@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -13,17 +14,27 @@ import {
   SidebarMenuButton,
   SidebarInset,
   SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, Edit3, ClipboardList, Tractor, FileText, Settings, HelpCircle, LogOut, Car, AlertTriangle } from 'lucide-react';
+import { Home, Edit3, Car, FileText, Settings, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog } from 'lucide-react';
 import Image from 'next/image';
 
-const navItems = [
+const userNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/vin-entry', label: 'VIN Entry', icon: Edit3 },
   { href: '/pre-trip', label: 'Pre-Trip Inspection', icon: Car },
-  { href: '/post-trip', label: 'Post-Trip Inspection', icon: Car }, // Could use different icon like ClipboardCheck
+  { href: '/post-trip', label: 'Post-Trip Inspection', icon: Car },
   { href: '/reports', label: 'Inspection Reports', icon: FileText },
+];
+
+const adminNavItems = [
+  { href: '/admin', label: 'Admin Overview', icon: ShieldCheck },
+  { href: '/admin/manage-fleet', label: 'Manage Fleet', icon: Users },
+  { href: '/admin/advanced-reports', label: 'Advanced Reports', icon: LineChart },
+  { href: '/admin/system-settings', label: 'System Settings', icon: Cog },
 ];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,7 +51,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarHeader>
         <SidebarContent>
           <SidebarMenu>
-            {navItems.map((item) => (
+            {userNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
                 <Link href={item.href} passHref legacyBehavior>
                   <SidebarMenuButton
@@ -55,15 +66,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               </SidebarMenuItem>
             ))}
           </SidebarMenu>
+
+          <SidebarSeparator className="my-4" />
+          
+          <SidebarGroup>
+            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Section</SidebarGroupLabel>
+            <SidebarMenu>
+              {adminNavItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href} passHref legacyBehavior>
+                    <SidebarMenuButton
+                      isActive={pathname.startsWith(item.href)} // Use startsWith for admin parent routes
+                      tooltip={{ children: item.label, className: "font-body" }}
+                      aria-label={item.label}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarMenu>
-                 <SidebarMenuItem>
-                     <SidebarMenuButton tooltip={{ children: "Settings", className: "font-body"}} aria-label="Settings">
-                        <Settings />
-                        <span>Settings</span>
-                     </SidebarMenuButton>
-                 </SidebarMenuItem>
                  <SidebarMenuItem>
                      <SidebarMenuButton tooltip={{ children: "Help", className: "font-body"}} aria-label="Help">
                         <HelpCircle />
