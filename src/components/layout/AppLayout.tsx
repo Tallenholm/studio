@@ -1,0 +1,96 @@
+'use client';
+
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarFooter,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Home, Edit3, ClipboardList, Tractor, FileText, Settings, HelpCircle, LogOut, Car, AlertTriangle } from 'lucide-react';
+import Image from 'next/image';
+
+const navItems = [
+  { href: '/', label: 'Dashboard', icon: Home },
+  { href: '/vin-entry', label: 'VIN Entry', icon: Edit3 },
+  { href: '/pre-trip', label: 'Pre-Trip Inspection', icon: Car },
+  { href: '/post-trip', label: 'Post-Trip Inspection', icon: Car }, // Could use different icon like ClipboardCheck
+  { href: '/reports', label: 'Inspection Reports', icon: FileText },
+];
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+
+  return (
+    <SidebarProvider defaultOpen>
+      <Sidebar>
+        <SidebarHeader className="p-4 flex flex-col items-center">
+           <Link href="/" className="flex items-center gap-2 mb-4">
+            <Tractor className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-headline font-bold">Fleet Check</h1>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent>
+          <SidebarMenu>
+            {navItems.map((item) => (
+              <SidebarMenuItem key={item.href}>
+                <Link href={item.href} passHref legacyBehavior>
+                  <SidebarMenuButton
+                    isActive={pathname === item.href}
+                    tooltip={{ children: item.label, className: "font-body" }}
+                    aria-label={item.label}
+                  >
+                    <item.icon />
+                    <span>{item.label}</span>
+                  </SidebarMenuButton>
+                </Link>
+              </SidebarMenuItem>
+            ))}
+          </SidebarMenu>
+        </SidebarContent>
+        <SidebarFooter className="p-2">
+            <SidebarMenu>
+                 <SidebarMenuItem>
+                     <SidebarMenuButton tooltip={{ children: "Settings", className: "font-body"}} aria-label="Settings">
+                        <Settings />
+                        <span>Settings</span>
+                     </SidebarMenuButton>
+                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                     <SidebarMenuButton tooltip={{ children: "Help", className: "font-body"}} aria-label="Help">
+                        <HelpCircle />
+                        <span>Help</span>
+                     </SidebarMenuButton>
+                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                     <SidebarMenuButton tooltip={{ children: "Logout", className: "font-body"}} aria-label="Logout">
+                        <LogOut />
+                        <span>Logout</span>
+                     </SidebarMenuButton>
+                 </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset className="bg-background min-h-screen">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
+            <SidebarTrigger className="md:hidden" />
+            {/* Potentially add user avatar or other header items here */}
+             <Button variant="ghost" size="icon" aria-label="Notifications">
+                <AlertTriangle className="h-5 w-5 text-accent" />
+             </Button>
+        </header>
+        <main className="flex-1 p-6 overflow-auto">
+          {children}
+        </main>
+      </SidebarInset>
+    </SidebarProvider>
+  );
+}
