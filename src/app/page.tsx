@@ -1,7 +1,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit3, ClipboardList, FileText, Car, AlertTriangle, CheckCircle2, History } from 'lucide-react';
+import { Edit3, FileText, Car, AlertTriangle, CheckCircle2, History, Wrench } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
@@ -12,10 +12,10 @@ export default function DashboardPage() {
       </p>
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Edit3 className="text-primary" />
+              <Wrench className="text-primary" />
               Manage VINs
             </CardTitle>
             <CardDescription>
@@ -29,7 +29,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Car className="text-primary" />
@@ -49,7 +49,7 @@ export default function DashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <FileText className="text-primary" />
@@ -73,29 +73,29 @@ export default function DashboardPage() {
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
-            <li className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-              <div className="flex items-center gap-2">
-                <CheckCircle2 className="text-green-500" />
+            <li className="flex items-center justify-between p-3 border bg-card hover:bg-muted/50 transition-colors duration-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <CheckCircle2 className="text-green-500 h-5 w-5" />
                 <span>Pre-Trip Inspection for Truck #12345 completed.</span>
               </div>
               <span className="text-sm text-muted-foreground">2 hours ago</span>
             </li>
-            <li className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="text-accent" />
+            <li className="flex items-center justify-between p-3 border bg-card hover:bg-muted/50 transition-colors duration-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <AlertTriangle className="text-accent h-5 w-5" />
                 <span>Anomaly detected in Skid Steer #SS789 report.</span>
               </div>
               <span className="text-sm text-muted-foreground">1 day ago</span>
             </li>
-             <li className="flex items-center justify-between p-3 bg-secondary/50 rounded-md">
-              <div className="flex items-center gap-2">
-                <Edit3 className="text-primary" />
+             <li className="flex items-center justify-between p-3 border bg-card hover:bg-muted/50 transition-colors duration-200 rounded-lg">
+              <div className="flex items-center gap-3">
+                <Edit3 className="text-primary h-5 w-5" />
                 <span>VIN for new Trailer #TILT001 added.</span>
               </div>
               <span className="text-sm text-muted-foreground">3 days ago</span>
             </li>
           </ul>
-           <p className="text-center text-muted-foreground mt-4">No more recent activities.</p>
+           <p className="text-center text-muted-foreground mt-6">No more recent activities.</p>
         </CardContent>
       </Card>
     </div>

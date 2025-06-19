@@ -5,7 +5,7 @@ import { Cog } from 'lucide-react';
 export default function SystemSettingsPage() {
   return (
     <div className="container mx-auto py-8">
-      <Card className="shadow-xl">
+      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <Cog className="h-8 w-8 text-primary" />

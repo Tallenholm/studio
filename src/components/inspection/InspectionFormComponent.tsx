@@ -128,7 +128,6 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       overallStatus,
     };
 
-    // Simulate API call delay
     await new Promise(resolve => setTimeout(resolve, 1000));
 
     saveInspectionReport(report);
@@ -137,32 +136,41 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       description: 'Your inspection report has been saved.',
     });
     setIsSubmitting(false);
-    router.push(`/reports/${reportId}`);
+    router.push(`/reports/${reportId}${inspectionType === 'pre-trip' ? '?analyze=true' : ''}`);
   }
 
   if (!isMounted) {
-    return <div className="flex justify-center items-center h-screen"><Loader2 className="h-12 w-12 animate-spin text-primary" /> <p className="ml-4 text-lg">Loading Inspection Form...</p></div>;
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Inspection Form...</p>
+      </div>
+    );
   }
 
   return (
-    <Card className="shadow-xl">
+    <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
       <CardHeader>
         <CardTitle className="text-3xl font-headline capitalize">
           {inspectionType.replace('-', ' ')} Inspection
         </CardTitle>
         <CardDescription>
           Complete the checklist for all vehicles and equipment. 
-          VINs loaded: Truck: {vins?.truckVin || 'N/A'}, Trailer: {vins?.trailerVin || 'N/A'}, Skid Steer: {vins?.skidSteerVin || 'N/A'}.
-          {!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin && " (No VINs entered. Please visit VIN Entry page.)"}
+          VINs loaded: Truck: <span className="font-medium text-foreground">{vins?.truckVin || 'N/A'}</span>, 
+          Trailer: <span className="font-medium text-foreground">{vins?.trailerVin || 'N/A'}</span>, 
+          Skid Steer: <span className="font-medium text-foreground">{vins?.skidSteerVin || 'N/A'}</span>.
+          {!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin && 
+            <span className="text-accent"> (No VINs entered. Please visit VIN Entry page.)</span>
+          }
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
             <Tabs defaultValue={CHECKLIST_DATA[0].id} className="w-full">
-              <TabsList className="grid w-full grid-cols-3">
+              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                 {CHECKLIST_DATA.map(section => (
-                  <TabsTrigger key={section.id} value={section.id} className="text-base py-3">
+                  <TabsTrigger key={section.id} value={section.id} className="text-base py-3 data-[state=active]:shadow-md">
                     <section.Icon className="mr-2 h-5 w-5" /> {section.name.split('(')[0].trim()}
                   </TabsTrigger>
                 ))}
@@ -188,7 +196,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
               ))}
             </Tabs>
 
-            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting} aria-label="Submit Inspection">
+            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || (!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin)} aria-label="Submit Inspection">
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
@@ -199,6 +207,9 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
              {form.formState.errors.sections && (
                 <p className="text-sm font-medium text-destructive mt-2 text-center">Please ensure all items are marked and notes are provided for failed items.</p>
             )}
+            {(!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin) &&
+                 <p className="text-sm font-medium text-accent mt-2 text-center">Please enter at least one VIN on the VIN Entry page to submit an inspection.</p>
+            }
           </form>
         </Form>
       </CardContent>

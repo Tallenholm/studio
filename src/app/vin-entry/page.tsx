@@ -19,12 +19,12 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { loadVins, saveVins } from '@/lib/localStorageService';
 import type { VehicleVins } from '@/lib/types';
-import { Truck, Box, Construction, Save } from 'lucide-react';
+import { Truck, Box, Construction, Save, Edit3, Loader2, Wrench } from 'lucide-react';
 
 const vinSchema = z.object({
-  truckVin: z.string().min(1, 'Truck VIN is required').max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
-  trailerVin: z.string().min(1, 'Trailer VIN is required').max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
-  skidSteerVin: z.string().min(1, 'Skid Steer VIN is required').max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
+  truckVin: z.string().max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
+  trailerVin: z.string().max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
+  skidSteerVin: z.string().max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
 });
 
 export default function VinEntryPage() {
@@ -53,20 +53,25 @@ export default function VinEntryPage() {
     toast({
       title: 'VINs Saved',
       description: 'Vehicle Identification Numbers have been successfully saved.',
-      variant: 'default',
+      variant: 'default', // Keep as default, toasts are styled via globals.css theme
     });
   }
 
   if (!isMounted) {
-    return <div className="flex justify-center items-center h-full"><p>Loading VINs...</p></div>; // Or a Skeleton loader
+     return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading VINs...</p>
+      </div>
+    );
   }
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="max-w-2xl mx-auto shadow-xl">
+      <Card className="max-w-2xl mx-auto shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
-            <Edit3 className="h-8 w-8 text-primary" />
+            <Wrench className="h-8 w-8 text-primary" />
             Vehicle Identification Numbers
           </CardTitle>
           <CardDescription>

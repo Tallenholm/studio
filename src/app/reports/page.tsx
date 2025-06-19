@@ -7,7 +7,7 @@ import type { InspectionReport } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2 } from 'lucide-react';
+import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 
 export default function ReportsListPage() {
@@ -20,7 +20,12 @@ export default function ReportsListPage() {
   }, []);
 
   if (!isMounted) {
-    return <div className="flex justify-center items-center h-screen"><p>Loading reports...</p></div>;
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading reports...</p>
+      </div>
+    );
   }
 
   return (
@@ -36,7 +41,7 @@ export default function ReportsListPage() {
       </div>
 
       {reports.length === 0 ? (
-        <Card className="text-center py-12 shadow-lg">
+        <Card className="text-center py-12 shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <CardTitle className="text-2xl font-headline">No Reports Found</CardTitle>
@@ -55,14 +60,14 @@ export default function ReportsListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reports.map((report) => (
-            <Card key={report.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 flex flex-col">
+            <Card key={report.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out flex flex-col">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                  <CardTitle className="text-xl font-headline capitalize flex items-center gap-2">
-                    {report.overallStatus === 'pass' ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <AlertTriangle className="h-6 w-6 text-red-500" />}
+                    {report.overallStatus === 'pass' ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <AlertTriangle className="h-6 w-6 text-destructive" />}
                     {report.type.replace('-', ' ')}
                   </CardTitle>
-                  <Badge variant={report.overallStatus === 'pass' ? 'default' : 'destructive'} className={report.overallStatus === 'pass' ? 'bg-green-500' : 'bg-red-500'}>
+                  <Badge variant={report.overallStatus === 'pass' ? 'default' : 'destructive'} className={`${report.overallStatus === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90'} text-primary-foreground`}>
                     {report.overallStatus?.toUpperCase()}
                   </Badge>
                 </div>
