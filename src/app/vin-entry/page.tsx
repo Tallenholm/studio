@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { useEffect, useState } from 'react';
 import { loadVins, saveVins } from '@/lib/localStorageService';
 import type { VehicleVins } from '@/lib/types';
-import { Truck, Box, Construction, Save, Edit3, Loader2, Wrench } from 'lucide-react';
+import { Truck, Box, Construction, Save, Loader2, Wrench } from 'lucide-react';
 
 const vinSchema = z.object({
   truckVin: z.string().max(17, 'VIN must be 17 characters').optional().or(z.literal('')),
@@ -53,7 +53,7 @@ export default function VinEntryPage() {
     toast({
       title: 'VINs Saved',
       description: 'Vehicle Identification Numbers have been successfully saved.',
-      variant: 'default', // Keep as default, toasts are styled via globals.css theme
+      variant: 'default',
     });
   }
 
@@ -61,7 +61,7 @@ export default function VinEntryPage() {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading VINs...</p>
+        <p className="text-lg text-muted-foreground">Loading VIN Entry Form...</p>
       </div>
     );
   }
