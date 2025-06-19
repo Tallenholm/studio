@@ -76,7 +76,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href} passHref legacyBehavior>
                     <SidebarMenuButton
-                      isActive={pathname.startsWith(item.href)} // Use startsWith for admin parent routes
+                      isActive={pathname.startsWith(item.href)} 
                       tooltip={{ children: item.label, className: "font-body" }}
                       aria-label={item.label}
                     >
@@ -93,13 +93,18 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter className="p-2">
             <SidebarMenu>
                  <SidebarMenuItem>
-                     <SidebarMenuButton tooltip={{ children: "Help", className: "font-body"}} aria-label="Help">
-                        <HelpCircle />
-                        <span>Help</span>
-                     </SidebarMenuButton>
+                    <Link href="/help" passHref legacyBehavior>
+                        <SidebarMenuButton 
+                            isActive={pathname === '/help'}
+                            tooltip={{ children: "Help", className: "font-body"}} 
+                            aria-label="Help">
+                            <HelpCircle />
+                            <span>Help</span>
+                        </SidebarMenuButton>
+                    </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                     <SidebarMenuButton tooltip={{ children: "Logout", className: "font-body"}} aria-label="Logout">
+                     <SidebarMenuButton tooltip={{ children: "Logout (Not Implemented)", className: "font-body"}} aria-label="Logout" disabled>
                         <LogOut />
                         <span>Logout</span>
                      </SidebarMenuButton>
@@ -110,8 +115,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className="bg-background min-h-screen">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
             <SidebarTrigger className="md:hidden" />
-            {/* Potentially add user avatar or other header items here */}
-             <Button variant="ghost" size="icon" aria-label="Notifications">
+             <Button variant="ghost" size="icon" aria-label="Notifications (Placeholder)">
                 <AlertTriangle className="h-5 w-5 text-accent" />
              </Button>
         </header>
