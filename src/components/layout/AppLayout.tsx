@@ -53,7 +53,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           <SidebarMenu>
             {userNavItems.map((item) => (
               <SidebarMenuItem key={item.href}>
-                <Link href={item.href} passHref legacyBehavior>
+                <Link href={item.href}>
                   <SidebarMenuButton
                     isActive={pathname === item.href}
                     tooltip={{ children: item.label, className: "font-body" }}
@@ -74,7 +74,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
               {adminNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
-                  <Link href={item.href} passHref legacyBehavior>
+                  <Link href={item.href}>
                     <SidebarMenuButton
                       isActive={pathname.startsWith(item.href)} 
                       tooltip={{ children: item.label, className: "font-body" }}
@@ -93,7 +93,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarFooter className="p-2">
             <SidebarMenu>
                  <SidebarMenuItem>
-                    <Link href="/help" passHref legacyBehavior>
+                    <Link href="/help">
                         <SidebarMenuButton 
                             isActive={pathname === '/help'}
                             tooltip={{ children: "Help", className: "font-body"}} 
