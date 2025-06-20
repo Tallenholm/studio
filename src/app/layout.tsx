@@ -4,8 +4,8 @@ import { Toaster } from "@/components/ui/toaster";
 import AppLayout from '@/components/layout/AppLayout';
 
 export const metadata: Metadata = {
-  title: 'Fleet Check',
-  description: 'Pre-trip and post-trip inspections for your fleet.',
+  title: 'Logans Excavating & Snow Removal',
+  description: 'Fleet inspection and management for Logans Excavating & Snow Removal.',
 };
 
 export default function RootLayout({

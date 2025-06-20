@@ -19,7 +19,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, Edit3, Car, FileText, Settings, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog } from 'lucide-react';
+import { Home, Edit3, Car, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog } from 'lucide-react';
 import Image from 'next/image';
 
 const userNavItems = [
@@ -44,9 +44,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     <SidebarProvider defaultOpen>
       <Sidebar>
         <SidebarHeader className="p-4 flex flex-col items-center">
-           <Link href="/" className="flex items-center gap-2 mb-4">
+           <Link href="/" className="flex items-center gap-2 mb-4 text-center">
             <Tractor className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-headline font-bold">Fleet Check</h1>
+            <h1 className="text-xl font-headline font-bold leading-tight">Logans Excavating<br />& Snow Removal</h1>
           </Link>
         </SidebarHeader>
         <SidebarContent>
