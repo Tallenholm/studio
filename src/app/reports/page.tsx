@@ -81,14 +81,14 @@ export default function ReportsListPage() {
                 <p className="text-sm text-muted-foreground"><strong>Skid Steer:</strong> {report.skidSteerVin || 'N/A'}</p>
               </CardContent>
               <CardFooter className="gap-2">
-                <Link href={`/reports/${report.id}`} passHref legacyBehavior>
-                  <Button variant="outline" className="flex-1" aria-label={`View report ${report.id}`}>
+                <Link href={`/reports/${report.id}`} className='flex-1'>
+                  <Button variant="outline" className="w-full" aria-label={`View report ${report.id}`}>
                     <Eye className="mr-2 h-4 w-4" /> View
                   </Button>
                 </Link>
                 {report.type === 'pre-trip' && (
-                  <Link href={`/reports/${report.id}?analyze=true`} passHref legacyBehavior>
-                    <Button className="flex-1" aria-label={`Analyze report ${report.id} with AI`}>
+                   <Link href={`/reports/${report.id}?analyze=true`} className='flex-1'>
+                    <Button className="w-full" aria-label={`Analyze report ${report.id} with AI`}>
                       <Brain className="mr-2 h-4 w-4" /> AI Analysis
                     </Button>
                   </Link>

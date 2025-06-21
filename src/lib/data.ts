@@ -17,12 +17,11 @@ import {
   LayoutGrid,
   ChevronsUpDown,
   Anchor,
-  Tractor,
   Shovel,
   Gamepad2,
   ShieldCheck,
   Wrench,
-  TruckIcon,
+  Truck,
   Box,
   Construction,
 } from 'lucide-react';
@@ -31,11 +30,11 @@ export const CHECKLIST_DATA: ChecklistSectionData[] = [
   {
     id: 'truck',
     name: 'Truck (2021 Chevy 6500)',
-    Icon: TruckIcon,
+    Icon: Truck,
     items: [
       { id: 'truck-oil', name: 'Engine Oil Level', instructions: 'Check dipstick. Level should be between min and max marks.', Icon: Droplet },
       { id: 'truck-coolant', name: 'Coolant Level', instructions: 'Check reservoir. Level should be between min and max marks when engine is cold.', Icon: Thermometer },
-      { id: 'truck-brake-fluid', name: 'Brake Fluid Level', instructions: 'Check reservoir. Level should be between min and max marks.', Icon: Droplet }, // Consider a more specific icon or use AlertTriangle if critically low
+      { id: 'truck-brake-fluid', name: 'Brake Fluid Level', instructions: 'Check reservoir. Level should be between min and max marks.', Icon: Droplet },
       { id: 'truck-power-steering', name: 'Power Steering Fluid', instructions: 'Check reservoir. Level should be between min and max marks.', Icon: Settings2 },
       { id: 'truck-washer-fluid', name: 'Windshield Washer Fluid', instructions: 'Check reservoir. Fill if low.', Icon: Wind },
       { id: 'truck-lights', name: 'Lights (All)', instructions: 'Test headlights (low/high), taillights, turn signals, brake lights, hazard lights, clearance lights.', Icon: Lightbulb },
@@ -53,7 +52,7 @@ export const CHECKLIST_DATA: ChecklistSectionData[] = [
   {
     id: 'trailer',
     name: 'Trailer (Tilt Deck)',
-    Icon: Box, // Using Box as a generic trailer icon
+    Icon: Box,
     items: [
       { id: 'trailer-lights', name: 'Lights (All)', instructions: 'Test taillights, turn signals, brake lights, clearance lights.', Icon: Lightbulb },
       { id: 'trailer-tires', name: 'Tires (Pressure, Tread, Damage)', instructions: 'Check for proper inflation, adequate tread depth, and any visible damage.', Icon: Disc3 },
@@ -68,11 +67,11 @@ export const CHECKLIST_DATA: ChecklistSectionData[] = [
   {
     id: 'skidSteer',
     name: 'Skid Steer',
-    Icon: Construction, // Using construction as skid steer icon
+    Icon: Construction,
     items: [
-      { id: 'skid-fluids', name: 'Fluid Levels (Engine, Hydraulic)', instructions: 'Check engine oil, hydraulic oil, and coolant levels.', Icon: Droplets },
+      { id: 'skid-fluids', name: 'Fluid Levels (Engine, Hydraulic)', instructions: 'Check engine oil, hydraulic oil, and coolant levels.', Icon: Droplet },
       { id: 'skid-lights', name: 'Lights (if applicable)', instructions: 'Test any work lights or warning lights.', Icon: Lightbulb },
-      { id: 'skid-tires-tracks', name: 'Tires/Tracks', instructions: 'Check tires for wear and damage, or tracks for tension and condition.', Icon: Disc3 }, // Tractor might be better for tracks
+      { id: 'skid-tires-tracks', name: 'Tires/Tracks', instructions: 'Check tires for wear and damage, or tracks for tension and condition.', Icon: Disc3 },
       { id: 'skid-bucket-attach', name: 'Bucket/Attachments', instructions: 'Inspect for damage, wear, and secure attachment.', Icon: Shovel },
       { id: 'skid-controls', name: 'Controls (Levers, Pedals)', instructions: 'Check for smooth operation and responsiveness.', Icon: Gamepad2 },
       { id: 'skid-safety-feat', name: 'Safety Features (ROPS, Seatbelt)', instructions: 'Ensure ROPS is intact and seatbelt is functional.', Icon: ShieldCheck },

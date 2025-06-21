@@ -15,7 +15,7 @@ export default function AdvancedReportsPage() {
             Advanced Fleet Analytics
           </CardTitle>
           <CardDescription>
-            Generate detailed reports and visualize trends for your fleet's inspection and maintenance data.
+            Generate detailed reports and visualize trends for your fleet's inspection and maintenance data. This feature is currently under development.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -81,7 +81,7 @@ export default function AdvancedReportsPage() {
               Generated reports and visualizations will appear here.
             </p>
             <p className="text-sm text-muted-foreground mt-2">
-              This feature is under active development to provide insightful fleet analytics.
+              Future enhancements will provide insightful fleet analytics, component failure rates, and more.
             </p>
           </div>
         </CardContent>

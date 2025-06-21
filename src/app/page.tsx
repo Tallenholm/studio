@@ -70,6 +70,7 @@ export default function DashboardPage() {
       <Card className="shadow-lg">
         <CardHeader>
           <CardTitle className="font-headline flex items-center gap-2"><History className="text-primary"/>Recent Activity</CardTitle>
+          <CardDescription>This is an illustrative example of recent activities.</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">
@@ -95,7 +96,7 @@ export default function DashboardPage() {
               <span className="text-sm text-muted-foreground">3 days ago</span>
             </li>
           </ul>
-           <p className="text-center text-muted-foreground mt-6">No more recent activities.</p>
+           <p className="text-center text-muted-foreground mt-6">A live feed of recent reports would appear here.</p>
         </CardContent>
       </Card>
     </div>

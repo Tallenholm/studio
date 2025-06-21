@@ -19,7 +19,7 @@ export default function SystemSettingsPage() {
             System Configuration
           </CardTitle>
           <CardDescription>
-            Manage global settings and preferences for the Fleet Check application. (Settings are illustrative and not functional yet)
+            Manage global settings for the Fleet Check application. (Note: These settings are illustrative placeholders and are not currently functional).
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -69,7 +69,7 @@ export default function SystemSettingsPage() {
             <Button variant="outline" disabled className="w-full md:w-auto">
               Clear Local Application Data
             </Button>
-             <p className="text-xs text-muted-foreground">Note: Data is stored in your browser's local storage. Clearing data is irreversible.</p>
+             <p className="text-xs text-muted-foreground">Note: Data is stored in your browser's local storage. Clearing data is irreversible and for development purposes only.</p>
           </div>
           
           <div className="flex justify-end pt-4">

@@ -14,8 +14,7 @@ export default function ManageFleetPage() {
             Manage Fleet Assets
           </CardTitle>
           <CardDescription>
-            View, add, edit, or remove vehicles and equipment from your fleet. 
-            Currently, VINs are managed globally via the "VIN Entry" page. Future enhancements could integrate individual asset management here.
+            This section is a placeholder for viewing, adding, and editing fleet assets. Currently, VINs are managed globally via the "VIN Entry" page.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
@@ -41,16 +40,16 @@ export default function ManageFleetPage() {
                 {/* Example Row - In a real app, this would be populated with data */}
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
-                    No fleet assets registered directly here yet. Manage VINs via the 'VIN Entry' page.
+                    Fleet asset management features are planned for future development.
                     <br />
-                    Full fleet asset management features are planned for future development.
+                    This would allow tracking maintenance history and status for each vehicle individually.
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </div>
            <p className="text-sm text-muted-foreground text-center">
-            Detailed fleet asset management functionalities, including individual editing and history, are under consideration.
+            Future functionality will integrate inspection data to provide a live status for each fleet asset.
           </p>
         </CardContent>
       </Card>

@@ -69,37 +69,23 @@ const prompt = ai.definePrompt({
   output: {schema: AnalyzeInspectionReportsOutputSchema},
   prompt: `You are an AI assistant specialized in analyzing vehicle inspection reports for anomalies.
 
-You will receive a current inspection report and a set of past reports for the same vehicle.
-Your task is to identify any significant deviations or inconsistencies in the current report compared to the past reports.
+Your task is to identify any significant deviations or inconsistencies in the current report compared to the past reports for the same vehicle. Consider factors like unexpected component failures, unusual patterns, or deviations from expected values.
 
-Consider factors such as:
-- Unexpected changes in inspection status (e.g., a component suddenly failing after consistently passing).
-- Unusual patterns or combinations of failures.
-- Deviations from expected values or ranges (if numerical data is available).
-
-Based on your analysis, determine if the detected anomalies warrant immediate mechanic intervention or if the inspection procedure needs to be reviewed and potentially changed.
+Based on your analysis, provide a concise summary, determine if the anomalies require immediate mechanic intervention, and suggest if the inspection procedure itself may need changes.
 
 Vehicle Identification Number (VIN): {{{vehicleIdentificationNumber}}}
 
-Current Inspection Report:
+Current Inspection Report (JSON):
 {{#if currentReport}}{{{currentReport}}}{{else}}No current report provided{{/if}}
 
-Past Inspection Reports:
+Past Inspection Reports (JSON Array):
 {{#if pastReports}}
   {{#each pastReports}}
 - {{{this}}}
   {{/each}}
 {{else}}No past reports provided{{/if}}
 
-Output:
-Anomaly Detected: set to true if anomalies are present, otherwise false
-Anomaly Summary: A summary of the detected anomalies, including potential causes and recommended actions.
-Requires Intervention: set to true if anomalies require immediate mechanic intervention.
-Requires Procedure Change: set to true if the inspection procedure needs to be reviewed and potentially changed based on the anomalies.
-
-Ensure your output is in valid JSON format according to the following schema: ${JSON.stringify(
-    AnalyzeInspectionReportsOutputSchema.shape
-  )}`,
+Please provide your analysis in the structured output format defined.`,
 });
 
 const analyzeInspectionReportsFlow = ai.defineFlow(
