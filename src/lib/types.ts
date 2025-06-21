@@ -3,6 +3,13 @@ import type { LucideIcon } from 'lucide-react';
 
 export type VehicleType = 'truck' | 'trailer' | 'skidSteer';
 
+export interface FleetAsset {
+  id: string;
+  type: VehicleType;
+  name: string;
+  vin: string;
+}
+
 export interface InspectionItem {
   id: string;
   name: string;
@@ -26,16 +33,13 @@ export interface CompletedInspectionItem {
   notes?: string;
 }
 
-export interface VehicleVins {
-  truckVin?: string;
-  trailerVin?: string;
-  skidSteerVin?: string;
-}
-
-export interface InspectionReport extends VehicleVins {
+export interface InspectionReport {
   id: string;
   type: 'pre-trip' | 'post-trip';
   date: string; // ISO string
+  truckVin?: string;
+  trailerVin?: string;
+  skidSteerVin?: string;
   sections: Array<{
     vehicleType: VehicleType;
     name: string; // e.g. "Truck", "Trailer"

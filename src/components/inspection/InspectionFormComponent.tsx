@@ -1,20 +1,27 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray, Controller } from 'react-hook-form';
+import { useForm, useFieldArray } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
-import { Form } from '@/components/ui/form';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CHECKLIST_DATA } from '@/lib/data';
-import type { InspectionReport, VehicleVins, InspectionStatus, CompletedInspectionItem, ChecklistSectionData } from '@/lib/types';
+import type { InspectionReport, InspectionStatus, FleetAsset } from '@/lib/types';
 import ChecklistItemComponent from './ChecklistItemComponent';
-import { saveInspectionReport, loadVins } from '@/lib/localStorageService';
+import { saveInspectionReport, loadFleetAssets } from '@/lib/localStorageService';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState } from 'react';
-import { Loader2, Send } from 'lucide-react';
+import { useEffect, useState, useMemo } from 'react';
+import { Loader2, Send, Truck, Box, Construction } from 'lucide-react';
 
 const completedItemSchema = z.object({
   itemId: z.string(),
@@ -30,8 +37,19 @@ const sectionSchema = z.object({
 });
 
 const inspectionFormSchema = z.object({
+  truckVin: z.string().optional(),
+  trailerVin: z.string().optional(),
+  skidSteerVin: z.string().optional(),
   sections: z.array(sectionSchema),
 }).superRefine((data, ctx) => {
+  if (!data.truckVin && !data.trailerVin && !data.skidSteerVin) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: 'You must select at least one vehicle for the inspection.',
+      path: ['truckVin'],
+    });
+  }
+
   data.sections.forEach((section, sectionIndex) => {
     section.items.forEach((item, itemIndex) => {
       if (item.status === 'fail' && (!item.notes || item.notes.trim() === '')) {
@@ -61,16 +79,27 @@ interface InspectionFormProps {
 export default function InspectionFormComponent({ inspectionType }: InspectionFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const [vins, setVins] = useState<VehicleVins | null>(null);
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
     setIsMounted(true);
-    setVins(loadVins());
+    setFleetAssets(loadFleetAssets());
   }, []);
   
+  const { trucks, trailers, skidSteers } = useMemo(() => {
+    return {
+      trucks: fleetAssets.filter(a => a.type === 'truck'),
+      trailers: fleetAssets.filter(a => a.type === 'trailer'),
+      skidSteers: fleetAssets.filter(a => a.type === 'skidSteer'),
+    }
+  }, [fleetAssets]);
+
   const defaultValues: InspectionFormValues = {
+    truckVin: '',
+    trailerVin: '',
+    skidSteerVin: '',
     sections: CHECKLIST_DATA.map(section => ({
       vehicleType: section.id,
       name: section.name,
@@ -112,9 +141,9 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       id: reportId,
       type: inspectionType,
       date: new Date().toISOString(),
-      truckVin: vins?.truckVin,
-      trailerVin: vins?.trailerVin,
-      skidSteerVin: vins?.skidSteerVin,
+      truckVin: values.truckVin,
+      trailerVin: values.trailerVin,
+      skidSteerVin: values.skidSteerVin,
       sections: values.sections.map(section => ({
         vehicleType: section.vehicleType,
         name: section.name,
@@ -155,18 +184,79 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
           {inspectionType.replace('-', ' ')} Inspection
         </CardTitle>
         <CardDescription>
-          Complete the checklist for all vehicles and equipment. 
-          VINs loaded: Truck: <span className="font-medium text-foreground">{vins?.truckVin || 'N/A'}</span>, 
-          Trailer: <span className="font-medium text-foreground">{vins?.trailerVin || 'N/A'}</span>, 
-          Skid Steer: <span className="font-medium text-foreground">{vins?.skidSteerVin || 'N/A'}</span>.
-          {!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin && 
-            <span className="text-accent"> (No VINs entered. Please visit VIN Entry page.)</span>
-          }
+          Select the vehicle(s) for this inspection, then complete the checklist.
         </CardDescription>
       </CardHeader>
       <CardContent>
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
+
+            <div className="p-6 border rounded-lg shadow-sm bg-muted/20">
+                <h3 className="text-xl font-semibold mb-4">Select Vehicles</h3>
+                 <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                     <FormField
+                        control={form.control}
+                        name="truckVin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2 text-lg"><Truck className="h-5 w-5 text-primary"/>Truck</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={trucks.length === 0}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={trucks.length > 0 ? "Select a truck" : "No trucks in fleet"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {trucks.map(truck => <SelectItem key={truck.id} value={truck.vin}>{truck.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="trailerVin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2 text-lg"><Box className="h-5 w-5 text-primary"/>Trailer</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={trailers.length === 0}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={trailers.length > 0 ? "Select a trailer" : "No trailers in fleet"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {trailers.map(trailer => <SelectItem key={trailer.id} value={trailer.vin}>{trailer.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="skidSteerVin"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel className="flex items-center gap-2 text-lg"><Construction className="h-5 w-5 text-primary"/>Skid Steer</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={skidSteers.length === 0}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder={skidSteers.length > 0 ? "Select a skid steer" : "No skid steers in fleet"} />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {skidSteers.map(skidSteer => <SelectItem key={skidSteer.id} value={skidSteer.vin}>{skidSteer.name}</SelectItem>)}
+                              </SelectContent>
+                            </Select>
+                          </FormItem>
+                        )}
+                      />
+                 </div>
+                 {form.formState.errors.truckVin && (
+                    <p className="text-sm font-medium text-destructive mt-2">{form.formState.errors.truckVin.message}</p>
+                )}
+            </div>
+
             <Tabs defaultValue={CHECKLIST_DATA[0].id} className="w-full">
               <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
                 {CHECKLIST_DATA.map(section => (
@@ -196,7 +286,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
               ))}
             </Tabs>
 
-            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || (!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin)} aria-label="Submit Inspection">
+            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting} aria-label="Submit Inspection">
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (
@@ -205,11 +295,8 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
               {isSubmitting ? 'Submitting...' : 'Submit Inspection'}
             </Button>
              {form.formState.errors.sections && (
-                <p className="text-sm font-medium text-destructive mt-2 text-center">Please ensure all items are marked and notes are provided for failed items.</p>
+                <p className="text-sm font-medium text-destructive mt-2 text-center">Please ensure all checklist items are marked and notes are provided for failed items.</p>
             )}
-            {(!vins?.truckVin && !vins?.trailerVin && !vins?.skidSteerVin) &&
-                 <p className="text-sm font-medium text-accent mt-2 text-center">Please enter at least one VIN on the VIN Entry page to submit an inspection.</p>
-            }
           </form>
         </Form>
       </CardContent>
