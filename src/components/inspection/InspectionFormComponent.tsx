@@ -235,11 +235,9 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
                           <FormItem>
                             <FormLabel className="flex items-center gap-2 text-lg"><Truck className="h-5 w-5 text-primary"/>Truck</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={trucks.length === 0}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={trucks.length > 0 ? "Select a truck" : "No trucks in fleet"} />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={trucks.length > 0 ? "Select a truck" : "No trucks in fleet"} />
+                              </SelectTrigger>
                               <SelectContent>
                                 {trucks.map(truck => <SelectItem key={truck.id} value={truck.vin}>{truck.name}</SelectItem>)}
                               </SelectContent>
@@ -254,11 +252,9 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
                           <FormItem>
                             <FormLabel className="flex items-center gap-2 text-lg"><Box className="h-5 w-5 text-primary"/>Trailer</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={trailers.length === 0}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={trailers.length > 0 ? "Select a trailer" : "No trailers in fleet"} />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={trailers.length > 0 ? "Select a trailer" : "No trailers in fleet"} />
+                              </SelectTrigger>
                               <SelectContent>
                                 {trailers.map(trailer => <SelectItem key={trailer.id} value={trailer.vin}>{trailer.name}</SelectItem>)}
                               </SelectContent>
@@ -273,11 +269,9 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
                           <FormItem>
                             <FormLabel className="flex items-center gap-2 text-lg"><Construction className="h-5 w-5 text-primary"/>Skid Steer</FormLabel>
                             <Select onValueChange={field.onChange} defaultValue={field.value} disabled={skidSteers.length === 0}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder={skidSteers.length > 0 ? "Select a skid steer" : "No skid steers in fleet"} />
-                                </SelectTrigger>
-                              </FormControl>
+                              <SelectTrigger>
+                                <SelectValue placeholder={skidSteers.length > 0 ? "Select a skid steer" : "No skid steers in fleet"} />
+                              </SelectTrigger>
                               <SelectContent>
                                 {skidSteers.map(skidSteer => <SelectItem key={skidSteer.id} value={skidSteer.vin}>{skidSteer.name}</SelectItem>)}
                               </SelectContent>
@@ -349,3 +343,5 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     </Card>
   );
 }
+
+    
