@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2 } from 'lucide-react';
+import { Clock, Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
