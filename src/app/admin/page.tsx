@@ -2,20 +2,54 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Users, LineChart, Cog, Truck } from 'lucide-react';
+import { Users, LineChart, Cog, Truck, FileText, UserCheck } from 'lucide-react';
 
-export default function AdminDashboardPage() {
+export default function FleetCheckDashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
-        <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
+        <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h1 className="text-4xl font-headline font-bold">Fleet Check Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Oversee fleet assets, user access, reports, and system settings.
+          Oversee fleet assets, users, reports, and settings for the Fleet Check app.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <UserCheck className="text-primary" />
+              Employee Portal
+            </CardTitle>
+            <CardDescription>
+              Access the simplified view for drivers to complete their inspections.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/employee" passHref>
+              <Button className="w-full">Go to Employee Portal</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <FileText className="text-primary" />
+              View Reports
+            </CardTitle>
+            <CardDescription>
+              Review all past inspection reports and their AI analysis.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/reports" passHref>
+              <Button className="w-full">Go to Reports</Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">

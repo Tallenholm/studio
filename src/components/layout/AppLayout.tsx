@@ -20,21 +20,8 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck, Loader2, Truck } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-
-const managementNavItems = [
-  { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/reports', label: 'Inspection Reports', icon: FileText },
-];
-
-const adminNavItems = [
-  { href: '/admin', label: 'Admin Overview', icon: ShieldCheck },
-  { href: '/admin/manage-fleet', label: 'Manage Fleet', icon: Truck },
-  { href: '/admin/manage-users', label: 'Manage Users', icon: Users },
-  { href: '/admin/advanced-reports', label: 'Advanced Reports', icon: LineChart },
-  { href: '/admin/system-settings', label: 'System Settings', icon: Cog },
-];
 
 // Define which routes belong to which role
 const managerBaseRoutes = ['/', '/reports', '/admin', '/help'];
@@ -91,7 +78,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           {role === 'employee' && (
             <SidebarGroup>
-              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Employee Tools</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Fleet Check App</SidebarGroupLabel>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/employee">
@@ -114,32 +101,49 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {role === 'manager' && (
             <>
               <SidebarGroup>
-                 <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Management</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Hub</SidebarGroupLabel>
                  <SidebarMenu>
-                  {managementNavItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <Link href={item.href}>
-                        <SidebarMenuButton isActive={pathname === item.href}>
-                          <item.icon /><span>{item.label}</span>
+                    <SidebarMenuItem>
+                      <Link href="/">
+                        <SidebarMenuButton isActive={pathname === '/'}>
+                          <LayoutDashboard /><span>Hub Dashboard</span>
                         </SidebarMenuButton>
                       </Link>
                     </SidebarMenuItem>
-                  ))}
                 </SidebarMenu>
               </SidebarGroup>
               <SidebarSeparator className="my-2" />
               <SidebarGroup>
-                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Fleet Check App</SidebarGroupLabel>
                 <SidebarMenu>
-                  {adminNavItems.map((item) => (
-                    <SidebarMenuItem key={item.href}>
-                      <Link href={item.href}>
-                        <SidebarMenuButton isActive={pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin')}>
-                          <item.icon /><span>{item.label}</span>
-                        </SidebarMenuButton>
-                      </Link>
+                    <SidebarMenuItem>
+                        <Link href="/admin">
+                            <SidebarMenuButton isActive={pathname === '/admin'}>
+                                <Truck /><span>Dashboard</span>
+                            </SidebarMenuButton>
+                        </Link>
                     </SidebarMenuItem>
-                  ))}
+                    <SidebarMenuItem>
+                        <Link href="/reports">
+                            <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                                <FileText /><span>Reports</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <Link href="/admin/manage-users">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-users')}>
+                                <Users /><span>Users</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/manage-fleet">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
+                                <Cog /><span>Fleet</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroup>
             </>
