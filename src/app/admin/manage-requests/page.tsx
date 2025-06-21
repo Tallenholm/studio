@@ -19,7 +19,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { ClipboardCheck, Loader2, Check, X } from 'lucide-react';
-import { format, differenceInDays } from 'date-fns';
+import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 
 export default function ManageRequestsPage() {
@@ -33,7 +33,7 @@ export default function ManageRequestsPage() {
   }, []);
 
   const updateRequestStatus = (requestId: string, status: 'approved' | 'denied') => {
-    let approvedRequest: TimeOffRequest | null = null;
+    let approvedRequest: TimeOffRequest | undefined;
     const updatedRequests = requests.map(req => {
       if (req.id === requestId) {
         const updatedReq = { ...req, status };
@@ -49,23 +49,49 @@ export default function ManageRequestsPage() {
     saveTimeOffRequests(updatedRequests);
     
     if (status === 'approved' && approvedRequest) {
-        const calendarEvents = loadCalendarEvents();
-        const newEvent: CalendarEvent = {
-            id: `time-off-${approvedRequest.id}`,
-            // For multi-day events, we'll just mark the start date on the calendar for simplicity.
-            // A more complex implementation could show the full range.
-            date: approvedRequest.startDate, 
-            title: `Time Off: ${approvedRequest.employeeName}`,
-            type: 'time-off',
-            description: approvedRequest.reason,
-        };
-        saveCalendarEvents([...calendarEvents, newEvent]);
-    }
+        const requestToProcess = approvedRequest;
+        try {
+            const calendarEvents = loadCalendarEvents();
+            
+            const interval = {
+                start: parseISO(requestToProcess.startDate),
+                end: parseISO(requestToProcess.endDate)
+            };
 
-    toast({
-      title: `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-      description: `The time off request has been ${status}.`,
-    });
+            if (interval.start > interval.end) {
+                throw new Error("Start date cannot be after end date.");
+            }
+
+            const datesInRange = eachDayOfInterval(interval);
+
+            const newEvents: CalendarEvent[] = datesInRange.map((date, index) => ({
+                id: `time-off-${requestToProcess.id}-${index}`,
+                date: format(date, 'yyyy-MM-dd'), 
+                title: `Time Off: ${requestToProcess.employeeName}`,
+                type: 'time-off',
+                description: requestToProcess.reason,
+            }));
+            
+            saveCalendarEvents([...calendarEvents, ...newEvents]);
+
+            toast({
+                title: `Request Approved`,
+                description: `The request has been approved and added to the calendar.`,
+            });
+        } catch (error) {
+            console.error("Failed to update calendar:", error);
+            toast({
+                variant: 'destructive',
+                title: 'Calendar Update Failed',
+                description: 'The request was approved, but an error occurred adding it to the calendar.',
+            });
+        }
+    } else {
+        toast({
+          title: `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+          description: `The time off request has been ${status}.`,
+        });
+    }
   };
 
   const getStatusBadgeVariant = (status: TimeOffRequest['status']) => {
