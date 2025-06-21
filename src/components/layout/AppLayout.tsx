@@ -39,7 +39,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const isAllowed = (baseRoutes: string[]) => {
       // Allow access to specific report detail pages
       if (pathname.startsWith('/reports/')) return true;
-      if (pathname.startsWith('/admin/')) return true;
       // Check against base routes
       return baseRoutes.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
     };

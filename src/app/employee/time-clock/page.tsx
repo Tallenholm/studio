@@ -68,7 +68,7 @@ export default function TimeClockPage() {
     return () => {
       navigator.geolocation.clearWatch(watcher);
     };
-  }, [locationError]);
+  }, []);
 
   const handleClockInOut = () => {
     if (!isWithinFence) {
