@@ -1,9 +1,10 @@
 
-import type { InspectionReport, FleetAsset, User } from './types';
+import type { InspectionReport, FleetAsset, User, ClockState } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
 const USERS_KEY = 'fleetCheckUsers';
+const CLOCK_STATE_KEY = 'fleetCheckClockState';
 
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -106,4 +107,29 @@ export const loadUsers = (): User[] => {
     }
   }
   return [];
+};
+
+export const saveClockState = (state: ClockState): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(CLOCK_STATE_KEY, JSON.stringify(state));
+    } catch (error) {
+      console.error('Failed to save clock state:', error);
+    }
+  }
+};
+
+export const loadClockState = (): ClockState => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(CLOCK_STATE_KEY);
+      if (data) {
+        return JSON.parse(data);
+      }
+    } catch (error) {
+      console.error('Failed to load clock state:', error);
+    }
+  }
+  // Default state if nothing is stored or on error
+  return { status: 'clockedOut', timestamp: null };
 };

@@ -58,3 +58,10 @@ export interface InspectionReport {
   anomalyReport?: AnalyzeInspectionReportsOutput;
   overallStatus?: 'pass' | 'fail'; // Calculated based on item statuses
 }
+
+export type ClockStatus = 'clockedIn' | 'clockedOut';
+
+export interface ClockState {
+  status: ClockStatus;
+  timestamp: string | null; // ISO string
+}

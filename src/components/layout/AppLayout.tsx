@@ -25,7 +25,7 @@ import { useAuth } from '@/contexts/AuthContext';
 
 // Define which routes belong to which role
 const managerBaseRoutes = ['/', '/reports', '/admin', '/help'];
-const employeeBaseRoutes = ['/employee', '/pre-trip', '/post-trip', '/reports', '/help'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -78,12 +78,12 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarContent>
           {role === 'employee' && (
             <SidebarGroup>
-              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Fleet Check App</SidebarGroupLabel>
+              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/employee">
-                    <SidebarMenuButton isActive={pathname === '/employee'}>
-                      <UserCheck /><span>Employee Portal</span>
+                    <SidebarMenuButton isActive={pathname.startsWith('/employee')}>
+                      <LayoutDashboard /><span>Employee Hub</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
