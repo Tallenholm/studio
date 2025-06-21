@@ -256,7 +256,7 @@ const defaultDocuments: ManagedDocument[] = [
       title: 'Fleet Safety Manual',
       description: 'Company safety procedures and guidelines.',
       documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'manual safety'
+      dataAiHint: 'manual safety',
     }
 ];
 

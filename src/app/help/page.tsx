@@ -7,28 +7,32 @@ import Link from 'next/link';
 export default function HelpPage() {
   const faqs = [
     {
-      question: "How do I add or update Vehicle Identification Numbers (VINs)?",
-      answer: "Navigate to the 'VIN Entry' page from the sidebar. Enter the VINs for your truck, trailer, and/or skid steer in the respective fields and click 'Save VINs'. These saved VINs will then be automatically used when you start a new inspection.",
-    },
-    {
-      question: "What's the difference between Pre-Trip and Post-Trip Inspections?",
-      answer: "Pre-Trip inspections are conducted before operating a vehicle or equipment to ensure it's safe and ready for use. Post-Trip inspections are done after operation to identify any issues that may have occurred during use, helping to schedule maintenance proactively.",
+      question: "How do I perform a vehicle inspection?",
+      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting from the dropdown menus. Go through each tab (Truck, Trailer, etc.) and mark each checklist item as 'Pass' or 'Fail'. If an item fails, you must provide notes. You can also add a photo. Once complete, click 'Submit Inspection'.",
     },
     {
       question: "How does the AI Anomaly Detection work?",
-      answer: "After you complete a Pre-Trip inspection, you'll have an option to 'Run AI Analysis' on the report details page. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns, deviations, or potential maintenance needs. It then provides a summary of its findings.",
+      answer: "After you complete a Pre-Trip inspection, you'll be taken to the report page where you can click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
     },
     {
-      question: "Where is my inspection data stored?",
-      answer: "All inspection reports and VIN information are stored locally in your web browser's local storage. This means the data is private to your browser and device. No data is sent to an external server for storage in the current version.",
+      question: "How do I request time off?",
+      answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page.",
     },
     {
-      question: "Can I view past inspection reports?",
-      answer: "Yes! Go to the 'Inspection Reports' page from the sidebar. You'll see a list of all your submitted reports. Click 'View' on any report to see its details.",
+        question: "How do I view notifications from my manager?",
+        answer: "Click on the 'Notifications' link in the sidebar or on the Employee Hub. This will take you to your message center. New, unread messages will be highlighted. Click on a message to expand it and mark it as read.",
     },
     {
-      question: "What happens if an item fails during an inspection?",
-      answer: "If you mark an item as 'Fail', you'll be required to provide notes explaining the issue. The overall report will also be marked as 'Fail'. This helps in tracking and addressing necessary repairs or maintenance.",
+        question: "Where can I find vehicle documents like registration or insurance?",
+        answer: "Navigate to the 'Vehicle Documents' page from the Employee Hub or the sidebar. Documents are grouped by vehicle or category. Click on a document to view or download it.",
+    },
+    {
+      question: "What are the different Admin roles and what can they do?",
+      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), and send notifications to employees.",
+    },
+    {
+      question: "Where is my data stored?",
+      answer: "All application data, including reports, users, and documents, is stored locally in your web browser's local storage. This means the data is private to your browser and device. No data is sent to an external server for storage.",
     },
   ];
 
