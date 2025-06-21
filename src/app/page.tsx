@@ -1,17 +1,34 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit3, FileText, Car, AlertTriangle, CheckCircle2, History, Wrench } from 'lucide-react';
+import { Edit3, FileText, Car, AlertTriangle, CheckCircle2, History, Wrench, UserCheck } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8">
-      <h1 className="text-4xl font-headline font-bold mb-8 text-center">Welcome to Fleet Check</h1>
+      <h1 className="text-4xl font-headline font-bold mb-8 text-center">Management Dashboard</h1>
       <p className="text-center text-lg text-muted-foreground mb-12">
         Your comprehensive solution for vehicle and equipment inspections.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <UserCheck className="text-primary" />
+              Employee Portal
+            </CardTitle>
+            <CardDescription>
+              A simplified view for drivers to start their inspections.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/employee" passHref>
+              <Button className="w-full">Go to Employee Portal</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
@@ -69,8 +86,8 @@ export default function DashboardPage() {
 
       <Card className="shadow-lg">
         <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2"><History className="text-primary"/>Recent Activity</CardTitle>
-          <CardDescription>This is an illustrative example of recent activities.</CardDescription>
+          <CardTitle className="font-headline flex items-center gap-2"><History className="text-primary"/>Recent Activity (Illustrative)</CardTitle>
+          <CardDescription>This is an illustrative example of recent activities. A live feed would appear here.</CardDescription>
         </CardHeader>
         <CardContent>
           <ul className="space-y-3">

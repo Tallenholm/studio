@@ -19,14 +19,15 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, Edit3, Car, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog } from 'lucide-react';
-import Image from 'next/image';
+import { Home, Edit3, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck } from 'lucide-react';
 
-const userNavItems = [
+const employeeNavItems = [
+  { href: '/employee', label: 'Employee Portal', icon: UserCheck },
+];
+
+const managementNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
   { href: '/vin-entry', label: 'VIN Entry', icon: Edit3 },
-  { href: '/pre-trip', label: 'Pre-Trip Inspection', icon: Car },
-  { href: '/post-trip', label: 'Post-Trip Inspection', icon: Car },
   { href: '/reports', label: 'Inspection Reports', icon: FileText },
 ];
 
@@ -50,33 +51,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          <SidebarMenu>
-            {userNavItems.map((item) => (
-              <SidebarMenuItem key={item.href}>
-                <Link href={item.href}>
-                  <SidebarMenuButton
-                    isActive={pathname === item.href}
-                    tooltip={{ children: item.label, className: "font-body" }}
-                    aria-label={item.label}
-                  >
-                    <item.icon />
-                    <span>{item.label}</span>
-                  </SidebarMenuButton>
-                </Link>
-              </SidebarMenuItem>
-            ))}
-          </SidebarMenu>
 
-          <SidebarSeparator className="my-4" />
+           <SidebarGroup>
+            <SidebarMenu>
+              {employeeNavItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname === item.href}
+                      tooltip={{ children: item.label, className: "font-body" }}
+                      aria-label={item.label}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarSeparator className="my-2" />
+
+          <SidebarGroup>
+             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Management</SidebarGroupLabel>
+             <SidebarMenu>
+              {managementNavItems.map((item) => (
+                <SidebarMenuItem key={item.href}>
+                  <Link href={item.href}>
+                    <SidebarMenuButton
+                      isActive={pathname === item.href}
+                      tooltip={{ children: item.label, className: "font-body" }}
+                      aria-label={item.label}
+                    >
+                      <item.icon />
+                      <span>{item.label}</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              ))}
+            </SidebarMenu>
+          </SidebarGroup>
+
+          <SidebarSeparator className="my-2" />
           
           <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Section</SidebarGroupLabel>
+            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin</SidebarGroupLabel>
             <SidebarMenu>
               {adminNavItems.map((item) => (
                 <SidebarMenuItem key={item.href}>
                   <Link href={item.href}>
                     <SidebarMenuButton
-                      isActive={pathname.startsWith(item.href)} 
+                      isActive={pathname.startsWith(item.href) && item.href !== '/admin' || pathname === '/admin'} 
                       tooltip={{ children: item.label, className: "font-body" }}
                       aria-label={item.label}
                     >
