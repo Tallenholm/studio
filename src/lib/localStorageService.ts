@@ -10,6 +10,11 @@ const NOTIFICATIONS_KEY = 'fleetCheckNotifications';
 const VIOLATIONS_KEY = 'fleetCheckViolations';
 const DOCUMENTS_KEY = 'fleetCheckDocuments';
 
+const defaultFleetAssets: FleetAsset[] = [
+    { id: 'truck-1', type: 'truck', name: 'Truck 01 (2021 Chevy 6500)', vin: '1GDTY7C1XMJ123456' },
+    { id: 'trailer-1', type: 'trailer', name: 'Big Tex Tilt Deck', vin: '5TETL222XPA654321' },
+    { id: 'skidSteer-1', type: 'skidSteer', name: 'CAT 259D3', vin: 'CAT0259D3XYZ98765' },
+];
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
   if (typeof window !== 'undefined') {
@@ -25,10 +30,16 @@ export const loadFleetAssets = (): FleetAsset[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(FLEET_ASSETS_KEY);
-      return data ? JSON.parse(data) : [];
+      if (data) {
+          return JSON.parse(data);
+      } else {
+          // On first load, seed with default assets
+          saveFleetAssets(defaultFleetAssets);
+          return defaultFleetAssets;
+      }
     } catch (error) {
       console.error('Failed to load fleet assets:', error);
-      return [];
+      return defaultFleetAssets; // return defaults on error
     }
   }
   return [];
