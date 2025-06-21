@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2 } from 'lucide-react';
+import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
@@ -156,6 +156,40 @@ export default function FleetCheckDashboardPage() {
             </Link>
           </CardContent>
         </Card>
+        
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <ClipboardCheck className="text-primary" />
+              Manage Requests
+            </CardTitle>
+            <CardDescription>
+              Approve or deny employee requests for time off.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/manage-requests" passHref>
+              <Button className="w-full">Go to Requests</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <CalendarIcon className="text-primary" />
+              Manage Calendar
+            </CardTitle>
+            <CardDescription>
+              Add or remove company events, time off, and schedules.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/manage-calendar" passHref>
+              <Button className="w-full">Go to Calendar Management</Button>
+            </Link>
+          </CardContent>
+        </Card>
 
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
@@ -187,23 +221,6 @@ export default function FleetCheckDashboardPage() {
           <CardContent>
             <Link href="/employee" passHref>
               <Button className="w-full">Go to Employee Portal</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <CalendarIcon className="text-primary" />
-              Manage Calendar
-            </CardTitle>
-            <CardDescription>
-              Add or remove company events, time off, and schedules.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-calendar" passHref>
-              <Button className="w-full">Go to Calendar Management</Button>
             </Link>
           </CardContent>
         </Card>

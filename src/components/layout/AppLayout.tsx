@@ -20,12 +20,12 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Clock } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Define which routes belong to which role
 const managerBaseRoutes = ['/', '/reports', '/admin', '/help'];
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -81,8 +81,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/employee">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee')}>
+                    <SidebarMenuButton isActive={pathname === '/employee'}>
                       <LayoutDashboard /><span>Employee Hub</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/fleet-check">
+                    <SidebarMenuButton isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
+                      <Truck /><span>Fleet Check</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/time-clock">
+                    <SidebarMenuButton isActive={pathname.startsWith('/employee/time-clock')}>
+                      <Clock /><span>Time Clock</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/employee/time-off">
+                    <SidebarMenuButton isActive={pathname.startsWith('/employee/time-off')}>
+                      <Calendar /><span>Time Off</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
@@ -140,6 +161,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/admin/manage-fleet">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
                                 <Cog /><span>Fleet</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <Link href="/admin/manage-requests">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-requests')}>
+                                <ClipboardCheck /><span>Requests</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>

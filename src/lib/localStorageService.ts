@@ -1,11 +1,12 @@
 
-import type { InspectionReport, FleetAsset, User, ClockState, CalendarEvent } from './types';
+import type { InspectionReport, FleetAsset, User, ClockState, CalendarEvent, TimeOffRequest } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
 const USERS_KEY = 'fleetCheckUsers';
 const CLOCK_STATE_KEY = 'fleetCheckClockState';
 const CALENDAR_EVENTS_KEY = 'fleetCheckCalendarEvents';
+const TIME_OFF_REQUESTS_KEY = 'fleetCheckTimeOffRequests';
 
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -169,6 +170,30 @@ export const loadCalendarEvents = (): CalendarEvent[] => {
     } catch (error) {
       console.error('Failed to load calendar events:', error);
       return defaultEvents;
+    }
+  }
+  return [];
+};
+
+// Time Off Requests
+export const saveTimeOffRequests = (requests: TimeOffRequest[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(TIME_OFF_REQUESTS_KEY, JSON.stringify(requests));
+    } catch (error) {
+      console.error('Failed to save time off requests:', error);
+    }
+  }
+};
+
+export const loadTimeOffRequests = (): TimeOffRequest[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(TIME_OFF_REQUESTS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load time off requests:', error);
+      return [];
     }
   }
   return [];

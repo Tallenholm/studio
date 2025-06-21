@@ -73,3 +73,15 @@ export interface CalendarEvent {
   type: 'time-off' | 'company-event' | 'maintenance';
   description: string;
 }
+
+export type RequestStatus = 'pending' | 'approved' | 'denied';
+
+export interface TimeOffRequest {
+    id: string;
+    employeeId: string;
+    employeeName: string;
+    startDate: string; // YYYY-MM-DD
+    endDate: string; // YYYY-MM-DD
+    reason: string;
+    status: RequestStatus;
+}
