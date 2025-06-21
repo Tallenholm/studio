@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { LayoutDashboard, Truck, CalendarCheck, BookUser } from 'lucide-react';
+import { LayoutDashboard, Truck, BookUser } from 'lucide-react';
 
 export default function HubDashboardPage() {
   return (
@@ -15,7 +15,7 @@ export default function HubDashboardPage() {
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
@@ -30,21 +30,6 @@ export default function HubDashboardPage() {
             <Link href="/admin" passHref>
               <Button className="w-full">Open Fleet App</Button>
             </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg bg-muted/30 opacity-60">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <CalendarCheck className="text-muted-foreground" />
-              Timesheets
-            </CardTitle>
-            <CardDescription>
-              Track employee hours and project time. (Coming Soon)
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Button className="w-full" disabled>Coming Soon</Button>
           </CardContent>
         </Card>
 
