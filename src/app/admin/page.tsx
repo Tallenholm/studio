@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck } from 'lucide-react';
+import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
@@ -35,7 +35,7 @@ export default function FleetCheckDashboardPage() {
     switch (type) {
         case 'time-off': return 'Time Off';
         case 'company-event': return 'Company Event';
-        case 'maintenance': return 'Maintenance';
+        case 'maintenance': return 'Event';
         default: return 'Event';
     }
   }
@@ -187,6 +187,23 @@ export default function FleetCheckDashboardPage() {
           <CardContent>
             <Link href="/admin/manage-calendar" passHref>
               <Button className="w-full">Go to Calendar Management</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <MailPlus className="text-primary" />
+              Send Notification
+            </CardTitle>
+            <CardDescription>
+              Send a message or alert to employees.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/send-notification" passHref>
+              <Button className="w-full">Go to Notifications</Button>
             </Link>
           </CardContent>
         </Card>

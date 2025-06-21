@@ -85,3 +85,13 @@ export interface TimeOffRequest {
     reason: string;
     status: RequestStatus;
 }
+
+export interface NotificationMessage {
+  id: string;
+  timestamp: string; // ISO string
+  title: string;
+  content: string;
+  recipientId: 'all' | string; // 'all' for all employees, or a specific user ID
+  senderName: string; // Admin's name
+  readBy: string[]; // Array of user IDs who have read it
+}

@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -20,26 +20,28 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Clock } from 'lucide-react';
+import { Badge } from '@/components/ui/badge';
+import { Home, FileText, HelpCircle, LogOut, Tractor, Bell, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Clock, MailPlus, Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { loadNotifications } from '@/lib/localStorageService';
+import type { NotificationMessage } from '@/lib/types';
+
 
 // Define which routes belong to which role
-const managerBaseRoutes = ['/', '/reports', '/admin', '/help'];
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off'];
+const managerBaseRoutes = ['/', '/reports', '/admin', '/help', '/notifications'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
-  const { role, logout, isLoading } = useAuth();
+  const { role, user, logout, isLoading } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
 
   useEffect(() => {
-    if (isLoading) return; // Wait for auth state to be loaded from localStorage
+    if (isLoading) return;
 
-    // Check if the current path is allowed for the user's role
     const isAllowed = (baseRoutes: string[]) => {
-      // Allow access to specific report detail pages
       if (pathname.startsWith('/reports/') || pathname.startsWith('/admin/')) return true;
-      // Check against base routes
       return baseRoutes.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
     };
 
@@ -51,6 +53,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       router.push('/employee');
     }
   }, [pathname, role, isLoading, router]);
+  
+  useEffect(() => {
+      if (user) {
+          const notifications = loadNotifications();
+          const userNotifications = notifications.filter(
+              notif => notif.recipientId === 'all' || notif.recipientId === user.id
+          );
+          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+          setUnreadCount(count);
+      }
+  }, [user, pathname]); // Re-check on page navigation
 
   if (isLoading) {
     return (
@@ -60,7 +73,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
-  // Render only the login page without the main layout
   if (pathname === '/login' || !role) {
     return <>{children}</>;
   }
@@ -178,6 +190,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/send-notification">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/send-notification')}>
+                                <Send /><span>Send Notification</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
                 </SidebarMenu>
               </SidebarGroup>
             </>
@@ -203,9 +222,14 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <SidebarInset className="bg-background min-h-screen">
         <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
             <SidebarTrigger className="md:hidden" />
-             <Button variant="ghost" size="icon" aria-label="Notifications (Placeholder)">
-                <AlertTriangle className="h-5 w-5 text-accent" />
+            <Link href="/notifications" passHref>
+             <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+                <Bell className="h-5 w-5 text-accent" />
+                {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0 text-xs" variant="destructive">{unreadCount}</Badge>
+                )}
              </Button>
+            </Link>
         </header>
         <main className="flex-1 p-6 overflow-auto">
           {children}
