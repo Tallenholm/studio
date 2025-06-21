@@ -82,8 +82,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       <Sidebar>
         <SidebarHeader className="p-4 flex flex-col items-center">
            <Link href={role === 'manager' ? '/' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-            <Tractor className="h-8 w-8 text-primary" />
-            <h1 className="text-xl font-headline font-bold leading-tight">Logans Excavating<br />& Snow Removal</h1>
+            <Truck className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-headline font-bold leading-tight">Fleet Check</h1>
           </Link>
         </SidebarHeader>
         <SidebarContent>

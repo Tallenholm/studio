@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Tractor, LogIn, AlertCircle } from 'lucide-react';
+import { Truck, LogIn, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
 import { loadUsers } from '@/lib/localStorageService';
@@ -62,8 +62,8 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
       <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center">
-          <Tractor className="h-12 w-12 text-primary mx-auto mb-4" />
-          <CardTitle className="text-3xl font-headline">Logan's Hub</CardTitle>
+          <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
+          <CardTitle className="text-3xl font-headline">Fleet Check Hub</CardTitle>
           <CardDescription>Please enter your PIN to access your portal</CardDescription>
         </CardHeader>
         <CardContent>

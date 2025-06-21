@@ -68,7 +68,7 @@ export default function TimeClockPage() {
     return () => {
       navigator.geolocation.clearWatch(watcher);
     };
-  }, []);
+  }, [locationError]);
 
   const handleClockInOut = () => {
     if (!isWithinFence) {
@@ -145,7 +145,7 @@ export default function TimeClockPage() {
 
   return (
     <div className="container mx-auto py-8 flex justify-center">
-      <Card className="w-full max-w-md shadow-xl">
+      <Card className="w-full max-w-md shadow-xl hover:shadow-xl transition-shadow duration-300 ease-in-out">
         <CardHeader className="text-center">
           <Clock className="h-12 w-12 text-primary mx-auto mb-4" />
           <CardTitle className="text-3xl font-headline">Time Clock</CardTitle>

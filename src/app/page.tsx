@@ -9,7 +9,7 @@ export default function HubDashboardPage() {
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
         <LayoutDashboard className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Logan's Hub</h1>
+        <h1 className="text-4xl font-headline font-bold">Fleet Check Hub</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Your central dashboard for all work-related tools and applications.
         </p>
