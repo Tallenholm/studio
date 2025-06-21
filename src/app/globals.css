@@ -46,40 +46,40 @@ body {
   }
 
   .dark {
-    --background: 224 71% 4%; /* Near Black */
-    --foreground: 210 40% 98%; /* Near White */
-    --card: 224 71% 9%; /* Slightly Lighter Card */
-    --card-foreground: 210 40% 98%;
-    --popover: 224 71% 9%;
-    --popover-foreground: 210 40% 98%;
-    --primary: 147 80% 45%; /* Bright Green */
-    --primary-foreground: 147 80% 95%; /* Light text on Green */
-    --secondary: 215 28% 17%; /* Dark Gray */
-    --secondary-foreground: 210 40% 98%;
-    --muted: 215 28% 17%;
-    --muted-foreground: 215 28% 65%;
-    --accent: 147 70% 55%; /* Brighter Green Accent */
-    --accent-foreground: 147 70% 10%; /* Dark text on Accent */
-    --destructive: 0 84.2% 60.2%;
+    --background: 240 10% 3.9%; /* Near Black */
+    --foreground: 0 0% 98%; /* White */
+    --card: 240 10% 8%; /* Dark Card */
+    --card-foreground: 0 0% 98%;
+    --popover: 240 10% 8%;
+    --popover-foreground: 0 0% 98%;
+    --primary: 140 70% 50%; /* Bright Green */
+    --primary-foreground: 140 70% 10%; /* Dark text on Bright Green */
+    --secondary: 240 3.7% 15.9%; /* Dark Muted Gray */
+    --secondary-foreground: 0 0% 98%;
+    --muted: 240 3.7% 15.9%;
+    --muted-foreground: 240 5% 64.9%;
+    --accent: 140 70% 60%; /* Brighter Green Accent */
+    --accent-foreground: 140 70% 10%; /* Dark text on Accent */
+    --destructive: 0 62.8% 30.6%;
     --destructive-foreground: 0 0% 98%;
-    --border: 215 28% 17%; /* Dark Gray Border */
-    --input: 215 28% 17%;
-    --ring: 147 80% 45%; /* Primary Green for ring */
-    --chart-1: 147 70% 40%;
-    --chart-2: 150 60% 50%;
-    --chart-3: 140 50% 60%;
-    --chart-4: 130 50% 55%;
-    --chart-5: 120 40% 60%;
+    --border: 240 3.7% 15.9%; /* Muted Border */
+    --input: 240 3.7% 15.9%;
+    --ring: 140 70% 50%; /* Primary Green for ring */
+    --chart-1: 140 70% 40%;
+    --chart-2: 145 60% 50%;
+    --chart-3: 130 50% 60%;
+    --chart-4: 120 50% 55%;
+    --chart-5: 110 40% 60%;
 
-    /* Sidebar colors for dark theme (very dark sidebar) */
-    --sidebar-background: 224 71% 4%; /* Same as background for seamless look */
-    --sidebar-foreground: 210 40% 95%;
-    --sidebar-primary: 147 80% 45%; /* Brighter Green for active/hover */
-    --sidebar-primary-foreground: 147 80% 95%;
-    --sidebar-accent: 224 71% 12%; /* Darker accent for hover */
-    --sidebar-accent-foreground: 210 40% 95%;
-    --sidebar-border: 224 71% 12%;
-    --sidebar-ring: 147 80% 45%;
+    /* Sidebar colors for dark theme (seamless dark sidebar) */
+    --sidebar-background: 240 10% 3.9%; /* Same as background for seamless look */
+    --sidebar-foreground: 0 0% 95%;
+    --sidebar-primary: 140 70% 50%; /* Bright Green for active/hover */
+    --sidebar-primary-foreground: 140 70% 10%;
+    --sidebar-accent: 240 10% 12%; /* Darker accent for hover */
+    --sidebar-accent-foreground: 0 0% 95%;
+    --sidebar-border: 240 10% 12%;
+    --sidebar-ring: 140 70% 50%;
   }
 }
 
