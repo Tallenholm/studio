@@ -95,9 +95,6 @@ export default function LoginPage() {
               Sign In
             </Button>
           </form>
-          <div className="mt-6 text-xs text-muted-foreground text-center">
-            <p>Hint: Default employee PINs are '1234' & '4321'. Manager is '5678'.</p>
-          </div>
         </CardContent>
       </Card>
     </div>

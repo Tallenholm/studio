@@ -17,12 +17,12 @@ import {
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
 import { CHECKLIST_DATA } from '@/lib/data';
-import type { InspectionReport, InspectionStatus, FleetAsset } from '@/lib/types';
+import type { InspectionReport, InspectionStatus, FleetAsset, VehicleType } from '@/lib/types';
 import ChecklistItemComponent from './ChecklistItemComponent';
 import { saveInspectionReport, loadFleetAssets } from '@/lib/localStorageService';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { Loader2, Send, Truck, Box, Construction } from 'lucide-react';
+import { Loader2, Send, Truck, Box, Construction, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const completedItemSchema = z.object({
@@ -54,22 +54,29 @@ const inspectionFormSchema = z.object({
   }
 
   data.sections.forEach((section, sectionIndex) => {
-    section.items.forEach((item, itemIndex) => {
-      if (item.status === 'fail' && (!item.notes || item.notes.trim() === '')) {
-        ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Notes are required if status is Fail.',
-          path: ['sections', sectionIndex, 'items', itemIndex, 'notes'],
+    const isTruckSection = section.vehicleType === 'truck' && data.truckVin;
+    const isTrailerSection = section.vehicleType === 'trailer' && data.trailerVin;
+    const isSkidSteerSection = section.vehicleType === 'skidSteer' && data.skidSteerVin;
+
+    // Only validate sections for selected vehicles
+    if (isTruckSection || isTrailerSection || isSkidSteerSection) {
+        section.items.forEach((item, itemIndex) => {
+        if (item.status === 'fail' && (!item.notes || item.notes.trim() === '')) {
+            ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Notes are required if status is Fail.',
+            path: ['sections', sectionIndex, 'items', itemIndex, 'notes'],
+            });
+        }
+        if (item.status === 'pending') {
+            ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Please select Pass or Fail.',
+            path: ['sections', sectionIndex, 'items', itemIndex, 'status'],
+            });
+        }
         });
-      }
-      if (item.status === 'pending') {
-         ctx.addIssue({
-          code: z.ZodIssueCode.custom,
-          message: 'Please select Pass or Fail.',
-          path: ['sections', sectionIndex, 'items', itemIndex, 'status'],
-        });
-      }
-    });
+    }
   });
 });
 
@@ -128,13 +135,31 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
   });
 
   const watchedSections = form.watch('sections');
+  const watchedTruckVin = form.watch('truckVin');
+  const watchedTrailerVin = form.watch('trailerVin');
+  const watchedSkidSteerVin = form.watch('skidSteerVin');
+
+  const visibleSections = useMemo(() => {
+    return CHECKLIST_DATA.filter(section => {
+        if (section.id === 'truck') return !!watchedTruckVin;
+        if (section.id === 'trailer') return !!watchedTrailerVin;
+        if (section.id === 'skidSteer') return !!watchedSkidSteerVin;
+        return false;
+    });
+  }, [watchedTruckVin, watchedTrailerVin, watchedSkidSteerVin]);
 
   async function onSubmit(values: InspectionFormValues) {
     setIsSubmitting(true);
-    const reportId = `${inspectionType}-${Date.now()}`;
     
+    const filteredSections = values.sections.filter(section => {
+      if (section.vehicleType === 'truck') return !!values.truckVin;
+      if (section.vehicleType === 'trailer') return !!values.trailerVin;
+      if (section.vehicleType === 'skidSteer') return !!values.skidSteerVin;
+      return false;
+    });
+
     let overallStatus: 'pass' | 'fail' = 'pass';
-    values.sections.forEach(section => {
+    filteredSections.forEach(section => {
       section.items.forEach(item => {
         if (item.status === 'fail') {
           overallStatus = 'fail';
@@ -142,6 +167,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       });
     });
 
+    const reportId = `${inspectionType}-${Date.now()}`;
     const report: InspectionReport = {
       id: reportId,
       type: inspectionType,
@@ -151,7 +177,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       truckVin: values.truckVin,
       trailerVin: values.trailerVin,
       skidSteerVin: values.skidSteerVin,
-      sections: values.sections.map(section => ({
+      sections: filteredSections.map(section => ({
         vehicleType: section.vehicleType,
         name: section.name,
         items: section.items.map(item => ({
@@ -265,36 +291,48 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
                 )}
             </div>
 
-            <Tabs defaultValue={CHECKLIST_DATA[0].id} className="w-full">
-              <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-                {CHECKLIST_DATA.map(section => (
-                  <TabsTrigger key={section.id} value={section.id} className="text-base py-3 data-[state=active]:shadow-md">
-                    <section.Icon className="mr-2 h-5 w-5" /> {section.name.split('(')[0].trim()}
-                  </TabsTrigger>
-                ))}
-              </TabsList>
-              {fields.map((sectionField, sectionIndex) => (
-                <TabsContent key={sectionField.id} value={sectionField.vehicleType}>
-                  <div className="space-y-4 mt-6">
-                    {sectionField.items.map((itemField, itemIndex) => {
-                       const originalItem = CHECKLIST_DATA[sectionIndex].items[itemIndex];
-                       const currentStatus = watchedSections[sectionIndex]?.items[itemIndex]?.status || 'pending';
-                       return (
-                         <ChecklistItemComponent
-                           key={itemField.itemId}
-                           item={originalItem}
-                           control={form.control}
-                           fieldNamePrefix={`sections.${sectionIndex}.items.${itemIndex}`}
-                           currentStatus={currentStatus}
-                         />
-                       );
-                    })}
-                  </div>
-                </TabsContent>
-              ))}
-            </Tabs>
+            {visibleSections.length > 0 ? (
+                <Tabs defaultValue={visibleSections[0].id} className="w-full">
+                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
+                    {visibleSections.map(section => (
+                    <TabsTrigger key={section.id} value={section.id} className="text-base py-3 data-[state=active]:shadow-md">
+                        <section.Icon className="mr-2 h-5 w-5" /> {section.name.split('(')[0].trim()}
+                    </TabsTrigger>
+                    ))}
+                </TabsList>
+                {fields.map((sectionField, sectionIndex) => {
+                    const isVisible = visibleSections.some(s => s.id === sectionField.vehicleType);
+                    if (!isVisible) return null;
 
-            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting} aria-label="Submit Inspection">
+                    return (
+                        <TabsContent key={sectionField.id} value={sectionField.vehicleType}>
+                        <div className="space-y-4 mt-6">
+                            {sectionField.items.map((itemField, itemIndex) => {
+                            const originalItem = CHECKLIST_DATA[sectionIndex].items[itemIndex];
+                            const currentStatus = watchedSections[sectionIndex]?.items[itemIndex]?.status || 'pending';
+                            return (
+                                <ChecklistItemComponent
+                                key={itemField.itemId}
+                                item={originalItem}
+                                control={form.control}
+                                fieldNamePrefix={`sections.${sectionIndex}.items.${itemIndex}`}
+                                currentStatus={currentStatus}
+                                />
+                            );
+                            })}
+                        </div>
+                        </TabsContent>
+                    );
+                })}
+                </Tabs>
+            ) : (
+                <div className="text-center py-10 border-2 border-dashed rounded-lg flex flex-col items-center gap-4">
+                    <ClipboardList className="h-12 w-12 text-muted-foreground" />
+                    <p className="text-lg text-muted-foreground">Please select a vehicle to begin the inspection.</p>
+                </div>
+            )}
+            
+            <Button type="submit" className="w-full text-lg py-6" disabled={isSubmitting || visibleSections.length === 0} aria-label="Submit Inspection">
               {isSubmitting ? (
                 <Loader2 className="mr-2 h-5 w-5 animate-spin" />
               ) : (

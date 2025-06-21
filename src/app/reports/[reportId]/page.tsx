@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -91,7 +92,7 @@ export default function ReportDetailsPage() {
 
   if (!report) {
     return (
-      <Card className="max-w-lg mx-auto mt-10 text-center shadow-xl">
+      <Card className="max-w-lg mx-auto mt-10 text-center shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
         <CardHeader>
           <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
           <CardTitle className="text-2xl font-headline">Report Not Found</CardTitle>
