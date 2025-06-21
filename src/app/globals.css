@@ -91,3 +91,26 @@ body {
     @apply bg-background text-foreground;
   }
 }
+
+.day-with-event {
+  position: relative;
+  color: hsl(var(--accent-foreground)) !important;
+  background-color: hsl(var(--accent) / 0.4) !important;
+}
+
+.day-with-event::after {
+  content: '';
+  position: absolute;
+  bottom: 6px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background-color: hsl(var(--primary));
+}
+
+.dark .day-with-event {
+    color: hsl(var(--accent-foreground)) !important;
+    background-color: hsl(var(--accent) / 0.3) !important;
+}

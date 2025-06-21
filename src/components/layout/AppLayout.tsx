@@ -20,7 +20,7 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 // Define which routes belong to which role
@@ -38,7 +38,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     // Check if the current path is allowed for the user's role
     const isAllowed = (baseRoutes: string[]) => {
       // Allow access to specific report detail pages
-      if (pathname.startsWith('/reports/')) return true;
+      if (pathname.startsWith('/reports/') || pathname.startsWith('/admin/')) return true;
       // Check against base routes
       return baseRoutes.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
     };
@@ -140,6 +140,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/admin/manage-fleet">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
                                 <Cog /><span>Fleet</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/manage-calendar">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-calendar')}>
+                                <Calendar /><span>Calendar</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>

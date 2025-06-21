@@ -65,3 +65,11 @@ export interface ClockState {
   status: ClockStatus;
   timestamp: string | null; // ISO string
 }
+
+export interface CalendarEvent {
+  id: string;
+  date: string; // YYYY-MM-DD
+  title: string;
+  type: 'time-off' | 'company-event' | 'maintenance';
+  description: string;
+}

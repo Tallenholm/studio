@@ -1,10 +1,11 @@
 
-import type { InspectionReport, FleetAsset, User, ClockState } from './types';
+import type { InspectionReport, FleetAsset, User, ClockState, CalendarEvent } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
 const USERS_KEY = 'fleetCheckUsers';
 const CLOCK_STATE_KEY = 'fleetCheckClockState';
+const CALENDAR_EVENTS_KEY = 'fleetCheckCalendarEvents';
 
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -132,4 +133,43 @@ export const loadClockState = (): ClockState => {
   }
   // Default state if nothing is stored or on error
   return { status: 'clockedOut', timestamp: null };
+};
+
+// Calendar Events
+const defaultEvents: CalendarEvent[] = [
+    {
+        id: '1',
+        date: new Date().toISOString().split('T')[0],
+        title: 'Team Meeting',
+        type: 'company-event',
+        description: 'All-hands meeting in the main conference room.'
+    }
+];
+
+export const saveCalendarEvents = (events: CalendarEvent[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(CALENDAR_EVENTS_KEY, JSON.stringify(events));
+    } catch (error) {
+      console.error('Failed to save calendar events:', error);
+    }
+  }
+};
+
+export const loadCalendarEvents = (): CalendarEvent[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(CALENDAR_EVENTS_KEY);
+      if(data) {
+          return JSON.parse(data);
+      } else {
+          saveCalendarEvents(defaultEvents);
+          return defaultEvents;
+      }
+    } catch (error) {
+      console.error('Failed to load calendar events:', error);
+      return defaultEvents;
+    }
+  }
+  return [];
 };
