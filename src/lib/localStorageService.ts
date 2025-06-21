@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -8,6 +8,7 @@ const CALENDAR_EVENTS_KEY = 'fleetCheckCalendarEvents';
 const TIME_OFF_REQUESTS_KEY = 'fleetCheckTimeOffRequests';
 const NOTIFICATIONS_KEY = 'fleetCheckNotifications';
 const VIOLATIONS_KEY = 'fleetCheckViolations';
+const DOCUMENTS_KEY = 'fleetCheckDocuments';
 
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -218,6 +219,70 @@ export const loadViolations = (): Violation[] => {
     } catch (error) {
       console.error('Failed to load violations:', error);
       return [];
+    }
+  }
+  return [];
+};
+
+// Documents
+const defaultDocuments: ManagedDocument[] = [
+    {
+      id: 'doc-1',
+      category: 'Truck - 2021 Chevy 6500',
+      title: 'Vehicle Registration - 2024',
+      description: 'Official state vehicle registration document.',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'official document',
+    },
+    {
+      id: 'doc-2',
+      category: 'Truck - 2021 Chevy 6500',
+      title: 'Insurance Card - 2024',
+      description: 'Proof of liability insurance.',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'insurance card',
+    },
+    {
+      id: 'doc-3',
+      category: 'Trailer - Tilt Deck',
+      title: 'Trailer Registration - 2024',
+      description: 'Official state trailer registration.',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'official document',
+    },
+    {
+      id: 'doc-4',
+      category: 'Company Policies',
+      title: 'Fleet Safety Manual',
+      description: 'Company safety procedures and guidelines.',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'manual safety'
+    }
+];
+
+export const saveDocuments = (documents: ManagedDocument[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(DOCUMENTS_KEY, JSON.stringify(documents));
+    } catch (error) {
+      console.error('Failed to save documents:', error);
+    }
+  }
+};
+
+export const loadDocuments = (): ManagedDocument[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(DOCUMENTS_KEY);
+      if (data) {
+          return JSON.parse(data);
+      } else {
+          saveDocuments(defaultDocuments);
+          return defaultDocuments;
+      }
+    } catch (error) {
+      console.error('Failed to load documents:', error);
+      return defaultDocuments; // return defaults on error
     }
   }
   return [];

@@ -98,3 +98,12 @@ export interface Violation {
   description: string;
   actionTaken: string;
 }
+
+export interface ManagedDocument {
+  id: string;
+  title: string;
+  description: string;
+  category: string; // The group header, e.g., "Truck - 2021 Chevy 6500" or "Company Policies"
+  documentDataUri: string; // Can be a placeholder URL or a real data URI
+  dataAiHint?: string; // Optional hint for image generation
+}

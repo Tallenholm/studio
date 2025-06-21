@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Tractor, Bell, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, MailPlus, Send, ShieldAlert, CalendarPlus, BookOpen } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, Bell, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, MailPlus, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -210,6 +210,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/admin/manage-violations">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-violations')}>
                                 <ShieldAlert /><span>Violations</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <Link href="/admin/manage-documents">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-documents')}>
+                                <BookCopy /><span>Documents</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
