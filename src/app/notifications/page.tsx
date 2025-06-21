@@ -60,7 +60,7 @@ export default function NotificationsPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out max-w-4xl mx-auto">
+      <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out max-w-4xl mx-auto">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <Bell className="h-8 w-8 text-primary" />

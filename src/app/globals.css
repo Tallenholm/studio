@@ -47,7 +47,7 @@ body {
   }
 
   .dark {
-    --background: 240 10% 3.9%; /* Near Black */
+    --background: 240 10% 2.5%; /* Near Black */
     --foreground: 0 0% 98%; /* White */
     --card: 240 10% 8%; /* Dark Card */
     --card-foreground: 0 0% 98%;
@@ -73,7 +73,7 @@ body {
     --chart-5: 110 40% 60%;
 
     /* Sidebar colors for dark theme (seamless dark sidebar) */
-    --sidebar-background: 240 10% 3.9%; /* Same as background for seamless look */
+    --sidebar-background: 240 10% 6%;
     --sidebar-foreground: 0 0% 95%;
     --sidebar-primary: 140 70% 50%; /* Bright Green for active/hover */
     --sidebar-primary-foreground: 140 70% 10%;
@@ -90,6 +90,11 @@ body {
   }
   body {
     @apply bg-background text-foreground;
+  }
+  .dark body {
+    background-image: linear-gradient(rgba(255, 255, 255, 0.03) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
+    background-size: 30px 30px;
   }
 }
 

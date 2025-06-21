@@ -16,7 +16,7 @@ export default function HubDashboardPage() {
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 max-w-4xl mx-auto">
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Truck className="text-primary" />
@@ -33,7 +33,7 @@ export default function HubDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg bg-muted/30 opacity-60">
+        <Card className="bg-muted/60 backdrop-blur-xl border-border/20 opacity-60">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <BookUser className="text-muted-foreground" />

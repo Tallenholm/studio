@@ -105,7 +105,7 @@ export default function UserManagementPage() {
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+      <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
         <CardHeader>
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>

@@ -19,7 +19,7 @@ export default function FleetCheckPage() {
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-8 w-full max-w-4xl mx-auto">
         <Link href="/pre-trip" passHref>
-          <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out h-full flex flex-col items-center justify-center text-center p-8 cursor-pointer">
+          <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-8 cursor-pointer">
             <CardHeader className="p-2">
               <Sunrise className="h-24 w-24 text-primary mx-auto mb-4" />
               <CardTitle className="text-4xl font-headline">
@@ -36,7 +36,7 @@ export default function FleetCheckPage() {
         </Link>
 
         <Link href="/post-trip" passHref>
-           <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out h-full flex flex-col items-center justify-center text-center p-8 cursor-pointer">
+           <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-8 cursor-pointer">
             <CardHeader className="p-2">
               <Sunset className="h-24 w-24 text-primary mx-auto mb-4" />
               <CardTitle className="text-4xl font-headline">

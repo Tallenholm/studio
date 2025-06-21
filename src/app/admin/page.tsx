@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus } from 'lucide-react';
+import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus, Send, ShieldAlert } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
@@ -59,7 +59,7 @@ export default function FleetCheckDashboardPage() {
         </p>
       </div>
 
-       <Card className="mb-8 shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+       <Card className="mb-8 bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-headline">
             <CalendarIcon className="text-primary" />
@@ -106,7 +106,7 @@ export default function FleetCheckDashboardPage() {
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <List className="text-primary" />
@@ -123,7 +123,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Truck className="text-primary" />
@@ -140,7 +140,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Users className="text-primary" />
@@ -157,7 +157,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
         
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <ClipboardCheck className="text-primary" />
@@ -174,7 +174,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <CalendarIcon className="text-primary" />
@@ -191,10 +191,10 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <MailPlus className="text-primary" />
+              <Send className="text-primary" />
               Send Notification
             </CardTitle>
             <CardDescription>
@@ -208,7 +208,24 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <ShieldAlert className="text-primary" />
+              Manage Violations
+            </CardTitle>
+            <CardDescription>
+              Log and track employee violations and actions taken.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/manage-violations" passHref>
+              <Button className="w-full">Go to Violations</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <LineChart className="text-primary" />
@@ -225,7 +242,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Book className="text-primary" />

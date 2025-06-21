@@ -50,7 +50,7 @@ export default function ReportsListPage() {
       </div>
 
       {reports.length === 0 ? (
-        <Card className="text-center py-12 shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+        <Card className="text-center py-12 bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
           <CardHeader>
             <FileText className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
             <CardTitle className="text-2xl font-headline">No Reports Found</CardTitle>
@@ -69,7 +69,7 @@ export default function ReportsListPage() {
       ) : (
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
           {reports.map((report) => (
-            <Card key={report.id} className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out flex flex-col">
+            <Card key={report.id} className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out flex flex-col">
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                  <CardTitle className="text-xl font-headline capitalize flex items-center gap-2">

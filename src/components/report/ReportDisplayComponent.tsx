@@ -39,7 +39,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
 
 
   return (
-    <Card className="shadow-xl w-full">
+    <Card className="w-full bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
       <CardHeader className="border-b pb-4">
         <div className="flex flex-col sm:flex-row justify-between items-start gap-4">
           <div>
