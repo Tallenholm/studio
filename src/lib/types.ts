@@ -59,13 +59,6 @@ export interface InspectionReport {
   overallStatus?: 'pass' | 'fail'; // Calculated based on item statuses
 }
 
-export type ClockStatus = 'clockedIn' | 'clockedOut';
-
-export interface ClockState {
-  status: ClockStatus;
-  timestamp: string | null; // ISO string
-}
-
 export interface CalendarEvent {
   id: string;
   date: string; // YYYY-MM-DD

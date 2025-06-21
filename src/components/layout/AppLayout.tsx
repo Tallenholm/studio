@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Tractor, Bell, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Clock, MailPlus, Send, ShieldAlert } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, Bell, Users, Cog, UserCheck, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, MailPlus, Send, ShieldAlert, CalendarPlus } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -29,7 +29,7 @@ import type { NotificationMessage } from '@/lib/types';
 
 // Define which routes belong to which role
 const managerBaseRoutes = ['/', '/reports', '/admin', '/help', '/notifications'];
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/employee/time-clock', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -105,17 +105,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-                <SidebarMenuItem>
-                  <Link href="/employee/time-clock">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/time-clock')}>
-                      <Clock /><span>Time Clock</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/employee/time-off">
                     <SidebarMenuButton isActive={pathname.startsWith('/employee/time-off')}>
-                      <Calendar /><span>Time Off</span>
+                      <CalendarPlus /><span>Time Off</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>

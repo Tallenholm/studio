@@ -43,7 +43,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Construction, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Construction, Loader2, Cog } from 'lucide-react';
 
 const assetSchema = z.object({
   type: z.enum(['truck', 'trailer', 'skidSteer'], { required_error: 'Asset type is required.' }),
@@ -164,7 +164,7 @@ export default function FleetManagementPage() {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Truck className="h-8 w-8 text-primary" />
+                <Cog className="h-8 w-8 text-primary" />
                 Manage Fleet Assets
               </CardTitle>
               <CardDescription className="mt-2">
