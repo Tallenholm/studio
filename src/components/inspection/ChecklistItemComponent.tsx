@@ -73,26 +73,24 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
           )}
         />
 
-        {currentStatus === 'fail' && (
-          <FormField
-            control={control}
-            name={`${fieldNamePrefix}.notes`}
-            render={({ field }) => (
-              <FormItem className="mt-4">
-                <FormLabel className="text-sm text-muted-foreground">Notes (Required if Fail)</FormLabel>
-                <FormControl>
-                  <Textarea
-                    placeholder="Describe the issue..."
-                    {...field}
-                    className="bg-card"
-                    aria-label={`Notes for ${item.name}`}
-                  />
-                </FormControl>
-                <FormMessage />
-              </FormItem>
-            )}
-          />
-        )}
+        <FormField
+          control={control}
+          name={`${fieldNamePrefix}.notes`}
+          render={({ field }) => (
+            <FormItem className="mt-4">
+              <FormLabel className="text-sm text-muted-foreground">Notes (Required if Fail)</FormLabel>
+              <FormControl>
+                <Textarea
+                  placeholder="Describe the issue or add optional notes..."
+                  {...field}
+                  className="bg-card"
+                  aria-label={`Notes for ${item.name}`}
+                />
+              </FormControl>
+              <FormMessage />
+            </FormItem>
+          )}
+        />
       </div>
     </div>
   );

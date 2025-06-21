@@ -94,7 +94,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
                             {item.status.toUpperCase()}
                           </Badge>
                         </div>
-                        {item.status === 'fail' && item.notes && (
+                        {item.notes && (
                           <p className={`text-sm ${item.status === 'fail' ? 'text-destructive' : 'text-muted-foreground'} mt-1 pl-7`}><strong>Notes:</strong> {item.notes}</p>
                         )}
                       </li>
