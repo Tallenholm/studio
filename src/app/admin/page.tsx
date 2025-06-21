@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus, Send, ShieldAlert } from 'lucide-react';
+import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus, Send, ShieldAlert, Cog, BookCopy } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
@@ -53,7 +53,7 @@ export default function FleetCheckDashboardPage() {
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
         <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Fleet Check Dashboard</h1>
+        <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Oversee fleet assets, users, reports, and settings for the Fleet Check app.
         </p>
@@ -126,7 +126,7 @@ export default function FleetCheckDashboardPage() {
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Truck className="text-primary" />
+              <Cog className="text-primary" />
               Manage Fleet
             </CardTitle>
             <CardDescription>
@@ -187,6 +187,23 @@ export default function FleetCheckDashboardPage() {
           <CardContent>
             <Link href="/admin/manage-calendar" passHref>
               <Button className="w-full">Go to Calendar Management</Button>
+            </Link>
+          </CardContent>
+        </Card>
+        
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <BookCopy className="text-primary" />
+              Manage Documents
+            </CardTitle>
+            <CardDescription>
+              Upload, edit, and remove vehicle and company documents.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/manage-documents" passHref>
+              <Button className="w-full">Go to Documents</Button>
             </Link>
           </CardContent>
         </Card>

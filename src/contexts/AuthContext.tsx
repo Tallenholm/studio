@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
+import { useRouter, usePathname } from 'next/navigation';
 
 type Role = 'employee' | 'manager' | null;
 type AuthUser = { id: string, name: string };
@@ -22,6 +22,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<AuthUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
+  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -49,7 +50,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       if (newRole === 'employee') {
         router.push('/employee');
       } else {
-        router.push('/');
+        router.push('/admin');
       }
     } catch (error) {
        console.error("Could not access localStorage", error);
@@ -68,6 +69,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
        console.error("Could not access localStorage", error);
     }
   }, [router]);
+
+  // If loading is done and there's no role, redirect to login, unless already there.
+  useEffect(() => {
+    if (!isLoading && !role && pathname !== '/login') {
+      router.push('/login');
+    }
+  }, [isLoading, role, pathname, router]);
+
 
   return (
     <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>
