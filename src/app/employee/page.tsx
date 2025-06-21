@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Clock, Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText } from 'lucide-react';
+import { Clock, Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -148,6 +148,17 @@ export default function EmployeeHubPage() {
                   </CardTitle>
                   <CardDescription className="text-base mt-2">
                     View your past inspections.
+                  </CardDescription>
+                </Card>
+              </Link>
+               <Link href="/notifications" passHref>
+                <Card className="shadow-lg hover:shadow-2xl transition-shadow duration-300 ease-in-out h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <Bell className="h-16 w-24 text-primary mx-auto mb-4" />
+                  <CardTitle className="text-2xl font-headline">
+                    Notifications
+                  </CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    View messages and alerts.
                   </CardDescription>
                 </Card>
               </Link>

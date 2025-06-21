@@ -126,6 +126,15 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/notifications">
+                    <SidebarMenuButton isActive={pathname.startsWith('/notifications')}>
+                      <Bell />
+                      <span>Notifications</span>
+                      {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
               </SidebarMenu>
             </SidebarGroup>
           )}
