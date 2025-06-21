@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, ClockState, CalendarEvent, TimeOffRequest, NotificationMessage } from './types';
+import type { InspectionReport, FleetAsset, User, ClockState, CalendarEvent, TimeOffRequest, NotificationMessage, Violation } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -8,6 +8,7 @@ const CLOCK_STATE_KEY = 'fleetCheckClockState';
 const CALENDAR_EVENTS_KEY = 'fleetCheckCalendarEvents';
 const TIME_OFF_REQUESTS_KEY = 'fleetCheckTimeOffRequests';
 const NOTIFICATIONS_KEY = 'fleetCheckNotifications';
+const VIOLATIONS_KEY = 'fleetCheckViolations';
 
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -218,6 +219,30 @@ export const loadNotifications = (): NotificationMessage[] => {
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Failed to load notifications:', error);
+      return [];
+    }
+  }
+  return [];
+};
+
+// Violations
+export const saveViolations = (violations: Violation[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(VIOLATIONS_KEY, JSON.stringify(violations));
+    } catch (error) {
+      console.error('Failed to save violations:', error);
+    }
+  }
+};
+
+export const loadViolations = (): Violation[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(VIOLATIONS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load violations:', error);
       return [];
     }
   }

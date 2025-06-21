@@ -95,3 +95,13 @@ export interface NotificationMessage {
   senderName: string; // Admin's name
   readBy: string[]; // Array of user IDs who have read it
 }
+
+export interface Violation {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string; // YYYY-MM-DD
+  type: 'safety' | 'conduct' | 'performance' | 'other';
+  description: string;
+  actionTaken: string;
+}
