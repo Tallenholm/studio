@@ -23,6 +23,7 @@ import { saveInspectionReport, loadFleetAssets } from '@/lib/localStorageService
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, Send, Truck, Box, Construction } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const completedItemSchema = z.object({
   itemId: z.string(),
@@ -81,6 +82,7 @@ interface InspectionFormProps {
 export default function InspectionFormComponent({ inspectionType }: InspectionFormProps) {
   const { toast } = useToast();
   const router = useRouter();
+  const { user } = useAuth();
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -144,6 +146,8 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       id: reportId,
       type: inspectionType,
       date: new Date().toISOString(),
+      employeeId: user?.id,
+      employeeName: user?.name,
       truckVin: values.truckVin,
       trailerVin: values.trailerVin,
       skidSteerVin: values.skidSteerVin,

@@ -41,7 +41,7 @@ export default function LoginPage() {
 
     // Check for Manager PIN first
     if (pin === MANAGER_PIN) {
-      login('manager', { name: 'Manager' });
+      login('manager', { id: 'manager-admin', name: 'Manager' });
       toast({ title: 'Login Successful', description: 'Welcome, Manager!' });
       return;
     }
@@ -49,7 +49,7 @@ export default function LoginPage() {
     // Check for Employee PIN
     const employee = users.find(u => u.pin === pin);
     if (employee) {
-      login('employee', { name: employee.name });
+      login('employee', { id: employee.id, name: employee.name });
       toast({ title: 'Login Successful', description: `Welcome, ${employee.name}!` });
       return;
     }

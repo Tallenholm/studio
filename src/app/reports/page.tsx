@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -9,15 +10,23 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function ReportsListPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const { role, user } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
-    setReports(loadInspectionReports().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
+    let loadedReports = loadInspectionReports().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+    
+    if (role === 'employee' && user) {
+      loadedReports = loadedReports.filter(report => report.employeeId === user.id);
+    }
+    
+    setReports(loadedReports);
+  }, [isMounted, role, user]);
 
   if (!isMounted) {
     return (
@@ -33,7 +42,7 @@ export default function ReportsListPage() {
       <div className="flex justify-between items-center mb-8">
         <h1 className="text-4xl font-headline font-bold flex items-center gap-2">
           <ListChecks className="h-10 w-10 text-primary" />
-          Inspection Reports
+          {role === 'employee' ? 'My Inspection Reports' : 'Inspection Reports'}
         </h1>
         <Link href="/pre-trip" passHref>
            <Button>New Inspection</Button>

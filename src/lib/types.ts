@@ -45,6 +45,8 @@ export interface InspectionReport {
   id: string;
   type: 'pre-trip' | 'post-trip';
   date: string; // ISO string
+  employeeId?: string;
+  employeeName?: string;
   truckVin?: string;
   trailerVin?: string;
   skidSteerVin?: string;

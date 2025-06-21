@@ -96,7 +96,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenuItem>
                   <Link href="/employee">
                     <SidebarMenuButton isActive={pathname === '/employee'}>
-                      <UserCheck /><span>Portal</span>
+                      <UserCheck /><span>Employee Portal</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>

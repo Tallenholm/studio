@@ -5,7 +5,7 @@ import type { InspectionReport, CompletedInspectionItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Camera, AlertTriangle, FileText, Truck, Box, Construction, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2 } from 'lucide-react';
+import { Camera, AlertTriangle, FileText, Truck, Box, Construction, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -47,9 +47,20 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
               <FileText className={`h-8 w-8 ${overallStatusColor}`} />
               {report.type.replace('-', ' ')} Inspection Report
             </CardTitle>
-            <CardDescription className="flex items-center gap-2 mt-1 text-sm">
-              <CalendarDays className="h-4 w-4 text-muted-foreground" />
-              {format(new Date(report.date), 'PPPp')}
+             <CardDescription className="flex items-center gap-2 mt-2 text-sm flex-wrap">
+              <span className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-muted-foreground" />
+                {format(new Date(report.date), 'PPPp')}
+              </span>
+              {report.employeeName && (
+                <>
+                  <span className="text-muted-foreground">|</span>
+                  <span className="flex items-center gap-2">
+                    <User className="h-4 w-4 text-muted-foreground" />
+                    <span>{report.employeeName}</span>
+                  </span>
+                </>
+              )}
             </CardDescription>
           </div>
           <Badge 

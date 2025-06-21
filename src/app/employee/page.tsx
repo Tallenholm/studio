@@ -1,13 +1,18 @@
 
+'use client';
+
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Sunrise, Sunset } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 export default function EmployeePortalPage() {
+  const { user } = useAuth();
+
   return (
     <div className="container mx-auto py-8 flex flex-col items-center justify-center text-center">
-      <h1 className="text-5xl font-headline font-bold mb-4">Welcome!</h1>
+      <h1 className="text-5xl font-headline font-bold mb-4">Welcome, {user?.name || 'Employee'}!</h1>
       <p className="text-2xl text-muted-foreground mb-12">
         Let's get your inspection started.
       </p>
