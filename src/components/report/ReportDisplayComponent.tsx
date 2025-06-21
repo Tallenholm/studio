@@ -1,14 +1,17 @@
+
 'use client';
 
 import type { InspectionReport, CompletedInspectionItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { CheckCircle2, XCircle, AlertTriangle, FileText, Truck, Box, Construction, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Edit, Loader2 } from 'lucide-react';
+import { Camera, AlertTriangle, FileText, Truck, Box, Construction, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
 import { CHECKLIST_DATA } from '@/lib/data';
+import Image from 'next/image';
+import Link from 'next/link';
 
 interface ReportDisplayProps {
   report: InspectionReport;
@@ -32,7 +35,6 @@ const getItemIcon = (vehicleType: string, itemId: string) => {
 
 export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing }: ReportDisplayProps) {
   const overallStatusColor = report.overallStatus === 'pass' ? 'text-green-600' : 'text-destructive';
-  const overallStatusBgColor = report.overallStatus === 'pass' ? 'bg-green-500/10' : 'bg-destructive/10';
   const overallStatusBadgeClass = report.overallStatus === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90';
 
 
@@ -62,9 +64,9 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
         <div>
           <h3 className="text-xl font-semibold mb-3 font-headline flex items-center gap-2"><Fingerprint className="text-primary h-6 w-6" />Vehicle Information</h3>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
-            <p><strong className="font-medium text-foreground">Truck VIN:</strong> {report.truckVin || 'N/A'}</p>
-            <p><strong className="font-medium text-foreground">Trailer VIN:</strong> {report.trailerVin || 'N/A'}</p>
-            <p><strong className="font-medium text-foreground">Skid Steer VIN:</strong> {report.skidSteerVin || 'N/A'}</p>
+            <p><strong className="font-medium text-foreground">Truck:</strong> {report.truckVin || 'N/A'}</p>
+            <p><strong className="font-medium text-foreground">Trailer:</strong> {report.trailerVin || 'N/A'}</p>
+            <p><strong className="font-medium text-foreground">Skid Steer:</strong> {report.skidSteerVin || 'N/A'}</p>
           </div>
         </div>
         
@@ -94,8 +96,29 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
                             {item.status.toUpperCase()}
                           </Badge>
                         </div>
-                        {item.notes && (
-                          <p className={`text-sm ${item.status === 'fail' ? 'text-destructive' : 'text-muted-foreground'} mt-1 pl-7`}><strong>Notes:</strong> {item.notes}</p>
+                        
+                        {(item.notes || item.photoDataUri) && (
+                            <div className="mt-2 pl-7 flex items-start gap-4">
+                                {item.notes && (
+                                    <p className={`text-sm ${item.status === 'fail' ? 'text-destructive-foreground/90' : 'text-muted-foreground'} flex-1`}><strong>Notes:</strong> {item.notes}</p>
+                                )}
+                                {item.photoDataUri && (
+                                  <div className="flex-shrink-0">
+                                    <Link href={item.photoDataUri} target="_blank" rel="noopener noreferrer" className="block relative group">
+                                        <Image
+                                            src={item.photoDataUri}
+                                            alt={`Photo for ${item.name}`}
+                                            width={100}
+                                            height={100}
+                                            className="rounded-md border-2 border-muted object-cover aspect-square transition-opacity group-hover:opacity-80"
+                                        />
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Camera className="h-6 w-6 text-white"/>
+                                        </div>
+                                    </Link>
+                                  </div>
+                                )}
+                            </div>
                         )}
                       </li>
                     ))}

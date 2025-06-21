@@ -1,3 +1,4 @@
+
 'use client';
 
 import type { Control } from 'react-hook-form';
@@ -12,6 +13,11 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { InspectionItem, InspectionStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
+import { Camera, Trash2 } from 'lucide-react';
+import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
+import Image from 'next/image';
+import { useRef } from 'react';
 
 interface ChecklistItemProps {
   item: InspectionItem;
@@ -27,6 +33,19 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
     return 'border-border';
   };
 
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: { onChange: (value: string) => void }) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        field.onChange(reader.result as string);
+      };
+      reader.readAsDataURL(file);
+    }
+  };
+
   return (
     <div className={cn("p-4 rounded-lg border transition-all duration-300", getStatusColor(currentStatus))}>
       <div className="flex items-center gap-2">
@@ -40,57 +59,120 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
       <div className="pl-8">
         <p className="text-sm text-muted-foreground mt-1 mb-3">{item.instructions}</p>
 
-        <FormField
-          control={control}
-          name={`${fieldNamePrefix}.status`}
-          render={({ field }) => (
-            <FormItem className="mb-2">
-              <RadioGroup
-                onValueChange={field.onChange}
-                defaultValue={field.value}
-                className="flex space-x-4"
-                aria-label={`Status for ${item.name}`}
-              >
-                <FormItem className="flex items-center space-x-2 space-y-0">
-                  <FormControl>
-                    <RadioGroupItem value="pass" id={`${item.id}-pass`} />
-                  </FormControl>
-                  <FormLabel htmlFor={`${item.id}-pass`} className="font-normal text-green-700 cursor-pointer">
-                    Pass
-                  </FormLabel>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
+          {/* Column 1: Status and Notes */}
+          <div className="space-y-4">
+            <FormField
+              control={control}
+              name={`${fieldNamePrefix}.status`}
+              render={({ field }) => (
+                <FormItem>
+                  <RadioGroup
+                    onValueChange={field.onChange}
+                    defaultValue={field.value}
+                    className="flex space-x-4 pt-2"
+                    aria-label={`Status for ${item.name}`}
+                  >
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="pass" id={`${item.id}-pass`} />
+                      </FormControl>
+                      <FormLabel htmlFor={`${item.id}-pass`} className="font-normal text-green-700 cursor-pointer">
+                        Pass
+                      </FormLabel>
+                    </FormItem>
+                    <FormItem className="flex items-center space-x-2 space-y-0">
+                      <FormControl>
+                        <RadioGroupItem value="fail" id={`${item.id}-fail`} />
+                      </FormControl>
+                      <FormLabel htmlFor={`${item.id}-fail`} className="font-normal text-red-700 cursor-pointer">
+                        Fail
+                      </FormLabel>
+                    </FormItem>
+                  </RadioGroup>
+                  <FormMessage />
                 </FormItem>
-                <FormItem className="flex items-center space-x-2 space-y-0">
-                  <FormControl>
-                    <RadioGroupItem value="fail" id={`${item.id}-fail`} />
-                  </FormControl>
-                  <FormLabel htmlFor={`${item.id}-fail`} className="font-normal text-red-700 cursor-pointer">
-                    Fail
-                  </FormLabel>
-                </FormItem>
-              </RadioGroup>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+              )}
+            />
 
-        <FormField
-          control={control}
-          name={`${fieldNamePrefix}.notes`}
-          render={({ field }) => (
-            <FormItem className="mt-4">
-              <FormLabel className="text-sm text-muted-foreground">Notes (Required if Fail)</FormLabel>
-              <FormControl>
-                <Textarea
-                  placeholder="Describe the issue or add optional notes..."
-                  {...field}
-                  className="bg-card"
-                  aria-label={`Notes for ${item.name}`}
-                />
-              </FormControl>
-              <FormMessage />
-            </FormItem>
-          )}
-        />
+            <FormField
+              control={control}
+              name={`${fieldNamePrefix}.notes`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm text-muted-foreground">Notes (Required if Fail)</FormLabel>
+                  <FormControl>
+                    <Textarea
+                      placeholder="Describe the issue or add optional notes..."
+                      {...field}
+                      className="bg-card"
+                      aria-label={`Notes for ${item.name}`}
+                    />
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+
+          {/* Column 2: Photo Upload */}
+          <div className="mt-2 md:mt-0">
+            <FormField
+              control={control}
+              name={`${fieldNamePrefix}.photoDataUri`}
+              render={({ field }) => (
+                <FormItem>
+                  <FormLabel className="text-sm text-muted-foreground">Photo Evidence</FormLabel>
+                  <FormControl>
+                    <div>
+                      <Input
+                        type="file"
+                        accept="image/*"
+                        capture="environment"
+                        ref={fileInputRef}
+                        className="hidden"
+                        onChange={(e) => handleFileChange(e, field)}
+                        aria-label={`Upload photo for ${item.name}`}
+                      />
+                      {!field.value ? (
+                        <Button
+                          type="button"
+                          variant="outline"
+                          className="w-full md:w-auto"
+                          onClick={() => fileInputRef.current?.click()}
+                        >
+                          <Camera className="mr-2 h-4 w-4" />
+                          Add Photo
+                        </Button>
+                      ) : (
+                        <div className="relative w-32 h-32">
+                          <Image
+                            src={field.value}
+                            alt={`Preview for ${item.name}`}
+                            layout="fill"
+                            objectFit="cover"
+                            className="rounded-md border"
+                          />
+                          <Button
+                            type="button"
+                            variant="destructive"
+                            size="icon"
+                            className="absolute -top-2 -right-2 h-7 w-7 rounded-full shadow-lg"
+                            onClick={() => field.onChange('')}
+                            aria-label={`Remove photo for ${item.name}`}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  </FormControl>
+                  <FormMessage />
+                </FormItem>
+              )}
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

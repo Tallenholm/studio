@@ -38,6 +38,7 @@ export interface CompletedInspectionItem {
   name: string; // For easier display in reports
   status: InspectionStatus;
   notes?: string;
+  photoDataUri?: string;
 }
 
 export interface InspectionReport {
