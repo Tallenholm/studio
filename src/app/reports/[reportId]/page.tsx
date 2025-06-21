@@ -92,7 +92,7 @@ export default function ReportDetailsPage() {
 
   if (!report) {
     return (
-      <Card className="max-w-lg mx-auto mt-10 text-center bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+      <Card className="max-w-lg mx-auto mt-10 text-center bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
           <AlertTriangle className="h-16 w-16 text-destructive mx-auto mb-4" />
           <CardTitle className="text-2xl font-headline">Report Not Found</CardTitle>

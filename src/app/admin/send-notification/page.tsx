@@ -89,7 +89,7 @@ export default function SendNotificationPage() {
   
   return (
     <div className="container mx-auto py-8">
-       <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out max-w-3xl mx-auto">
+       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 max-w-3xl mx-auto">
         <CardHeader>
             <CardTitle className="text-3xl font-headline flex items-center gap-2">
                 <MailPlus className="h-8 w-8 text-primary" />

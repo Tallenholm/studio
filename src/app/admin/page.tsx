@@ -59,7 +59,7 @@ export default function FleetCheckDashboardPage() {
         </p>
       </div>
 
-       <Card className="mb-8 bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+       <Card className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-headline">
             <CalendarIcon className="text-primary" />
@@ -106,7 +106,7 @@ export default function FleetCheckDashboardPage() {
 
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <List className="text-primary" />
@@ -123,7 +123,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Truck className="text-primary" />
@@ -140,7 +140,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Users className="text-primary" />
@@ -157,7 +157,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
         
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <ClipboardCheck className="text-primary" />
@@ -174,7 +174,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <CalendarIcon className="text-primary" />
@@ -191,7 +191,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Send className="text-primary" />
@@ -208,7 +208,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <ShieldAlert className="text-primary" />
@@ -225,7 +225,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <LineChart className="text-primary" />
@@ -242,7 +242,7 @@ export default function FleetCheckDashboardPage() {
           </CardContent>
         </Card>
 
-        <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Book className="text-primary" />

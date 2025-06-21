@@ -212,7 +212,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
   }
 
   return (
-    <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+    <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
       <CardHeader>
         <CardTitle className="text-3xl font-headline capitalize">
           {inspectionType.replace('-', ' ')} Inspection
@@ -343,5 +343,3 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     </Card>
   );
 }
-
-    

@@ -62,7 +62,7 @@ export default function EmployeeHubPage() {
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+          <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <CalendarIcon className="text-primary" />
@@ -108,7 +108,7 @@ export default function EmployeeHubPage() {
           </Card>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <Link href="/employee/fleet-check" passHref>
-                <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-16 w-24 text-primary mx-auto mb-4" />
                   <CardTitle className="text-2xl font-headline">
                     Fleet Check
@@ -119,7 +119,7 @@ export default function EmployeeHubPage() {
                 </Card>
               </Link>
               <Link href="/employee/time-off" passHref>
-                <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <CalendarPlus className="h-16 w-24 text-primary mx-auto mb-4" />
                   <CardTitle className="text-2xl font-headline">
                     Time Off
@@ -130,7 +130,7 @@ export default function EmployeeHubPage() {
                 </Card>
               </Link>
                 <Link href="/reports" passHref>
-                <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <FileText className="h-16 w-24 text-primary mx-auto mb-4" />
                   <CardTitle className="text-2xl font-headline">
                     My Reports
@@ -141,7 +141,7 @@ export default function EmployeeHubPage() {
                 </Card>
               </Link>
                <Link href="/notifications" passHref>
-                <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out hover:scale-105 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Bell className="h-16 w-24 text-primary mx-auto mb-4" />
                   <CardTitle className="text-2xl font-headline">
                     Notifications

@@ -12,7 +12,7 @@ import { Cog, Bell, Palette, DownloadCloud, Save } from 'lucide-react';
 export default function SystemSettingsPage() {
   return (
     <div className="container mx-auto py-8">
-      <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <Cog className="h-8 w-8 text-primary" />

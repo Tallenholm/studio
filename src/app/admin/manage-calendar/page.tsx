@@ -114,7 +114,7 @@ export default function ManageCalendarPage() {
   
   return (
     <div className="container mx-auto py-8 space-y-8">
-       <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
             <CardTitle className="text-3xl font-headline flex items-center gap-2">
                 <CalendarPlus className="h-8 w-8 text-primary" />
@@ -226,7 +226,7 @@ export default function ManageCalendarPage() {
         </CardContent>
        </Card>
 
-      <Card className="bg-card/60 backdrop-blur-xl border-border/20 shadow-lg hover:shadow-2xl transition-all duration-300 ease-in-out">
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
           <CardTitle className="text-3xl font-headline flex items-center gap-2">
             <CalendarIcon className="h-8 w-8 text-primary" />

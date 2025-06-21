@@ -60,7 +60,7 @@ export default function LoginPage() {
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
-      <Card className="w-full max-w-sm bg-card/60 backdrop-blur-xl border-border/20 shadow-2xl">
+      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
         <CardHeader className="text-center">
           <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
           <CardTitle className="text-3xl font-headline">Fleet Check Hub</CardTitle>
