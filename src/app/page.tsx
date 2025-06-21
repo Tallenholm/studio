@@ -1,17 +1,18 @@
+
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit3, FileText, Car, AlertTriangle, CheckCircle2, History, Wrench, UserCheck } from 'lucide-react';
+import { Edit3, FileText, AlertTriangle, CheckCircle2, History, Wrench, UserCheck } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
     <div className="container mx-auto py-8">
       <h1 className="text-4xl font-headline font-bold mb-8 text-center">Management Dashboard</h1>
       <p className="text-center text-lg text-muted-foreground mb-12">
-        Your comprehensive solution for vehicle and equipment inspections.
+        An overview of fleet operations, inspections, and management tools.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
@@ -19,7 +20,7 @@ export default function DashboardPage() {
               Employee Portal
             </CardTitle>
             <CardDescription>
-              A simplified view for drivers to start their inspections.
+              Access the simplified view for drivers to complete their inspections.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -49,31 +50,11 @@ export default function DashboardPage() {
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Car className="text-primary" />
-              Start Inspection
-            </CardTitle>
-            <CardDescription>
-              Conduct pre-trip or post-trip inspections for your vehicles and equipment.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-2">
-            <Link href="/pre-trip" passHref>
-              <Button variant="outline" className="w-full">Pre-Trip Inspection</Button>
-            </Link>
-            <Link href="/post-trip" passHref>
-              <Button variant="outline" className="w-full">Post-Trip Inspection</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
               <FileText className="text-primary" />
               View Reports
             </CardTitle>
             <CardDescription>
-              Access and review past inspection reports and AI-driven anomaly detection.
+              Access and review all past inspection reports and their AI analysis.
             </CardDescription>
           </CardHeader>
           <CardContent>

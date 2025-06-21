@@ -19,7 +19,7 @@ export default function SystemSettingsPage() {
             System Configuration
           </CardTitle>
           <CardDescription>
-            Manage global settings for the Fleet Check application. (Note: These settings are illustrative placeholders and are not currently functional).
+            Configure global settings for the Fleet Check application. All options are illustrative and not yet functional.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -28,7 +28,7 @@ export default function SystemSettingsPage() {
             <h3 className="text-xl font-semibold flex items-center gap-2"><Palette className="h-5 w-5 text-accent" />Appearance</h3>
             <div className="flex items-center justify-between">
               <Label htmlFor="dark-mode-toggle" className="text-base">Enable Dark Mode by Default</Label>
-              <Switch id="dark-mode-toggle" disabled />
+              <Switch id="dark-mode-toggle" disabled checked />
             </div>
             <div className="space-y-2">
               <Label htmlFor="default-font-size" className="text-base">Default Font Size</Label>

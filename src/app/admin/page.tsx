@@ -11,7 +11,7 @@ export default function AdminDashboardPage() {
         <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Manage your fleet, generate reports, and configure system settings.
+          Oversee fleet assets, generate advanced reports, and configure system settings.
         </p>
       </div>
 
@@ -23,7 +23,7 @@ export default function AdminDashboardPage() {
               Manage Fleet
             </CardTitle>
             <CardDescription>
-              Add, edit, or remove vehicles and equipment from your fleet.
+              View, add, or edit the vehicles and equipment in your fleet.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -40,7 +40,7 @@ export default function AdminDashboardPage() {
               Advanced Reports
             </CardTitle>
             <CardDescription>
-              Generate and view comprehensive reports on inspections and fleet status.
+              Analyze trends, component failures, and inspection history.
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -57,7 +57,7 @@ export default function AdminDashboardPage() {
               System Settings
             </CardTitle>
             <CardDescription>
-              Configure application settings, manage users (if applicable), and more.
+              Configure application settings and data management options.
             </CardDescription>
           </CardHeader>
           <CardContent>

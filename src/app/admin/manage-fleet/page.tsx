@@ -14,14 +14,14 @@ export default function ManageFleetPage() {
             Manage Fleet Assets
           </CardTitle>
           <CardDescription>
-            This section is a placeholder for viewing, adding, and editing fleet assets. Currently, VINs are managed globally via the "VIN Entry" page.
+            View and manage your fleet of vehicles and equipment. Future updates will allow for adding, editing, and tracking maintenance history.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-6">
           <div className="flex justify-end">
-            <Button disabled> {/* Disabled as it's a placeholder */}
+            <Button disabled>
               <PlusCircle className="mr-2 h-5 w-5" />
-              Add New Vehicle
+              Add New Asset
             </Button>
           </div>
           
@@ -37,19 +37,18 @@ export default function ManageFleetPage() {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {/* Example Row - In a real app, this would be populated with data */}
                 <TableRow>
                   <TableCell colSpan={5} className="text-center text-muted-foreground py-10">
-                    Fleet asset management features are planned for future development.
+                    Fleet asset management is planned for future development.
                     <br />
-                    This would allow tracking maintenance history and status for each vehicle individually.
+                    This area will allow for detailed tracking of each vehicle and piece of equipment.
                   </TableCell>
                 </TableRow>
               </TableBody>
             </Table>
           </div>
            <p className="text-sm text-muted-foreground text-center">
-            Future functionality will integrate inspection data to provide a live status for each fleet asset.
+            Future functionality will integrate inspection data to provide a live status for each asset.
           </p>
         </CardContent>
       </Card>
