@@ -81,7 +81,7 @@ export default function NotificationsPage() {
                     key={notif.id} 
                     className={cn(
                         "border rounded-lg overflow-hidden transition-colors", 
-                        !isRead ? 'border-primary/50 bg-primary/5 hover:bg-primary/10' : 'bg-card'
+                        !isRead ? 'border-primary/50 bg-primary/10 hover:bg-primary/20' : 'bg-card'
                     )}
                     onClick={() => handleMarkAsRead(notif.id)}
                     >
@@ -90,7 +90,7 @@ export default function NotificationsPage() {
                             {!isRead && <Circle className="h-2.5 w-2.5 fill-primary text-primary flex-shrink-0" />}
                             <div className={cn("flex-1 grid gap-1", isRead && "ml-7")}>
                                 <div className="flex justify-between items-start">
-                                    <span className="font-semibold text-base">{notif.title}</span>
+                                    <span className={cn("text-base", !isRead ? "font-bold" : "font-semibold")}>{notif.title}</span>
                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
                                         {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}
                                     </span>

@@ -111,7 +111,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
                         {(item.notes || item.photoDataUri) && (
                             <div className="mt-2 pl-7 flex items-start gap-4">
                                 {item.notes && (
-                                    <p className={`text-sm ${item.status === 'fail' ? 'text-destructive-foreground/90' : 'text-muted-foreground'} flex-1`}><strong>Notes:</strong> {item.notes}</p>
+                                    <p className={`text-sm ${item.status === 'fail' ? 'text-destructive-foreground font-semibold' : 'text-muted-foreground'} flex-1`}><strong>Notes:</strong> {item.notes}</p>
                                 )}
                                 {item.photoDataUri && (
                                   <div className="flex-shrink-0">

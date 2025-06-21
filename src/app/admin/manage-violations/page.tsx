@@ -311,8 +311,8 @@ export default function ManageViolationsPage() {
                                         <TableCell className="font-medium">{v.employeeName}</TableCell>
                                         <TableCell>{format(new Date(v.date), 'PPP')}</TableCell>
                                         <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
-                                        <TableCell className="max-w-sm truncate">{v.description}</TableCell>
-                                        <TableCell className="max-w-xs truncate">{v.actionTaken}</TableCell>
+                                        <TableCell className="max-w-sm">{v.description}</TableCell>
+                                        <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
                                         <TableCell className="text-right">
                                         <Button variant="ghost" size="icon" onClick={() => removeViolation(v.id)} aria-label={`Remove violation for ${v.employeeName}`}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
