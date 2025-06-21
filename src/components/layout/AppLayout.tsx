@@ -2,7 +2,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
+import { useEffect } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -19,11 +20,8 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, Edit3, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck } from 'lucide-react';
-
-const employeeNavItems = [
-  { href: '/employee', label: 'Employee Portal', icon: UserCheck },
-];
+import { Home, Edit3, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck, Loader2 } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 const managementNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
@@ -38,101 +36,126 @@ const adminNavItems = [
   { href: '/admin/system-settings', label: 'System Settings', icon: Cog },
 ];
 
+// Define which routes belong to which role
+const managerBaseRoutes = ['/', '/vin-entry', '/reports', '/admin', '/help'];
+const employeeBaseRoutes = ['/employee', '/pre-trip', '/post-trip', '/reports', '/help'];
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
+  const router = useRouter();
+  const { role, logout, isLoading } = useAuth();
+
+  useEffect(() => {
+    if (isLoading) return; // Wait for auth state to be loaded from localStorage
+
+    // Check if the current path is allowed for the user's role
+    const isAllowed = (baseRoutes: string[]) => {
+      // Allow access to specific report detail pages
+      if (pathname.startsWith('/reports/')) return true;
+      // Check against base routes
+      return baseRoutes.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
+    };
+
+    if (!role && pathname !== '/login') {
+      router.push('/login');
+    } else if (role === 'manager' && !isAllowed(managerBaseRoutes)) {
+      router.push('/');
+    } else if (role === 'employee' && !isAllowed(employeeBaseRoutes)) {
+      router.push('/employee');
+    }
+  }, [pathname, role, isLoading, router]);
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Render only the login page without the main layout
+  if (pathname === '/login' || !role) {
+    return <>{children}</>;
+  }
 
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
         <SidebarHeader className="p-4 flex flex-col items-center">
-           <Link href="/" className="flex items-center gap-2 mb-4 text-center">
+           <Link href={role === 'manager' ? '/' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
             <Tractor className="h-8 w-8 text-primary" />
             <h1 className="text-xl font-headline font-bold leading-tight">Logans Excavating<br />& Snow Removal</h1>
           </Link>
         </SidebarHeader>
         <SidebarContent>
-
-           <SidebarGroup>
-            <SidebarMenu>
-              {employeeNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <Link href={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname === item.href}
-                      tooltip={{ children: item.label, className: "font-body" }}
-                      aria-label={item.label}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
+          {role === 'employee' && (
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Employee Tools</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <Link href="/employee">
+                    <SidebarMenuButton isActive={pathname === '/employee'}>
+                      <UserCheck /><span>Portal</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
-
-          <SidebarSeparator className="my-2" />
-
-          <SidebarGroup>
-             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Management</SidebarGroupLabel>
-             <SidebarMenu>
-              {managementNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <Link href={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname === item.href}
-                      tooltip={{ children: item.label, className: "font-body" }}
-                      aria-label={item.label}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
+                 <SidebarMenuItem>
+                  <Link href="/reports">
+                    <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                      <FileText /><span>My Reports</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
 
-          <SidebarSeparator className="my-2" />
-          
-          <SidebarGroup>
-            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin</SidebarGroupLabel>
-            <SidebarMenu>
-              {adminNavItems.map((item) => (
-                <SidebarMenuItem key={item.href}>
-                  <Link href={item.href}>
-                    <SidebarMenuButton
-                      isActive={pathname.startsWith(item.href) && item.href !== '/admin' || pathname === '/admin'} 
-                      tooltip={{ children: item.label, className: "font-body" }}
-                      aria-label={item.label}
-                    >
-                      <item.icon />
-                      <span>{item.label}</span>
-                    </SidebarMenuButton>
-                  </Link>
-                </SidebarMenuItem>
-              ))}
-            </SidebarMenu>
-          </SidebarGroup>
-
+          {role === 'manager' && (
+            <>
+              <SidebarGroup>
+                 <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Management</SidebarGroupLabel>
+                 <SidebarMenu>
+                  {managementNavItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <Link href={item.href}>
+                        <SidebarMenuButton isActive={pathname === item.href}>
+                          <item.icon /><span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+              <SidebarSeparator className="my-2" />
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin</SidebarGroupLabel>
+                <SidebarMenu>
+                  {adminNavItems.map((item) => (
+                    <SidebarMenuItem key={item.href}>
+                      <Link href={item.href}>
+                        <SidebarMenuButton isActive={pathname.startsWith(item.href) && (item.href !== '/admin' || pathname === '/admin')}>
+                          <item.icon /><span>{item.label}</span>
+                        </SidebarMenuButton>
+                      </Link>
+                    </SidebarMenuItem>
+                  ))}
+                </SidebarMenu>
+              </SidebarGroup>
+            </>
+          )}
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarMenu>
                  <SidebarMenuItem>
                     <Link href="/help">
-                        <SidebarMenuButton 
-                            isActive={pathname === '/help'}
-                            tooltip={{ children: "Help", className: "font-body"}} 
-                            aria-label="Help">
-                            <HelpCircle />
-                            <span>Help</span>
+                        <SidebarMenuButton isActive={pathname === '/help'}>
+                            <HelpCircle /><span>Help</span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                     <SidebarMenuButton tooltip={{ children: "Logout (Not Implemented)", className: "font-body"}} aria-label="Logout" disabled>
-                        <LogOut />
-                        <span>Logout</span>
+                     <SidebarMenuButton onClick={logout}>
+                        <LogOut /><span>Logout</span>
                      </SidebarMenuButton>
                  </SidebarMenuItem>
             </SidebarMenu>
