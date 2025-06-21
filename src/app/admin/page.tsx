@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ShieldCheck, Users, LineChart, Cog } from 'lucide-react';
+import { ShieldCheck, Users, LineChart, Cog, Truck } from 'lucide-react';
 
 export default function AdminDashboardPage() {
   return (
@@ -11,15 +11,15 @@ export default function AdminDashboardPage() {
         <ShieldCheck className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Oversee fleet assets, generate advanced reports, and configure system settings.
+          Oversee fleet assets, user access, reports, and system settings.
         </p>
       </div>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Users className="text-primary" />
+              <Truck className="text-primary" />
               Manage Fleet
             </CardTitle>
             <CardDescription>
@@ -29,6 +29,23 @@ export default function AdminDashboardPage() {
           <CardContent>
             <Link href="/admin/manage-fleet" passHref>
               <Button className="w-full">Go to Fleet Management</Button>
+            </Link>
+          </CardContent>
+        </Card>
+
+        <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline">
+              <Users className="text-primary" />
+              Manage Users
+            </CardTitle>
+            <CardDescription>
+              Add, view, and remove employee user accounts and PINs.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            <Link href="/admin/manage-users" passHref>
+              <Button className="w-full">Go to User Management</Button>
             </Link>
           </CardContent>
         </Card>

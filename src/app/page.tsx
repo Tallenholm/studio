@@ -2,7 +2,7 @@
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Edit3, FileText, AlertTriangle, CheckCircle2, History, Wrench, UserCheck } from 'lucide-react';
+import { Edit3, FileText, AlertTriangle, CheckCircle2, History, Wrench, UserCheck, Truck } from 'lucide-react';
 
 export default function DashboardPage() {
   return (
@@ -12,7 +12,7 @@ export default function DashboardPage() {
         An overview of fleet operations, inspections, and management tools.
       </p>
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-12">
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
@@ -33,16 +33,16 @@ export default function DashboardPage() {
         <Card className="shadow-lg hover:shadow-xl transition-shadow duration-300 ease-in-out">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Wrench className="text-primary" />
-              Manage VINs
+              <Truck className="text-primary" />
+              Manage Fleet
             </CardTitle>
             <CardDescription>
-              Easily enter and manage Vehicle Identification Numbers for your fleet.
+              Add, view, and remove your fleet of vehicles and equipment.
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <Link href="/vin-entry" passHref>
-              <Button className="w-full">Go to VIN Entry</Button>
+            <Link href="/admin/manage-fleet" passHref>
+              <Button className="w-full">Go to Fleet Management</Button>
             </Link>
           </CardContent>
         </Card>

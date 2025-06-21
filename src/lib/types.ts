@@ -1,7 +1,14 @@
+
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
 
 export type VehicleType = 'truck' | 'trailer' | 'skidSteer';
+
+export interface User {
+  id: string;
+  name: string;
+  pin: string;
+}
 
 export interface FleetAsset {
   id: string;

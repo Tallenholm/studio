@@ -10,6 +10,8 @@ import { Label } from '@/components/ui/label';
 import { Tractor, LogIn, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { useRouter } from 'next/navigation';
+import { loadUsers } from '@/lib/localStorageService';
+import type { User } from '@/lib/types';
 
 export default function LoginPage() {
   const { login, role, isLoading } = useAuth();
@@ -17,11 +19,15 @@ export default function LoginPage() {
   const [error, setError] = useState('');
   const { toast } = useToast();
   const router = useRouter();
+  const [users, setUsers] = useState<User[]>([]);
 
-  // In a real app, this would be a proper auth flow.
-  // For this project, we'll use hardcoded PINs.
-  const EMPLOYEE_PIN = '1234';
+  // Hardcoded Manager PIN
   const MANAGER_PIN = '5678';
+
+  useEffect(() => {
+    // Load users from local storage on component mount
+    setUsers(loadUsers());
+  }, []);
 
   useEffect(() => {
     if (!isLoading && role) {
@@ -31,15 +37,25 @@ export default function LoginPage() {
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
-    if (pin === EMPLOYEE_PIN) {
-      toast({ title: 'Login Successful', description: 'Welcome, Employee!' });
-      login('employee');
-    } else if (pin === MANAGER_PIN) {
+    setError('');
+
+    // Check for Manager PIN first
+    if (pin === MANAGER_PIN) {
+      login('manager', { name: 'Manager' });
       toast({ title: 'Login Successful', description: 'Welcome, Manager!' });
-      login('manager');
-    } else {
-      setError('Invalid PIN. Please try again.');
+      return;
     }
+
+    // Check for Employee PIN
+    const employee = users.find(u => u.pin === pin);
+    if (employee) {
+      login('employee', { name: employee.name });
+      toast({ title: 'Login Successful', description: `Welcome, ${employee.name}!` });
+      return;
+    }
+
+    // If no match, set error
+    setError('Invalid PIN. Please try again.');
   };
 
   return (
@@ -74,13 +90,13 @@ export default function LoginPage() {
                 <p>{error}</p>
               </div>
             )}
-            <Button type="submit" className="w-full text-lg py-6">
+            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
               <LogIn className="mr-2 h-5 w-5" />
               Sign In
             </Button>
           </form>
           <div className="mt-6 text-xs text-muted-foreground text-center">
-            <p>Hint: Use PIN '1234' for Employee or '5678' for Manager.</p>
+            <p>Hint: Default employee PINs are '1234' & '4321'. Manager is '5678'.</p>
           </div>
         </CardContent>
       </Card>

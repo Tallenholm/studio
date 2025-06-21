@@ -20,24 +20,24 @@ import {
   SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
-import { Home, Edit3, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck, Loader2 } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Tractor, AlertTriangle, ShieldCheck, Users, LineChart, Cog, UserCheck, Loader2, Truck } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const managementNavItems = [
   { href: '/', label: 'Dashboard', icon: Home },
-  { href: '/vin-entry', label: 'VIN Entry', icon: Edit3 },
   { href: '/reports', label: 'Inspection Reports', icon: FileText },
 ];
 
 const adminNavItems = [
   { href: '/admin', label: 'Admin Overview', icon: ShieldCheck },
-  { href: '/admin/manage-fleet', label: 'Manage Fleet', icon: Users },
+  { href: '/admin/manage-fleet', label: 'Manage Fleet', icon: Truck },
+  { href: '/admin/manage-users', label: 'Manage Users', icon: Users },
   { href: '/admin/advanced-reports', label: 'Advanced Reports', icon: LineChart },
   { href: '/admin/system-settings', label: 'System Settings', icon: Cog },
 ];
 
 // Define which routes belong to which role
-const managerBaseRoutes = ['/', '/vin-entry', '/reports', '/admin', '/help'];
+const managerBaseRoutes = ['/', '/reports', '/admin', '/help'];
 const employeeBaseRoutes = ['/employee', '/pre-trip', '/post-trip', '/reports', '/help'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -52,6 +52,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const isAllowed = (baseRoutes: string[]) => {
       // Allow access to specific report detail pages
       if (pathname.startsWith('/reports/')) return true;
+      if (pathname.startsWith('/admin/')) return true;
       // Check against base routes
       return baseRoutes.some(route => pathname.startsWith(route) && (route !== '/' || pathname === '/'));
     };
