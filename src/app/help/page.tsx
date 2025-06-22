@@ -19,6 +19,10 @@ export default function HelpPage() {
       answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page.",
     },
     {
+      question: "How do I submit an expense for reimbursement?",
+      answer: "From the Employee Hub, navigate to 'Submit Expense'. Fill out the form with the date, amount, category, and a brief description of the expense. You must upload a photo of the receipt. After submitting, your expense will be sent to an administrator for approval. You can track the status of your submissions on the same page.",
+    },
+    {
         question: "How do I complete an assigned task?",
         answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete', add any required notes, and upload a photo if requested. Once you submit, the task will be marked as complete.",
     },
@@ -33,6 +37,10 @@ export default function HelpPage() {
     {
       question: "What are the different Admin roles and what can they do?",
       answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs'), assign tasks ('Manage Tasks') and send notifications to employees.",
+    },
+    {
+      question: "How do I approve or deny employee expenses?",
+      answer: "As an Administrator, go to 'Manage Expenses' from your dashboard. You will see a list of all pending expense reports. You can review the details, view the uploaded receipt, and then choose to 'Approve' or 'Deny' the request. The employee will see the updated status in their portal.",
     },
     {
       question: "How do I manage employee tasks?",

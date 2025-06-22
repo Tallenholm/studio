@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -11,6 +11,7 @@ const VIOLATIONS_KEY = 'fleetCheckViolations';
 const DOCUMENTS_KEY = 'fleetCheckDocuments';
 const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 const TASKS_KEY = 'fleetCheckTasks';
+const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
 
 const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456' },
@@ -372,6 +373,30 @@ export const loadTasks = (): Task[] => {
       return data ? JSON.parse(data) : [];
     } catch (error) {
       console.error('Failed to load tasks:', error);
+      return [];
+    }
+  }
+  return [];
+};
+
+// Expense Reports
+export const saveExpenseReports = (reports: ExpenseReport[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(EXPENSE_REPORTS_KEY, JSON.stringify(reports));
+    } catch (error) {
+      console.error('Failed to save expense reports:', error);
+    }
+  }
+};
+
+export const loadExpenseReports = (): ExpenseReport[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(EXPENSE_REPORTS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load expense reports:', error);
       return [];
     }
   }

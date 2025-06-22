@@ -133,3 +133,17 @@ export interface Task {
   completionNotes?: string;
   completionPhotoUri?: string;
 }
+
+export type ExpenseCategory = 'fuel' | 'food' | 'lodging' | 'supplies' | 'other';
+
+export interface ExpenseReport {
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  date: string; // YYYY-MM-DD
+  amount: number;
+  category: ExpenseCategory;
+  description: string;
+  receiptDataUri: string; // Required
+  status: 'pending' | 'approved' | 'denied';
+}

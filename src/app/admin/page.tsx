@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
@@ -120,6 +120,7 @@ export default function FleetCheckDashboardPage() {
           <CardContent className="flex flex-col gap-3">
             <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start">Manage Employees</Button></Link>
             <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start">Manage Time Off Requests</Button></Link>
+            <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start">Manage Expenses</Button></Link>
             <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start">Manage Tasks</Button></Link>
             <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start">Manage Violations</Button></Link>
             <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start">Send Notification</Button></Link>
