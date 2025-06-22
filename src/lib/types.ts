@@ -107,3 +107,14 @@ export interface ManagedDocument {
   documentDataUri: string; // Can be a placeholder URL or a real data URI
   dataAiHint?: string; // Optional hint for image generation
 }
+
+export interface MaintenanceLog {
+  id: string;
+  assetId: string; // From FleetAsset
+  assetName: string;
+  date: string; // YYYY-MM-DD
+  serviceType: 'routine' | 'repair' | 'inspection' | 'other';
+  description: string;
+  cost?: number;
+  mechanic?: string;
+}

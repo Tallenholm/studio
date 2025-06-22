@@ -28,7 +28,11 @@ export default function HelpPage() {
     },
     {
       question: "What are the different Admin roles and what can they do?",
-      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), and send notifications to employees.",
+      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs') and send notifications to employees.",
+    },
+    {
+      question: "How do I log maintenance for a vehicle?",
+      answer: "As an Administrator, navigate to the 'Maintenance Logs' section from your dashboard. Click 'Log New Service', fill in the details about the service performed, including the date, cost, and description, and select the asset it applies to. All past logs are visible on this page.",
     },
     {
       question: "Where is my data stored?",

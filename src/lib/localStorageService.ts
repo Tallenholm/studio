@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -9,6 +9,7 @@ const TIME_OFF_REQUESTS_KEY = 'fleetCheckTimeOffRequests';
 const NOTIFICATIONS_KEY = 'fleetCheckNotifications';
 const VIOLATIONS_KEY = 'fleetCheckViolations';
 const DOCUMENTS_KEY = 'fleetCheckDocuments';
+const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 
 const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-1', type: 'truck', name: 'Truck 01 (2021 Chevy 6500)', vin: '1GDTY7C1XMJ123456' },
@@ -294,6 +295,59 @@ export const loadDocuments = (): ManagedDocument[] => {
     } catch (error) {
       console.error('Failed to load documents:', error);
       return defaultDocuments; // return defaults on error
+    }
+  }
+  return [];
+};
+
+
+// Maintenance Logs
+const defaultMaintenanceLogs: MaintenanceLog[] = [
+    {
+      id: 'log-1',
+      assetId: 'truck-1',
+      assetName: 'Truck 01 (2021 Chevy 6500)',
+      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days ago
+      serviceType: 'routine',
+      description: 'Oil change and tire rotation.',
+      cost: 150.75,
+      mechanic: 'City Auto Repair'
+    },
+    {
+      id: 'log-2',
+      assetId: 'skidSteer-1',
+      assetName: 'CAT 259D3',
+      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+      serviceType: 'repair',
+      description: 'Replaced worn hydraulic hose on lift arm.',
+      cost: 325.50,
+      mechanic: 'In-house'
+    }
+];
+
+export const saveMaintenanceLogs = (logs: MaintenanceLog[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(MAINTENANCE_LOGS_KEY, JSON.stringify(logs));
+    } catch (error) {
+      console.error('Failed to save maintenance logs:', error);
+    }
+  }
+};
+
+export const loadMaintenanceLogs = (): MaintenanceLog[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(MAINTENANCE_LOGS_KEY);
+      if (data) {
+          return JSON.parse(data);
+      } else {
+          saveMaintenanceLogs(defaultMaintenanceLogs);
+          return defaultMaintenanceLogs;
+      }
+    } catch (error) {
+      console.error('Failed to load maintenance logs:', error);
+      return defaultMaintenanceLogs;
     }
   }
   return [];
