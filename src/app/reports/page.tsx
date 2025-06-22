@@ -8,7 +8,7 @@ import type { InspectionReport } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -57,7 +57,7 @@ export default function ReportsListPage() {
           </CardHeader>
           <CardContent>
             <CardDescription className="text-lg">
-              You haven't submitted any inspection reports yet.
+              {role === 'employee' ? "You haven't submitted any inspection reports yet." : "No inspection reports have been submitted yet."}
             </CardDescription>
           </CardContent>
           <CardFooter className="justify-center">
@@ -84,10 +84,16 @@ export default function ReportsListPage() {
                     <CalendarDays className="h-4 w-4"/> {format(new Date(report.date), 'PPp')}
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex-grow">
-                <p className="text-sm text-muted-foreground mb-1"><strong>Truck:</strong> {report.truckVin || 'N/A'}</p>
-                <p className="text-sm text-muted-foreground mb-1"><strong>Trailer:</strong> {report.trailerVin || 'N/A'}</p>
-                <p className="text-sm text-muted-foreground"><strong>Equipment:</strong> {report.heavyEquipmentVin || 'N/A'}</p>
+              <CardContent className="flex-grow space-y-2">
+                <div className="text-sm text-muted-foreground">
+                  <p><strong>Truck:</strong> {report.truckVin || 'N/A'}</p>
+                  <p><strong>Trailer:</strong> {report.trailerVin || 'N/A'}</p>
+                  <p><strong>Equipment:</strong> {report.heavyEquipmentVin || 'N/A'}</p>
+                </div>
+                <div className="text-sm text-muted-foreground flex items-center gap-2 pt-2 border-t">
+                    <User className="h-4 w-4" />
+                    <span>By: <strong>{report.employeeName || 'Unknown'}</strong></span>
+                </div>
               </CardContent>
               <CardFooter className="gap-2">
                 <Link href={`/reports/${report.id}`} className='flex-1'>

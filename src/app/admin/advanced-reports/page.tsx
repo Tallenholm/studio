@@ -7,8 +7,8 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { loadInspectionReports, loadMaintenanceLogs } from '@/lib/localStorageService';
-import type { InspectionReport, MaintenanceLog } from '@/lib/types';
+import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadExpenseReports } from '@/lib/localStorageService';
+import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, ExpenseCategory } from '@/lib/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart as LineChartIcon, Filter, AlertTriangle, Loader2 } from 'lucide-react';
 
@@ -29,15 +29,38 @@ interface CostData {
   totalCost: number;
 }
 
+interface TaskStatusData {
+    name: string;
+    value: number;
+    fill: string;
+}
+
+interface ViolationData {
+    name: string;
+    value: number;
+    fill: string;
+}
+
+interface ExpenseData {
+    name: string;
+    totalAmount: number;
+}
+
 export default function AdvancedReportsPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [reports, setReports] = useState<InspectionReport[]>([]);
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [violations, setViolations] = useState<Violation[]>([]);
+  const [expenses, setExpenses] = useState<ExpenseReport[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
     setReports(loadInspectionReports());
     setLogs(loadMaintenanceLogs());
+    setTasks(loadTasks());
+    setViolations(loadViolations());
+    setExpenses(loadExpenseReports());
   }, []);
 
   const inspectionOutcomes: OutcomeData[] = [
@@ -75,6 +98,37 @@ export default function AdvancedReportsPage() {
     })).sort((a, b) => b.totalCost - a.totalCost);
   })();
 
+  const taskStatusData: TaskStatusData[] = [
+    { name: 'Pending', value: tasks.filter(t => t.status === 'pending').length, fill: 'hsl(var(--chart-4))' },
+    { name: 'Completed', value: tasks.filter(t => t.status === 'completed').length, fill: 'hsl(var(--chart-1))' },
+  ];
+
+  const expensesByCategoryData: ExpenseData[] = (() => {
+    const expenseMap: { [key in ExpenseCategory]?: number } = {};
+    expenses.forEach(expense => {
+      expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
+    });
+    return Object.entries(expenseMap)
+      .map(([name, totalAmount]) => ({
+        name: name.charAt(0).toUpperCase() + name.slice(1),
+        totalAmount: totalAmount || 0,
+      }))
+      .sort((a, b) => b.totalAmount - a.totalAmount);
+  })();
+
+  const violationsByTypeData: ViolationData[] = (() => {
+      const counts: Record<string, number> = {};
+      violations.forEach(v => {
+          counts[v.type] = (counts[v.type] || 0) + 1;
+      });
+      return [
+        { name: 'Safety', value: counts.safety || 0, fill: 'hsl(var(--chart-2))'},
+        { name: 'Conduct', value: counts.conduct || 0, fill: 'hsl(var(--chart-3))'},
+        { name: 'Performance', value: counts.performance || 0, fill: 'hsl(var(--chart-4))'},
+        { name: 'Other', value: counts.other || 0, fill: 'hsl(var(--chart-5))'},
+      ];
+  })();
+
   const CHART_CONFIG = {
     total: {
       label: 'Failures',
@@ -83,6 +137,10 @@ export default function AdvancedReportsPage() {
     totalCost: {
       label: 'Cost',
       color: 'hsl(var(--chart-2))',
+    },
+    totalAmount: {
+      label: 'Amount',
+      color: 'hsl(var(--chart-3))',
     },
   };
   
@@ -94,6 +152,8 @@ export default function AdvancedReportsPage() {
       </div>
     );
   }
+  
+  const noData = reports.length === 0 && logs.length === 0 && tasks.length === 0 && violations.length === 0 && expenses.length === 0;
 
   return (
     <div className="container mx-auto py-8">
@@ -159,7 +219,7 @@ export default function AdvancedReportsPage() {
             </CardContent>
           </Card>
           
-          {reports.length === 0 && logs.length === 0 ? (
+          {noData ? (
              <div className="text-center py-10 border-2 border-dashed rounded-lg">
                 <div className="flex justify-center items-center gap-4 mb-4 text-muted-foreground">
                     <AlertTriangle className="h-10 w-10" />
@@ -212,6 +272,48 @@ export default function AdvancedReportsPage() {
                 </CardContent>
               </Card>
 
+               <Card>
+                <CardHeader>
+                  <CardTitle>Task Status</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                            <Pie data={taskStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {taskStatusData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                   </ChartContainer>
+                </CardContent>
+              </Card>
+
+               <Card>
+                <CardHeader>
+                  <CardTitle>Violations by Type</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                            <Pie data={violationsByTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {violationsByTypeData.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                   </ChartContainer>
+                </CardContent>
+              </Card>
+              
               <Card className="lg:col-span-2">
                 <CardHeader>
                   <CardTitle>Maintenance Costs by Asset</CardTitle>
@@ -225,6 +327,25 @@ export default function AdvancedReportsPage() {
                         <YAxis tickFormatter={(value) => `$${value}`} />
                         <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
                         <Bar dataKey="totalCost" fill="hsl(var(--chart-2))" radius={4} />
+                      </BarChart>
+                    </ResponsiveContainer>
+                  </ChartContainer>
+                </CardContent>
+              </Card>
+
+              <Card className="lg:col-span-2">
+                <CardHeader>
+                  <CardTitle>Expenses by Category</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={CHART_CONFIG} className="h-[300px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                      <BarChart data={expensesByCategoryData}>
+                        <CartesianGrid vertical={false} />
+                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
+                        <YAxis tickFormatter={(value) => `$${value}`} />
+                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
+                        <Bar dataKey="totalAmount" fill="hsl(var(--chart-3))" radius={4} />
                       </BarChart>
                     </ResponsiveContainer>
                   </ChartContainer>
