@@ -246,11 +246,16 @@ export default function ManageDocumentsPage() {
                         <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                            {docs.map(doc => (
                                <Card key={doc.id} className="flex flex-col">
-                                   <CardHeader>
-                                       <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
-                                       <CardDescription>{doc.description}</CardDescription>
+                                   <CardHeader className="flex-row items-start justify-between">
+                                        <div>
+                                            <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
+                                            <CardDescription>{doc.description}</CardDescription>
+                                        </div>
+                                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
+                                            <Trash2 className="h-4 w-4 text-destructive" />
+                                        </Button>
                                    </CardHeader>
-                                   <CardContent className="flex-grow flex items-center justify-center">
+                                   <CardContent className="flex-grow flex items-center justify-center pt-0">
                                        <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
                                           <Image
                                             src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
@@ -263,12 +268,6 @@ export default function ManageDocumentsPage() {
                                             </div>
                                         </Link>
                                    </CardContent>
-                                   <CardFooter>
-                                        <Button variant="destructive" size="sm" className="w-full" onClick={() => removeDocument(doc.id)}>
-                                            <Trash2 className="mr-2 h-4 w-4"/>
-                                            Delete
-                                        </Button>
-                                   </CardFooter>
                                </Card>
                            ))}
                         </CardContent>

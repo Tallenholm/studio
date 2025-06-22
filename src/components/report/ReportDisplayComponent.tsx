@@ -146,20 +146,20 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
             <div>
               <h3 className="text-xl font-semibold mb-3 font-headline flex items-center gap-2"><Brain className="text-primary h-6 w-6" />AI Anomaly Detection</h3>
               {report.anomalyReport ? (
-                <Card className={`border-2 ${report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 'border-accent bg-accent/10' : 'border-green-500 bg-green-500/10'} shadow-md`}>
+                <Card className={`border-2 ${report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 'border-destructive bg-destructive/10' : 'border-green-500 bg-green-500/10'} shadow-md`}>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       {report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 
-                        <AlertOctagon className="text-accent h-6 w-6" /> : 
+                        <AlertOctagon className="text-destructive h-6 w-6" /> : 
                         <ThumbsUp className="text-green-600 h-6 w-6" />}
                       Analysis Results
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <p><strong>Anomalies Detected:</strong> {report.anomalyReport.anomaliesDetected ? <span className="font-semibold text-accent">Yes</span> : <span className="font-semibold text-green-600">No</span>}</p>
+                    <p><strong>Anomalies Detected:</strong> {report.anomalyReport.anomaliesDetected ? <span className="font-semibold text-destructive">Yes</span> : <span className="font-semibold text-green-600">No</span>}</p>
                     <p><strong>Summary:</strong> {report.anomalyReport.anomalySummary}</p>
-                    <p><strong>Requires Mechanic Intervention:</strong> {report.anomalyReport.requiresIntervention ? <span className="font-bold text-accent">Yes</span> : 'No'}</p>
-                    <p><strong>Requires Procedure Change:</strong> {report.anomalyReport.requiresProcedureChange ? <span className="font-bold text-accent">Yes</span> : 'No'}</p>
+                    <p><strong>Requires Mechanic Intervention:</strong> {report.anomalyReport.requiresIntervention ? <span className="font-bold text-destructive">Yes</span> : 'No'}</p>
+                    <p><strong>Requires Procedure Change:</strong> {report.anomalyReport.requiresProcedureChange ? <span className="font-bold text-destructive">Yes</span> : 'No'}</p>
                   </CardContent>
                 </Card>
               ) : onAnalyze ? (
