@@ -118,3 +118,18 @@ export interface MaintenanceLog {
   cost?: number;
   mechanic?: string;
 }
+
+export interface Task {
+  id: string;
+  title: string;
+  description: string;
+  assignedToEmployeeId: string;
+  assignedToEmployeeName: string;
+  createdByAdminName: string;
+  dateAssigned: string; // ISO string
+  dateCompleted: string | null; // ISO string
+  status: 'pending' | 'completed';
+  requiresPhoto: boolean;
+  completionNotes?: string;
+  completionPhotoUri?: string;
+}

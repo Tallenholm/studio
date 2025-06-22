@@ -19,6 +19,10 @@ export default function HelpPage() {
       answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page.",
     },
     {
+        question: "How do I complete an assigned task?",
+        answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete', add any required notes, and upload a photo if requested. Once you submit, the task will be marked as complete.",
+    },
+    {
         question: "How do I view notifications from my manager?",
         answer: "Click on the 'Notifications' link in the sidebar or on the Employee Hub. This will take you to your message center. New, unread messages will be highlighted. Click on a message to expand it and mark it as read.",
     },
@@ -28,7 +32,11 @@ export default function HelpPage() {
     },
     {
       question: "What are the different Admin roles and what can they do?",
-      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs') and send notifications to employees.",
+      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs'), assign tasks ('Manage Tasks') and send notifications to employees.",
+    },
+    {
+      question: "How do I manage employee tasks?",
+      answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, including any photos uploaded by employees for verification.",
     },
     {
       question: "How do I log maintenance for a vehicle?",

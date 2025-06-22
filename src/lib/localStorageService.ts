@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -10,6 +10,7 @@ const NOTIFICATIONS_KEY = 'fleetCheckNotifications';
 const VIOLATIONS_KEY = 'fleetCheckViolations';
 const DOCUMENTS_KEY = 'fleetCheckDocuments';
 const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
+const TASKS_KEY = 'fleetCheckTasks';
 
 const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-1', type: 'truck', name: 'Truck 01 (2021 Chevy 6500)', vin: '1GDTY7C1XMJ123456' },
@@ -348,6 +349,30 @@ export const loadMaintenanceLogs = (): MaintenanceLog[] => {
     } catch (error) {
       console.error('Failed to load maintenance logs:', error);
       return defaultMaintenanceLogs;
+    }
+  }
+  return [];
+};
+
+// Task Management
+export const saveTasks = (tasks: Task[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(TASKS_KEY, JSON.stringify(tasks));
+    } catch (error) {
+      console.error('Failed to save tasks:', error);
+    }
+  }
+};
+
+export const loadTasks = (): Task[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(TASKS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load tasks:', error);
+      return [];
     }
   }
   return [];

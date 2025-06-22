@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -118,6 +118,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/my-tasks">
+                    <SidebarMenuButton isActive={pathname.startsWith('/employee/my-tasks')}>
+                      <ClipboardList /><span>My Tasks</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/employee/vehicle-documents">
                     <SidebarMenuButton isActive={pathname.startsWith('/employee/vehicle-documents')}>
@@ -188,6 +195,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/admin/manage-requests">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-requests')}>
                                 <ClipboardCheck /><span>Manage Requests</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/manage-tasks">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-tasks')}>
+                                <ClipboardList /><span>Manage Tasks</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
