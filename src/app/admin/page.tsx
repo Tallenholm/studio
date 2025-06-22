@@ -4,12 +4,12 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, FileText, UserCheck, CalendarDays, Calendar as CalendarIcon, List, Book, Loader2, ClipboardCheck, MailPlus, Send, ShieldAlert, Cog, BookCopy, SlidersHorizontal, Wrench, ClipboardList } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent } from '@/lib/types';
 import { loadCalendarEvents } from '@/lib/localStorageService';
-import { addDays, format, isSameDay } from 'date-fns';
+import { isSameDay, format } from 'date-fns';
 
 
 export default function FleetCheckDashboardPage() {
@@ -105,225 +105,77 @@ export default function FleetCheckDashboardPage() {
       </Card>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <List className="text-primary" />
-              View Reports
-            </CardTitle>
-            <CardDescription>
-              Review all past inspection reports and their AI analysis.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/reports" passHref>
-              <Button className="w-full">Go to Reports</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <Cog className="text-primary" />
-              Manage Fleet
-            </CardTitle>
-            <CardDescription>
-              View, add, or edit the vehicles and equipment in your fleet.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-fleet" passHref>
-              <Button className="w-full">Go to Fleet Management</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+        {/* People & Communication Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Users className="text-primary" />
-              Manage Users
+              People & Communication
             </CardTitle>
             <CardDescription>
-              Add, view, and remove employee user accounts and PINs.
+              Manage employees, requests, tasks, violations, and send notifications.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-users" passHref>
-              <Button className="w-full">Go to User Management</Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <ClipboardCheck className="text-primary" />
-              Manage Requests
-            </CardTitle>
-            <CardDescription>
-              Approve or deny employee requests for time off.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-requests" passHref>
-              <Button className="w-full">Go to Requests</Button>
-            </Link>
+          <CardContent className="flex flex-col gap-3">
+            <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start">Manage Employees</Button></Link>
+            <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start">Manage Time Off Requests</Button></Link>
+            <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start">Manage Tasks</Button></Link>
+            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start">Manage Violations</Button></Link>
+            <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start">Send Notification</Button></Link>
           </CardContent>
         </Card>
 
+        {/* Content & Assets Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <CalendarIcon className="text-primary" />
-              Manage Calendar
-            </CardTitle>
-            <CardDescription>
-              Add or remove company events, time off, and schedules.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-calendar" passHref>
-              <Button className="w-full">Go to Calendar Management</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <ClipboardList className="text-primary" />
-              Manage Tasks
+              Assets & Content
             </CardTitle>
             <CardDescription>
-              Assign tasks to employees and track their completion.
+              Manage fleet vehicles, company documents, and the events calendar.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-tasks" passHref>
-              <Button className="w-full">Go to Task Management</Button>
-            </Link>
-          </CardContent>
-        </Card>
-        
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <BookCopy className="text-primary" />
-              Manage Documents
-            </CardTitle>
-            <CardDescription>
-              Upload, edit, and remove vehicle and company documents.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-documents" passHref>
-              <Button className="w-full">Go to Documents</Button>
-            </Link>
+          <CardContent className="flex flex-col gap-3">
+            <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start">Manage Fleet</Button></Link>
+            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start">Manage Documents</Button></Link>
+            <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start">Manage Calendar</Button></Link>
           </CardContent>
         </Card>
 
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <Wrench className="text-primary" />
-              Maintenance Logs
-            </CardTitle>
-            <CardDescription>
-              Track and manage service history for all fleet assets.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/maintenance-logs" passHref>
-              <Button className="w-full">Go to Maintenance Logs</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <Send className="text-primary" />
-              Send Notification
-            </CardTitle>
-            <CardDescription>
-              Send a message or alert to employees.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/send-notification" passHref>
-              <Button className="w-full">Go to Notifications</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <ShieldAlert className="text-primary" />
-              Manage Violations
-            </CardTitle>
-            <CardDescription>
-              Log and track employee violations and actions taken.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/manage-violations" passHref>
-              <Button className="w-full">Go to Violations</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
+        {/* Operations & Analytics Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <LineChart className="text-primary" />
-              Advanced Reports
+              Operations & Analytics
             </CardTitle>
             <CardDescription>
-              Analyze trends, component failures, and inspection history.
+              Review inspection reports, view maintenance logs, and access advanced analytics.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link href="/admin/advanced-reports" passHref>
-              <Button className="w-full">Go to Advanced Reports</Button>
-            </Link>
+          <CardContent className="flex flex-col gap-3">
+            <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start">View Inspection Reports</Button></Link>
+            <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start">View Maintenance Logs</Button></Link>
+            <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start">Advanced Reports</Button></Link>
           </CardContent>
         </Card>
-
-         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <SlidersHorizontal className="text-primary" />
-              System Settings
-            </CardTitle>
-            <CardDescription>
-              Configure global settings for the application (illustrative).
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <Link href="/admin/system-settings" passHref>
-              <Button className="w-full">Go to System Settings</Button>
-            </Link>
-          </CardContent>
-        </Card>
-
+        
+        {/* System & Access Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <Book className="text-primary" />
-              Go to Employee Portal
+              <Cog className="text-primary" />
+              System & Access
             </CardTitle>
             <CardDescription>
-              Access the simplified view for drivers to do their work.
+              Configure system-wide settings and access the employee portal view.
             </CardDescription>
           </CardHeader>
-          <CardContent>
-            <Link href="/employee" passHref>
-              <Button className="w-full">Go to Employee Portal</Button>
-            </Link>
+          <CardContent className="flex flex-col gap-3">
+            <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start">System Settings</Button></Link>
+            <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start">Go to Employee Portal</Button></Link>
           </CardContent>
         </Card>
 
