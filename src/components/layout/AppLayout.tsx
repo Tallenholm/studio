@@ -154,7 +154,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
           {role === 'manager' && (
               <SidebarGroup>
-                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Tools</SidebarGroupLabel>
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <Link href="/admin">
@@ -163,35 +163,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <Link href="/reports">
-                            <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
-                                <FileText /><span>Reports</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
-                        <Link href="/admin/manage-fleet">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
-                                <Cog /><span>Manage Fleet</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
+                    
+                    <SidebarSeparator className="my-1" />
+
                     <SidebarMenuItem>
                         <Link href="/admin/manage-users">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-users')}>
-                                <Users /><span>Manage Users</span>
+                                <Users /><span>Manage Employees</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
-                        <Link href="/admin/manage-calendar">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-calendar')}>
-                                <Calendar /><span>Manage Calendar</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
                         <Link href="/admin/manage-requests">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-requests')}>
                                 <ClipboardCheck /><span>Manage Requests</span>
@@ -206,16 +188,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         </Link>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
-                        <Link href="/admin/manage-documents">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-documents')}>
-                                <BookCopy /><span>Manage Documents</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
-                     <SidebarMenuItem>
-                        <Link href="/admin/maintenance-logs">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/maintenance-logs')}>
-                                <Wrench /><span>Maintenance Logs</span>
+                        <Link href="/admin/manage-violations">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-violations')}>
+                                <ShieldAlert /><span>Manage Violations</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
@@ -226,10 +201,44 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
+
+                    <SidebarSeparator className="my-1" />
+                    
                     <SidebarMenuItem>
-                        <Link href="/admin/manage-violations">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-violations')}>
-                                <ShieldAlert /><span>Manage Violations</span>
+                        <Link href="/admin/manage-fleet">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
+                                <Cog /><span>Manage Fleet</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/manage-documents">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-documents')}>
+                                <BookCopy /><span>Manage Documents</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/manage-calendar">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-calendar')}>
+                                <Calendar /><span>Manage Calendar</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+
+                    <SidebarSeparator className="my-1" />
+                    
+                    <SidebarMenuItem>
+                        <Link href="/reports">
+                            <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                                <FileText /><span>Inspection Reports</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                     <SidebarMenuItem>
+                        <Link href="/admin/maintenance-logs">
+                            <SidebarMenuButton isActive={pathname.startsWith('/admin/maintenance-logs')}>
+                                <Wrench /><span>Maintenance Logs</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
@@ -240,6 +249,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
+                    
+                    <SidebarSeparator className="my-1" />
+
                     <SidebarMenuItem>
                         <Link href="/admin/system-settings">
                             <SidebarMenuButton isActive={pathname.startsWith('/admin/system-settings')}>
