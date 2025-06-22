@@ -22,7 +22,7 @@ import ChecklistItemComponent from './ChecklistItemComponent';
 import { saveInspectionReport, loadFleetAssets } from '@/lib/localStorageService';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
-import { Loader2, Send, Truck, Box, Construction, ClipboardList } from 'lucide-react';
+import { Loader2, Send, Truck, Box, Shovel, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 
 const completedItemSchema = z.object({
@@ -34,7 +34,7 @@ const completedItemSchema = z.object({
 });
 
 const sectionSchema = z.object({
-  vehicleType: z.enum(['truck', 'trailer', 'skidSteer']),
+  vehicleType: z.enum(['truck', 'trailer', 'heavyEquipment']),
   name: z.string(),
   items: z.array(completedItemSchema),
 });
@@ -42,10 +42,10 @@ const sectionSchema = z.object({
 const inspectionFormSchema = z.object({
   truckVin: z.string().optional(),
   trailerVin: z.string().optional(),
-  skidSteerVin: z.string().optional(),
+  heavyEquipmentVin: z.string().optional(),
   sections: z.array(sectionSchema),
 }).superRefine((data, ctx) => {
-  if (!data.truckVin && !data.trailerVin && !data.skidSteerVin) {
+  if (!data.truckVin && !data.trailerVin && !data.heavyEquipmentVin) {
     ctx.addIssue({
       code: z.ZodIssueCode.custom,
       message: 'You must select at least one vehicle for the inspection.',
@@ -56,10 +56,10 @@ const inspectionFormSchema = z.object({
   data.sections.forEach((section, sectionIndex) => {
     const isTruckSection = section.vehicleType === 'truck' && data.truckVin;
     const isTrailerSection = section.vehicleType === 'trailer' && data.trailerVin;
-    const isSkidSteerSection = section.vehicleType === 'skidSteer' && data.skidSteerVin;
+    const isHeavyEquipmentSection = section.vehicleType === 'heavyEquipment' && data.heavyEquipmentVin;
 
     // Only validate sections for selected vehicles
-    if (isTruckSection || isTrailerSection || isSkidSteerSection) {
+    if (isTruckSection || isTrailerSection || isHeavyEquipmentSection) {
         section.items.forEach((item, itemIndex) => {
         if (item.status === 'fail' && (!item.notes || item.notes.trim() === '')) {
             ctx.addIssue({
@@ -99,18 +99,18 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     setFleetAssets(loadFleetAssets());
   }, []);
   
-  const { trucks, trailers, skidSteers } = useMemo(() => {
+  const { trucks, trailers, heavyEquipments } = useMemo(() => {
     return {
       trucks: fleetAssets.filter(a => a.type === 'truck'),
       trailers: fleetAssets.filter(a => a.type === 'trailer'),
-      skidSteers: fleetAssets.filter(a => a.type === 'skidSteer'),
+      heavyEquipments: fleetAssets.filter(a => a.type === 'heavyEquipment'),
     }
   }, [fleetAssets]);
 
   const defaultValues: InspectionFormValues = {
     truckVin: '',
     trailerVin: '',
-    skidSteerVin: '',
+    heavyEquipmentVin: '',
     sections: CHECKLIST_DATA.map(section => ({
       vehicleType: section.id,
       name: section.name,
@@ -137,16 +137,16 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
   const watchedSections = form.watch('sections');
   const watchedTruckVin = form.watch('truckVin');
   const watchedTrailerVin = form.watch('trailerVin');
-  const watchedSkidSteerVin = form.watch('skidSteerVin');
+  const watchedHeavyEquipmentVin = form.watch('heavyEquipmentVin');
 
   const visibleSections = useMemo(() => {
     return CHECKLIST_DATA.filter(section => {
         if (section.id === 'truck') return !!watchedTruckVin;
         if (section.id === 'trailer') return !!watchedTrailerVin;
-        if (section.id === 'skidSteer') return !!watchedSkidSteerVin;
+        if (section.id === 'heavyEquipment') return !!watchedHeavyEquipmentVin;
         return false;
     });
-  }, [watchedTruckVin, watchedTrailerVin, watchedSkidSteerVin]);
+  }, [watchedTruckVin, watchedTrailerVin, watchedHeavyEquipmentVin]);
 
   async function onSubmit(values: InspectionFormValues) {
     setIsSubmitting(true);
@@ -154,7 +154,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     const filteredSections = values.sections.filter(section => {
       if (section.vehicleType === 'truck') return !!values.truckVin;
       if (section.vehicleType === 'trailer') return !!values.trailerVin;
-      if (section.vehicleType === 'skidSteer') return !!values.skidSteerVin;
+      if (section.vehicleType === 'heavyEquipment') return !!values.heavyEquipmentVin;
       return false;
     });
 
@@ -176,7 +176,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       employeeName: user?.name,
       truckVin: values.truckVin,
       trailerVin: values.trailerVin,
-      skidSteerVin: values.skidSteerVin,
+      heavyEquipmentVin: values.heavyEquipmentVin,
       sections: filteredSections.map(section => ({
         vehicleType: section.vehicleType,
         name: section.name,
@@ -264,16 +264,16 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
                       />
                       <FormField
                         control={form.control}
-                        name="skidSteerVin"
+                        name="heavyEquipmentVin"
                         render={({ field }) => (
                           <FormItem>
-                            <FormLabel className="flex items-center gap-2 text-lg"><Construction className="h-5 w-5 text-primary"/>Skid Steer</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={skidSteers.length === 0}>
+                            <FormLabel className="flex items-center gap-2 text-lg"><Shovel className="h-5 w-5 text-primary"/>Heavy Equipment</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value} disabled={heavyEquipments.length === 0}>
                               <SelectTrigger>
-                                <SelectValue placeholder={skidSteers.length > 0 ? "Select a skid steer" : "No skid steers in fleet"} />
+                                <SelectValue placeholder={heavyEquipments.length > 0 ? "Select equipment" : "No equipment in fleet"} />
                               </SelectTrigger>
                               <SelectContent>
-                                {skidSteers.map(skidSteer => <SelectItem key={skidSteer.id} value={skidSteer.vin}>{skidSteer.name}</SelectItem>)}
+                                {heavyEquipments.map(eq => <SelectItem key={eq.id} value={eq.vin}>{eq.name}</SelectItem>)}
                               </SelectContent>
                             </Select>
                           </FormItem>

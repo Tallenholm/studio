@@ -23,13 +23,13 @@ import {
   Wrench,
   Truck,
   Box,
-  Construction,
+  Snowflake,
 } from 'lucide-react';
 
 export const CHECKLIST_DATA: ChecklistSectionData[] = [
   {
     id: 'truck',
-    name: 'Truck (2021 Chevy 6500)',
+    name: 'Dump Truck',
     Icon: Truck,
     items: [
       { id: 'truck-oil', name: 'Engine Oil Level', instructions: 'With engine off, check dipstick. Level must be between Add and Full marks.', Icon: Droplet },
@@ -51,7 +51,7 @@ export const CHECKLIST_DATA: ChecklistSectionData[] = [
   },
   {
     id: 'trailer',
-    name: 'Trailer (Tilt Deck)',
+    name: 'Equipment Trailer',
     Icon: Box,
     items: [
       { id: 'trailer-lights', name: 'Lights & Reflectors', instructions: 'Verify operation of all required lights and ensure reflectors are clean and intact.', Icon: Lightbulb },
@@ -60,23 +60,24 @@ export const CHECKLIST_DATA: ChecklistSectionData[] = [
       { id: 'trailer-hitch-conn', name: 'Hitch & Landing Gear', instructions: 'Ensure coupling is secure and locked. Check landing gear is raised and handle is secured.', Icon: Link2 },
       { id: 'trailer-safety-chains', name: 'Safety Chains & Cables', instructions: 'Ensure chains/cables are properly attached, not twisted, and free from damage.', Icon: Link },
       { id: 'trailer-deck-cond', name: 'Deck Condition', instructions: 'Inspect flooring for damage, holes, or weakness. Ensure it is clear of debris.', Icon: LayoutGrid },
-      { id: 'trailer-tilt-mech', name: 'Tilt Mechanism', instructions: 'Inspect hydraulic system for leaks. Ensure pivot points are secure and lubricated.', Icon: ChevronsUpDown },
+      { id: 'trailer-ramps', name: 'Ramps & Tilt Mechanism', instructions: 'Inspect ramps for damage. If tilt, check hydraulic system for leaks. Ensure pivot points are secure and lubricated.', Icon: ChevronsUpDown },
       { id: 'trailer-load-secure', name: 'Load Securement Points', instructions: 'Check all D-rings, stake pockets, and rub rails for damage or cracks.', Icon: Anchor },
     ],
   },
   {
-    id: 'skidSteer',
-    name: 'Skid Steer',
-    Icon: Construction,
+    id: 'heavyEquipment',
+    name: 'Heavy Equipment',
+    Icon: Shovel,
     items: [
-      { id: 'skid-fluids', name: 'Fluid Levels', instructions: 'Check engine oil, hydraulic oil, and coolant levels. Ensure they are within operating range.', Icon: Droplet },
-      { id: 'skid-lights', name: 'Lights & Alarms', instructions: 'Test all work lights and audible alarms (like backup alarms) for proper function.', Icon: Lightbulb },
-      { id: 'skid-tires-tracks', name: 'Tires / Tracks', instructions: 'Check tires for damage and proper inflation, or tracks for proper tension and signs of wear.', Icon: Disc3 },
-      { id: 'skid-bucket-attach', name: 'Bucket / Attachment', instructions: 'Inspect for damage, excessive wear, and secure connection via locking pins.', Icon: Shovel },
-      { id: 'skid-controls', name: 'Controls & Hydraulics', instructions: 'Cycle all controls to ensure smooth operation. Check hoses for leaks or damage.', Icon: Gamepad2 },
-      { id: 'skid-safety-feat', name: 'Safety Features', instructions: 'Check seatbelt, safety bar, and ROPS (Rollover Protective Structure) for damage.', Icon: ShieldCheck },
-      { id: 'skid-leaks', name: 'Leaks (General)', instructions: 'Visually inspect under and around the machine for any signs of fluid leaks.', Icon: Pipette },
-      { id: 'skid-grease', name: 'Grease Points', instructions: "Inspect all pivot points and grease as needed according to the manufacturer's schedule.", Icon: Wrench },
+      { id: 'equip-fluids', name: 'Fluid Levels (Engine/Hydraulic)', instructions: 'Check engine oil, hydraulic oil, and coolant levels. Ensure they are within operating range.', Icon: Droplet },
+      { id: 'equip-lights', name: 'Lights & Alarms', instructions: 'Test all work lights and audible alarms (like backup alarms) for proper function.', Icon: Lightbulb },
+      { id: 'equip-tires-tracks', name: 'Tires / Tracks', instructions: 'Check tires for damage and proper inflation, or tracks for proper tension and signs of wear.', Icon: Disc3 },
+      { id: 'equip-cutting-edges', name: 'Cutting Edges & Teeth', instructions: 'Inspect bucket/plow cutting edges and teeth for wear or damage.', Icon: Wrench },
+      { id: 'equip-hydraulics', name: 'Attachment Hydraulics', instructions: 'Check auxiliary hydraulic lines and connectors for leaks or damage.', Icon: Pipette },
+      { id: 'equip-controls', name: 'Controls & Operation', instructions: 'Cycle all controls to ensure smooth operation. Check for unusual noises.', Icon: Gamepad2 },
+      { id: 'equip-safety-feat', name: 'Safety Features', instructions: 'Check seatbelt, safety bar, and ROPS (Rollover Protective Structure) for damage.', Icon: ShieldCheck },
+      { id: 'equip-leaks', name: 'Leaks (General)', instructions: 'Visually inspect under and around the machine for any signs of fluid leaks.', Icon: Pipette },
+      { id: 'equip-snow-prep', name: 'Snow Equipment Prep', instructions: 'Check snow blower, plow, or salt spreader for proper mounting, connections, and wear.', Icon: Snowflake },
     ],
   },
 ];

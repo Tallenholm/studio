@@ -43,10 +43,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Construction, Loader2, Cog } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog } from 'lucide-react';
 
 const assetSchema = z.object({
-  type: z.enum(['truck', 'trailer', 'skidSteer'], { required_error: 'Asset type is required.' }),
+  type: z.enum(['truck', 'trailer', 'heavyEquipment'], { required_error: 'Asset type is required.' }),
   name: z.string().min(1, 'Asset name is required.'),
   vin: z.string().min(1, 'VIN/Serial is required.').max(17, 'VIN must be 17 characters or less.'),
 });
@@ -102,7 +102,7 @@ export default function FleetManagementPage() {
     switch (type) {
       case 'truck': return <Truck className="h-5 w-5 text-primary" />;
       case 'trailer': return <Box className="h-5 w-5 text-primary" />;
-      case 'skidSteer': return <Construction className="h-5 w-5 text-primary" />;
+      case 'heavyEquipment': return <Shovel className="h-5 w-5 text-primary" />;
       default: return null;
     }
   }
@@ -202,7 +202,7 @@ export default function FleetManagementPage() {
                             <SelectContent>
                               <SelectItem value="truck">Truck</SelectItem>
                               <SelectItem value="trailer">Trailer</SelectItem>
-                              <SelectItem value="skidSteer">Skid Steer</SelectItem>
+                              <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem>
                             </SelectContent>
                           </Select>
                           <FormMessage />
@@ -247,7 +247,7 @@ export default function FleetManagementPage() {
         <CardContent className="space-y-6">
             {renderAssetsTable('truck', 'Trucks')}
             {renderAssetsTable('trailer', 'Trailers')}
-            {renderAssetsTable('skidSteer', 'Skid Steers')}
+            {renderAssetsTable('heavyEquipment', 'Heavy Equipment')}
         </CardContent>
       </Card>
     </div>

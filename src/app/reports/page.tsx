@@ -87,7 +87,7 @@ export default function ReportsListPage() {
               <CardContent className="flex-grow">
                 <p className="text-sm text-muted-foreground mb-1"><strong>Truck:</strong> {report.truckVin || 'N/A'}</p>
                 <p className="text-sm text-muted-foreground mb-1"><strong>Trailer:</strong> {report.trailerVin || 'N/A'}</p>
-                <p className="text-sm text-muted-foreground"><strong>Skid Steer:</strong> {report.skidSteerVin || 'N/A'}</p>
+                <p className="text-sm text-muted-foreground"><strong>Equipment:</strong> {report.heavyEquipmentVin || 'N/A'}</p>
               </CardContent>
               <CardFooter className="gap-2">
                 <Link href={`/reports/${report.id}`} className='flex-1'>

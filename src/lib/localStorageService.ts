@@ -13,9 +13,9 @@ const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 const TASKS_KEY = 'fleetCheckTasks';
 
 const defaultFleetAssets: FleetAsset[] = [
-    { id: 'truck-1', type: 'truck', name: 'Truck 01 (2021 Chevy 6500)', vin: '1GDTY7C1XMJ123456' },
-    { id: 'trailer-1', type: 'trailer', name: 'Big Tex Tilt Deck', vin: '5TETL222XPA654321' },
-    { id: 'skidSteer-1', type: 'skidSteer', name: 'CAT 259D3', vin: 'CAT0259D3XYZ98765' },
+    { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456' },
+    { id: 'trailer-1', type: 'trailer', name: 'Gooseneck Equipment Trailer', vin: '5TETL222XPA654321' },
+    { id: 'heavyEquipment-1', type: 'heavyEquipment', name: 'CAT 259D3 Skid Steer', vin: 'CAT0259D3XYZ98765' },
 ];
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -307,7 +307,7 @@ const defaultMaintenanceLogs: MaintenanceLog[] = [
     {
       id: 'log-1',
       assetId: 'truck-1',
-      assetName: 'Truck 01 (2021 Chevy 6500)',
+      assetName: 'Truck 01 (Dump Truck)',
       date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days ago
       serviceType: 'routine',
       description: 'Oil change and tire rotation.',
@@ -316,8 +316,8 @@ const defaultMaintenanceLogs: MaintenanceLog[] = [
     },
     {
       id: 'log-2',
-      assetId: 'skidSteer-1',
-      assetName: 'CAT 259D3',
+      assetId: 'heavyEquipment-1',
+      assetName: 'CAT 259D3 Skid Steer',
       date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
       serviceType: 'repair',
       description: 'Replaced worn hydraulic hose on lift arm.',

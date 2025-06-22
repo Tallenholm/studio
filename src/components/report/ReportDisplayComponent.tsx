@@ -5,7 +5,7 @@ import type { InspectionReport, CompletedInspectionItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Camera, AlertTriangle, FileText, Truck, Box, Construction, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2, User } from 'lucide-react';
+import { Camera, AlertTriangle, FileText, Truck, Box, Shovel, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -22,7 +22,7 @@ interface ReportDisplayProps {
 const getVehicleIcon = (vehicleType: string) => {
   if (vehicleType === 'truck') return <Truck className="h-5 w-5" />;
   if (vehicleType === 'trailer') return <Box className="h-5 w-5" />;
-  if (vehicleType === 'skidSteer') return <Construction className="h-5 w-5" />;
+  if (vehicleType === 'heavyEquipment') return <Shovel className="h-5 w-5" />;
   return <FileText className="h-5 w-5" />;
 };
 
@@ -77,7 +77,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <p><strong className="font-medium text-foreground">Truck:</strong> {report.truckVin || 'N/A'}</p>
             <p><strong className="font-medium text-foreground">Trailer:</strong> {report.trailerVin || 'N/A'}</p>
-            <p><strong className="font-medium text-foreground">Skid Steer:</strong> {report.skidSteerVin || 'N/A'}</p>
+            <p><strong className="font-medium text-foreground">Heavy Equipment:</strong> {report.heavyEquipmentVin || 'N/A'}</p>
           </div>
         </div>
         

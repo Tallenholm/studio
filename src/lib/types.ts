@@ -2,7 +2,7 @@
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
 
-export type VehicleType = 'truck' | 'trailer' | 'skidSteer';
+export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
 
 export interface User {
   id: string;
@@ -49,7 +49,7 @@ export interface InspectionReport {
   employeeName?: string;
   truckVin?: string;
   trailerVin?: string;
-  skidSteerVin?: string;
+  heavyEquipmentVin?: string;
   sections: Array<{
     vehicleType: VehicleType;
     name: string; // e.g. "Truck", "Trailer"

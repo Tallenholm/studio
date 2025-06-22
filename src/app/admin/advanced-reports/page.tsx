@@ -61,7 +61,7 @@ export default function AdvancedReportsPage() {
                     <SelectItem value="all">All Types</SelectItem>
                     <SelectItem value="truck">Truck</SelectItem>
                     <SelectItem value="trailer">Trailer</SelectItem>
-                    <SelectItem value="skid_steer">Skid Steer</SelectItem>
+                    <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
