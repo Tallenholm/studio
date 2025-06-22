@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs } from '@/lib/localStorageService';
-import type { FleetAsset, MaintenanceLog } from '@/lib/types';
+import type { FleetAsset, MaintenanceLog, VehicleType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -46,7 +46,7 @@ import {
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Wrench, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Wrench, Calendar as CalendarIcon, Loader2, Truck, Box, Shovel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -123,6 +123,67 @@ export default function MaintenanceLogsPage() {
     return type.charAt(0).toUpperCase() + type.slice(1);
   }
 
+  const renderLogsTable = (type: VehicleType, title: string) => {
+    const filteredLogs = logs.filter(log => {
+      const asset = assets.find(a => a.id === log.assetId);
+      return asset?.type === type;
+    });
+
+    const getIcon = () => {
+      switch (type) {
+        case 'truck': return <Truck className="h-6 w-6 text-primary" />;
+        case 'trailer': return <Box className="h-6 w-6 text-primary" />;
+        case 'heavyEquipment': return <Shovel className="h-6 w-6 text-primary" />;
+      }
+    };
+
+    return (
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">{getIcon()} {title}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {filteredLogs.length > 0 ? (
+            <div className="border rounded-md">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Asset</TableHead>
+                    <TableHead>Date</TableHead>
+                    <TableHead>Type</TableHead>
+                    <TableHead>Description</TableHead>
+                    <TableHead>Cost</TableHead>
+                    <TableHead>Mechanic</TableHead>
+                    <TableHead className="text-right w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {filteredLogs.map(log => (
+                    <TableRow key={log.id}>
+                      <TableCell className="font-medium">{log.assetName}</TableCell>
+                      <TableCell>{format(new Date(log.date), 'PPP')}</TableCell>
+                      <TableCell>{getServiceTypeLabel(log.serviceType)}</TableCell>
+                      <TableCell className="max-w-sm">{log.description}</TableCell>
+                      <TableCell>{log.cost ? `$${log.cost.toFixed(2)}` : 'N/A'}</TableCell>
+                      <TableCell>{log.mechanic || 'N/A'}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => removeLog(log.id)} aria-label={`Remove log for ${log.assetName}`}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No maintenance logs found for {title.toLowerCase()}.</div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+  
   if (!isMounted) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -300,50 +361,10 @@ export default function MaintenanceLogsPage() {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Service History</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {logs.length > 0 ? (
-                        <div className="border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                    <TableHead>Asset</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Cost</TableHead>
-                                    <TableHead>Mechanic</TableHead>
-                                    <TableHead className="text-right w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {logs.map(log => (
-                                    <TableRow key={log.id}>
-                                        <TableCell className="font-medium">{log.assetName}</TableCell>
-                                        <TableCell>{format(new Date(log.date), 'PPP')}</TableCell>
-                                        <TableCell>{getServiceTypeLabel(log.serviceType)}</TableCell>
-                                        <TableCell className="max-w-sm">{log.description}</TableCell>
-                                        <TableCell>{log.cost ? `$${log.cost.toFixed(2)}` : 'N/A'}</TableCell>
-                                        <TableCell>{log.mechanic || 'N/A'}</TableCell>
-                                        <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => removeLog(log.id)} aria-label={`Remove log for ${log.assetName}`}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No maintenance logs found.</div>
-                    )}
-                </CardContent>
-            </Card>
+        <CardContent className="space-y-6">
+            {renderLogsTable('truck', 'Trucks')}
+            {renderLogsTable('trailer', 'Trailers')}
+            {renderLogsTable('heavyEquipment', 'Heavy Equipment')}
         </CardContent>
       </Card>
     </div>
