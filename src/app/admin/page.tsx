@@ -4,11 +4,11 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2 } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent } from '@/lib/types';
-import { loadCalendarEvents } from '@/lib/localStorageService';
+import type { CalendarEvent, InspectionReport, FleetAsset } from '@/lib/types';
+import { loadCalendarEvents, loadInspectionReports, loadFleetAssets } from '@/lib/localStorageService';
 import { isSameDay, format } from 'date-fns';
 
 
@@ -16,10 +16,23 @@ export default function FleetCheckDashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [failedReports, setFailedReports] = useState<InspectionReport[]>([]);
+  const [allAssets, setAllAssets] = useState<FleetAsset[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
     setEvents(loadCalendarEvents());
+    
+    const reports = loadInspectionReports();
+    const assets = loadFleetAssets();
+    setAllAssets(assets);
+    
+    const recentFailed = reports
+        .filter(r => r.overallStatus === 'fail')
+        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        .slice(0, 5); // Show latest 5 issues to keep it clean
+    setFailedReports(recentFailed);
+
   }, []);
 
   const eventDates = useMemo(() => {
@@ -58,6 +71,49 @@ export default function FleetCheckDashboardPage() {
           Oversee fleet assets, users, reports, and settings for the Fleet Check app.
         </p>
       </div>
+
+       <Card className="mb-8 border-destructive/50 shadow-xl bg-destructive/5 hover:shadow-destructive/20 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-destructive">
+              <AlertTriangle />
+              Recent Issues Requiring Attention
+            </CardTitle>
+            <CardDescription>
+              The following inspections were submitted with failed items. Please review them promptly.
+            </CardDescription>
+          </CardHeader>
+          <CardContent>
+            {failedReports.length > 0 ? (
+              <ul className="space-y-3">
+                {failedReports.map(report => {
+                  const asset = allAssets.find(a => a.vin === (report.truckVin || report.trailerVin || report.heavyEquipmentVin));
+                  return (
+                    <li key={report.id} className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-md border bg-card">
+                      <div>
+                        <p className="font-semibold">{asset?.name || report.truckVin || 'Unknown Asset'}</p>
+                        <p className="text-sm text-muted-foreground">
+                          Failed {report.type.replace('-', ' ')} inspection by {report.employeeName || 'N/A'} on {format(new Date(report.date), 'PPP')}
+                        </p>
+                      </div>
+                      <Link href={`/reports/${report.id}`} passHref>
+                        <Button variant="outline" size="sm">View Report</Button>
+                      </Link>
+                    </li>
+                  )
+                })}
+              </ul>
+            ) : (
+              <div className="text-center text-muted-foreground py-6 flex items-center justify-center gap-4 border-2 border-dashed rounded-lg">
+                <CheckCircle2 className="h-8 w-8 text-green-500" />
+                <div>
+                  <p className="font-semibold text-lg text-foreground">No Failed Inspections</p>
+                  <p>All systems are currently operational.</p>
+                </div>
+              </div>
+            )}
+          </CardContent>
+        </Card>
+
 
        <Card className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>

@@ -7,8 +7,8 @@ import Link from 'next/link';
 export default function HelpPage() {
   const faqs = [
     {
-      question: "How do I perform a vehicle inspection?",
-      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting from the dropdown menus. Go through each tab (Truck, Trailer, etc.) and mark each checklist item as 'Pass' or 'Fail'. If an item fails, you must provide notes. You can also add a photo. Once complete, click 'Submit Inspection'.",
+      question: "How do I perform a vehicle inspection and report damage?",
+      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. To report damage or an issue, mark the relevant checklist item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
     {
       question: "How does the AI Anomaly Detection work?",
