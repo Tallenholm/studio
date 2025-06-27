@@ -25,10 +25,9 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay } from 'date-fns';
-import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 
 const jobSchema = z.object({
@@ -39,7 +38,11 @@ const jobSchema = z.object({
     from: z.date({ required_error: 'A start date is required.' }),
     to: z.date({ required_error: 'An end date is required.' }),
   }),
+}).refine((data) => data.dateRange.to >= data.dateRange.from, {
+  message: "End date cannot be before start date.",
+  path: ["dateRange"],
 });
+
 
 const getJobStatus = (job: Job): JobStatus => {
   const today = startOfDay(new Date());
@@ -60,6 +63,7 @@ export default function ManageJobsPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingJob, setEditingJob] = useState<Job | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof jobSchema>>({
@@ -82,6 +86,28 @@ export default function ManageJobsPage() {
     }
   }, [jobs, isMounted]);
 
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      form.reset();
+      setEditingJob(null);
+    }
+  };
+
+  const handleEditClick = (job: Job) => {
+    setEditingJob(job);
+    form.reset({
+      name: job.name,
+      clientId: job.clientId,
+      address: job.address,
+      dateRange: {
+        from: new Date(job.startDate),
+        to: new Date(job.endDate),
+      },
+    });
+    setIsDialogOpen(true);
+  };
+
   function onSubmit(values: z.infer<typeof jobSchema>) {
     const client = clients.find(c => c.id === values.clientId);
     if (!client) {
@@ -89,20 +115,33 @@ export default function ManageJobsPage() {
         return;
     }
 
-    const newJob: Job = {
-      id: `job-${Date.now()}`,
-      name: values.name,
-      clientId: client.id,
-      clientName: client.name,
-      address: values.address,
-      startDate: values.dateRange.from.toISOString().split('T')[0],
-      endDate: values.dateRange.to.toISOString().split('T')[0],
-      // Status is now calculated dynamically, no need to set it here
-    };
-    setJobs((prev) => [...prev, newJob]);
-    toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
-    setIsDialogOpen(false);
-    form.reset();
+    if (editingJob) {
+        const updatedJob: Job = {
+            ...editingJob,
+            name: values.name,
+            clientId: client.id,
+            clientName: client.name,
+            address: values.address,
+            startDate: values.dateRange.from.toISOString().split('T')[0],
+            endDate: values.dateRange.to.toISOString().split('T')[0],
+        };
+        setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
+        toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
+    } else {
+        const newJob: Job = {
+        id: `job-${Date.now()}`,
+        name: values.name,
+        clientId: client.id,
+        clientName: client.name,
+        address: values.address,
+        startDate: values.dateRange.from.toISOString().split('T')[0],
+        endDate: values.dateRange.to.toISOString().split('T')[0],
+      };
+      setJobs((prev) => [...prev, newJob]);
+      toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
+    }
+    
+    handleDialogOpenChange(false);
   }
 
   function removeJob(jobId: string) {
@@ -151,7 +190,7 @@ export default function ManageJobsPage() {
                   <TableHead>Client</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead>Dates</TableHead>
-                  <TableHead className="text-right">Actions</TableHead>
+                  <TableHead className="text-right w-[120px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -167,6 +206,9 @@ export default function ManageJobsPage() {
                     <TableCell>{job.address}</TableCell>
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
                     <TableCell className="text-right">
+                       <Button variant="ghost" size="icon" onClick={() => handleEditClick(job)} aria-label={`Edit job ${job.name}`}>
+                        <Pencil className="h-4 w-4" />
+                      </Button>
                       <Button variant="ghost" size="icon" onClick={() => removeJob(job.id)} aria-label={`Remove job ${job.name}`}>
                         <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
@@ -206,7 +248,7 @@ export default function ManageJobsPage() {
                 Assign and track jobs for your clients.
               </CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-5 w-5" />
@@ -215,9 +257,9 @@ export default function ManageJobsPage() {
               </DialogTrigger>
               <DialogContent className="sm:max-w-2xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Job</DialogTitle>
+                  <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
                   <DialogDescription>
-                    Enter the details for a new job.
+                    {editingJob ? 'Update the details for this job.' : 'Enter the details for a new job.'}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
