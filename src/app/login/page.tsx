@@ -14,19 +14,15 @@ import { loadUsers } from '@/lib/localStorageService';
 import type { User } from '@/lib/types';
 
 export default function LoginPage() {
-  const { login, role, isLoading } = useAuth();
+  const { login, isLoading } = useAuth();
   const [pin, setPin] = useState('');
   const [error, setError] = useState('');
   const { toast } = useToast();
-  const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
 
   useEffect(() => {
     setUsers(loadUsers());
   }, []);
-
-  // The main AppLayout now handles all redirection logic.
-  // This page just handles the login form submission.
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,9 +30,8 @@ export default function LoginPage() {
 
     const user = users.find(u => u.pin === pin);
     if (user) {
-      login(user);
       toast({ title: 'Login Successful', description: `Welcome, ${user.name}!` });
-      // No longer need to handle routing here. AppLayout will detect the role change.
+      login(user);
       return;
     }
 

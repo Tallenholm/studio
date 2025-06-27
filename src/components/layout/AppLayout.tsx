@@ -49,43 +49,29 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { role, user, logout, isLoading, isFreshLogin, setIsFreshLogin } = useAuth();
+  const { role, user, logout, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
   useEffect(() => {
-    // This effect is the single source of truth for routing logic after login.
+    // This effect handles route protection for users who are already logged in.
+    // The AuthProvider handles the initial redirect after login/logout.
     if (isLoading) {
       return; // Wait until auth state is loaded.
     }
-
-    // --- Handle unauthenticated users ---
+    
     if (!role) {
+      // If user is not authenticated, and not on the login page, redirect them.
+      // This is a failsafe for if they manually navigate away after being logged out.
       if (pathname !== '/login') {
         router.replace('/login');
       }
-      return; // End of logic for unauthenticated users.
+      return;
     }
 
-    // --- Handle authenticated users ---
-    const destination = role === 'employee' ? '/employee' : '/admin';
-
-    // A) Handle the special case of a user who just logged in.
-    if (isFreshLogin) {
-      setIsFreshLogin(false); // Consume the flag so this doesn't run again.
-      const tourKey = `hasViewedTour_${role}`;
-      const hasViewedTour = localStorage.getItem(tourKey);
-      
-      if (!hasViewedTour) {
-        router.replace(`${destination}?tour=true`);
-      } else {
-        router.replace(destination);
-      }
-      return; // Navigation has been handled for the fresh login.
-    }
-
-    // B) Handle all other cases for an already logged-in user (page protection).
+    // This handles cases where a logged-in user tries to access a page they
+    // shouldn't, or the root URL.
     const isAllowed = () => {
       if (pathname.startsWith('/reports/')) return true;
       if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
@@ -97,10 +83,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return false;
     };
 
-    if (!isAllowed()) {
+    if (!isAllowed() || pathname === '/') {
+      const destination = role === 'employee' ? '/employee' : '/admin';
       router.replace(destination);
     }
-  }, [pathname, role, isLoading, router, isFreshLogin, setIsFreshLogin]);
+  }, [pathname, role, isLoading, router]);
   
   useEffect(() => {
       if (user) {

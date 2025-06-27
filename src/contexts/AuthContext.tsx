@@ -13,8 +13,6 @@ interface AuthContextType {
   login: (user: User) => void;
   logout: () => void;
   isLoading: boolean;
-  isFreshLogin: boolean;
-  setIsFreshLogin: (value: boolean) => void;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -23,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AuthRole>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [isFreshLogin, setIsFreshLogin] = useState(false);
   const router = useRouter();
 
   useEffect(() => {
@@ -46,26 +43,34 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
       setRole(loggedInUser.role);
       setUser(loggedInUser);
-      setIsFreshLogin(true); // Flag that a login just occurred
+      
+      const destination = loggedInUser.role === 'employee' ? '/employee' : '/admin';
+      const tourKey = `hasViewedTour_${loggedInUser.role}`;
+      const hasViewedTour = localStorage.getItem(tourKey);
+
+      if (!hasViewedTour) {
+        router.replace(`${destination}?tour=true`);
+      } else {
+        router.replace(destination);
+      }
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, []);
+  }, [router]);
 
   const logout = useCallback(() => {
     try {
       localStorage.removeItem('fleetCheckUser');
       setRole(null);
       setUser(null);
-      setIsFreshLogin(false);
-      // Navigation is now handled by AppLayout's effect
+      router.replace('/login');
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, []);
+  }, [router]);
 
   return (
-    <AuthContext.Provider value={{ role, user, login, logout, isLoading, isFreshLogin, setIsFreshLogin }}>
+    <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>
       {children}
     </AuthContext.Provider>
   );
