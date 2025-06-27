@@ -10,35 +10,34 @@ interface AuthState {
   isLoading: boolean;
   login: (user: User) => void;
   logout: () => void;
-  _setLoading: (isLoading: boolean) => void;
-  _setUser: (user: User | null) => void;
 }
 
-// Using Zustand for state management to avoid context provider re-rendering issues.
+// We can't use the regular `create` from zustand because we need to share this
+// state between the hook and the provider logic.
 const authStore = createStore<AuthState>((set) => ({
   user: null,
-  isLoading: true,
+  isLoading: true, // Start as loading
   login: (loggedInUser: User) => {
     try {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
-      set({ user: loggedInUser });
+      set({ user: loggedInUser, isLoading: false });
     } catch (error) {
        console.error("Could not access localStorage to login", error);
+       set({ isLoading: false });
     }
   },
   logout: () => {
     try {
       localStorage.removeItem('fleetCheckUser');
-      set({ user: null });
+      set({ user: null, isLoading: false });
     } catch (error) {
        console.error("Could not access localStorage to logout", error);
+       set({ isLoading: false });
     }
   },
-  _setLoading: (isLoading) => set({ isLoading }),
-  _setUser: (user) => set({ user }),
 }));
 
-// A client-side initializer component that runs once.
+// A client-side initializer component that runs once to check localStorage.
 function AuthInitializer() {
     useEffect(() => {
         let isMounted = true;
@@ -47,14 +46,15 @@ function AuthInitializer() {
             if (isMounted) {
                 if (storedUser) {
                     const parsedUser: User = JSON.parse(storedUser);
-                    authStore.getState()._setUser(parsedUser);
+                    authStore.setState({ user: parsedUser, isLoading: false });
+                } else {
+                    authStore.setState({ user: null, isLoading: false });
                 }
             }
         } catch (error) {
             console.error("Could not access localStorage to initialize auth", error);
-        } finally {
             if (isMounted) {
-                authStore.getState()._setLoading(false);
+                authStore.setState({ isLoading: false });
             }
         }
         return () => {
@@ -65,7 +65,7 @@ function AuthInitializer() {
     return null; // This component renders nothing.
 }
 
-// The provider component
+// The provider component wraps the app and includes the initializer.
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
     <>
@@ -75,7 +75,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   );
 }
 
-// The hook to access auth state and actions
+// The hook to access auth state and actions from any client component.
 export function useAuth() {
   return useStore(authStore);
 }

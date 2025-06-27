@@ -33,92 +33,68 @@ const FullScreenLoader = () => (
     </div>
 );
 
-// This is the single source of truth for page authorization.
-const isPathAllowed = (pathname: string, role: UserRole | null): boolean => {
-    // --- Define Routes ---
+// This function now only checks permissions for AUTHENTICATED users.
+const isPathAllowedForRole = (pathname: string, role: UserRole): boolean => {
     const managerRoutes = [
         '/admin', '/reports', '/help', '/notifications',
         '/admin/manage-requests', '/admin/manage-tasks', '/admin/manage-violations',
         '/admin/send-notification', '/admin/manage-fleet', '/admin/manage-documents',
         '/admin/manage-calendar', '/admin/maintenance-logs', '/admin/manage-work-orders',
-        '/employee'
+        '/employee' // Managers can view the employee portal
     ];
     const ownerRoutes = [
         ...managerRoutes,
         '/admin/manage-users', '/admin/manage-expenses', '/admin/manage-clients',
         '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
     ];
-    const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/company-documents', '/employee/personal-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations'];
+    const employeeRoutes = [
+        '/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', 
+        '/employee/time-off', '/notifications', '/employee/company-documents', 
+        '/employee/personal-documents', '/employee/my-tasks', '/employee/submit-expense', 
+        '/employee/my-violations'
+    ];
 
-    // Rule 1: Guest (not logged in) can ONLY be on the login page.
-    if (!role) {
-        return pathname === '/login';
-    }
+    // Rule 1: Dynamic routes take precedence.
+    if (pathname.startsWith('/reports/')) return true; // Anyone logged in can see a report detail.
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner'; // Only owners see job details.
 
-    // --- From here, we know the user is authenticated. ---
-
-    // Rule 2: Authenticated users can NEVER be on the login page.
-    if (pathname === '/login') {
-        return false;
-    }
-    
-    // Rule 3: Allow the root page temporarily; it will be redirected by the layout.
-    if (pathname === '/') {
-        return true;
-    }
-
-    // Rule 4: Check dynamic routes first.
-    if (pathname.startsWith('/reports/')) return true; // Anyone logged in can see a report detail
-    if (pathname.startsWith('/admin/jobs/')) return role === 'owner'; // Only owners can see job details
-
-    // Rule 5: Check static routes based on role.
+    // Rule 2: Check static routes based on role.
     if (role === 'owner') return ownerRoutes.includes(pathname);
     if (role === 'manager') return managerRoutes.includes(pathname);
-    if (role === 'employee') return employeeBaseRoutes.includes(pathname);
+    if (role === 'employee') return employeeRoutes.includes(pathname);
 
-    // Rule 6: If no rule matches, the path is not allowed.
     return false;
 };
-
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
     const searchParams = useSearchParams();
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, logout } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
     const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
-    // This state tracks if we have resolved the initial route and authentication.
-    const [isRouteChecked, setIsRouteChecked] = useState(false);
-
+    // Effect for handling redirects based on auth state. This is the "gatekeeper".
     useEffect(() => {
-        // Don't do anything until the auth state is fully loaded from localStorage.
         if (isLoading) {
-            return;
+            return; // Wait until auth state is determined.
         }
 
-        const isAllowed = isPathAllowed(pathname, user?.role || null);
-
-        if (isAllowed) {
-            // If user is on an allowed page, we can show the content.
-            // Special case: if an authenticated user lands on `/`, redirect them home.
-            if (user && pathname === '/') {
+        if (user) {
+            // User is logged in.
+            // If they are on the login page OR a page forbidden for their role, redirect them home.
+            if (pathname === '/login' || !isPathAllowedForRole(pathname, user.role)) {
                 const destination = user.role === 'employee' ? '/employee' : '/admin';
                 router.replace(destination);
-                // Don't mark route as checked yet, wait for redirect to finish.
-                return;
             }
-            setIsRouteChecked(true);
         } else {
-            // If the user is on a forbidden page, redirect them.
-            const destination = user ? (user.role === 'employee' ? '/employee' : '/admin') : '/login';
-            router.replace(destination);
-            // Don't mark route as checked yet, wait for redirect.
+            // User is not logged in.
+            // If they are not on the login page, they must be sent there.
+            if (pathname !== '/login') {
+                router.replace('/login');
+            }
         }
-
     }, [isLoading, user, pathname, router]);
-
 
     // Effect to update notification count.
     useEffect(() => {
@@ -131,23 +107,30 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             setUnreadCount(count);
         }
     }, [user, pathname]);
-
-    // Show the loader until the initial route check and potential redirect are complete.
-    if (!isRouteChecked) {
+    
+    // ======== RENDER LOGIC ========
+    
+    // 1. While auth state is loading, show a full-screen loader.
+    if (isLoading) {
         return <FullScreenLoader />;
     }
-    
-    // If not logged in, we are on the login page (guaranteed by the effect).
+
+    // 2. If not logged in, only render children if we are on the login page. Otherwise, show loader while redirecting.
     if (!user) {
-        return (
+        return pathname === '/login' ? (
             <>
                 {children}
                 <AiAssistantWidget initialOpen={false} />
             </>
-        );
+        ) : <FullScreenLoader />;
+    }
+
+    // 3. If logged in, but not on an allowed path, show a loader while redirecting.
+    if (!isPathAllowedForRole(pathname, user.role)) {
+        return <FullScreenLoader />;
     }
     
-    // If we reach here, user is authenticated and on an allowed page.
+    // 4. If all checks pass, render the full application layout.
     const isAdmin = user.role === 'owner' || user.role === 'manager';
     
     return (
@@ -331,7 +314,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenu>
                   <SidebarMenuItem>
                       <Link href="/reports">
-                          <SidebarMenuButton tooltip="Inspection Reports" isActive={pathname.startsWith('/reports')}>
+                          <SidebarMenuButton tooltip="Inspection Reports" isActive={pathname === '/reports' || pathname.startsWith('/reports/')}>
                               <FileText /><span>Inspection Reports</span>
                           </SidebarMenuButton>
                       </Link>
@@ -399,10 +382,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                     <SidebarMenuButton tooltip="Logout" onClick={() => {
-                        const { logout } = useAuth.getState();
-                        logout();
-                     }}>
+                     <SidebarMenuButton tooltip="Logout" onClick={logout}>
                         <LogOut /><span>Logout</span>
                      </SidebarMenuButton>
                  </SidebarMenuItem>
