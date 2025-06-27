@@ -58,14 +58,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     if (isLoading) return;
 
     const isAllowed = () => {
+      // Return early if no role, this is handled below.
+      if (!role) return false;
+      
       if (role === 'owner') {
-        // Dynamic path checking for owner
         if (pathname.startsWith('/admin/jobs/')) return true;
         if (pathname.startsWith('/reports/')) return true;
         return ownerRoutes.includes(pathname);
       }
       if (role === 'manager') {
-        if (pathname.startsWith('/admin/jobs/')) return true; // Managers might need to view job details
+        if (pathname.startsWith('/admin/jobs/')) return true;
         if (pathname.startsWith('/reports/')) return true;
         return managerRoutes.includes(pathname);
       }
@@ -76,15 +78,24 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return false;
     };
 
-    if (!role && pathname !== '/login') {
-      router.push('/login');
-    } else if (role && !isAllowed()) {
-      // If user is not allowed on the current path, redirect to their dashboard
-      const dashboardPath = role === 'employee' ? '/employee' : '/admin';
-      if (pathname !== dashboardPath) {
-        router.push(dashboardPath);
+    // Case 1: Not logged in.
+    if (!role) {
+      // If they are not on the login page already, send them there.
+      if (pathname !== '/login') {
+        router.push('/login');
       }
+      return; // End of logic for non-logged-in users.
     }
+
+    // After this point, we know `role` exists.
+
+    // Case 2: Logged in, but on a forbidden page.
+    if (!isAllowed()) {
+      // Redirect to their respective dashboard.
+      const dashboardPath = role === 'employee' ? '/employee' : '/admin';
+      router.push(dashboardPath);
+    }
+
   }, [pathname, role, isLoading, router]);
   
   useEffect(() => {
@@ -107,13 +118,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   }
 
   // Unauthenticated view (login page)
-  if (pathname === '/login' || !role) {
+  if (pathname === '/login') {
     return (
       <>
         {children}
         <AiAssistantWidget initialOpen={false} />
       </>
     );
+  }
+
+  // Fallback for when role isn't determined but not on login page
+  if (!role) {
+     return (
+        <div className="flex h-screen items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        </div>
+     );
   }
 
   // Authenticated view

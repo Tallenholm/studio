@@ -2,7 +2,7 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter, usePathname } from 'next/navigation';
+import { useRouter } from 'next/navigation';
 import type { UserRole, User } from '@/lib/types';
 
 type AuthRole = UserRole | null;
@@ -22,7 +22,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
-  const pathname = usePathname();
 
   useEffect(() => {
     try {
@@ -70,14 +69,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
        console.error("Could not access localStorage", error);
     }
   }, [router]);
-
-  // If loading is done and there's no role, redirect to login, unless already there.
-  useEffect(() => {
-    if (!isLoading && !role && pathname !== '/login') {
-      router.push('/login');
-    }
-  }, [isLoading, role, pathname, router]);
-
 
   return (
     <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>
