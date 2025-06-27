@@ -5,8 +5,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadDocuments, saveDocuments } from '@/lib/localStorageService';
-import type { ManagedDocument } from '@/lib/types';
+import { loadDocuments, saveDocuments, loadUsers } from '@/lib/localStorageService';
+import type { ManagedDocument, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import {
@@ -42,16 +42,33 @@ import Link from 'next/link';
 
 const documentSchema = z.object({
   title: z.string().min(1, 'Document title is required.'),
-  category: z.string().min(1, 'Category/Group is required.'),
+  category: z.string().optional(),
+  employeeId: z.string().optional(),
   documentType: z.enum(['general', 'tax', 'employment'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
   documentDataUri: z.string().refine((val) => val.startsWith('data:'), {
     message: 'A document file upload is required.',
   }),
+}).superRefine((data, ctx) => {
+    if (data.documentType === 'employment' && !data.employeeId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'An employee must be selected for employment forms.',
+            path: ['employeeId'],
+        });
+    }
+    if (data.documentType !== 'employment' && (!data.category || data.category.trim() === '')) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'Category is required for this document type.',
+            path: ['category'],
+        });
+    }
 });
 
 export default function ManageDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -68,9 +85,12 @@ export default function ManageDocumentsPage() {
     },
   });
 
+  const watchedDocType = form.watch('documentType');
+
   useEffect(() => {
     setIsMounted(true);
     setDocuments(loadDocuments());
+    setUsers(loadUsers());
   }, []);
 
   useEffect(() => {
@@ -92,10 +112,33 @@ export default function ManageDocumentsPage() {
   };
 
   function onSubmit(values: z.infer<typeof documentSchema>) {
+    let docCategory = '';
+    let employeeName: string | undefined = undefined;
+
+    if (values.documentType === 'employment' && values.employeeId) {
+        const employee = users.find(u => u.id === values.employeeId);
+        if (employee) {
+            docCategory = employee.name;
+            employeeName = employee.name;
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
+            return;
+        }
+    } else {
+        docCategory = values.category!;
+    }
+    
     const newDocument: ManagedDocument = {
       id: `doc-${Date.now()}`,
-      ...values,
+      title: values.title,
+      description: values.description,
+      documentType: values.documentType,
+      documentDataUri: values.documentDataUri,
+      category: docCategory,
+      employeeId: values.employeeId,
+      employeeName: employeeName,
     };
+
     setDocuments((prev) => [newDocument, ...prev]);
     toast({ title: 'Document Added', description: `${values.title} has been added.` });
     setIsDialogOpen(false);
@@ -204,7 +247,7 @@ export default function ManageDocumentsPage() {
                 Manage Documents
               </CardTitle>
               <CardDescription className="mt-2">
-                Add, view, and remove documents accessible to employees.
+                Add, view, and remove documents. Employment forms are assigned to specific employees.
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -218,7 +261,7 @@ export default function ManageDocumentsPage() {
                 <DialogHeader>
                   <DialogTitle>Add New Document</DialogTitle>
                   <DialogDescription>
-                    Upload a new document and assign it to a category.
+                    Upload a new document and assign it to a category or employee.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -258,19 +301,46 @@ export default function ManageDocumentsPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="category"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Category / Group</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Truck 01, Company Policies, 2023 Tax Year" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    {watchedDocType === 'employment' ? (
+                       <FormField
+                          control={form.control}
+                          name="employeeId"
+                          render={({ field }) => (
+                              <FormItem>
+                              <FormLabel>Assign to Employee</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                  <SelectTrigger>
+                                      <SelectValue placeholder="Select an employee" />
+                                  </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                  {users.filter(u => u.role === 'employee').map(user => (
+                                      <SelectItem key={user.id} value={user.id}>
+                                          {user.name}
+                                      </SelectItem>
+                                  ))}
+                                  </SelectContent>
+                              </Select>
+                              <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                    ) : (
+                      <FormField
+                        control={form.control}
+                        name="category"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Category / Group</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Truck 01, Company Policies" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                    )}
                     <FormField
                       control={form.control}
                       name="description"

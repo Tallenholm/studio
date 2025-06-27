@@ -309,10 +309,12 @@ const defaultDocuments: ManagedDocument[] = [
     },
     {
       id: 'doc-6',
-      category: 'Onboarding',
+      category: 'John Doe',
       title: 'I-9 Form',
       description: 'Employment Eligibility Verification form.',
       documentType: 'employment',
+      employeeId: '1',
+      employeeName: 'John Doe',
       documentDataUri: 'https://placehold.co/850x1100.png',
       dataAiHint: 'employment form',
     }

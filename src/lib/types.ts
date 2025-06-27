@@ -108,10 +108,12 @@ export interface ManagedDocument {
   id: string;
   title: string;
   description: string;
-  category: string; // The group header, e.g., "Truck - 2021 Chevy 6500" or "Company Policies"
+  category: string;
   documentType: 'general' | 'tax' | 'employment';
-  documentDataUri: string; // Can be a placeholder URL or a real data URI
-  dataAiHint?: string; // Optional hint for image generation
+  documentDataUri: string;
+  dataAiHint?: string;
+  employeeId?: string;
+  employeeName?: string;
 }
 
 export interface MaintenanceLog {

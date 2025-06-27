@@ -8,6 +8,7 @@ import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
 import { loadDocuments } from '@/lib/localStorageService';
 import type { ManagedDocument } from '@/lib/types';
+import { useAuth } from '@/contexts/AuthContext';
 
 
 // Helper function to get an icon for a category
@@ -22,47 +23,35 @@ const getCategoryIcon = (categoryName: string) => {
 export default function CompanyDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const { user } = useAuth();
 
   useEffect(() => {
     setIsMounted(true);
     setDocuments(loadDocuments());
   }, []);
 
-  const { generalDocuments, taxDocuments, employmentDocuments } = useMemo(() => {
-    const groupByType = (type: ManagedDocument['documentType']) => {
-        return documents
-            .filter(d => d.documentType === type)
-            .reduce((acc, doc) => {
-                (acc[doc.category] = acc[doc.category] || []).push(doc);
-                return acc;
-            }, {} as Record<string, ManagedDocument[]>);
+  const { generalDocuments, taxDocuments, employmentDocumentsForUser } = useMemo(() => {
+    const groupByCategory = (docs: ManagedDocument[]) => {
+        return docs.reduce((acc, doc) => {
+            (acc[doc.category] = acc[doc.category] || []).push(doc);
+            return acc;
+        }, {} as Record<string, ManagedDocument[]>);
     };
-    return {
-        generalDocuments: groupByType('general'),
-        taxDocuments: groupByType('tax'),
-        employmentDocuments: groupByType('employment'),
-    }
-  }, [documents]);
+    
+    const general = documents.filter(d => d.documentType === 'general');
+    const tax = documents.filter(d => d.documentType === 'tax');
+    const personal = documents.filter(d => d.documentType === 'employment' && d.employeeId === user?.id);
 
-  const renderDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
-    const totalDocs = Object.values(groupedDocs).reduce((sum, docs) => sum + docs.length, 0);
-    if (totalDocs === 0) {
-        return (
-            <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline flex items-center gap-3">
-                        <Icon className="h-7 w-7 text-primary" />
-                        {title}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                        <p>No {title.toLowerCase()} available at this time.</p>
-                    </div>
-                </CardContent>
-            </Card>
-        )
+    return {
+        generalDocuments: groupByCategory(general),
+        taxDocuments: groupByCategory(tax),
+        employmentDocumentsForUser: personal,
     }
+  }, [documents, user]);
+
+  const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
+    const totalDocs = Object.values(groupedDocs).reduce((sum, docs) => sum + docs.length, 0);
+    if (totalDocs === 0) return null;
 
     return (
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
@@ -112,6 +101,50 @@ export default function CompanyDocumentsPage() {
     );
   };
 
+  const renderPersonalDocumentSection = (title: string, Icon: React.ElementType, docs: ManagedDocument[]) => {
+      return (
+          <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+              <CardHeader>
+                  <CardTitle className="text-2xl font-headline flex items-center gap-3">
+                      <Icon className="h-7 w-7 text-primary" />
+                      {title}
+                  </CardTitle>
+              </CardHeader>
+              <CardContent>
+                  {docs.length === 0 ? (
+                      <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                          <p>No personal {title.toLowerCase()} available at this time.</p>
+                      </div>
+                  ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                          {docs.map((doc) => (
+                              <Card key={doc.id} className="bg-muted/30 flex flex-col">
+                                  <CardHeader>
+                                      <CardTitle className="text-lg">{doc.title}</CardTitle>
+                                      <CardDescription>{doc.description}</CardDescription>
+                                  </CardHeader>
+                                  <CardContent className="flex-grow">
+                                      <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group aspect-[8.5/11] rounded-md overflow-hidden border">
+                                          <Image
+                                              src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                              alt={`Preview of ${doc.title}`}
+                                              fill
+                                              className="object-cover object-top transition-transform group-hover:scale-105"
+                                          />
+                                          <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                              <Download className="h-10 w-10 text-white"/>
+                                          </div>
+                                      </Link>
+                                  </CardContent>
+                              </Card>
+                          ))}
+                      </div>
+                  )}
+              </CardContent>
+          </Card>
+      );
+  }
+
   if (!isMounted) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -127,14 +160,14 @@ export default function CompanyDocumentsPage() {
         <Files className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Company Documents</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Access general, tax, and employment documents.
+          Access general, tax, and personal employment documents.
         </p>
       </div>
 
       <div className="space-y-12">
-        {renderDocumentSection("General Documents", Files, generalDocuments)}
-        {renderDocumentSection("Tax Forms", FileText, taxDocuments)}
-        {renderDocumentSection("Employment Forms", FileBadge, employmentDocuments)}
+        {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
+        {renderGroupedDocumentSection("Tax Forms", FileText, taxDocuments)}
+        {renderPersonalDocumentSection("Employment Forms", FileBadge, employmentDocumentsForUser)}
       </div>
     </div>
   );
