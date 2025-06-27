@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadWorkOrders, saveWorkOrders } from '@/lib/localStorageService';
-import type { WorkOrder } from '@/lib/types';
+import { loadWorkOrders, saveWorkOrders, loadMaintenanceLogs, saveMaintenanceLogs } from '@/lib/localStorageService';
+import type { WorkOrder, MaintenanceLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -32,6 +32,7 @@ const workOrderSchema = z.object({
   status: z.enum(['open', 'in-progress', 'completed', 'on-hold']),
   mechanicNotes: z.string().optional(),
   cost: z.coerce.number().optional(),
+  mechanic: z.string().optional(),
 });
 
 export default function ManageWorkOrdersPage() {
@@ -55,6 +56,7 @@ export default function ManageWorkOrdersPage() {
       status: order.status,
       mechanicNotes: order.mechanicNotes || '',
       cost: order.cost || undefined,
+      mechanic: order.mechanic || '',
     });
   };
 
@@ -66,17 +68,43 @@ export default function ManageWorkOrdersPage() {
   function onSubmit(values: z.infer<typeof workOrderSchema>) {
     if (!editingOrder) return;
 
+    const wasJustCompleted = values.status === 'completed' && editingOrder.status !== 'completed';
+
     const updatedOrder: WorkOrder = {
       ...editingOrder,
       ...values,
-      dateCompleted: values.status === 'completed' && !editingOrder.dateCompleted ? new Date().toISOString() : editingOrder.dateCompleted,
+      dateCompleted: wasJustCompleted ? new Date().toISOString() : editingOrder.dateCompleted,
     };
     
     const updatedOrders = workOrders.map(wo => wo.id === updatedOrder.id ? updatedOrder : wo);
     setWorkOrders(updatedOrders);
     saveWorkOrders(updatedOrders);
     
-    toast({ title: 'Work Order Updated', description: `Status for ${updatedOrder.assetName} has been updated.` });
+    let toastDescription = `Status for ${updatedOrder.assetName} has been updated.`;
+
+    // Automatically create a maintenance log when the order is first completed
+    if (wasJustCompleted) {
+        const maintenanceLogs = loadMaintenanceLogs();
+        const logAlreadyExists = maintenanceLogs.some(log => log.workOrderId === updatedOrder.id);
+        
+        if (!logAlreadyExists) {
+            const newLog: MaintenanceLog = {
+                id: `mlog-${Date.now()}`,
+                workOrderId: updatedOrder.id,
+                assetId: updatedOrder.assetId,
+                assetName: updatedOrder.assetName,
+                date: new Date().toISOString().split('T')[0],
+                serviceType: 'repair',
+                description: `Work order repair: ${updatedOrder.issueDescription}\nNotes: ${values.mechanicNotes || 'N/A'}`,
+                cost: values.cost,
+                mechanic: values.mechanic,
+            };
+            saveMaintenanceLogs([...maintenanceLogs, newLog]);
+            toastDescription += ' A maintenance log was automatically created.';
+        }
+    }
+    
+    toast({ title: 'Work Order Updated', description: toastDescription });
     handleDialogClose();
   }
 
@@ -188,25 +216,53 @@ export default function ManageWorkOrdersPage() {
             </div>
             <Form {...form}>
               <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                   <FormField
+                      control={form.control}
+                      name="status"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Status</FormLabel>
+                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                              <SelectTrigger>
+                                  <SelectValue placeholder="Select a status" />
+                              </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                  <SelectItem value="open">Open</SelectItem>
+                                  <SelectItem value="in-progress">In Progress</SelectItem>
+                                  <SelectItem value="on-hold">On Hold</SelectItem>
+                                  <SelectItem value="completed">Completed</SelectItem>
+                              </SelectContent>
+                          </Select>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                    />
+                    <FormField
+                      control={form.control}
+                      name="cost"
+                      render={({ field }) => (
+                          <FormItem>
+                          <FormLabel>Cost (Optional)</FormLabel>
+                          <FormControl>
+                              <Input type="number" placeholder="e.g., 250.00" {...field} />
+                          </FormControl>
+                          <FormMessage />
+                          </FormItem>
+                      )}
+                  />
+                </div>
                 <FormField
                     control={form.control}
-                    name="status"
+                    name="mechanic"
                     render={({ field }) => (
                         <FormItem>
-                        <FormLabel>Status</FormLabel>
-                        <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                            <SelectTrigger>
-                                <SelectValue placeholder="Select a status" />
-                            </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                                <SelectItem value="open">Open</SelectItem>
-                                <SelectItem value="in-progress">In Progress</SelectItem>
-                                <SelectItem value="on-hold">On Hold</SelectItem>
-                                <SelectItem value="completed">Completed</SelectItem>
-                            </SelectContent>
-                        </Select>
+                        <FormLabel>Mechanic / Service Provider (Optional)</FormLabel>
+                        <FormControl>
+                            <Input placeholder="e.g., In-house, City Auto" {...field} />
+                        </FormControl>
                         <FormMessage />
                         </FormItem>
                     )}
@@ -219,19 +275,6 @@ export default function ManageWorkOrdersPage() {
                         <FormLabel>Mechanic Notes</FormLabel>
                         <FormControl>
                             <Textarea placeholder="Describe the work performed, parts used, etc." {...field} />
-                        </FormControl>
-                        <FormMessage />
-                        </FormItem>
-                    )}
-                />
-                 <FormField
-                    control={form.control}
-                    name="cost"
-                    render={({ field }) => (
-                        <FormItem>
-                        <FormLabel>Cost (Optional)</FormLabel>
-                        <FormControl>
-                            <Input type="number" placeholder="e.g., 250.00" {...field} />
                         </FormControl>
                         <FormMessage />
                         </FormItem>

@@ -117,6 +117,7 @@ export interface MaintenanceLog {
   description: string;
   cost?: number;
   mechanic?: string;
+  workOrderId?: string; // Link to the work order that generated this log
 }
 
 export interface Task {
@@ -183,5 +184,6 @@ export interface WorkOrder {
   status: WorkOrderStatus;
   issueDescription: string;
   mechanicNotes?: string;
+  mechanic?: string;
   cost?: number;
 }

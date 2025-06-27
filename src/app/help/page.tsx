@@ -12,7 +12,7 @@ export default function HelpPage() {
     },
     {
       question: "How are Work Orders created and managed?",
-      answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status (e.g., In Progress, Completed), add mechanic notes, and track costs, creating a complete audit trail for the repair.",
+      answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status, add notes, and track costs. When an admin completes a work order, the system automatically creates a corresponding entry in the Maintenance Logs, ensuring a complete and seamless audit trail for the repair.",
     },
     {
       question: "How does the AI Anomaly Detection work?",
@@ -48,7 +48,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I create and track jobs?",
-      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also track the financial value of each job and use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' columns based on their dates.",
+      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs. You can track the financial value of each job and use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' columns based on their dates.",
     },
     {
       question: "How do I approve or deny employee expenses?",
