@@ -28,118 +28,129 @@ import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
 const FullScreenLoader = () => (
-  <div className="flex h-screen items-center justify-center bg-background">
-    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-  </div>
+    <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+    </div>
 );
 
-// Define which routes belong to which role
-const managerRoutes = [
-  '/admin', '/reports', '/help', '/notifications',
-  '/admin/manage-requests', '/admin/manage-tasks', '/admin/manage-violations',
-  '/admin/send-notification', '/admin/manage-fleet', '/admin/manage-documents',
-  '/admin/manage-calendar', '/admin/maintenance-logs', '/admin/manage-work-orders',
-  '/employee' // For viewing employee portal
-];
-const ownerRoutes = [
-  ...managerRoutes,
-  '/admin/manage-users', '/admin/manage-expenses', '/admin/manage-clients',
-  '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
-];
-
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
-
+// This is the single source of truth for page authorization.
 const isPathAllowed = (pathname: string, role: UserRole | null): boolean => {
-    if (!role) return false;
+    // --- Define Routes ---
+    const managerRoutes = [
+        '/admin', '/reports', '/help', '/notifications',
+        '/admin/manage-requests', '/admin/manage-tasks', '/admin/manage-violations',
+        '/admin/send-notification', '/admin/manage-fleet', '/admin/manage-documents',
+        '/admin/manage-calendar', '/admin/maintenance-logs', '/admin/manage-work-orders',
+        '/employee'
+    ];
+    const ownerRoutes = [
+        ...managerRoutes,
+        '/admin/manage-users', '/admin/manage-expenses', '/admin/manage-clients',
+        '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
+    ];
+    const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/company-documents', '/employee/personal-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations'];
 
-    // Allow specific dynamic routes
-    if (pathname.startsWith('/reports/')) return true;
-    if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+    // Rule 1: Guest (not logged in) can ONLY be on the login page.
+    if (!role) {
+        return pathname === '/login';
+    }
+
+    // --- From here, we know the user is authenticated. ---
+
+    // Rule 2: Authenticated users can NEVER be on the login page.
+    if (pathname === '/login') {
+        return false;
+    }
     
+    // Rule 3: Allow the root page temporarily; it will be redirected by the layout.
+    if (pathname === '/') {
+        return true;
+    }
+
+    // Rule 4: Check dynamic routes first.
+    if (pathname.startsWith('/reports/')) return true; // Anyone logged in can see a report detail
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner'; // Only owners can see job details
+
+    // Rule 5: Check static routes based on role.
     if (role === 'owner') return ownerRoutes.includes(pathname);
     if (role === 'manager') return managerRoutes.includes(pathname);
     if (role === 'employee') return employeeBaseRoutes.includes(pathname);
-    
+
+    // Rule 6: If no rule matches, the path is not allowed.
     return false;
 };
 
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-  const pathname = usePathname();
-  const router = useRouter();
-  const searchParams = useSearchParams();
-  const { role, user, logout, isLoading } = useAuth();
-  const [unreadCount, setUnreadCount] = useState(0);
-  const showAiAssistantWelcome = searchParams.get('tour') === 'true';
+    const pathname = usePathname();
+    const router = useRouter();
+    const searchParams = useSearchParams();
+    const { user, isLoading } = useAuth();
+    const [unreadCount, setUnreadCount] = useState(0);
+    const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
-  // Effect to handle all routing side-effects
-  useEffect(() => {
-    if (isLoading) return; // Wait until authentication state is loaded
+    // This state tracks if we have resolved the initial route and authentication.
+    const [isRouteChecked, setIsRouteChecked] = useState(false);
 
-    const onLoginPage = pathname === '/login';
+    useEffect(() => {
+        // Don't do anything until the auth state is fully loaded from localStorage.
+        if (isLoading) {
+            return;
+        }
 
-    // If user is logged in, check if they are on the login page or a forbidden page
-    if (user) {
-      if (onLoginPage || !isPathAllowed(pathname, user.role)) {
-        const destination = user.role === 'employee' ? '/employee' : '/admin';
-        router.replace(destination);
-      }
-    } 
-    // If user is not logged in, they must be on the login page
-    else {
-      if (!onLoginPage) {
-        router.replace('/login');
-      }
+        const isAllowed = isPathAllowed(pathname, user?.role || null);
+
+        if (isAllowed) {
+            // If user is on an allowed page, we can show the content.
+            // Special case: if an authenticated user lands on `/`, redirect them home.
+            if (user && pathname === '/') {
+                const destination = user.role === 'employee' ? '/employee' : '/admin';
+                router.replace(destination);
+                // Don't mark route as checked yet, wait for redirect to finish.
+                return;
+            }
+            setIsRouteChecked(true);
+        } else {
+            // If the user is on a forbidden page, redirect them.
+            const destination = user ? (user.role === 'employee' ? '/employee' : '/admin') : '/login';
+            router.replace(destination);
+            // Don't mark route as checked yet, wait for redirect.
+        }
+
+    }, [isLoading, user, pathname, router]);
+
+
+    // Effect to update notification count.
+    useEffect(() => {
+        if (user) {
+            const notifications = loadNotifications();
+            const userNotifications = notifications.filter(
+                notif => notif.recipientId === 'all' || notif.recipientId === user.id
+            );
+            const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+            setUnreadCount(count);
+        }
+    }, [user, pathname]);
+
+    // Show the loader until the initial route check and potential redirect are complete.
+    if (!isRouteChecked) {
+        return <FullScreenLoader />;
     }
-  // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [isLoading, user, pathname]);
-  
-  // Effect to update notification count
-  useEffect(() => {
-      if (user) {
-          const notifications = loadNotifications();
-          const userNotifications = notifications.filter(
-              notif => notif.recipientId === 'all' || notif.recipientId === user.id
-          );
-          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
-          setUnreadCount(count);
-      }
-  }, [user, pathname]);
-
-  // --- Render Logic ---
-
-  // While checking auth state, show a full-screen loader
-  if (isLoading) {
-    return <FullScreenLoader />;
-  }
-
-  const onLoginPage = pathname === '/login';
-  const isAllowed = isPathAllowed(pathname, role);
-
-  // Determine if the app is in a transient state (i.e., a redirect is pending).
-  // In these cases, show a loader to prevent a flash of incorrect content.
-  const isRedirecting = 
-    (!!user && onLoginPage) ||   // Logged in, but on login page
-    (!user && !onLoginPage) ||   // Not logged in, and not on login page
-    (!!user && !isAllowed);      // Logged in, but on a forbidden page
-
-  if (isRedirecting) {
-    return <FullScreenLoader />;
-  }
-  
-  // If not logged in, and on the login page (stable state)
-  if (!user) {
+    
+    // If not logged in, we are on the login page (guaranteed by the effect).
+    if (!user) {
+        return (
+            <>
+                {children}
+                <AiAssistantWidget initialOpen={false} />
+            </>
+        );
+    }
+    
+    // If we reach here, user is authenticated and on an allowed page.
+    const isAdmin = user.role === 'owner' || user.role === 'manager';
+    
     return (
-        <>
-            {children}
-            <AiAssistantWidget initialOpen={false} />
-        </>
-    );
-  }
-  
-  // If we reach here, user is logged in and on an allowed page.
-  const isAdmin = role === 'owner' || role === 'manager';
-  
-  return (
     <SidebarProvider defaultOpen>
       <Sidebar id="tour-step-sidebar">
         <SidebarHeader className="p-4 flex flex-col items-center">
@@ -149,7 +160,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           </Link>
         </SidebarHeader>
         <SidebarContent>
-          {role === 'employee' && (
+          {user.role === 'employee' && (
             <SidebarGroup>
               <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
               <SidebarMenu>
@@ -245,7 +256,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarSeparator className="my-1" />
                 <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People & Comm.</SidebarGroupLabel>
                 <SidebarMenu>
-                  {role === 'owner' && <SidebarMenuItem>
+                  {user.role === 'owner' && <SidebarMenuItem>
                       <Link href="/admin/manage-users">
                           <SidebarMenuButton tooltip="Manage Employees" isActive={pathname.startsWith('/admin/manage-users')}>
                               <Users /><span>Manage Employees</span>
@@ -259,7 +270,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           </SidebarMenuButton>
                       </Link>
                   </SidebarMenuItem>
-                    {role === 'owner' && <SidebarMenuItem>
+                    {user.role === 'owner' && <SidebarMenuItem>
                       <Link href="/admin/manage-expenses">
                           <SidebarMenuButton tooltip="Manage Expenses" isActive={pathname.startsWith('/admin/manage-expenses')}>
                               <Coins /><span>Manage Expenses</span>
@@ -339,21 +350,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                           </SidebarMenuButton>
                       </Link>
                   </SidebarMenuItem>
-                  {role === 'owner' && <SidebarMenuItem>
+                  {user.role === 'owner' && <SidebarMenuItem>
                       <Link href="/admin/manage-clients">
                           <SidebarMenuButton tooltip="Manage Clients" isActive={pathname.startsWith('/admin/manage-clients')}>
                               <Building2 /><span>Manage Clients</span>
                           </SidebarMenuButton>
                       </Link>
                   </SidebarMenuItem>}
-                  {role === 'owner' && <SidebarMenuItem>
+                  {user.role === 'owner' && <SidebarMenuItem>
                       <Link href="/admin/manage-jobs">
                           <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
                               <Briefcase /><span>Manage Jobs</span>
                           </SidebarMenuButton>
                       </Link>
                   </SidebarMenuItem>}
-                  {role === 'owner' && <SidebarMenuItem>
+                  {user.role === 'owner' && <SidebarMenuItem>
                       <Link href="/admin/advanced-reports">
                           <SidebarMenuButton tooltip="Advanced Reports" isActive={pathname.startsWith('/admin/advanced-reports')}>
                               <LineChart /><span>Advanced Reports</span>
@@ -362,7 +373,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </SidebarMenuItem>}
                 </SidebarMenu>
                 
-                {role === 'owner' && <>
+                {user.role === 'owner' && <>
                   <SidebarSeparator className="my-1" />
                   <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">System</SidebarGroupLabel>
                   <SidebarMenu>
@@ -388,7 +399,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                     <SidebarMenuButton tooltip="Logout" onClick={logout}>
+                     <SidebarMenuButton tooltip="Logout" onClick={() => {
+                        const { logout } = useAuth.getState();
+                        logout();
+                     }}>
                         <LogOut /><span>Logout</span>
                      </SidebarMenuButton>
                  </SidebarMenuItem>
