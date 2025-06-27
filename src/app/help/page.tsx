@@ -48,7 +48,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I create and track jobs?",
-      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs. You can track the financial value of each job and use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' columns based on their dates.",
+      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs. You can track the financial value of each job and use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections based on their dates.",
     },
     {
       question: "How do I approve or deny employee expenses?",
