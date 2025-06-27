@@ -166,9 +166,16 @@ export interface Job {
   clientName: string;
   address: string;
   jobValue?: number;
-  status?: JobStatus;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  assignedTruckIds?: string[];
+  assignedTrailerIds?: string[];
+  assignedHeavyEquipmentIds?: string[];
+  notes?: {
+    timestamp: string; // ISO string
+    content: string;
+    author: string;
+  }[];
 }
 
 export type WorkOrderStatus = 'open' | 'in-progress' | 'completed' | 'on-hold';

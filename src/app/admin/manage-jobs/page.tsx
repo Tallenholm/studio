@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, loadJobs, saveJobs } from '@/lib/localStorageService';
-import type { Client, Job, JobStatus } from '@/lib/types';
+import { loadClients, loadJobs, saveJobs, loadFleetAssets } from '@/lib/localStorageService';
+import type { Client, Job, JobStatus, FleetAsset, VehicleType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -24,11 +24,13 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign } from 'lucide-react';
+import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import Link from 'next/link';
 
 const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required.'),
@@ -39,6 +41,9 @@ const jobSchema = z.object({
     from: z.date({ required_error: 'A start date is required.' }),
     to: z.date({ required_error: 'An end date is required.' }),
   }),
+  assignedTruckIds: z.array(z.string()).optional(),
+  assignedTrailerIds: z.array(z.string()).optional(),
+  assignedHeavyEquipmentIds: z.array(z.string()).optional(),
 }).refine((data) => data.dateRange.to >= data.dateRange.from, {
   message: "End date cannot be before start date.",
   path: ["dateRange"],
@@ -62,6 +67,7 @@ const getJobStatus = (job: Job): JobStatus => {
 export default function ManageJobsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
@@ -76,6 +82,9 @@ export default function ManageJobsPage() {
     defaultValues: {
       name: '',
       address: '',
+      assignedTruckIds: [],
+      assignedTrailerIds: [],
+      assignedHeavyEquipmentIds: [],
     },
   });
 
@@ -83,6 +92,7 @@ export default function ManageJobsPage() {
     setIsMounted(true);
     setClients(loadClients());
     setJobs(loadJobs());
+    setFleetAssets(loadFleetAssets());
   }, []);
 
   useEffect(() => {
@@ -91,10 +101,17 @@ export default function ManageJobsPage() {
     }
   }, [jobs, isMounted]);
 
+  const { trucks, trailers, heavyEquipments } = useMemo(() => ({
+    trucks: fleetAssets.filter(a => a.type === 'truck'),
+    trailers: fleetAssets.filter(a => a.type === 'trailer'),
+    heavyEquipments: fleetAssets.filter(a => a.type === 'heavyEquipment'),
+  }), [fleetAssets]);
+
+
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset();
+      form.reset({ name: '', address: '', assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
       setEditingJob(null);
     }
   };
@@ -110,6 +127,9 @@ export default function ManageJobsPage() {
         from: new Date(job.startDate),
         to: new Date(job.endDate),
       },
+      assignedTruckIds: job.assignedTruckIds || [],
+      assignedTrailerIds: job.assignedTrailerIds || [],
+      assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
     });
     setIsDialogOpen(true);
   };
@@ -121,29 +141,30 @@ export default function ManageJobsPage() {
         return;
     }
 
+    const jobData = {
+      name: values.name,
+      clientId: client.id,
+      clientName: client.name,
+      address: values.address,
+      jobValue: values.jobValue,
+      startDate: values.dateRange.from.toISOString().split('T')[0],
+      endDate: values.dateRange.to.toISOString().split('T')[0],
+      assignedTruckIds: values.assignedTruckIds || [],
+      assignedTrailerIds: values.assignedTrailerIds || [],
+      assignedHeavyEquipmentIds: values.assignedHeavyEquipmentIds || [],
+    };
+
     if (editingJob) {
         const updatedJob: Job = {
             ...editingJob,
-            name: values.name,
-            clientId: client.id,
-            clientName: client.name,
-            address: values.address,
-            jobValue: values.jobValue,
-            startDate: values.dateRange.from.toISOString().split('T')[0],
-            endDate: values.dateRange.to.toISOString().split('T')[0],
+            ...jobData,
         };
         setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
         toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
     } else {
         const newJob: Job = {
         id: `job-${Date.now()}`,
-        name: values.name,
-        clientId: client.id,
-        clientName: client.name,
-        address: values.address,
-        jobValue: values.jobValue,
-        startDate: values.dateRange.from.toISOString().split('T')[0],
-        endDate: values.dateRange.to.toISOString().split('T')[0],
+        ...jobData,
       };
       setJobs((prev) => [...prev, newJob]);
       toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
@@ -216,10 +237,10 @@ export default function ManageJobsPage() {
                   <TableHead>Status</TableHead>
                   <TableHead>Job Name</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Address</TableHead>
                   <TableHead>Job Value</TableHead>
                   <TableHead>Dates</TableHead>
-                  <TableHead className="text-right w-[120px]">Actions</TableHead>
+                  <TableHead>Assigned Assets</TableHead>
+                  <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -232,16 +253,35 @@ export default function ManageJobsPage() {
                     </TableCell>
                     <TableCell className="font-medium">{job.name}</TableCell>
                     <TableCell>{job.clientName}</TableCell>
-                    <TableCell>{job.address}</TableCell>
                     <TableCell>{formatCurrency(job.jobValue)}</TableCell>
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
+                    <TableCell>
+                      <div className="flex gap-2 items-center text-muted-foreground">
+                        {(job.assignedTruckIds?.length || 0) > 0 && <Truck className="h-4 w-4" title={`${job.assignedTruckIds?.length} truck(s)`} />}
+                        {(job.assignedTrailerIds?.length || 0) > 0 && <Box className="h-4 w-4" title={`${job.assignedTrailerIds?.length} trailer(s)`} />}
+                        {(job.assignedHeavyEquipmentIds?.length || 0) > 0 && <Shovel className="h-4 w-4" title={`${job.assignedHeavyEquipmentIds?.length} equipment`} />}
+                      </div>
+                    </TableCell>
                     <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" onClick={() => handleEditClick(job)} aria-label={`Edit job ${job.name}`}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => removeJob(job.id)} aria-label={`Remove job ${job.name}`}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
+                       <DropdownMenu>
+                         <DropdownMenuTrigger asChild>
+                           <Button variant="ghost" size="icon">
+                             <MoreHorizontal className="h-4 w-4" />
+                           </Button>
+                         </DropdownMenuTrigger>
+                         <DropdownMenuContent align="end">
+                           <DropdownMenuItem asChild>
+                             <Link href={`/admin/jobs/${job.id}`}><Eye className="mr-2 h-4 w-4" />View Details</Link>
+                           </DropdownMenuItem>
+                           <DropdownMenuItem onClick={() => handleEditClick(job)}>
+                            <Pencil className="mr-2 h-4 w-4" />Edit
+                           </DropdownMenuItem>
+                           <DropdownMenuSeparator />
+                           <DropdownMenuItem onClick={() => removeJob(job.id)} className="text-destructive">
+                             <Trash2 className="mr-2 h-4 w-4" />Delete
+                           </DropdownMenuItem>
+                         </DropdownMenuContent>
+                       </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}
@@ -254,6 +294,48 @@ export default function ManageJobsPage() {
       </CardContent>
     </Card>
   );
+
+  const AssetMultiSelect = ({ assetType, assets, fieldName }: { assetType: VehicleType, assets: FleetAsset[], fieldName: "assignedTruckIds" | "assignedTrailerIds" | "assignedHeavyEquipmentIds" }) => {
+    const selectedIds = form.watch(fieldName) || [];
+    const Icon = assetType === 'truck' ? Truck : assetType === 'trailer' ? Box : Shovel;
+
+    return (
+      <FormField
+        control={form.control}
+        name={fieldName}
+        render={({ field }) => (
+          <FormItem>
+            <FormLabel className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /> Assign {assetType.charAt(0).toUpperCase() + assetType.slice(1)}s</FormLabel>
+            <DropdownMenu>
+              <DropdownMenuTrigger asChild>
+                <Button variant="outline" className="w-full justify-start text-left font-normal">
+                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select assets...'}
+                </Button>
+              </DropdownMenuTrigger>
+              <DropdownMenuContent className="w-64" align="start">
+                <DropdownMenuLabel>Available {assetType}s</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                {assets.map(asset => (
+                  <DropdownMenuCheckboxItem
+                    key={asset.id}
+                    checked={field.value?.includes(asset.id)}
+                    onCheckedChange={(checked) => {
+                      return checked
+                        ? field.onChange([...(field.value || []), asset.id])
+                        : field.onChange(field.value?.filter(value => value !== asset.id))
+                    }}
+                  >
+                    {asset.name}
+                  </DropdownMenuCheckboxItem>
+                ))}
+              </DropdownMenuContent>
+            </DropdownMenu>
+            <FormMessage />
+          </FormItem>
+        )}
+      />
+    )
+  }
 
   if (!isMounted) {
     return (
@@ -285,7 +367,7 @@ export default function ManageJobsPage() {
                   Add New Job
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
+              <DialogContent className="sm:max-w-3xl">
                 <DialogHeader>
                   <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
                   <DialogDescription>
@@ -294,115 +376,127 @@ export default function ManageJobsPage() {
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Job Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Lot 5 Excavation" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
-                        control={form.control}
-                        name="clientId"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Client</FormLabel>
-                            <Select onValueChange={field.onChange} defaultValue={field.value}>
-                              <FormControl>
-                                <SelectTrigger>
-                                  <SelectValue placeholder="Select a client" />
-                                </SelectTrigger>
-                              </FormControl>
-                              <SelectContent>
-                                {clients.map(client => (
-                                  <SelectItem key={client.id} value={client.id}>
-                                    {client.name}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
-                       <FormField
+                      <div className="space-y-4">
+                        <FormField
                           control={form.control}
-                          name="jobValue"
+                          name="name"
                           render={({ field }) => (
                             <FormItem>
-                              <FormLabel>Job Value (Optional)</FormLabel>
+                              <FormLabel>Job Name</FormLabel>
                               <FormControl>
-                                <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                <Input placeholder="e.g., Lot 5 Excavation" {...field} />
                               </FormControl>
                               <FormMessage />
                             </FormItem>
                           )}
                         />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="address"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Job Site Address</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., 123 Main St, Anytown" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="dateRange"
-                      render={({ field }) => (
-                        <FormItem className="flex flex-col">
-                          <FormLabel>Start & End Date</FormLabel>
-                          <Popover>
-                            <PopoverTrigger asChild>
+                        <FormField
+                          control={form.control}
+                          name="address"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Job Site Address</FormLabel>
                               <FormControl>
-                                <Button
-                                  id="date"
-                                  variant={"outline"}
-                                  className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
-                                >
-                                  <CalendarIcon className="mr-2 h-4 w-4" />
-                                  {field.value?.from ? (
-                                    field.value.to ? (
-                                      <>
-                                        {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
-                                      </>
-                                    ) : (
-                                      format(field.value.from, "LLL dd, y")
-                                    )
-                                  ) : (
-                                    <span>Pick a date range</span>
-                                  )}
-                                </Button>
+                                <Input placeholder="e.g., 123 Main St, Anytown" {...field} />
                               </FormControl>
-                            </PopoverTrigger>
-                            <PopoverContent className="w-auto p-0" align="start">
-                              <Calendar
-                                initialFocus
-                                mode="range"
-                                defaultMonth={field.value?.from}
-                                selected={{ from: field.value?.from, to: field.value?.to }}
-                                onSelect={field.onChange}
-                                numberOfMonths={2}
-                              />
-                            </PopoverContent>
-                          </Popover>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                        <FormField
+                          control={form.control}
+                          name="clientId"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Client</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a client" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {clients.map(client => (
+                                    <SelectItem key={client.id} value={client.id}>
+                                      {client.name}
+                                    </SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      </div>
+                      <div className="space-y-4">
+                          <FormField
+                            control={form.control}
+                            name="jobValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Job Value (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="dateRange"
+                            render={({ field }) => (
+                              <FormItem className="flex flex-col">
+                                <FormLabel>Start & End Date</FormLabel>
+                                <Popover>
+                                  <PopoverTrigger asChild>
+                                    <FormControl>
+                                      <Button
+                                        id="date"
+                                        variant={"outline"}
+                                        className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
+                                      >
+                                        <CalendarIcon className="mr-2 h-4 w-4" />
+                                        {field.value?.from ? (
+                                          field.value.to ? (
+                                            <>
+                                              {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
+                                            </>
+                                          ) : (
+                                            format(field.value.from, "LLL dd, y")
+                                          )
+                                        ) : (
+                                          <span>Pick a date range</span>
+                                        )}
+                                      </Button>
+                                    </FormControl>
+                                  </PopoverTrigger>
+                                  <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar
+                                      initialFocus
+                                      mode="range"
+                                      defaultMonth={field.value?.from}
+                                      selected={{ from: field.value?.from, to: field.value?.to }}
+                                      onSelect={field.onChange}
+                                      numberOfMonths={2}
+                                    />
+                                  </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                        </div>
+                    </div>
+
+                    <Separator />
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                       <AssetMultiSelect assetType="truck" assets={trucks} fieldName="assignedTruckIds" />
+                       <AssetMultiSelect assetType="trailer" assets={trailers} fieldName="assignedTrailerIds" />
+                       <AssetMultiSelect assetType="heavyEquipment" assets={heavyEquipments} fieldName="assignedHeavyEquipmentIds" />
+                    </div>
+
                     <DialogFooter>
                       <Button type="submit">Save Job</Button>
                     </DialogFooter>
