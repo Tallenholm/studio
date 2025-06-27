@@ -26,13 +26,15 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel } from 'lucide-react';
+import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, isAfter, isBefore, startOfDay } from 'date-fns';
+import { format, isAfter, isBefore, startOfDay, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { Separator } from '@/components/ui/separator';
 import { getJobStatus } from '@/lib/job-utils';
+import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
+import { Textarea } from '@/components/ui/textarea';
 
 
 const jobSchema = z.object({
@@ -59,6 +61,9 @@ export default function ManageJobsPage() {
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
+  const [aiPrompt, setAiPrompt] = useState('');
+  const [isGeneratingJob, setIsGeneratingJob] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const { toast } = useToast();
 
@@ -122,6 +127,48 @@ export default function ManageJobsPage() {
     });
     setIsDialogOpen(true);
   };
+
+  async function handleGenerateJob() {
+    if (!aiPrompt.trim()) {
+      toast({ variant: 'destructive', title: 'Error', description: 'Prompt cannot be empty.' });
+      return;
+    }
+    setIsGeneratingJob(true);
+    try {
+      const result = await createJobFromPrompt(aiPrompt);
+
+      const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
+      if (!client) {
+        toast({ variant: 'destructive', title: 'Client Not Found', description: `Could not find a client named "${result.clientName}". Please add them first.` });
+        setIsGeneratingJob(false);
+        return;
+      }
+      
+      form.reset({
+        name: result.name,
+        clientId: client.id,
+        address: result.address,
+        jobValue: result.jobValue,
+        dateRange: {
+          from: parseISO(result.startDate),
+          to: parseISO(result.endDate),
+        },
+        assignedTruckIds: [],
+        assignedTrailerIds: [],
+        assignedHeavyEquipmentIds: [],
+      });
+
+      toast({ title: 'Job Populated', description: 'Please review the generated job details and assign assets.' });
+      setIsAiDialogOpen(false);
+      setIsDialogOpen(true);
+
+    } catch (error) {
+      console.error("AI Job Generation Error:", error);
+      toast({ variant: 'destructive', title: 'AI Error', description: 'Failed to generate job from prompt. Please try again.' });
+    } finally {
+      setIsGeneratingJob(false);
+    }
+  }
 
   function onSubmit(values: z.infer<typeof jobSchema>) {
     const client = clients.find(c => c.id === values.clientId);
@@ -349,84 +396,60 @@ export default function ManageJobsPage() {
                 Assign and track jobs for your clients.
               </CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Job
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-3xl">
-                <DialogHeader>
-                  <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
-                  <DialogDescription>
-                    {editingJob ? 'Update the details for this job.' : 'Enter the details for a new job.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <div className="space-y-4">
-                        <FormField
-                          control={form.control}
-                          name="name"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Job Name</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., Lot 5 Excavation" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="address"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Job Site Address</FormLabel>
-                              <FormControl>
-                                <Input placeholder="e.g., 123 Main St, Anytown" {...field} />
-                              </FormControl>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
-                        <FormField
-                          control={form.control}
-                          name="clientId"
-                          render={({ field }) => (
-                            <FormItem>
-                              <FormLabel>Client</FormLabel>
-                              <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                <FormControl>
-                                  <SelectTrigger>
-                                    <SelectValue placeholder="Select a client" />
-                                  </SelectTrigger>
-                                </FormControl>
-                                <SelectContent>
-                                  {clients.map(client => (
-                                    <SelectItem key={client.id} value={client.id}>
-                                      {client.name}
-                                    </SelectItem>
-                                  ))}
-                                </SelectContent>
-                              </Select>
-                              <FormMessage />
-                            </FormItem>
-                          )}
-                        />
+            <div className="flex gap-2">
+              <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+                  <DialogTrigger asChild>
+                    <Button variant="outline"><Brain className="mr-2 h-5 w-5" /> Create with AI</Button>
+                  </DialogTrigger>
+                  <DialogContent className="sm:max-w-xl">
+                      <DialogHeader>
+                          <DialogTitle>Create Job with AI</DialogTitle>
+                          <DialogDescription>
+                              Describe the job in plain English. The AI will populate the form for you. Include the client name, address, dates, and value.
+                          </DialogDescription>
+                      </DialogHeader>
+                      <div className="py-4 space-y-4">
+                          <Textarea 
+                            placeholder="e.g., Excavate the foundation for Main Street Properties at 456 Central Ave. Start tomorrow and finish in two weeks. The job is worth $75,000."
+                            value={aiPrompt}
+                            onChange={(e) => setAiPrompt(e.target.value)}
+                            className="min-h-[120px]"
+                          />
                       </div>
-                      <div className="space-y-4">
+                      <DialogFooter>
+                          <Button onClick={handleGenerateJob} disabled={isGeneratingJob}>
+                              {isGeneratingJob ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4" />}
+                              {isGeneratingJob ? 'Generating...' : 'Generate Job'}
+                          </Button>
+                      </DialogFooter>
+                  </DialogContent>
+              </Dialog>
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Add New Job
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-3xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
+                    <DialogDescription>
+                      {editingJob ? 'Update the details for this job.' : 'Enter the details for a new job.'}
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div className="space-y-4">
                           <FormField
                             control={form.control}
-                            name="jobValue"
+                            name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Job Value (Optional)</FormLabel>
+                                <FormLabel>Job Name</FormLabel>
                                 <FormControl>
-                                  <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                  <Input placeholder="e.g., Lot 5 Excavation" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -434,65 +457,118 @@ export default function ManageJobsPage() {
                           />
                           <FormField
                             control={form.control}
-                            name="dateRange"
+                            name="address"
                             render={({ field }) => (
-                              <FormItem className="flex flex-col">
-                                <FormLabel>Start & End Date</FormLabel>
-                                <Popover>
-                                  <PopoverTrigger asChild>
-                                    <FormControl>
-                                      <Button
-                                        id="date"
-                                        variant={"outline"}
-                                        className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
-                                      >
-                                        <CalendarIcon className="mr-2 h-4 w-4" />
-                                        {field.value?.from ? (
-                                          field.value.to ? (
-                                            <>
-                                              {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
-                                            </>
-                                          ) : (
-                                            format(field.value.from, "LLL dd, y")
-                                          )
-                                        ) : (
-                                          <span>Pick a date range</span>
-                                        )}
-                                      </Button>
-                                    </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                      initialFocus
-                                      mode="range"
-                                      defaultMonth={field.value?.from}
-                                      selected={{ from: field.value?.from, to: field.value?.to }}
-                                      onSelect={field.onChange}
-                                      numberOfMonths={2}
-                                    />
-                                  </PopoverContent>
-                                </Popover>
+                              <FormItem>
+                                <FormLabel>Job Site Address</FormLabel>
+                                <FormControl>
+                                  <Input placeholder="e.g., 123 Main St, Anytown" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
+                          <FormField
+                            control={form.control}
+                            name="clientId"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Client</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                    <SelectTrigger>
+                                      <SelectValue placeholder="Select a client" />
+                                    </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                    {clients.map(client => (
+                                      <SelectItem key={client.id} value={client.id}>
+                                        {client.name}
+                                      </SelectItem>
+                                    ))}
+                                  </SelectContent>
+                                </Select>
                                 <FormMessage />
                               </FormItem>
                             )}
                           />
                         </div>
-                    </div>
+                        <div className="space-y-4">
+                            <FormField
+                              control={form.control}
+                              name="jobValue"
+                              render={({ field }) => (
+                                <FormItem>
+                                  <FormLabel>Job Value (Optional)</FormLabel>
+                                  <FormControl>
+                                    <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                  </FormControl>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                            <FormField
+                              control={form.control}
+                              name="dateRange"
+                              render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                  <FormLabel>Start & End Date</FormLabel>
+                                  <Popover>
+                                    <PopoverTrigger asChild>
+                                      <FormControl>
+                                        <Button
+                                          id="date"
+                                          variant={"outline"}
+                                          className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
+                                        >
+                                          <CalendarIcon className="mr-2 h-4 w-4" />
+                                          {field.value?.from ? (
+                                            field.value.to ? (
+                                              <>
+                                                {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
+                                              </>
+                                            ) : (
+                                              format(field.value.from, "LLL dd, y")
+                                            )
+                                          ) : (
+                                            <span>Pick a date range</span>
+                                          )}
+                                        </Button>
+                                      </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                        initialFocus
+                                        mode="range"
+                                        defaultMonth={field.value?.from}
+                                        selected={{ from: field.value?.from, to: field.value?.to }}
+                                        onSelect={field.onChange}
+                                        numberOfMonths={2}
+                                      />
+                                    </PopoverContent>
+                                  </Popover>
+                                  <FormMessage />
+                                </FormItem>
+                              )}
+                            />
+                          </div>
+                      </div>
 
-                    <Separator />
-                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                       <AssetMultiSelect assetType="truck" assets={trucks} fieldName="assignedTruckIds" />
-                       <AssetMultiSelect assetType="trailer" assets={trailers} fieldName="assignedTrailerIds" />
-                       <AssetMultiSelect assetType="heavyEquipment" assets={heavyEquipments} fieldName="assignedHeavyEquipmentIds" />
-                    </div>
+                      <Separator />
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                         <AssetMultiSelect assetType="truck" assets={trucks} fieldName="assignedTruckIds" />
+                         <AssetMultiSelect assetType="trailer" assets={trailers} fieldName="assignedTrailerIds" />
+                         <AssetMultiSelect assetType="heavyEquipment" assets={heavyEquipments} fieldName="assignedHeavyEquipmentIds" />
+                      </div>
 
-                    <DialogFooter>
-                      <Button type="submit">Save Job</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
+                      <DialogFooter>
+                        <Button type="submit">Save Job</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
           </div>
         </CardHeader>
         <CardContent className="space-y-6">

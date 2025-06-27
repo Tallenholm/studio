@@ -1,14 +1,49 @@
 
+'use client';
+
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { HelpCircle, Mail, Info } from 'lucide-react';
+import { HelpCircle, Mail, Info, Brain, Loader2 } from 'lucide-react';
 import Link from 'next/link';
+import { useState } from 'react';
+import { Input } from '@/components/ui/input';
+import { Button } from '@/components/ui/button';
+import { useToast } from '@/hooks/use-toast';
+import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
 
 export default function HelpPage() {
+  const [aiQuestion, setAiQuestion] = useState('');
+  const [aiAnswer, setAiAnswer] = useState('');
+  const [isAsking, setIsAsking] = useState(false);
+  const { toast } = useToast();
+  
+  const handleAskAi = async () => {
+    if (!aiQuestion.trim()) return;
+    setIsAsking(true);
+    setAiAnswer('');
+    try {
+      const answer = await answerHelpQuestion(aiQuestion);
+      setAiAnswer(answer);
+    } catch (error) {
+      console.error("AI Help Error:", error);
+      toast({
+        variant: 'destructive',
+        title: 'AI Assistant Error',
+        description: 'Could not get an answer from the AI assistant. Please try again.'
+      });
+    } finally {
+      setIsAsking(false);
+    }
+  }
+
   const faqs = [
     {
       question: "I just logged in for the first time. What was that tour?",
       answer: "Welcome! The first time you log in, the application provides a brief guided tour to introduce you to the key features of your dashboard. This tour is designed to help you get started quickly. It will only appear once.",
+    },
+    {
+      question: "How do I use the new AI assistant?",
+      answer: "The AI assistant has two main functions. On this Help page, you can ask it questions about how to use the application. On the 'Manage Jobs' page, administrators can use the 'Create with AI' button to generate a new job from a simple text description, which speeds up the form-filling process.",
     },
     {
       question: "How do I use the AI Daily Briefing on the Admin Dashboard?",
@@ -101,6 +136,38 @@ export default function HelpPage() {
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
+          <section>
+            <Card className="p-6 border-primary/20 bg-primary/5">
+              <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><Brain className="h-6 w-6 text-primary" />AI Assistant</h2>
+              <div className="space-y-4">
+                <div className="flex gap-2">
+                  <Input 
+                    type="text"
+                    placeholder="Ask a question about the app..."
+                    value={aiQuestion}
+                    onChange={(e) => setAiQuestion(e.target.value)}
+                    onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
+                  />
+                  <Button onClick={handleAskAi} disabled={isAsking}>
+                    {isAsking ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Ask'}
+                  </Button>
+                </div>
+                {(isAsking || aiAnswer) && (
+                  <div className="p-4 bg-background/50 rounded-md border min-h-[80px]">
+                    {isAsking ? (
+                      <div className="flex items-center gap-2 text-muted-foreground">
+                        <Loader2 className="h-5 w-5 animate-spin" />
+                        <span>Finding an answer...</span>
+                      </div>
+                    ) : (
+                      <p className="text-foreground/90 whitespace-pre-wrap">{aiAnswer}</p>
+                    )}
+                  </div>
+                )}
+              </div>
+            </Card>
+          </section>
+
           <section>
             <h2 className="text-2xl font-semibold mb-4 flex items-center gap-2"><Info className="h-6 w-6 text-accent" />Frequently Asked Questions</h2>
             <Accordion type="single" collapsible className="w-full">
