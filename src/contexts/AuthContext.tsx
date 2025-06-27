@@ -2,79 +2,80 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createStore, useStore } from 'zustand';
 import type { UserRole, User } from '@/lib/types';
 
-type AuthRole = UserRole | null;
-
-interface AuthContextType {
-  role: AuthRole;
+interface AuthState {
   user: User | null;
+  isLoading: boolean;
   login: (user: User) => void;
   logout: () => void;
-  isLoading: boolean;
+  _setLoading: (isLoading: boolean) => void;
+  _setUser: (user: User | null) => void;
 }
 
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<AuthRole>(null);
-  const [user, setUser] = useState<User | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
-
-  useEffect(() => {
-    let isMounted = true;
-    try {
-      const storedUser = localStorage.getItem('fleetCheckUser');
-      if (isMounted) {
-        if (storedUser) {
-          const parsedUser: User = JSON.parse(storedUser);
-          setRole(parsedUser.role);
-          setUser(parsedUser);
-        }
-        setIsLoading(false);
-      }
-    } catch (error) {
-      console.error("Could not access localStorage", error);
-      if (isMounted) {
-        setIsLoading(false);
-      }
-    }
-    return () => {
-      isMounted = false;
-    };
-  }, []);
-
-  const login = useCallback((loggedInUser: User) => {
+// Using Zustand for state management to avoid context provider re-rendering issues.
+const authStore = createStore<AuthState>((set) => ({
+  user: null,
+  isLoading: true,
+  login: (loggedInUser: User) => {
     try {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
-      setRole(loggedInUser.role);
-      setUser(loggedInUser);
+      set({ user: loggedInUser });
     } catch (error) {
-       console.error("Could not access localStorage", error);
+       console.error("Could not access localStorage to login", error);
     }
-  }, []);
-
-  const logout = useCallback(() => {
+  },
+  logout: () => {
     try {
       localStorage.removeItem('fleetCheckUser');
-      setRole(null);
-      setUser(null);
+      set({ user: null });
     } catch (error) {
-       console.error("Could not access localStorage", error);
+       console.error("Could not access localStorage to logout", error);
     }
-  }, []);
+  },
+  _setLoading: (isLoading) => set({ isLoading }),
+  _setUser: (user) => set({ user }),
+}));
 
+// A client-side initializer component that runs once.
+function AuthInitializer() {
+    useEffect(() => {
+        let isMounted = true;
+        try {
+            const storedUser = localStorage.getItem('fleetCheckUser');
+            if (isMounted) {
+                if (storedUser) {
+                    const parsedUser: User = JSON.parse(storedUser);
+                    authStore.getState()._setUser(parsedUser);
+                }
+            }
+        } catch (error) {
+            console.error("Could not access localStorage to initialize auth", error);
+        } finally {
+            if (isMounted) {
+                authStore.getState()._setLoading(false);
+            }
+        }
+        return () => {
+            isMounted = false;
+        };
+    }, []);
+
+    return null; // This component renders nothing.
+}
+
+// The provider component
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   return (
-    <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>
+    <>
+      <AuthInitializer />
       {children}
-    </AuthContext.Provider>
+    </>
   );
 }
 
+// The hook to access auth state and actions
 export function useAuth() {
-  const context = useContext(AuthContext);
-  if (context === undefined) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
+  return useStore(authStore);
 }
