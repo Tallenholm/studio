@@ -13,13 +13,14 @@ import type { CalendarEvent } from '@/lib/types';
 import { loadCalendarEvents } from '@/lib/localStorageService';
 import { isSameDay, format, parseISO } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
+import type { TourStep } from '@/components/common/GuidedTour';
 
-const employeeTourSteps = [
-    { title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour." },
-    { title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled." },
-    { title: "Your Main Tools", content: "The cards on the right are your main tools. Here you can start vehicle inspections ('Fleet Check'), request time off, complete tasks, submit expenses, and more." },
-    { title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out." },
-    { title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!" },
+const employeeTourSteps: TourStep[] = [
+    { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
+    { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },
+    { element: '#tour-step-main-tools', title: "Your Main Tools", content: "The cards on the right are your main tools. Here you can start vehicle inspections ('Fleet Check'), request time off, complete tasks, submit expenses, and more.", side: 'left' },
+    { element: '#tour-step-sidebar', title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out.", side: 'right' },
+    { element: '#tour-step-sidebar-help-employee', title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!", side: 'right' },
 ];
 
 export default function EmployeeHubPage() {
@@ -76,7 +77,7 @@ export default function EmployeeHubPage() {
         tourKey="hasViewedTour_employee"
     />
     <div className="container mx-auto py-8">
-      <div className="text-center mb-12">
+      <div id="tour-step-employee-welcome" className="text-center mb-12">
         <h1 className="text-5xl font-headline font-bold mb-4">Welcome, {user?.name || 'Employee'}!</h1>
         <p className="text-2xl text-muted-foreground">
           Your central hub for work tools.
@@ -84,7 +85,7 @@ export default function EmployeeHubPage() {
       </div>
 
        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <Card id="tour-step-company-calendar" className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <CalendarIcon className="text-primary" />
@@ -128,7 +129,7 @@ export default function EmployeeHubPage() {
               </div>
             </CardContent>
           </Card>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-8">
+          <div id="tour-step-main-tools" className="grid grid-cols-1 sm:grid-cols-2 gap-8">
               <Link href="/employee/fleet-check" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-16 w-24 text-primary mx-auto mb-4" />

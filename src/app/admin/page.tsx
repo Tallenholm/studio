@@ -18,6 +18,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send, BookCopy, Wrench, FileText, ShieldAlert } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
+import type { TourStep } from '@/components/common/GuidedTour';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -149,12 +150,12 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
   );
 };
 
-const managerTourSteps = [
-    { title: "Welcome to the Admin Dashboard", content: "This is your command center for managing all fleet operations. Let's take a quick look at the key features." },
-    { title: "AI Daily Briefing", content: "The AI Daily Briefing is your intelligent assistant. It analyzes all data to give you a summary of the day's most important items, like failed inspections and pending requests." },
-    { title: "Operations Calendar", content: "The Operations Calendar gives you a complete view of all scheduled jobs, company events, and approved time off. Click a date to see the agenda for that day." },
-    { title: "Management Sections", content: "The cards below are your main navigation hubs. From here, you can manage everything from employees and clients to jobs, reports, and maintenance logs." },
-    { title: "Advanced Tools & Help", content: "For deep insights, visit 'Advanced Reports'. For application-wide settings, go to 'System Settings'. You can find everything in the sidebar too. If you need a reminder, visit the 'Help & Support' page. Enjoy exploring!" },
+const managerTourSteps: TourStep[] = [
+    { element: '#tour-step-admin-welcome', title: "Welcome to the Admin Dashboard", content: "This is your command center for managing all fleet operations. Let's take a quick look at the key features.", side: 'bottom' },
+    { element: '#tour-step-ai-briefing', title: "AI Daily Briefing", content: "The AI Daily Briefing is your intelligent assistant. It analyzes all data to give you a summary of the day's most important items, like failed inspections and pending requests.", side: 'bottom' },
+    { element: '#tour-step-calendar', title: "Operations Calendar", content: "The Operations Calendar gives you a complete view of all scheduled jobs, company events, and approved time off. Click a date to see the agenda for that day.", side: 'bottom' },
+    { element: '#tour-step-management-hubs', title: "Management Sections", content: "The cards below are your main navigation hubs. From here, you can manage everything from employees and clients to jobs, reports, and maintenance logs.", side: 'top' },
+    { element: '#tour-step-sidebar-help', title: "Advanced Tools & Help", content: "For deep insights, visit 'Advanced Reports'. For application-wide settings, go to 'System Settings'. You can find everything in the sidebar too. If you need a reminder, visit the 'Help & Support' page. Enjoy exploring!", side: 'right' },
 ];
 
 export default function FleetCheckDashboardPage() {
@@ -265,7 +266,7 @@ export default function FleetCheckDashboardPage() {
         tourKey="hasViewedTour_manager"
     />
     <div className="container mx-auto py-8">
-      <div className="mb-12 text-center">
+      <div id="tour-step-admin-welcome" className="mb-12 text-center">
         <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
@@ -273,9 +274,11 @@ export default function FleetCheckDashboardPage() {
         </p>
       </div>
       
-      <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />
+      <div id="tour-step-ai-briefing">
+        <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />
+      </div>
 
-       <Card className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+       <Card id="tour-step-calendar" className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-headline">
             <CalendarIcon className="text-primary" />
@@ -334,7 +337,7 @@ export default function FleetCheckDashboardPage() {
       </Card>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
+      <div id="tour-step-management-hubs" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* People & Communication Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>

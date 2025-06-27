@@ -110,7 +110,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
   return (
     <SidebarProvider defaultOpen>
-      <Sidebar>
+      <Sidebar id="tour-step-sidebar">
         <SidebarHeader className="p-4 flex flex-col items-center">
            <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
             <Truck className="h-8 w-8 text-primary" />
@@ -349,7 +349,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarContent>
         <SidebarFooter className="p-2">
             <SidebarMenu>
-                 <SidebarMenuItem>
+                 <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
                     <Link href="/help">
                         <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'}>
                             <HelpCircle /><span>Help</span>
