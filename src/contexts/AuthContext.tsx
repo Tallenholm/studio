@@ -2,7 +2,6 @@
 'use client';
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
-import { useRouter } from 'next/navigation';
 import type { UserRole, User } from '@/lib/types';
 
 type AuthRole = UserRole | null;
@@ -23,18 +22,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
+    let isMounted = true;
     try {
       const storedUser = localStorage.getItem('fleetCheckUser');
-      if (storedUser) {
-        const parsedUser: User = JSON.parse(storedUser);
-        setRole(parsedUser.role);
-        setUser(parsedUser);
+      if (isMounted) {
+        if (storedUser) {
+          const parsedUser: User = JSON.parse(storedUser);
+          setRole(parsedUser.role);
+          setUser(parsedUser);
+        }
+        setIsLoading(false);
       }
     } catch (error) {
       console.error("Could not access localStorage", error);
-    } finally {
-      setIsLoading(false);
+      if (isMounted) {
+        setIsLoading(false);
+      }
     }
+    return () => {
+      isMounted = false;
+    };
   }, []);
 
   const login = useCallback((loggedInUser: User) => {

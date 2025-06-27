@@ -21,13 +21,17 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
-import type { NotificationMessage } from '@/lib/types';
-import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
+const FullScreenLoader = () => (
+  <div className="flex h-screen items-center justify-center bg-background">
+    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+  </div>
+);
 
 // Define which routes belong to which role
 const managerRoutes = [
@@ -45,97 +49,99 @@ const ownerRoutes = [
 
 const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
 
+const isPathAllowed = (pathname: string, role: UserRole | null): boolean => {
+    if (!role) return false;
+
+    // Allow specific dynamic routes
+    if (pathname.startsWith('/reports/')) return true;
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+    
+    // Allow root page as it will be redirected from
+    if (pathname === '/') return true;
+
+    if (role === 'owner') return ownerRoutes.includes(pathname);
+    if (role === 'manager') return managerRoutes.includes(pathname);
+    if (role === 'employee') return employeeBaseRoutes.includes(pathname);
+    
+    return false;
+};
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { role, user, logout, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
+  // This effect is the single source of truth for navigation.
+  // It ensures the user is always on a page they are allowed to see.
   useEffect(() => {
     if (isLoading) {
-      return; // Wait until auth state is loaded.
+      return; // Don't do anything until we know the user's auth status.
     }
 
     const onLoginPage = pathname === '/login';
 
-    if (role) {
-      // USER IS LOGGED IN
-      if (onLoginPage) {
-        // If a logged-in user somehow gets to the login page, redirect them away.
-        const destination = role === 'employee' ? '/employee' : '/admin';
-        const tourKey = `hasViewedTour_${role}`;
-        const hasViewedTour = localStorage.getItem(tourKey);
-        
-        if (!hasViewedTour) {
-          router.replace(`${destination}?tour=true`);
-        } else {
-          router.replace(destination);
-        }
-        return; // Stop further execution
-      }
-
-      // User is logged in and not on the login page. Check if they're allowed to be on the current page.
-      const isAllowed = () => {
-        if (pathname.startsWith('/reports/')) return true;
-        if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
-
-        if (role === 'owner') return ownerRoutes.includes(pathname);
-        if (role === 'manager') return managerRoutes.includes(pathname);
-        if (role === 'employee') return employeeBaseRoutes.includes(pathname);
-        
-        return false;
-      };
-
-      if (!isAllowed()) {
-        // User is on a page they shouldn't be on (e.g., an employee on an admin page or an invalid URL).
-        // Redirect them to their designated dashboard.
-        const destination = role === 'employee' ? '/employee' : '/admin';
+    if (user) {
+      // User is logged in.
+      if (onLoginPage || !isPathAllowed(pathname, user.role)) {
+        // If they are on the login page or a forbidden page, redirect them to their dashboard.
+        const destination = user.role === 'employee' ? '/employee' : '/admin';
         router.replace(destination);
       }
     } else {
-      // USER IS NOT LOGGED IN
+      // User is not logged in.
       if (!onLoginPage) {
-        // Not logged in and not on the login page, so redirect to login.
+        // If they are on any page other than login, redirect them to login.
         router.replace('/login');
       }
     }
-  }, [role, pathname, isLoading, router]);
-  
+  }, [isLoading, user, pathname, router]);
+
   useEffect(() => {
-      if (user) {
-          const notifications = loadNotifications();
-          const userNotifications = notifications.filter(
-              notif => notif.recipientId === 'all' || notif.recipientId === user.id
-          );
-          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
-          setUnreadCount(count);
-      }
-  }, [user, pathname]); // Re-check on page navigation
+    if (user) {
+        const notifications = loadNotifications();
+        const userNotifications = notifications.filter(
+            notif => notif.recipientId === 'all' || notif.recipientId === user.id
+        );
+        const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+        setUnreadCount(count);
+    }
+  }, [user, pathname]);
+
+  // --- Render Logic ---
 
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
-  // Unauthenticated view (login page)
-  if (!role) {
-    return (
+  const onLoginPage = pathname === '/login';
+
+  if (!user) {
+    // If there's no user, we should only be showing the login page.
+    // The useEffect above will handle redirecting from any other page.
+    // So, if we are on the login page, render it. Otherwise, show a loader.
+    return onLoginPage ? (
       <>
         {children}
         <AiAssistantWidget initialOpen={false} />
       </>
+    ) : (
+      <FullScreenLoader />
     );
   }
 
-  // Authenticated view
+  // If there IS a user, we should only be showing an allowed page.
+  // The useEffect will handle redirecting from forbidden pages (like /login).
+  // If the path is allowed, render the app. Otherwise, show a loader while redirecting.
+  if (!isPathAllowed(pathname, user.role)) {
+    return <FullScreenLoader />;
+  }
+  
+  // If we reach here, user is logged in and on an allowed page.
   const isAdmin = role === 'owner' || role === 'manager';
-
+  
   return (
     <SidebarProvider defaultOpen>
       <Sidebar id="tour-step-sidebar">
