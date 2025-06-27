@@ -15,6 +15,8 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
 import { Brain, Loader2, Sparkles } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import type { UserRole } from '@/lib/types';
 
 interface AiAssistantWidgetProps {
     initialOpen?: boolean;
@@ -26,6 +28,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
   const [aiAnswer, setAiAnswer] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
   useEffect(() => {
       setIsOpen(initialOpen);
@@ -39,7 +42,9 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
     setIsAsking(true);
     setAiAnswer('');
     try {
-      const answer = await answerHelpQuestion(aiQuestion);
+      // Use the logged-in user's role, or 'guest' if not logged in
+      const role = user?.role || 'guest';
+      const answer = await answerHelpQuestion({ question: aiQuestion, role });
       setAiAnswer(answer);
     } catch (error) {
       console.error("AI Help Error:", error);
@@ -50,6 +55,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
       });
     } finally {
       setIsAsking(false);
+      setAiQuestion('');
     }
   }
 
