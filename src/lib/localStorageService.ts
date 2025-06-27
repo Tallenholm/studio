@@ -117,32 +117,27 @@ export const saveUsers = (users: User[]): void => {
 
 export const loadUsers = (): User[] => {
   if (typeof window !== 'undefined') {
-    const defaultOwner = { id: 'owner-1', name: 'Fleet Owner', pin: '5678', role: 'owner' as UserRole };
-    
     try {
       const data = localStorage.getItem(USERS_KEY);
       let users: User[] = data ? JSON.parse(data) : [];
+      let needsSave = !data; // If there was no data, we'll need to save.
 
-      if (!data) {
-          saveUsers(defaultUsers);
-          return defaultUsers;
-      }
-
-      // Self-healing logic to ensure the default owner is always correct.
-      const ownerIndex = users.findIndex(u => u.id === defaultOwner.id);
-      let needsSave = false;
-
-      if (ownerIndex > -1) {
-        const currentOwner = users[ownerIndex];
-        if (currentOwner.pin !== defaultOwner.pin || currentOwner.role !== 'owner' || currentOwner.name !== defaultOwner.name) {
-          users[ownerIndex] = { ...currentOwner, ...defaultOwner };
+      // Ensure all default users exist by ID. This prevents issues if local storage gets cleared.
+      defaultUsers.forEach(defaultUser => {
+        const userExists = users.some(u => u.id === defaultUser.id);
+        if (!userExists) {
+          users.push(defaultUser);
           needsSave = true;
         }
-      } else {
-        users.push(defaultOwner);
-        needsSave = true;
-      }
+      });
       
+      // Special check to prevent the owner from being demoted or having a changed role.
+      const owner = users.find(u => u.id === 'owner-1');
+      if (owner && owner.role !== 'owner') {
+          owner.role = 'owner';
+          needsSave = true;
+      }
+
       if (needsSave) {
         saveUsers(users);
       }
@@ -151,6 +146,7 @@ export const loadUsers = (): User[] => {
 
     } catch (error) {
       console.error('Failed to load users:', error);
+      // On any error, fall back to a clean default state.
       saveUsers(defaultUsers);
       return defaultUsers;
     }
