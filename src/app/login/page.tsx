@@ -59,7 +59,7 @@ export default function LoginPage() {
   };
 
   return (
-    <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
+    <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
         <CardHeader className="text-center">
           <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
@@ -80,7 +80,7 @@ export default function LoginPage() {
                 }}
                 placeholder="****"
                 required
-                className="text-center text-2xl tracking-[0.5em] font-mono h-12"
+                className="text-center text-3xl tracking-[0.5em] font-mono h-14"
                 aria-label="PIN Code"
               />
             </div>
