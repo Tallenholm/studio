@@ -106,10 +106,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     );
   }
 
+  // Unauthenticated view (login page)
   if (pathname === '/login' || !role) {
-    return <>{children}</>;
+    return (
+      <>
+        {children}
+        <AiAssistantWidget initialOpen={false} />
+      </>
+    );
   }
 
+  // Authenticated view
   const isAdmin = role === 'owner' || role === 'manager';
 
   return (
