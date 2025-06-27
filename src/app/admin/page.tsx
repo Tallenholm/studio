@@ -7,21 +7,23 @@ import { Button } from '@/components/ui/button';
 import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent, InspectionReport, FleetAsset } from '@/lib/types';
-import { loadCalendarEvents, loadInspectionReports, loadFleetAssets } from '@/lib/localStorageService';
-import { isSameDay, format } from 'date-fns';
+import type { CalendarEvent, InspectionReport, FleetAsset, Job } from '@/lib/types';
+import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs } from '@/lib/localStorageService';
+import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 
 
 export default function FleetCheckDashboardPage() {
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [failedReports, setFailedReports] = useState<InspectionReport[]>([]);
   const [allAssets, setAllAssets] = useState<FleetAsset[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
     setEvents(loadCalendarEvents());
+    setJobs(loadJobs());
     
     const reports = loadInspectionReports();
     const assets = loadFleetAssets();
@@ -35,14 +37,30 @@ export default function FleetCheckDashboardPage() {
 
   }, []);
 
-  const eventDates = useMemo(() => {
-    return events.map(event => new Date(event.date));
-  }, [events]);
+  const { eventDates, jobRanges } = useMemo(() => {
+    const eventDates = events.map(event => parseISO(event.date));
+    const jobRanges = jobs.map(job => ({
+      from: parseISO(job.startDate),
+      to: parseISO(job.endDate),
+    }));
+    return { eventDates, jobRanges };
+  }, [events, jobs]);
 
-  const selectedDayEvents = useMemo(() => {
+  const selectedDayItems = useMemo(() => {
     if (!date) return [];
-    return events.filter(event => isSameDay(new Date(event.date), date));
-  }, [date, events]);
+    
+    const dayEvents = events
+      .filter(event => isSameDay(parseISO(event.date), date))
+      .map(e => ({ ...e, itemType: 'event' as const }));
+
+    const dayJobs = jobs
+      .filter(job => isWithinInterval(date, { start: parseISO(job.startDate), end: parseISO(job.endDate) }))
+      .map(j => ({ ...j, itemType: 'job' as const }));
+    
+    const combined = [...dayJobs, ...dayEvents];
+    return combined;
+
+  }, [date, events, jobs]);
   
   const getEventTypeLabel = (type: CalendarEvent['type']) => {
     switch (type) {
@@ -119,10 +137,10 @@ export default function FleetCheckDashboardPage() {
         <CardHeader>
           <CardTitle className="flex items-center gap-2 font-headline">
             <CalendarIcon className="text-primary" />
-            Company Calendar
+            Operations Calendar
           </CardTitle>
           <CardDescription>
-            At-a-glance view of company events, time off, and maintenance schedules. <Link href="/admin/manage-calendar" className="text-primary hover:underline">Click here to manage events.</Link>
+            At-a-glance view of jobs, company events, time off, and maintenance schedules. <Link href="/admin/manage-calendar" className="text-primary hover:underline">Click here to manage events.</Link>
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -131,22 +149,35 @@ export default function FleetCheckDashboardPage() {
               mode="single"
               selected={date}
               onSelect={setDate}
-              modifiers={{ event: eventDates }}
+              modifiers={{ event: eventDates, job: jobRanges }}
               modifiersClassNames={{
                 event: 'day-with-event',
+                job: 'day-with-job',
               }}
               className="rounded-md border"
             />
           </div>
           <div className="space-y-4">
-            <h3 className="text-xl font-semibold">Events for {date ? format(date, 'PPP') : '...'}</h3>
-            {selectedDayEvents.length > 0 ? (
-                <ul className="space-y-3">
-                  {selectedDayEvents.map(event => (
-                    <li key={event.id} className="p-3 rounded-md border bg-muted/50">
-                        <p className="font-semibold">{event.title}</p>
-                        <p className="text-sm text-muted-foreground">{getEventTypeLabel(event.type)}</p>
-                        {event.description && <p className="text-sm text-muted-foreground mt-1">{event.description}</p>}
+            <h3 className="text-xl font-semibold">Agenda for {date ? format(date, 'PPP') : '...'}</h3>
+            {selectedDayItems.length > 0 ? (
+                <ul className="space-y-3 max-h-60 overflow-y-auto">
+                  {selectedDayItems.map(item => (
+                    <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
+                      {item.itemType === 'job' ? <Briefcase className="h-5 w-5 text-primary mt-1" /> : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
+                      <div>
+                        <p className="font-semibold">{item.title || item.name}</p>
+                        {item.itemType === 'job' ? (
+                          <>
+                            <p className="text-sm text-muted-foreground">Job for: {item.clientName}</p>
+                            <Link href={`/admin/jobs/${item.id}`} className="text-sm text-primary hover:underline">View Job Details</Link>
+                          </>
+                        ) : (
+                          <>
+                            <p className="text-sm text-muted-foreground">{getEventTypeLabel(item.type)}</p>
+                            {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
+                          </>
+                        )}
+                      </div>
                     </li>
                   ))}
                 </ul>

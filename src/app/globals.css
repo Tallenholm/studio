@@ -108,6 +108,9 @@ body {
 
 .day-with-event {
   position: relative;
+}
+
+.day-with-event:not(.day-with-job) {
   color: hsl(var(--accent-foreground)) !important;
   background-color: hsl(var(--primary) / 0.2) !important;
   border-radius: 9999px;
@@ -125,7 +128,39 @@ body {
   background-color: hsl(var(--primary));
 }
 
-.dark .day-with-event {
+.dark .day-with-event:not(.day-with-job) {
     color: hsl(var(--primary-foreground)) !important;
     background-color: hsl(var(--primary) / 0.2) !important;
 }
+
+.day-with-job {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+  border-radius: 0 !important;
+}
+
+.rdp-day_range_start.day-with-job, .rdp-day_selected.day-with-job:first-child {
+  border-top-left-radius: 9999px !important;
+  border-bottom-left-radius: 9999px !important;
+}
+.rdp-day_range_end.day-with-job, .rdp-day_selected.day-with-job:last-child {
+  border-top-right-radius: 9999px !important;
+  border-bottom-right-radius: 9999px !important;
+}
+
+.rdp-day_today.day-with-job {
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.dark .day-with-job {
+  background-color: hsl(var(--secondary)) !important;
+  color: hsl(var(--secondary-foreground)) !important;
+}
+.dark .rdp-day_today.day-with-job {
+  color: hsl(var(--accent-foreground)) !important;
+}
+
+.day-with-event.day-with-job::after {
+  background-color: hsl(var(--primary));
+}
+
