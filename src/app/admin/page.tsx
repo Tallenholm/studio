@@ -4,12 +4,146 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent, InspectionReport, FleetAsset, Job } from '@/lib/types';
-import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs } from '@/lib/localStorageService';
+import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
+import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
+import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
+import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
+import { useToast } from '@/hooks/use-toast';
+import { Badge } from '@/components/ui/badge';
+
+const getBriefingItemIcon = (type: string) => {
+  switch (type) {
+    case 'report': return <AlertTriangle className="h-5 w-5 text-destructive" />;
+    case 'job': return <Briefcase className="h-5 w-5 text-primary" />;
+    case 'request': return <ClipboardCheck className="h-5 w-5 text-blue-500" />;
+    case 'task': return <ListTodo className="h-5 w-5 text-purple-500" />;
+    case 'event': return <CalendarIcon className="h-5 w-5 text-green-500" />;
+    default: return <Sparkles className="h-5 w-5 text-yellow-500" />;
+  }
+};
+
+const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOutput | null, isLoading: boolean }) => {
+  if (isLoading) {
+    return (
+       <Card className="mb-8 border-primary/30 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-primary">
+              <Brain />
+              AI Daily Briefing
+            </CardTitle>
+            <CardDescription>
+              Your intelligent assistant is analyzing today's operational data...
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="flex justify-center items-center py-10">
+              <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          </CardContent>
+        </Card>
+    );
+  }
+
+  if (!briefing) {
+     return (
+       <Card className="mb-8 border-destructive/50 shadow-xl bg-destructive/5 hover:shadow-destructive/20 transition-all duration-300">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-destructive">
+              <AlertTriangle />
+              Briefing Not Available
+            </CardTitle>
+            <CardDescription>
+              The AI-powered daily briefing could not be generated at this time.
+            </CardDescription>
+          </CardHeader>
+        </Card>
+    );
+  }
+
+  const allItems = [...briefing.attentionItems, ...briefing.todaysAgenda, ...briefing.pendingActions];
+
+  if (allItems.length === 0) {
+      return (
+           <Card className="mb-8 border-green-500/50 shadow-xl bg-green-500/5 hover:shadow-green-500/20 transition-all duration-300">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline text-green-600">
+                    <ThumbsUp />
+                    All Clear!
+                    </CardTitle>
+                    <CardDescription>
+                    Your AI assistant has reviewed all operational data. There are no urgent items, pending actions, or scheduled events for today.
+                    </CardDescription>
+                </CardHeader>
+            </Card>
+      );
+  }
+
+  return (
+    <Card className="mb-8 border-primary/30 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
+      <CardHeader>
+        <CardTitle className="flex items-center gap-2 font-headline text-primary">
+          <Brain />
+          AI Daily Briefing for {format(new Date(), 'PPP')}
+        </CardTitle>
+        <CardDescription>
+          Your AI assistant has summarized the key items for your attention today.
+        </CardDescription>
+      </CardHeader>
+      <CardContent className="space-y-6">
+        {briefing.attentionItems.length > 0 && (
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-destructive"/>Urgent Attention</h3>
+            <ul className="space-y-2">
+              {briefing.attentionItems.map(item => (
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                  <div className="flex items-center gap-3">
+                    {getBriefingItemIcon(item.type)}
+                    <p>{item.summary}</p>
+                  </div>
+                  <Link href={item.link} passHref><Button variant="secondary" size="sm">View</Button></Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+         {briefing.todaysAgenda.length > 0 && (
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center gap-2"><CalendarDays className="text-primary/80"/>Today's Agenda</h3>
+            <ul className="space-y-2">
+              {briefing.todaysAgenda.map(item => (
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                  <div className="flex items-center gap-3">
+                    {getBriefingItemIcon(item.type)}
+                    <p>{item.summary}</p>
+                  </div>
+                  <Link href={item.link} passHref><Button variant="secondary" size="sm">View</Button></Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+         {briefing.pendingActions.length > 0 && (
+          <div>
+            <h3 className="font-semibold mb-2 flex items-center gap-2"><ClipboardCheck className="text-blue-500"/>Pending Actions</h3>
+            <ul className="space-y-2">
+              {briefing.pendingActions.map(item => (
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                  <div className="flex items-center gap-3">
+                    {getBriefingItemIcon(item.type)}
+                    <p>{item.summary}</p>
+                  </div>
+                  <Link href={item.link} passHref><Button variant="secondary" size="sm">Review</Button></Link>
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
 
 
 export default function FleetCheckDashboardPage() {
@@ -17,25 +151,48 @@ export default function FleetCheckDashboardPage() {
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [failedReports, setFailedReports] = useState<InspectionReport[]>([]);
-  const [allAssets, setAllAssets] = useState<FleetAsset[]>([]);
+  const [briefing, setBriefing] = useState<DailyBriefingOutput | null>(null);
+  const [isBriefingLoading, setIsBriefingLoading] = useState(true);
+  const { toast } = useToast();
+
 
   useEffect(() => {
     setIsMounted(true);
-    setEvents(loadCalendarEvents());
-    setJobs(loadJobs());
+    const loadedEvents = loadCalendarEvents();
+    const loadedJobs = loadJobs();
     
-    const reports = loadInspectionReports();
-    const assets = loadFleetAssets();
-    setAllAssets(assets);
+    setEvents(loadedEvents);
+    setJobs(loadedJobs);
     
-    const recentFailed = reports
-        .filter(r => r.overallStatus === 'fail')
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5); // Show latest 5 issues to keep it clean
-    setFailedReports(recentFailed);
+    // Generate AI Briefing
+    const runBriefing = async () => {
+        try {
+            const briefingInput = {
+                date: new Date().toISOString(),
+                jobs: JSON.stringify(loadedJobs),
+                reports: JSON.stringify(loadInspectionReports()),
+                timeOffRequests: JSON.stringify(loadTimeOffRequests()),
+                expenseReports: JSON.stringify(loadExpenseReports()),
+                tasks: JSON.stringify(loadTasks()),
+                events: JSON.stringify(loadedEvents),
+            };
+            const result = await generateDailyBriefing(briefingInput);
+            setBriefing(result);
+        } catch (error) {
+            console.error("Failed to generate daily briefing:", error);
+            toast({
+                variant: 'destructive',
+                title: 'AI Briefing Failed',
+                description: 'Could not generate the daily briefing. Please check the logs.'
+            })
+            setBriefing(null);
+        } finally {
+            setIsBriefingLoading(false);
+        }
+    };
+    runBriefing();
 
-  }, []);
+  }, [toast]);
 
   const { eventDates, jobRanges } = useMemo(() => {
     const eventDates = events.map(event => parseISO(event.date));
@@ -89,49 +246,8 @@ export default function FleetCheckDashboardPage() {
           Oversee fleet assets, users, reports, and settings for the Fleet Check app.
         </p>
       </div>
-
-       <Card className="mb-8 border-destructive/50 shadow-xl bg-destructive/5 hover:shadow-destructive/20 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline text-destructive">
-              <AlertTriangle />
-              Recent Issues Requiring Attention
-            </CardTitle>
-            <CardDescription>
-              The following inspections were submitted with failed items. Please review them promptly.
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            {failedReports.length > 0 ? (
-              <ul className="space-y-3">
-                {failedReports.map(report => {
-                  const asset = allAssets.find(a => a.vin === (report.truckVin || report.trailerVin || report.heavyEquipmentVin));
-                  return (
-                    <li key={report.id} className="flex flex-wrap items-center justify-between gap-4 p-3 rounded-md border bg-card">
-                      <div>
-                        <p className="font-semibold">{asset?.name || report.truckVin || 'Unknown Asset'}</p>
-                        <p className="text-sm text-muted-foreground">
-                          Failed {report.type.replace('-', ' ')} inspection by {report.employeeName || 'N/A'} on {format(new Date(report.date), 'PPP')}
-                        </p>
-                      </div>
-                      <Link href={`/reports/${report.id}`} passHref>
-                        <Button variant="outline" size="sm">View Report</Button>
-                      </Link>
-                    </li>
-                  )
-                })}
-              </ul>
-            ) : (
-              <div className="text-center text-muted-foreground py-6 flex items-center justify-center gap-4 border-2 border-dashed rounded-lg">
-                <CheckCircle2 className="h-8 w-8 text-green-500" />
-                <div>
-                  <p className="font-semibold text-lg text-foreground">No Failed Inspections</p>
-                  <p>All systems are currently operational.</p>
-                </div>
-              </div>
-            )}
-          </CardContent>
-        </Card>
-
+      
+      <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />
 
        <Card className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>

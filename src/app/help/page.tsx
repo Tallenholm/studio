@@ -7,6 +7,10 @@ import Link from 'next/link';
 export default function HelpPage() {
   const faqs = [
     {
+      question: "How do I use the AI Daily Briefing on the Admin Dashboard?",
+      answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off or expense approvals. It helps you prioritize your work without having to manually check every section of the app.",
+    },
+    {
       question: "How do I perform a vehicle inspection and report damage?",
       answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. To report damage or an issue, mark the relevant checklist item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
