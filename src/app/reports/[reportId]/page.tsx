@@ -2,9 +2,9 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams } from 'next/navigation';
-import { loadInspectionReportById, loadInspectionReports, saveInspectionReport } from '@/lib/localStorageService';
-import type { InspectionReport } from '@/lib/types';
+import { useParams, useSearchParams, useRouter } from 'next/navigation';
+import { loadInspectionReportById, loadInspectionReports, saveInspectionReport, loadWorkOrders, saveWorkOrders } from '@/lib/localStorageService';
+import type { InspectionReport, WorkOrder } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
 import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
 import { useToast } from '@/hooks/use-toast';
@@ -16,10 +16,12 @@ import { Button } from '@/components/ui/button';
 export default function ReportDetailsPage() {
   const params = useParams();
   const searchParams = useSearchParams();
+  const router = useRouter();
   const reportId = params.reportId as string;
   const { toast } = useToast();
 
   const [report, setReport] = useState<InspectionReport | null | undefined>(undefined); // undefined for loading, null for not found
+  const [hasWorkOrder, setHasWorkOrder] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
 
@@ -29,6 +31,9 @@ export default function ReportDetailsPage() {
       const loadedReport = loadInspectionReportById(reportId);
       setReport(loadedReport);
       
+      const workOrders = loadWorkOrders();
+      setHasWorkOrder(workOrders.some(wo => wo.reportId === reportId));
+
       // Check if AI analysis should be triggered on load
       if (loadedReport && loadedReport.type === 'pre-trip' && !loadedReport.anomalyReport && searchParams.get('analyze') === 'true') {
         handleAnalyzeReport(loadedReport);
@@ -45,18 +50,17 @@ export default function ReportDetailsPage() {
 
     setIsAnalyzing(true);
     try {
-      // For "pastReports", load all reports and filter for the same truck VIN, excluding the current one, and take latest N (e.g. 5)
       const allReports = loadInspectionReports();
       const pastReportsForVin = allReports
         .filter(r => r.truckVin === reportToUse.truckVin && r.id !== reportToUse.id && r.type === 'pre-trip')
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5) // Limit to 5 past reports for brevity
-        .map(r => JSON.stringify(r)); // Convert to JSON strings as expected by AI flow
+        .slice(0, 5) 
+        .map(r => JSON.stringify(r));
 
       const aiInput: AnalyzeInspectionReportsInput = {
         currentReport: JSON.stringify(reportToUse),
         pastReports: pastReportsForVin,
-        vehicleIdentificationNumber: reportToUse.truckVin || 'UNKNOWN_VIN',
+        vehicleIdentificationNumber: reportToUse.truckVin || reportToUse.trailerVin || reportToUse.heavyEquipmentVin || 'UNKNOWN_VIN',
       };
 
       const analysisResult = await analyzeInspectionReports(aiInput);
@@ -79,6 +83,38 @@ export default function ReportDetailsPage() {
     } finally {
       setIsAnalyzing(false);
     }
+  };
+
+  const handleCreateWorkOrder = () => {
+    if (!report) return;
+
+    const failedItems = report.sections
+      .flatMap(sec => sec.items)
+      .filter(item => item.status === 'fail');
+
+    if (failedItems.length === 0) {
+      toast({ title: 'No action needed', description: 'Cannot create a work order for a report with no failed items.' });
+      return;
+    }
+
+    const issueDescription = failedItems.map(item => `${item.name}: ${item.notes || 'No notes provided.'}`).join('\n');
+    
+    const newWorkOrder: WorkOrder = {
+      id: `wo-${Date.now()}`,
+      reportId: report.id,
+      assetId: report.truckVin || report.trailerVin || report.heavyEquipmentVin || 'N/A',
+      assetName: 'Asset from report ' + report.id, // A better name resolution would be ideal in a real app
+      dateCreated: new Date().toISOString(),
+      reportedBy: report.employeeName || 'Unknown',
+      status: 'open',
+      issueDescription: issueDescription,
+    };
+
+    const workOrders = loadWorkOrders();
+    saveWorkOrders([...workOrders, newWorkOrder]);
+    setHasWorkOrder(true);
+    toast({ title: 'Work Order Created', description: 'A new work order has been generated.' });
+    router.push('/admin/manage-work-orders');
   };
   
   if (!isMounted || report === undefined) {
@@ -115,6 +151,8 @@ export default function ReportDetailsPage() {
         report={report} 
         onAnalyze={report.type === 'pre-trip' ? () => handleAnalyzeReport() : undefined} 
         isAnalyzing={isAnalyzing} 
+        onCreateWorkOrder={handleCreateWorkOrder}
+        hasWorkOrder={hasWorkOrder}
       />
     </div>
   );

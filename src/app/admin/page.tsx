@@ -4,7 +4,7 @@
 import Link from 'next/link';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2 } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset } from '@/lib/types';
@@ -215,6 +215,7 @@ export default function FleetCheckDashboardPage() {
           <CardContent className="flex flex-col gap-3">
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start">View Inspection Reports</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start">View Maintenance Logs</Button></Link>
+            <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start">Manage Work Orders</Button></Link>
             <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start">Manage Clients</Button></Link>
             <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start">Manage Jobs</Button></Link>
             <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start">Advanced Reports</Button></Link>

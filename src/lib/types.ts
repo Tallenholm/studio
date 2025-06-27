@@ -169,3 +169,19 @@ export interface Job {
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
 }
+
+export type WorkOrderStatus = 'open' | 'in-progress' | 'completed' | 'on-hold';
+
+export interface WorkOrder {
+  id: string;
+  reportId: string; // Link to the original inspection report
+  assetId: string;
+  assetName: string;
+  dateCreated: string; // ISO string
+  dateCompleted?: string | null; // ISO string
+  reportedBy: string; // Employee name
+  status: WorkOrderStatus;
+  issueDescription: string;
+  mechanicNotes?: string;
+  cost?: number;
+}

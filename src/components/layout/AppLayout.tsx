@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2 } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -253,6 +253,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                         <Link href="/admin/maintenance-logs">
                             <SidebarMenuButton tooltip="Maintenance Logs" isActive={pathname.startsWith('/admin/maintenance-logs')}>
                                 <Wrench /><span>Maintenance Logs</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                    <SidebarMenuItem>
+                        <Link href="/admin/manage-work-orders">
+                            <SidebarMenuButton tooltip="Manage Work Orders" isActive={pathname.startsWith('/admin/manage-work-orders')}>
+                                <ClipboardEdit /><span>Manage Work Orders</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>

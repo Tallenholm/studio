@@ -11,6 +11,10 @@ export default function HelpPage() {
       answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. To report damage or an issue, mark the relevant checklist item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
     {
+      question: "How are Work Orders created and managed?",
+      answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status (e.g., In Progress, Completed), add mechanic notes, and track costs, creating a complete audit trail for the repair.",
+    },
+    {
       question: "How does the AI Anomaly Detection work?",
       answer: "After you complete a Pre-Trip inspection, you'll be taken to the report page where you can click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
     },

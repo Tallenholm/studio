@@ -5,7 +5,7 @@ import type { InspectionReport, CompletedInspectionItem } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
-import { Camera, AlertTriangle, FileText, Truck, Box, Shovel, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2, User } from 'lucide-react';
+import { Camera, AlertTriangle, FileText, Truck, Box, Shovel, CalendarDays, Fingerprint, Brain, ThumbsUp, AlertOctagon, Loader2, User, ClipboardEdit } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '../ui/button';
 import { Separator } from '../ui/separator';
@@ -17,6 +17,8 @@ interface ReportDisplayProps {
   report: InspectionReport;
   onAnalyze?: () => void;
   isAnalyzing?: boolean;
+  onCreateWorkOrder?: () => void;
+  hasWorkOrder?: boolean;
 }
 
 const getVehicleIcon = (vehicleType: string) => {
@@ -33,7 +35,7 @@ const getItemIcon = (vehicleType: string, itemId: string) => {
 };
 
 
-export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing }: ReportDisplayProps) {
+export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing, onCreateWorkOrder, hasWorkOrder }: ReportDisplayProps) {
   const overallStatusColor = report.overallStatus === 'pass' ? 'text-green-600' : 'text-destructive';
   const overallStatusBadgeClass = report.overallStatus === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90';
 
@@ -177,7 +179,18 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing 
           </>
         )}
       </CardContent>
-      <CardFooter className="border-t pt-6 flex justify-end">
+      <CardFooter className="border-t pt-6 flex justify-between items-center">
+        {onCreateWorkOrder && report.overallStatus === 'fail' && (
+          <Button 
+            onClick={onCreateWorkOrder} 
+            disabled={hasWorkOrder}
+            aria-label="Create Work Order"
+          >
+            <ClipboardEdit className="mr-2 h-4 w-4" />
+            {hasWorkOrder ? 'Work Order Created' : 'Create Work Order'}
+          </Button>
+        )}
+        <div className="flex-grow" />
         <Button variant="outline" onClick={() => window.print()} aria-label="Print Report">
           <FileText className="mr-2 h-4 w-4" /> Print Report
         </Button>

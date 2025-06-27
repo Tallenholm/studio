@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -14,6 +14,7 @@ const TASKS_KEY = 'fleetCheckTasks';
 const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
 const CLIENTS_KEY = 'fleetCheckClients';
 const JOBS_KEY = 'fleetCheckJobs';
+const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -470,6 +471,30 @@ export const loadJobs = (): Job[] => {
     } catch (error) {
       console.error('Failed to load jobs:', error);
       return defaultJobs;
+    }
+  }
+  return [];
+};
+
+// Work Order Management
+export const saveWorkOrders = (workOrders: WorkOrder[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(WORK_ORDERS_KEY, JSON.stringify(workOrders));
+    } catch (error) {
+      console.error('Failed to save work orders:', error);
+    }
+  }
+};
+
+export const loadWorkOrders = (): WorkOrder[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(WORK_ORDERS_KEY);
+      return data ? JSON.parse(data) : [];
+    } catch (error) {
+      console.error('Failed to load work orders:', error);
+      return [];
     }
   }
   return [];
