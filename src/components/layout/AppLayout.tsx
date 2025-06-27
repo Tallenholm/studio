@@ -49,33 +49,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { role, user, logout, isLoading } = useAuth();
+  const { role, user, logout, isLoading, isFreshLogin, setIsFreshLogin } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
 
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
   useEffect(() => {
+    // This effect is the single source of truth for routing logic after login.
     if (isLoading) {
-      return; // Wait for auth state to be determined from localStorage
+      return; // Wait until auth state is loaded.
     }
 
-    // If the user is not logged in, they should only be on the login page.
+    // --- Handle unauthenticated users ---
     if (!role) {
       if (pathname !== '/login') {
         router.replace('/login');
       }
-      return;
+      return; // End of logic for unauthenticated users.
     }
 
-    // From here, the user is authenticated.
-    
-    // Define allowed routes for the current user.
+    // --- Handle authenticated users ---
+    const destination = role === 'employee' ? '/employee' : '/admin';
+
+    // A) Handle the special case of a user who just logged in.
+    if (isFreshLogin) {
+      setIsFreshLogin(false); // Consume the flag so this doesn't run again.
+      const tourKey = `hasViewedTour_${role}`;
+      const hasViewedTour = localStorage.getItem(tourKey);
+      
+      if (!hasViewedTour) {
+        router.replace(`${destination}?tour=true`);
+      } else {
+        router.replace(destination);
+      }
+      return; // Navigation has been handled for the fresh login.
+    }
+
+    // B) Handle all other cases for an already logged-in user (page protection).
     const isAllowed = () => {
-      // Dynamic routes need special handling
       if (pathname.startsWith('/reports/')) return true;
       if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
 
-      // Check against static route lists
       if (role === 'owner') return ownerRoutes.includes(pathname);
       if (role === 'manager') return managerRoutes.includes(pathname);
       if (role === 'employee') return employeeBaseRoutes.includes(pathname);
@@ -83,12 +97,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return false;
     };
 
-    // If the user is on a page they are not allowed to see, redirect them to their dashboard.
     if (!isAllowed()) {
-      const destination = role === 'employee' ? '/employee' : '/admin';
       router.replace(destination);
     }
-  }, [pathname, role, isLoading, router]);
+  }, [pathname, role, isLoading, router, isFreshLogin, setIsFreshLogin]);
   
   useEffect(() => {
       if (user) {

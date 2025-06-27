@@ -25,11 +25,8 @@ export default function LoginPage() {
     setUsers(loadUsers());
   }, []);
 
-  useEffect(() => {
-    if (!isLoading && role) {
-      router.push(role === 'employee' ? '/employee' : '/admin');
-    }
-  }, [role, isLoading, router]);
+  // The main AppLayout now handles all redirection logic.
+  // This page just handles the login form submission.
 
   const handleLogin = (e: React.FormEvent) => {
     e.preventDefault();
@@ -39,6 +36,7 @@ export default function LoginPage() {
     if (user) {
       login(user);
       toast({ title: 'Login Successful', description: `Welcome, ${user.name}!` });
+      // No longer need to handle routing here. AppLayout will detect the role change.
       return;
     }
 
