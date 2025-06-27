@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -26,16 +26,24 @@ import {
   FormLabel,
   FormMessage,
 } from '@/components/ui/form';
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select';
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp } from 'lucide-react';
+import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, FileText, FileBadge } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
 const documentSchema = z.object({
   title: z.string().min(1, 'Document title is required.'),
   category: z.string().min(1, 'Category/Group is required.'),
+  documentType: z.enum(['general', 'tax', 'employment'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
   documentDataUri: z.string().refine((val) => val.startsWith('data:'), {
     message: 'A document file upload is required.',
@@ -54,6 +62,7 @@ export default function ManageDocumentsPage() {
     defaultValues: {
       title: '',
       category: '',
+      documentType: 'general',
       description: '',
       documentDataUri: '',
     },
@@ -93,6 +102,7 @@ export default function ManageDocumentsPage() {
     form.reset({
         title: '',
         category: '',
+        documentType: 'general',
         description: '',
         documentDataUri: '',
     });
@@ -108,10 +118,71 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const groupedDocuments = documents.reduce((acc, doc) => {
-    (acc[doc.category] = acc[doc.category] || []).push(doc);
-    return acc;
-  }, {} as Record<string, ManagedDocument[]>);
+  const { generalDocuments, taxDocuments, employmentDocuments } = useMemo(() => {
+    const groupByType = (type: ManagedDocument['documentType']) => {
+        return documents
+            .filter(d => d.documentType === type)
+            .reduce((acc, doc) => {
+                (acc[doc.category] = acc[doc.category] || []).push(doc);
+                return acc;
+            }, {} as Record<string, ManagedDocument[]>);
+    };
+    return {
+        generalDocuments: groupByType('general'),
+        taxDocuments: groupByType('tax'),
+        employmentDocuments: groupByType('employment'),
+    }
+  }, [documents]);
+
+  const renderDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
+    if (Object.keys(groupedDocs).length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+                    <Icon className="h-6 w-6 text-primary" />
+                    {title}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+            {Object.entries(groupedDocs).map(([category, docs]) => (
+                <div key={category}>
+                    <h3 className="font-semibold text-lg text-muted-foreground mb-2">{category}</h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {docs.map(doc => (
+                           <Card key={doc.id} className="flex flex-col bg-muted/20">
+                               <CardHeader className="flex-row items-start justify-between">
+                                    <div>
+                                        <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
+                                        <CardDescription>{doc.description}</CardDescription>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                               </CardHeader>
+                               <CardContent className="flex-grow flex items-center justify-center pt-0">
+                                   <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
+                                      <Image
+                                        src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                        alt={`Preview of ${doc.title}`}
+                                        fill
+                                        className="object-cover object-top transition-transform group-hover:scale-105"
+                                      />
+                                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Download className="h-8 w-8 text-white"/>
+                                        </div>
+                                    </Link>
+                               </CardContent>
+                           </Card>
+                       ))}
+                    </div>
+                </div>
+            ))}
+            </CardContent>
+        </Card>
+    );
+  };
 
   if (!isMounted) {
     return (
@@ -152,6 +223,28 @@ export default function ManageDocumentsPage() {
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                     <FormField
+                        control={form.control}
+                        name="documentType"
+                        render={({ field }) => (
+                            <FormItem>
+                            <FormLabel>Document Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                <SelectTrigger>
+                                    <SelectValue placeholder="Select a document type" />
+                                </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                <SelectItem value="general">General Document</SelectItem>
+                                <SelectItem value="tax">Tax Form</SelectItem>
+                                <SelectItem value="employment">Employment Form</SelectItem>
+                                </SelectContent>
+                            </Select>
+                            <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <FormField
                       control={form.control}
                       name="title"
@@ -172,7 +265,7 @@ export default function ManageDocumentsPage() {
                         <FormItem>
                           <FormLabel>Category / Group</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Truck 01, Company Policies" {...field} />
+                            <Input placeholder="e.g., Truck 01, Company Policies, 2023 Tax Year" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
@@ -237,44 +330,11 @@ export default function ManageDocumentsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-            {Object.keys(groupedDocuments).length > 0 ? (
-                Object.entries(groupedDocuments).map(([category, docs]) => (
-                    <Card key={category}>
-                        <CardHeader>
-                            <CardTitle>{category}</CardTitle>
-                        </CardHeader>
-                        <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                           {docs.map(doc => (
-                               <Card key={doc.id} className="flex flex-col">
-                                   <CardHeader className="flex-row items-start justify-between">
-                                        <div>
-                                            <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
-                                            <CardDescription>{doc.description}</CardDescription>
-                                        </div>
-                                        <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                   </CardHeader>
-                                   <CardContent className="flex-grow flex items-center justify-center pt-0">
-                                       <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
-                                          <Image
-                                            src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
-                                            alt={`Preview of ${doc.title}`}
-                                            fill
-                                            className="object-cover object-top transition-transform group-hover:scale-105"
-                                          />
-                                           <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                                <Download className="h-8 w-8 text-white"/>
-                                            </div>
-                                        </Link>
-                                   </CardContent>
-                               </Card>
-                           ))}
-                        </CardContent>
-                    </Card>
-                ))
-            ) : (
-                <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No documents have been uploaded yet.</div>
+            {renderDocumentSection("General Documents", Files, generalDocuments)}
+            {renderDocumentSection("Tax Forms", FileText, taxDocuments)}
+            {renderDocumentSection("Employment Forms", FileBadge, employmentDocuments)}
+            {documents.length === 0 && (
+                 <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No documents have been uploaded yet.</div>
             )}
         </CardContent>
       </Card>

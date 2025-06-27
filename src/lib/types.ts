@@ -109,6 +109,7 @@ export interface ManagedDocument {
   title: string;
   description: string;
   category: string; // The group header, e.g., "Truck - 2021 Chevy 6500" or "Company Policies"
+  documentType: 'general' | 'tax' | 'employment';
   documentDataUri: string; // Can be a placeholder URL or a real data URI
   dataAiHint?: string; // Optional hint for image generation
 }
@@ -165,7 +166,7 @@ export interface Client {
 export type JobStatus = 'upcoming' | 'active' | 'completed';
 
 export interface Job {
-  id: string;
+  id:string;
   name: string;
   clientId: string;
   clientName: string;

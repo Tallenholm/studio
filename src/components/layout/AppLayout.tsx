@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -159,8 +159,8 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/employee/vehicle-documents">
-                    <SidebarMenuButton tooltip="Documents" isActive={pathname.startsWith('/employee/vehicle-documents')}>
-                      <BookOpen /><span>Documents</span>
+                    <SidebarMenuButton tooltip="Company Documents" isActive={pathname.startsWith('/employee/vehicle-documents')}>
+                      <Files /><span>Company Documents</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
