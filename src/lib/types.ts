@@ -147,3 +147,24 @@ export interface ExpenseReport {
   receiptDataUri: string; // Required
   status: 'pending' | 'approved' | 'denied';
 }
+
+export interface Client {
+  id: string;
+  name: string;
+  contactPerson?: string;
+  contactEmail?: string;
+  contactPhone?: string;
+}
+
+export type JobStatus = 'upcoming' | 'active' | 'completed';
+
+export interface Job {
+  id: string;
+  name: string;
+  clientId: string;
+  clientName: string;
+  address: string;
+  status: JobStatus;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+}

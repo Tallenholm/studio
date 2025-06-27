@@ -39,6 +39,14 @@ export default function HelpPage() {
       answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs'), assign tasks ('Manage Tasks') and send notifications to employees.",
     },
     {
+      question: "How do I add and manage clients?",
+      answer: "As an Administrator, go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, or remove existing ones. This client list is then used when creating and assigning jobs.",
+    },
+    {
+      question: "How do I create and track jobs?",
+      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client from the dropdown list, and set its address and date range. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' columns based on their dates, giving you a clear view of your current workload.",
+    },
+    {
       question: "How do I approve or deny employee expenses?",
       answer: "As an Administrator, go to 'Manage Expenses' from your dashboard. You will see a list of all pending expense reports. You can review the details, view the uploaded receipt, and then choose to 'Approve' or 'Deny' the request. The employee will see the updated status in their portal.",
     },

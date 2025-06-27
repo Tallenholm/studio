@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -12,6 +12,9 @@ const DOCUMENTS_KEY = 'fleetCheckDocuments';
 const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 const TASKS_KEY = 'fleetCheckTasks';
 const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
+const CLIENTS_KEY = 'fleetCheckClients';
+const JOBS_KEY = 'fleetCheckJobs';
+
 
 const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456' },
@@ -398,6 +401,75 @@ export const loadExpenseReports = (): ExpenseReport[] => {
     } catch (error) {
       console.error('Failed to load expense reports:', error);
       return [];
+    }
+  }
+  return [];
+};
+
+// Client Management
+const defaultClients: Client[] = [
+    { id: 'client-1', name: 'Main Street Properties', contactPerson: 'Bob Vance', contactEmail: 'bob.vance@vancerefrigeration.com', contactPhone: '555-123-4567' },
+    { id: 'client-2', name: 'City Development Group', contactPerson: 'Carol Smith', contactEmail: 'carol.s@cdg.com', contactPhone: '555-987-6543' },
+];
+
+export const saveClients = (clients: Client[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
+    } catch (error) {
+      console.error('Failed to save clients:', error);
+    }
+  }
+};
+
+export const loadClients = (): Client[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(CLIENTS_KEY);
+      if (data) {
+          return JSON.parse(data);
+      } else {
+          saveClients(defaultClients);
+          return defaultClients;
+      }
+    } catch (error) {
+      console.error('Failed to load clients:', error);
+      return defaultClients;
+    }
+  }
+  return [];
+};
+
+// Job Management
+const defaultJobs: Job[] = [
+    { id: 'job-1', name: 'Lot 5 Excavation', clientId: 'client-1', clientName: 'Main Street Properties', address: '123 Main St, Anytown, USA', status: 'active', startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+    { id: 'job-2', name: 'Downtown Plaza Snow Removal', clientId: 'client-2', clientName: 'City Development Group', address: '456 Central Ave, Anytown, USA', status: 'upcoming', startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+    { id: 'job-3', name: 'Old Mill Foundation', clientId: 'client-1', clientName: 'Main Street Properties', address: '789 River Rd, Anytown, USA', status: 'completed', startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+];
+
+export const saveJobs = (jobs: Job[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
+    } catch (error) {
+      console.error('Failed to save jobs:', error);
+    }
+  }
+};
+
+export const loadJobs = (): Job[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(JOBS_KEY);
+      if (data) {
+          return JSON.parse(data);
+      } else {
+          saveJobs(defaultJobs);
+          return defaultJobs;
+      }
+    } catch (error) {
+      console.error('Failed to load jobs:', error);
+      return defaultJobs;
     }
   }
   return [];
