@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, FileText, FileBadge } from 'lucide-react';
+import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, FileText, FileBadge, User as UserIcon } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -50,17 +50,17 @@ const documentSchema = z.object({
     message: 'A document file upload is required.',
   }),
 }).superRefine((data, ctx) => {
-    if (data.documentType === 'employment' && !data.employeeId) {
+    if ((data.documentType === 'employment' || data.documentType === 'tax') && !data.employeeId) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'An employee must be selected for employment forms.',
+            message: 'An employee must be selected for this document type.',
             path: ['employeeId'],
         });
     }
-    if (data.documentType !== 'employment' && (!data.category || data.category.trim() === '')) {
+    if (data.documentType === 'general' && (!data.category || data.category.trim() === '')) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'Category is required for this document type.',
+            message: 'Category is required for General documents.',
             path: ['category'],
         });
     }
@@ -115,7 +115,7 @@ export default function ManageDocumentsPage() {
     let docCategory = '';
     let employeeName: string | undefined = undefined;
 
-    if (values.documentType === 'employment' && values.employeeId) {
+    if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
         const employee = users.find(u => u.id === values.employeeId);
         if (employee) {
             docCategory = employee.name;
@@ -161,23 +161,26 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const { generalDocuments, taxDocuments, employmentDocuments } = useMemo(() => {
-    const groupByType = (type: ManagedDocument['documentType']) => {
-        return documents
-            .filter(d => d.documentType === type)
-            .reduce((acc, doc) => {
-                (acc[doc.category] = acc[doc.category] || []).push(doc);
-                return acc;
-            }, {} as Record<string, ManagedDocument[]>);
-    };
-    return {
-        generalDocuments: groupByType('general'),
-        taxDocuments: groupByType('tax'),
-        employmentDocuments: groupByType('employment'),
-    }
+  const { generalDocuments, personalDocuments } = useMemo(() => {
+    const general = documents
+        .filter(d => d.documentType === 'general')
+        .reduce((acc, doc) => {
+            (acc[doc.category] = acc[doc.category] || []).push(doc);
+            return acc;
+        }, {} as Record<string, ManagedDocument[]>);
+
+    const personal = documents
+        .filter(d => d.documentType === 'tax' || d.documentType === 'employment')
+        .reduce((acc, doc) => {
+            const employeeName = doc.employeeName || 'Unassigned';
+            (acc[employeeName] = acc[employeeName] || []).push(doc);
+            return acc;
+        }, {} as Record<string, ManagedDocument[]>);
+        
+    return { generalDocuments: general, personalDocuments: personal }
   }, [documents]);
 
-  const renderDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
+  const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
     if (Object.keys(groupedDocs).length === 0) return null;
 
     return (
@@ -226,6 +229,60 @@ export default function ManageDocumentsPage() {
         </Card>
     );
   };
+  
+  const renderPersonalDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
+    if (Object.keys(groupedDocs).length === 0) return null;
+
+    return (
+        <Card>
+            <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-2xl font-headline">
+                    <Icon className="h-6 w-6 text-primary" />
+                    {title}
+                </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+            {Object.entries(groupedDocs).map(([employeeName, docs]) => (
+                <div key={employeeName}>
+                    <h3 className="font-semibold text-lg text-muted-foreground mb-2 flex items-center gap-2">
+                        <UserIcon className="h-5 w-5" />
+                        {employeeName}
+                    </h3>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {docs.map(doc => (
+                           <Card key={doc.id} className="flex flex-col bg-muted/20">
+                               <CardHeader className="flex-row items-start justify-between">
+                                    <div>
+                                        <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
+                                        <CardDescription>{doc.documentType === 'tax' ? 'Tax Form' : 'Employment Form'}</CardDescription>
+                                    </div>
+                                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
+                                        <Trash2 className="h-4 w-4 text-destructive" />
+                                    </Button>
+                               </CardHeader>
+                               <CardContent className="flex-grow flex items-center justify-center pt-0">
+                                   <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
+                                      <Image
+                                        src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                        alt={`Preview of ${doc.title}`}
+                                        fill
+                                        className="object-cover object-top transition-transform group-hover:scale-105"
+                                      />
+                                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                            <Download className="h-8 w-8 text-white"/>
+                                        </div>
+                                    </Link>
+                               </CardContent>
+                           </Card>
+                       ))}
+                    </div>
+                </div>
+            ))}
+            </CardContent>
+        </Card>
+    );
+  };
+
 
   if (!isMounted) {
     return (
@@ -247,7 +304,7 @@ export default function ManageDocumentsPage() {
                 Manage Documents
               </CardTitle>
               <CardDescription className="mt-2">
-                Add, view, and remove documents. Employment forms are assigned to specific employees.
+                Add, view, and remove documents. Employment and Tax forms are assigned to specific employees.
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -301,7 +358,7 @@ export default function ManageDocumentsPage() {
                         </FormItem>
                       )}
                     />
-                    {watchedDocType === 'employment' ? (
+                    {watchedDocType === 'employment' || watchedDocType === 'tax' ? (
                        <FormField
                           control={form.control}
                           name="employeeId"
@@ -400,9 +457,8 @@ export default function ManageDocumentsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-            {renderDocumentSection("General Documents", Files, generalDocuments)}
-            {renderDocumentSection("Tax Forms", FileText, taxDocuments)}
-            {renderDocumentSection("Employment Forms", FileBadge, employmentDocuments)}
+            {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
+            {renderPersonalDocumentSection("Personal & Tax Documents", FileBadge, personalDocuments)}
             {documents.length === 0 && (
                  <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No documents have been uploaded yet.</div>
             )}

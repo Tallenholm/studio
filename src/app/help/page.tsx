@@ -47,8 +47,12 @@ export default function HelpPage() {
         answer: "Click on the 'Notifications' link in the sidebar or on the Employee Hub. This will take you to your message center. New, unread messages will be highlighted. Click on a message to expand it and mark it as read.",
     },
     {
-        question: "Where can I find vehicle documents like registration or insurance?",
-        answer: "Navigate to the 'Vehicle Documents' page from the Employee Hub or the sidebar. Documents are grouped by vehicle or category. Click on a document to view or download it.",
+      question: "Where can I find documents?",
+      answer: "There are two document pages. 'Company Documents' contains general files for all employees, like safety manuals and vehicle information. 'Personal Documents' is a secure area where you can find your own tax forms (like W-2s) and employment-related documents (like your I-9). Both can be accessed from your Employee Hub or the sidebar.",
+    },
+    {
+      question: "How do I upload or manage documents as an administrator?",
+      answer: "Navigate to 'Manage Documents' from your dashboard. When adding a new document, you must select its type: General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section.",
     },
     {
       question: "What are the different Admin roles and what can they do?",

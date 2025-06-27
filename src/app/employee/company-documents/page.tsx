@@ -31,14 +31,12 @@ export default function CompanyDocumentsPage() {
   }, []);
 
   const generalDocuments = useMemo(() => {
-    const general = documents
+    return documents
         .filter(d => d.documentType === 'general')
         .reduce((acc, doc) => {
             (acc[doc.category] = acc[doc.category] || []).push(doc);
             return acc;
         }, {} as Record<string, ManagedDocument[]>);
-    
-    return general;
   }, [documents]);
 
   const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {

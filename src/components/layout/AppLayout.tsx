@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files } from 'lucide-react';
+import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
@@ -42,7 +42,7 @@ const ownerRoutes = [
   '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
 ];
 
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -158,9 +158,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
-                  <Link href="/employee/vehicle-documents">
-                    <SidebarMenuButton tooltip="Company Documents" isActive={pathname.startsWith('/employee/vehicle-documents')}>
-                      <Files /><span>Company Documents</span>
+                  <Link href="/employee/company-documents">
+                    <SidebarMenuButton tooltip="Company Documents" isActive={pathname.startsWith('/employee/company-documents')}>
+                      <Files /><span>Company Docs</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/employee/personal-documents">
+                    <SidebarMenuButton tooltip="Personal Documents" isActive={pathname.startsWith('/employee/personal-documents')}>
+                      <FileBadge /><span>Personal Docs</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
