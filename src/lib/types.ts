@@ -6,11 +6,13 @@ import type { LucideIcon } from 'lucide-react';
 export type { DailyBriefingOutput, DailyBriefingInput };
 
 export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
+export type UserRole = 'owner' | 'manager' | 'employee';
 
 export interface User {
   id: string;
   name: string;
   pin: string;
+  role: UserRole;
 }
 
 export interface FleetAsset {

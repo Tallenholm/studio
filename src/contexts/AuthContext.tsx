@@ -3,14 +3,14 @@
 
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { useRouter, usePathname } from 'next/navigation';
+import type { UserRole, User } from '@/lib/types';
 
-type Role = 'employee' | 'manager' | null;
-type AuthUser = { id: string, name: string };
+type AuthRole = UserRole | null;
 
 interface AuthContextType {
-  role: Role;
-  user: AuthUser | null;
-  login: (role: 'employee' | 'manager', user: AuthUser) => void;
+  role: AuthRole;
+  user: User | null;
+  login: (user: User) => void;
   logout: () => void;
   isLoading: boolean;
 }
@@ -18,20 +18,19 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [role, setRole] = useState<Role>(null);
-  const [user, setUser] = useState<AuthUser | null>(null);
+  const [role, setRole] = useState<AuthRole>(null);
+  const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const router = useRouter();
   const pathname = usePathname();
 
   useEffect(() => {
     try {
-      const storedRole = localStorage.getItem('userRole') as Role;
-      const storedUserId = localStorage.getItem('userId');
-      const storedUserName = localStorage.getItem('userName');
-      if (storedRole && storedUserId && storedUserName) {
-        setRole(storedRole);
-        setUser({ id: storedUserId, name: storedUserName });
+      const storedUser = localStorage.getItem('fleetCheckUser');
+      if (storedUser) {
+        const parsedUser: User = JSON.parse(storedUser);
+        setRole(parsedUser.role);
+        setUser(parsedUser);
       }
     } catch (error) {
       console.error("Could not access localStorage", error);
@@ -40,17 +39,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   }, []);
 
-  const login = useCallback((newRole: 'employee' | 'manager', user: AuthUser) => {
+  const login = useCallback((loggedInUser: User) => {
     try {
-      const hasViewedTour = localStorage.getItem(`hasViewedTour_${newRole}`);
+      const tourKey = `hasViewedTour_${loggedInUser.role}`;
+      const hasViewedTour = localStorage.getItem(tourKey);
       
-      localStorage.setItem('userRole', newRole);
-      localStorage.setItem('userId', user.id);
-      localStorage.setItem('userName', user.name);
-      setRole(newRole);
-      setUser(user);
+      localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
+      setRole(loggedInUser.role);
+      setUser(loggedInUser);
 
-      const destination = newRole === 'employee' ? '/employee' : '/admin';
+      const destination = loggedInUser.role === 'employee' ? '/employee' : '/admin';
       
       if (!hasViewedTour) {
         router.push(`${destination}?tour=true`);
@@ -64,9 +62,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const logout = useCallback(() => {
     try {
-      localStorage.removeItem('userRole');
-      localStorage.removeItem('userId');
-      localStorage.removeItem('userName');
+      localStorage.removeItem('fleetCheckUser');
       setRole(null);
       setUser(null);
       router.push('/login');

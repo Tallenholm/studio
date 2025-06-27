@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
+import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -99,8 +99,10 @@ export const loadInspectionReportById = (id: string): InspectionReport | undefin
 
 // User Management
 const defaultUsers: User[] = [
-    { id: '1', name: 'John Doe', pin: '1234' },
-    { id: '2', name: 'Jane Smith', pin: '4321' },
+    { id: 'owner-1', name: 'Fleet Owner', pin: '5678', role: 'owner' },
+    { id: 'manager-1', name: 'Operations Manager', pin: '8765', role: 'manager' },
+    { id: '1', name: 'John Doe', pin: '1234', role: 'employee' },
+    { id: '2', name: 'Jane Smith', pin: '4321', role: 'employee' },
 ];
 
 export const saveUsers = (users: User[]): void => {

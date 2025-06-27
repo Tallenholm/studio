@@ -21,11 +21,7 @@ export default function LoginPage() {
   const router = useRouter();
   const [users, setUsers] = useState<User[]>([]);
 
-  // Hardcoded Manager PIN
-  const MANAGER_PIN = '5678';
-
   useEffect(() => {
-    // Load users from local storage on component mount
     setUsers(loadUsers());
   }, []);
 
@@ -39,22 +35,13 @@ export default function LoginPage() {
     e.preventDefault();
     setError('');
 
-    // Check for Manager PIN first
-    if (pin === MANAGER_PIN) {
-      login('manager', { id: 'manager-admin', name: 'Manager' });
-      toast({ title: 'Login Successful', description: 'Welcome, Manager!' });
+    const user = users.find(u => u.pin === pin);
+    if (user) {
+      login(user);
+      toast({ title: 'Login Successful', description: `Welcome, ${user.name}!` });
       return;
     }
 
-    // Check for Employee PIN
-    const employee = users.find(u => u.pin === pin);
-    if (employee) {
-      login('employee', { id: employee.id, name: employee.name });
-      toast({ title: 'Login Successful', description: `Welcome, ${employee.name}!` });
-      return;
-    }
-
-    // If no match, set error
     setError('Invalid PIN. Please try again.');
   };
 

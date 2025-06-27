@@ -28,7 +28,19 @@ import type { NotificationMessage } from '@/lib/types';
 
 
 // Define which routes belong to which role
-const managerBaseRoutes = ['/', '/reports', '/admin', '/help', '/notifications'];
+const managerRoutes = [
+  '/admin', '/reports', '/help', '/notifications',
+  '/admin/manage-requests', '/admin/manage-tasks', '/admin/manage-violations',
+  '/admin/send-notification', '/admin/manage-fleet', '/admin/manage-documents',
+  '/admin/manage-calendar', '/admin/maintenance-logs', '/admin/manage-work-orders',
+  '/employee' // For viewing employee portal
+];
+const ownerRoutes = [
+  ...managerRoutes,
+  '/admin/manage-users', '/admin/manage-expenses', '/admin/manage-clients',
+  '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
+];
+
 const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
@@ -40,23 +52,32 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   useEffect(() => {
     if (isLoading) return;
 
-    const isAllowed = (baseRoutes: string[]) => {
-       // Allow any path that starts with /admin/ for managers
-      if (role === 'manager' && pathname.startsWith('/admin')) return true;
-      // Allow any path that starts with /employee/ for employees
-      if (role === 'employee' && pathname.startsWith('/employee')) return true;
-      
-      if (pathname.startsWith('/reports/')) return true;
-
-      return baseRoutes.some(route => pathname === route);
+    const isAllowed = () => {
+      if (role === 'owner') {
+        // Dynamic path checking for owner
+        if (pathname.startsWith('/admin/jobs/')) return true;
+        return ownerRoutes.includes(pathname);
+      }
+      if (role === 'manager') {
+        if (pathname.startsWith('/admin/jobs/')) return true; // Managers might need to view job details
+        return managerRoutes.includes(pathname);
+      }
+      if (role === 'employee') {
+        if (pathname.startsWith('/reports/')) return true;
+        if (pathname.startsWith('/employee/')) return true;
+        return employeeBaseRoutes.includes(pathname);
+      }
+      return false;
     };
 
     if (!role && pathname !== '/login') {
       router.push('/login');
-    } else if (role === 'manager' && !isAllowed(managerBaseRoutes)) {
-      router.push('/admin');
-    } else if (role === 'employee' && !isAllowed(employeeBaseRoutes)) {
-      router.push('/employee');
+    } else if (role && !isAllowed()) {
+      // If user is not allowed on the current path, redirect to their dashboard
+      const dashboardPath = role === 'employee' ? '/employee' : '/admin';
+      if (pathname !== dashboardPath) {
+        router.push(dashboardPath);
+      }
     }
   }, [pathname, role, isLoading, router]);
   
@@ -83,11 +104,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     return <>{children}</>;
   }
 
+  const isAdmin = role === 'owner' || role === 'manager';
+
   return (
     <SidebarProvider defaultOpen>
       <Sidebar>
         <SidebarHeader className="p-4 flex flex-col items-center">
-           <Link href={role === 'manager' ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
+           <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
             <Truck className="h-8 w-8 text-primary" />
             <h1 className="text-2xl font-headline font-bold leading-tight">Fleet Check</h1>
           </Link>
@@ -159,7 +182,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             </SidebarGroup>
           )}
 
-          {role === 'manager' && (
+          {isAdmin && (
               <SidebarGroup>
                 <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
                 <SidebarMenu>
@@ -173,13 +196,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     
                     <SidebarSeparator className="my-1" />
 
-                    <SidebarMenuItem>
+                    {role === 'owner' && <SidebarMenuItem>
                         <Link href="/admin/manage-users">
                             <SidebarMenuButton tooltip="Manage Employees" isActive={pathname.startsWith('/admin/manage-users')}>
                                 <Users /><span>Manage Employees</span>
                             </SidebarMenuButton>
                         </Link>
-                    </SidebarMenuItem>
+                    </SidebarMenuItem>}
                      <SidebarMenuItem>
                         <Link href="/admin/manage-requests">
                             <SidebarMenuButton tooltip="Manage Requests" isActive={pathname.startsWith('/admin/manage-requests')}>
@@ -187,13 +210,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
-                     <SidebarMenuItem>
+                     {role === 'owner' && <SidebarMenuItem>
                         <Link href="/admin/manage-expenses">
                             <SidebarMenuButton tooltip="Manage Expenses" isActive={pathname.startsWith('/admin/manage-expenses')}>
                                 <Coins /><span>Manage Expenses</span>
                             </SidebarMenuButton>
                         </Link>
-                    </SidebarMenuItem>
+                    </SidebarMenuItem>}
                      <SidebarMenuItem>
                         <Link href="/admin/manage-tasks">
                             <SidebarMenuButton tooltip="Manage Tasks" isActive={pathname.startsWith('/admin/manage-tasks')}>
@@ -263,37 +286,38 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    {role === 'owner' && <SidebarMenuItem>
                         <Link href="/admin/manage-clients">
                             <SidebarMenuButton tooltip="Manage Clients" isActive={pathname.startsWith('/admin/manage-clients')}>
                                 <Building2 /><span>Manage Clients</span>
                             </SidebarMenuButton>
                         </Link>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    </SidebarMenuItem>}
+                    {role === 'owner' && <SidebarMenuItem>
                         <Link href="/admin/manage-jobs">
                             <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
                                 <Briefcase /><span>Manage Jobs</span>
                             </SidebarMenuButton>
                         </Link>
-                    </SidebarMenuItem>
-                    <SidebarMenuItem>
+                    </SidebarMenuItem>}
+                    {role === 'owner' && <SidebarMenuItem>
                         <Link href="/admin/advanced-reports">
                             <SidebarMenuButton tooltip="Advanced Reports" isActive={pathname.startsWith('/admin/advanced-reports')}>
                                 <LineChart /><span>Advanced Reports</span>
                             </SidebarMenuButton>
                         </Link>
-                    </SidebarMenuItem>
+                    </SidebarMenuItem>}
                     
-                    <SidebarSeparator className="my-1" />
-
-                    <SidebarMenuItem>
-                        <Link href="/admin/system-settings">
-                            <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
-                                <SlidersHorizontal /><span>System Settings</span>
-                            </SidebarMenuButton>
-                        </Link>
-                    </SidebarMenuItem>
+                    {role === 'owner' && <>
+                      <SidebarSeparator className="my-1" />
+                      <SidebarMenuItem>
+                          <Link href="/admin/system-settings">
+                              <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
+                                  <SlidersHorizontal /><span>System Settings</span>
+                              </SidebarMenuButton>
+                          </Link>
+                      </SidebarMenuItem>
+                    </>}
                 </SidebarMenu>
               </SidebarGroup>
           )}

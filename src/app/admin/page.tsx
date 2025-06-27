@@ -14,6 +14,7 @@ import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs, l
 import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
+import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send, BookCopy, Wrench, FileText, ShieldAlert } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
@@ -166,6 +167,7 @@ export default function FleetCheckDashboardPage() {
   const [isBriefingLoading, setIsBriefingLoading] = useState(true);
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { toast } = useToast();
+  const { user } = useAuth();
 
 
   useEffect(() => {
@@ -267,7 +269,7 @@ export default function FleetCheckDashboardPage() {
         <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Oversee fleet assets, users, reports, and settings for the Fleet Check app.
+          Welcome, {user?.name}. Oversee fleet assets, users, reports, and settings.
         </p>
       </div>
       
@@ -345,9 +347,9 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Manage Employees</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Manage Employees</Button></Link>}
             <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start"><ClipboardCheck className="mr-2"/>Manage Time Off Requests</Button></Link>
-            <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>}
             <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo className="mr-2"/>Manage Tasks</Button></Link>
             <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><ShieldAlert className="mr-2"/>Manage Violations</Button></Link>
             <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send className="mr-2"/>Send Notification</Button></Link>
@@ -384,31 +386,33 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>
-            <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Manage Jobs</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>}
+            {user?.role === 'owner' && <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Manage Jobs</Button></Link>}
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit className="mr-2"/>Manage Work Orders</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench className="mr-2"/>View Maintenance Logs</Button></Link>
-            <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start"><LineChart className="mr-2"/>Advanced Reports</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start"><LineChart className="mr-2"/>Advanced Reports</Button></Link>}
           </CardContent>
         </Card>
         
         {/* System & Access Card */}
-        <Card className="col-span-1 md:col-span-2 lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
-              <SlidersHorizontal className="text-primary" />
-              System & Access
-            </CardTitle>
-            <CardDescription>
-              Configure system-wide settings and access the employee portal view.
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-            <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal className="mr-2"/>System Settings</Button></Link>
-            <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Go to Employee Portal</Button></Link>
-          </CardContent>
-        </Card>
+        {user?.role === 'owner' && (
+          <Card className="col-span-1 md:col-span-2 lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2 font-headline">
+                <SlidersHorizontal className="text-primary" />
+                System & Access
+              </CardTitle>
+              <CardDescription>
+                Configure system-wide settings and access the employee portal view.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal className="mr-2"/>System Settings</Button></Link>
+              <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Go to Employee Portal</Button></Link>
+            </CardContent>
+          </Card>
+        )}
 
       </div>
     </div>
