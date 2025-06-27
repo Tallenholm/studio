@@ -172,7 +172,7 @@ export default function ManageDocumentsPage() {
                         <FormItem>
                           <FormLabel>Category / Group</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Truck 123, Company Policies" {...field} />
+                            <Input placeholder="e.g., Truck 01, Company Policies" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

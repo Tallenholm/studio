@@ -52,19 +52,19 @@ export default function HelpPage() {
     },
     {
       question: "What are the different Admin roles and what can they do?",
-      answer: "As an Administrator, you have full access to manage the application. You can add/remove fleet assets ('Manage Fleet'), manage employee accounts and PINs ('Manage Users'), approve or deny time off ('Manage Requests'), add/remove company events ('Manage Calendar'), upload documents ('Manage Documents'), log safety or conduct issues ('Manage Violations'), log maintenance history ('Maintenance Logs'), assign tasks ('Manage Tasks') and send notifications to employees.",
+      answer: "There are two levels of administrative access: Manager and Owner. 'Managers' can handle day-to-day operations like managing tasks, violations, and documents. 'Owners' have full system access, including all manager permissions, plus the ability to manage users, clients, jobs, expenses, and view advanced financial reports. Only an Owner can change another user's role.",
     },
     {
       question: "How do I add and manage clients?",
-      answer: "As an Administrator, go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, edit existing clients, or remove them. This client list is then used when creating and assigning jobs.",
+      answer: "As an 'Owner', go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, edit existing clients, or remove them. This client list is then used when creating and assigning jobs.",
     },
     {
       question: "How do I create and track jobs?",
-      answer: "From the 'Manage Jobs' page, you can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs, assign specific fleet assets, and track job value. You can use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
+      answer: "As an 'Owner', go to the 'Manage Jobs' page. You can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs, assign specific fleet assets, and track job value. You can use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
     },
     {
       question: "How do I approve or deny employee expenses?",
-      answer: "As an Administrator, go to 'Manage Expenses' from your dashboard. You will see a list of all pending expense reports. You can review the details, view the uploaded receipt, and then choose to 'Approve' or 'Deny' the request. The employee will see the updated status in their portal.",
+      answer: "As an 'Owner', go to 'Manage Expenses' from your dashboard. You will see a list of all pending expense reports. You can review the details, view the uploaded receipt, and then choose to 'Approve' or 'Deny' the request. The employee will see the updated status in their portal.",
     },
     {
       question: "How do I manage employee tasks?",

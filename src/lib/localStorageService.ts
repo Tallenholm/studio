@@ -273,7 +273,7 @@ export const loadViolations = (): Violation[] => {
 const defaultDocuments: ManagedDocument[] = [
     {
       id: 'doc-1',
-      category: 'Truck - 2021 Chevy 6500',
+      category: 'Truck 01 (Dump Truck)',
       title: 'Vehicle Registration - 2024',
       description: 'Official state vehicle registration document.',
       documentDataUri: 'https://placehold.co/850x1100.png',
@@ -281,7 +281,7 @@ const defaultDocuments: ManagedDocument[] = [
     },
     {
       id: 'doc-2',
-      category: 'Truck - 2021 Chevy 6500',
+      category: 'Truck 01 (Dump Truck)',
       title: 'Insurance Card - 2024',
       description: 'Proof of liability insurance.',
       documentDataUri: 'https://placehold.co/850x1100.png',
@@ -289,7 +289,7 @@ const defaultDocuments: ManagedDocument[] = [
     },
     {
       id: 'doc-3',
-      category: 'Trailer - Tilt Deck',
+      category: 'Gooseneck Equipment Trailer',
       title: 'Trailer Registration - 2024',
       description: 'Official state trailer registration.',
       documentDataUri: 'https://placehold.co/850x1100.png',
