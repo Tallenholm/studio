@@ -1,16 +1,17 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'recharts';
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadExpenseReports } from '@/lib/localStorageService';
-import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, ExpenseCategory } from '@/lib/types';
+import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadExpenseReports, loadFleetAssets } from '@/lib/localStorageService';
+import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, ExpenseCategory, FleetAsset, VehicleType } from '@/lib/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart as LineChartIcon, Filter, AlertTriangle, Loader2 } from 'lucide-react';
+import { subDays, isWithinInterval, parseISO } from 'date-fns';
 
 // Define types for chart data
 interface OutcomeData {
@@ -53,6 +54,10 @@ export default function AdvancedReportsPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [violations, setViolations] = useState<Violation[]>([]);
   const [expenses, setExpenses] = useState<ExpenseReport[]>([]);
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+
+  const [dateRangeFilter, setDateRangeFilter] = useState('all_time');
+  const [vehicleTypeFilter, setVehicleTypeFilter] = useState<VehicleType | 'all'>('all');
 
   useEffect(() => {
     setIsMounted(true);
@@ -61,16 +66,59 @@ export default function AdvancedReportsPage() {
     setTasks(loadTasks());
     setViolations(loadViolations());
     setExpenses(loadExpenseReports());
+    setFleetAssets(loadFleetAssets());
   }, []);
 
+  const dateFilterRange = useMemo(() => {
+    const now = new Date();
+    if (dateRangeFilter === 'last_30_days') return { start: subDays(now, 30), end: now };
+    if (dateRangeFilter === 'last_quarter') return { start: subDays(now, 90), end: now };
+    return null; // all_time
+  }, [dateRangeFilter]);
+
+  const filteredData = useMemo(() => {
+    const filterByDate = (items: { date: string }[]) => {
+      if (!dateFilterRange) return items;
+      return items.filter(item => isWithinInterval(parseISO(item.date), dateFilterRange));
+    };
+
+    const filterByVehicleType = <T extends { assetId?: string, truckVin?: string, trailerVin?: string, heavyEquipmentVin?: string }>(items: T[]) => {
+      if (vehicleTypeFilter === 'all') return items;
+      const assetVinsOfType = fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.vin);
+      return items.filter(item => {
+        const itemAssetId = item.assetId;
+        const itemVin = item.truckVin || item.trailerVin || item.heavyEquipmentVin;
+        if(itemAssetId) { // For maintenance logs
+          const asset = fleetAssets.find(a => a.id === itemAssetId);
+          return asset?.type === vehicleTypeFilter;
+        }
+        if(itemVin) { // for inspection reports
+          return assetVinsOfType.includes(itemVin);
+        }
+        return false;
+      });
+    };
+
+    const filteredReports = filterByVehicleType(filterByDate(reports) as InspectionReport[]);
+    const filteredLogs = filterByVehicleType(filterByDate(logs) as MaintenanceLog[]);
+    
+    // Tasks, violations, and expenses are not typically asset-specific in this app's model, so only filter by date
+    const filteredTasks = filterByDate(tasks) as Task[];
+    const filteredViolations = filterByDate(violations) as Violation[];
+    const filteredExpenses = filterByDate(expenses) as ExpenseReport[];
+
+    return { filteredReports, filteredLogs, filteredTasks, filteredViolations, filteredExpenses };
+  }, [reports, logs, tasks, violations, expenses, fleetAssets, dateRangeFilter, vehicleTypeFilter, dateFilterRange]);
+
+
   const inspectionOutcomes: OutcomeData[] = [
-    { name: 'Pass', value: reports.filter(r => r.overallStatus === 'pass').length, fill: 'hsl(var(--chart-1))' },
-    { name: 'Fail', value: reports.filter(r => r.overallStatus === 'fail').length, fill: 'hsl(var(--chart-2))' },
+    { name: 'Pass', value: filteredData.filteredReports.filter(r => r.overallStatus === 'pass').length, fill: 'hsl(var(--chart-1))' },
+    { name: 'Fail', value: filteredData.filteredReports.filter(r => r.overallStatus === 'fail').length, fill: 'hsl(var(--chart-2))' },
   ];
 
   const frequentFailures: FailureData[] = (() => {
     const failureCounts: { [key: string]: number } = {};
-    reports.forEach(report => {
+    filteredData.filteredReports.forEach(report => {
       report.sections.forEach(section => {
         section.items.forEach(item => {
           if (item.status === 'fail') {
@@ -87,7 +135,7 @@ export default function AdvancedReportsPage() {
 
   const maintenanceCosts: CostData[] = (() => {
     const costMap: { [key: string]: number } = {};
-    logs.forEach(log => {
+    filteredData.filteredLogs.forEach(log => {
       if (log.cost) {
         costMap[log.assetName] = (costMap[log.assetName] || 0) + log.cost;
       }
@@ -99,13 +147,13 @@ export default function AdvancedReportsPage() {
   })();
 
   const taskStatusData: TaskStatusData[] = [
-    { name: 'Pending', value: tasks.filter(t => t.status === 'pending').length, fill: 'hsl(var(--chart-4))' },
-    { name: 'Completed', value: tasks.filter(t => t.status === 'completed').length, fill: 'hsl(var(--chart-1))' },
+    { name: 'Pending', value: filteredData.filteredTasks.filter(t => t.status === 'pending').length, fill: 'hsl(var(--chart-4))' },
+    { name: 'Completed', value: filteredData.filteredTasks.filter(t => t.status === 'completed').length, fill: 'hsl(var(--chart-1))' },
   ];
 
   const expensesByCategoryData: ExpenseData[] = (() => {
     const expenseMap: { [key in ExpenseCategory]?: number } = {};
-    expenses.forEach(expense => {
+    filteredData.filteredExpenses.forEach(expense => {
       expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
     });
     return Object.entries(expenseMap)
@@ -118,7 +166,7 @@ export default function AdvancedReportsPage() {
 
   const violationsByTypeData: ViolationData[] = (() => {
       const counts: Record<string, number> = {};
-      violations.forEach(v => {
+      filteredData.filteredViolations.forEach(v => {
           counts[v.type] = (counts[v.type] || 0) + 1;
       });
       return [
@@ -172,36 +220,23 @@ export default function AdvancedReportsPage() {
             <CardHeader>
               <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Report Filters</CardTitle>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <div>
-                <Label htmlFor="report-type">Data Set</Label>
-                <Select>
-                  <SelectTrigger id="report-type">
-                    <SelectValue placeholder="All Data" />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="all_data">All Data</SelectItem>
-                    <SelectItem value="inspections">Inspections</SelectItem>
-                    <SelectItem value="maintenance">Maintenance</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date-range">Date Range</Label>
-                 <Select>
+                 <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
                   <SelectTrigger id="date-range">
                     <SelectValue placeholder="All Time" />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="all_time">All Time</SelectItem>
                     <SelectItem value="last_30_days">Last 30 Days</SelectItem>
-                    <SelectItem value="last_quarter">Last Quarter</SelectItem>
+                    <SelectItem value="last_quarter">Last 90 Days</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
               <div>
                 <Label htmlFor="vehicle-type">Vehicle/Equipment Type</Label>
-                <Select>
+                <Select value={vehicleTypeFilter} onValueChange={(value) => setVehicleTypeFilter(value as VehicleType | 'all')}>
                   <SelectTrigger id="vehicle-type">
                     <SelectValue placeholder="All Types" />
                   </SelectTrigger>
@@ -213,9 +248,6 @@ export default function AdvancedReportsPage() {
                   </SelectContent>
                 </Select>
               </div>
-            </CardContent>
-            <CardContent>
-                <Button className="w-full md:w-auto">Generate Report</Button>
             </CardContent>
           </Card>
           
