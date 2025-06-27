@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -27,8 +27,9 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, isAfter, isBefore, startOfDay } from 'date-fns';
 import { DateRange } from 'react-day-picker';
+import { Badge } from '@/components/ui/badge';
 
 const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required.'),
@@ -39,6 +40,20 @@ const jobSchema = z.object({
     to: z.date({ required_error: 'An end date is required.' }),
   }),
 });
+
+const getJobStatus = (job: Job): JobStatus => {
+  const today = startOfDay(new Date());
+  const startDate = new Date(job.startDate);
+  const endDate = new Date(job.endDate);
+
+  if (isBefore(today, startDate)) {
+    return 'upcoming';
+  } else if (isAfter(today, endDate)) {
+    return 'completed';
+  } else {
+    return 'active';
+  }
+};
 
 export default function ManageJobsPage() {
   const [clients, setClients] = useState<Client[]>([]);
@@ -82,9 +97,9 @@ export default function ManageJobsPage() {
       address: values.address,
       startDate: values.dateRange.from.toISOString().split('T')[0],
       endDate: values.dateRange.to.toISOString().split('T')[0],
-      status: 'upcoming', // New jobs are always upcoming
+      // Status is now calculated dynamically, no need to set it here
     };
-    setJobs((prev) => [...prev, newJob].sort((a,b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime()));
+    setJobs((prev) => [...prev, newJob]);
     toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
     setIsDialogOpen(false);
     form.reset();
@@ -99,8 +114,28 @@ export default function ManageJobsPage() {
       variant: 'destructive',
     });
   }
+  
+  const getStatusBadgeVariant = (status: JobStatus) => {
+    switch (status) {
+      case 'active': return 'default';
+      case 'completed': return 'secondary';
+      case 'upcoming': return 'outline';
+      default: return 'outline';
+    }
+  };
+  
+  const jobsWithStatus = useMemo(() => {
+    return jobs.map(job => ({
+        ...job,
+        status: getJobStatus(job)
+    })).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  }, [jobs]);
 
-  const renderJobsTable = (jobList: Job[], title: string) => (
+  const upcomingJobs = jobsWithStatus.filter(j => j.status === 'upcoming');
+  const activeJobs = jobsWithStatus.filter(j => j.status === 'active');
+  const completedJobs = jobsWithStatus.filter(j => j.status === 'completed');
+
+  const renderJobsTable = (jobList: (Job & { status: JobStatus })[], title: string) => (
     <Card>
       <CardHeader>
         <CardTitle>{title}</CardTitle>
@@ -111,6 +146,7 @@ export default function ManageJobsPage() {
             <Table>
               <TableHeader>
                 <TableRow>
+                  <TableHead>Status</TableHead>
                   <TableHead>Job Name</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Address</TableHead>
@@ -121,6 +157,11 @@ export default function ManageJobsPage() {
               <TableBody>
                 {jobList.map(job => (
                   <TableRow key={job.id}>
+                    <TableCell>
+                      <Badge variant={getStatusBadgeVariant(job.status)} className={cn(job.status === 'active' && 'bg-green-600')}>
+                        {job.status}
+                      </Badge>
+                    </TableCell>
                     <TableCell className="font-medium">{job.name}</TableCell>
                     <TableCell>{job.clientName}</TableCell>
                     <TableCell>{job.address}</TableCell>
@@ -150,10 +191,6 @@ export default function ManageJobsPage() {
       </div>
     );
   }
-
-  const upcomingJobs = jobs.filter(j => j.status === 'upcoming');
-  const activeJobs = jobs.filter(j => j.status === 'active');
-  const completedJobs = jobs.filter(j => j.status === 'completed');
 
   return (
     <div className="container mx-auto py-8">

@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, saveClients } from '@/lib/localStorageService';
-import type { Client } from '@/lib/types';
+import { loadClients, saveClients, loadJobs } from '@/lib/localStorageService';
+import type { Client, Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,7 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Loader2, Pencil } from 'lucide-react';
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
@@ -47,8 +47,10 @@ const clientSchema = z.object({
 
 export default function ManageClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof clientSchema>>({
@@ -64,6 +66,7 @@ export default function ManageClientsPage() {
   useEffect(() => {
     setIsMounted(true);
     setClients(loadClients());
+    setJobs(loadJobs());
   }, []);
 
   useEffect(() => {
@@ -72,18 +75,49 @@ export default function ManageClientsPage() {
     }
   }, [clients, isMounted]);
 
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      form.reset();
+      setEditingClient(null);
+    }
+  };
+
+  const handleEditClick = (client: Client) => {
+    setEditingClient(client);
+    form.reset(client);
+    setIsDialogOpen(true);
+  };
+
   function onSubmit(values: z.infer<typeof clientSchema>) {
-    const newClient: Client = {
-      id: `client-${Date.now()}`,
-      ...values,
-    };
-    setClients((prev) => [...prev, newClient].sort((a,b) => a.name.localeCompare(b.name)));
-    toast({ title: 'Client Added', description: `Client "${values.name}" has been added.` });
-    setIsDialogOpen(false);
-    form.reset();
+    if (editingClient) {
+      const updatedClients = clients.map(c => 
+        c.id === editingClient.id ? { ...c, ...values } : c
+      );
+      setClients(updatedClients.sort((a,b) => a.name.localeCompare(b.name)));
+      toast({ title: 'Client Updated', description: `Client "${values.name}" has been updated.` });
+    } else {
+      const newClient: Client = {
+        id: `client-${Date.now()}`,
+        ...values,
+      };
+      setClients((prev) => [...prev, newClient].sort((a,b) => a.name.localeCompare(b.name)));
+      toast({ title: 'Client Added', description: `Client "${values.name}" has been added.` });
+    }
+    handleDialogOpenChange(false);
   }
 
   function removeClient(clientId: string) {
+    const clientHasJobs = jobs.some(job => job.clientId === clientId);
+    if (clientHasJobs) {
+      toast({
+        variant: 'destructive',
+        title: 'Cannot Delete Client',
+        description: 'This client has active or past jobs and cannot be removed.',
+      });
+      return;
+    }
+
     const clientToRemove = clients.find(c => c.id === clientId);
     setClients((prev) => prev.filter((client) => client.id !== clientId));
     toast({
@@ -116,18 +150,18 @@ export default function ManageClientsPage() {
                 Add, view, and remove client information.
               </CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
-                <Button>
+                <Button onClick={() => setIsDialogOpen(true)}>
                   <PlusCircle className="mr-2 h-5 w-5" />
                   Add New Client
                 </Button>
               </DialogTrigger>
               <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Client</DialogTitle>
+                  <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
                   <DialogDescription>
-                    Enter the details for a new client.
+                    {editingClient ? 'Update the details for this client.' : 'Enter the details for a new client.'}
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -210,6 +244,7 @@ export default function ManageClientsPage() {
                                     <TableHead>Contact Person</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Phone</TableHead>
+                                    <TableHead>Jobs</TableHead>
                                     <TableHead className="text-right w-[100px]">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -220,7 +255,11 @@ export default function ManageClientsPage() {
                                         <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{client.contactEmail || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{client.contactPhone || 'N/A'}</TableCell>
+                                        <TableCell className="text-muted-foreground">{jobs.filter(j => j.clientId === client.id).length}</TableCell>
                                         <TableCell className="text-right">
+                                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(client)} aria-label={`Edit ${client.name}`}>
+                                            <Pencil className="h-4 w-4" />
+                                        </Button>
                                         <Button variant="ghost" size="icon" onClick={() => removeClient(client.id)} aria-label={`Remove ${client.name}`}>
                                             <Trash2 className="h-4 w-4 text-destructive" />
                                         </Button>

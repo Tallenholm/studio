@@ -164,7 +164,7 @@ export interface Job {
   clientId: string;
   clientName: string;
   address: string;
-  status: JobStatus;
+  status?: JobStatus;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
 }
