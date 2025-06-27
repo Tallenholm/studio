@@ -221,7 +221,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     <SidebarMenuItem>
                         <Link href="/admin/manage-fleet">
                             <SidebarMenuButton tooltip="Manage Fleet" isActive={pathname.startsWith('/admin/manage-fleet')}>
-                                <Cog /><span>Manage Fleet</span>
+                                <Truck /><span>Manage Fleet</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>

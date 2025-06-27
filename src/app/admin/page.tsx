@@ -14,7 +14,7 @@ import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
-import { ClipboardCheck, Send, BookCopy, Wrench, SlidersHorizontal } from 'lucide-react';
+import { ClipboardCheck, Send, BookCopy, Wrench, SlidersHorizontal, FileText, ShieldAlert } from 'lucide-react';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -326,7 +326,7 @@ export default function FleetCheckDashboardPage() {
             <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start"><ClipboardCheck className="mr-2"/>Manage Time Off Requests</Button></Link>
             <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>
             <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo className="mr-2"/>Manage Tasks</Button></Link>
-            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><AlertTriangle className="mr-2"/>Manage Violations</Button></Link>
+            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><ShieldAlert className="mr-2"/>Manage Violations</Button></Link>
             <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send className="mr-2"/>Send Notification</Button></Link>
           </CardContent>
         </Card>
@@ -335,7 +335,7 @@ export default function FleetCheckDashboardPage() {
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
-              <ClipboardList className="text-primary" />
+              <Cog className="text-primary" />
               Assets & Content
             </CardTitle>
             <CardDescription>
@@ -350,7 +350,7 @@ export default function FleetCheckDashboardPage() {
         </Card>
 
         {/* Operations & Analytics Card */}
-        <Card className="lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <LineChart className="text-primary" />
@@ -360,7 +360,7 @@ export default function FleetCheckDashboardPage() {
               Review reports, logs, jobs, clients, and access advanced analytics.
             </CardDescription>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+          <CardContent className="flex flex-col gap-3">
             <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>
             <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Manage Jobs</Button></Link>
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
