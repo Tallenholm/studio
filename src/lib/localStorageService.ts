@@ -120,24 +120,27 @@ export const loadUsers = (): User[] => {
     try {
       const data = localStorage.getItem(USERS_KEY);
       let users: User[] = data ? JSON.parse(data) : [];
-      let needsSave = !data; // If there was no data, we'll need to save.
+      let needsSave = !data;
 
-      // Ensure all default users exist by ID. This prevents issues if local storage gets cleared.
+      // Ensure all default users exist and have the correct role and PIN.
+      // This will overwrite any conflicting data from localStorage for default users.
       defaultUsers.forEach(defaultUser => {
-        const userExists = users.some(u => u.id === defaultUser.id);
-        if (!userExists) {
+        const existingUserIndex = users.findIndex(u => u.id === defaultUser.id);
+        if (existingUserIndex > -1) {
+          // User exists, let's check if the data is correct.
+          const existingUser = users[existingUserIndex];
+          if (existingUser.role !== defaultUser.role || existingUser.pin !== defaultUser.pin || existingUser.name !== defaultUser.name) {
+            // Overwrite with default data if it's incorrect.
+            users[existingUserIndex] = { ...existingUser, ...defaultUser };
+            needsSave = true;
+          }
+        } else {
+          // User doesn't exist, add the default user.
           users.push(defaultUser);
           needsSave = true;
         }
       });
       
-      // Special check to prevent the owner from being demoted or having a changed role.
-      const owner = users.find(u => u.id === 'owner-1');
-      if (owner && owner.role !== 'owner') {
-          owner.role = 'owner';
-          needsSave = true;
-      }
-
       if (needsSave) {
         saveUsers(users);
       }
