@@ -2,6 +2,7 @@
 'use client';
 
 import Link from 'next/link';
+import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, BookOpen, ClipboardList, Receipt } from 'lucide-react';
@@ -11,18 +12,32 @@ import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent } from '@/lib/types';
 import { loadCalendarEvents } from '@/lib/localStorageService';
 import { isSameDay, format } from 'date-fns';
+import GuidedTour from '@/components/common/GuidedTour';
 
+const employeeTourSteps = [
+    { title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour." },
+    { title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled." },
+    { title: "Your Main Tools", content: "The cards on the right are your main tools. Here you can start vehicle inspections ('Fleet Check'), request time off, complete tasks, submit expenses, and more." },
+    { title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out." },
+    { title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!" },
+];
 
 export default function EmployeeHubPage() {
   const { user } = useAuth();
+  const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [isTourOpen, setIsTourOpen] = useState(false);
 
    useEffect(() => {
     setIsMounted(true);
+    const hasViewedTour = localStorage.getItem('hasViewedTour_employee');
+    if (searchParams.get('tour') === 'true' && !hasViewedTour) {
+        setIsTourOpen(true);
+    }
     setEvents(loadCalendarEvents());
-  }, []);
+  }, [searchParams]);
 
   const eventDates = useMemo(() => {
     return events.map(event => new Date(event.date));
@@ -53,6 +68,13 @@ export default function EmployeeHubPage() {
 
 
   return (
+    <>
+    <GuidedTour 
+        isOpen={isTourOpen} 
+        onClose={() => setIsTourOpen(false)} 
+        steps={employeeTourSteps}
+        tourKey="hasViewedTour_employee"
+    />
     <div className="container mx-auto py-8">
       <div className="text-center mb-12">
         <h1 className="text-5xl font-headline font-bold mb-4">Welcome, {user?.name || 'Employee'}!</h1>
@@ -187,5 +209,6 @@ export default function EmployeeHubPage() {
           </div>
        </div>
     </div>
+    </>
   );
 }

@@ -42,15 +42,20 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback((newRole: 'employee' | 'manager', user: AuthUser) => {
     try {
+      const hasViewedTour = localStorage.getItem(`hasViewedTour_${newRole}`);
+      
       localStorage.setItem('userRole', newRole);
       localStorage.setItem('userId', user.id);
       localStorage.setItem('userName', user.name);
       setRole(newRole);
       setUser(user);
-      if (newRole === 'employee') {
-        router.push('/employee');
+
+      const destination = newRole === 'employee' ? '/employee' : '/admin';
+      
+      if (!hasViewedTour) {
+        router.push(`${destination}?tour=true`);
       } else {
-        router.push('/admin');
+        router.push(destination);
       }
     } catch (error) {
        console.error("Could not access localStorage", error);

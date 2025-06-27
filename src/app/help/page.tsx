@@ -7,6 +7,10 @@ import Link from 'next/link';
 export default function HelpPage() {
   const faqs = [
     {
+      question: "I just logged in for the first time. What was that tour?",
+      answer: "Welcome! The first time you log in, the application provides a brief guided tour to introduce you to the key features of your dashboard. This tour is designed to help you get started quickly. It will only appear once.",
+    },
+    {
       question: "How do I use the AI Daily Briefing on the Admin Dashboard?",
       answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off or expense approvals. It helps you prioritize your work without having to manually check every section of the app.",
     },
