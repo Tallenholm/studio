@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter } from 'next/navigation';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
   SidebarProvider,
@@ -26,6 +26,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
 
 // Define which routes belong to which role
@@ -47,8 +48,11 @@ const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
+  const searchParams = useSearchParams();
   const { role, user, logout, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
+
+  const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
   useEffect(() => {
     if (isLoading) return;
@@ -380,6 +384,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
           {children}
         </main>
       </SidebarInset>
+      <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
     </SidebarProvider>
   );
 }
