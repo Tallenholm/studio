@@ -117,18 +117,42 @@ export const saveUsers = (users: User[]): void => {
 
 export const loadUsers = (): User[] => {
   if (typeof window !== 'undefined') {
+    const defaultOwner = { id: 'owner-1', name: 'Fleet Owner', pin: '5678', role: 'owner' as UserRole };
+    
     try {
       const data = localStorage.getItem(USERS_KEY);
-      if (data) {
-          return JSON.parse(data);
-      } else {
-          // On first load, seed with default users
+      let users: User[] = data ? JSON.parse(data) : [];
+
+      if (!data) {
           saveUsers(defaultUsers);
           return defaultUsers;
       }
+
+      // Self-healing logic to ensure the default owner is always correct.
+      const ownerIndex = users.findIndex(u => u.id === defaultOwner.id);
+      let needsSave = false;
+
+      if (ownerIndex > -1) {
+        const currentOwner = users[ownerIndex];
+        if (currentOwner.pin !== defaultOwner.pin || currentOwner.role !== 'owner' || currentOwner.name !== defaultOwner.name) {
+          users[ownerIndex] = { ...currentOwner, ...defaultOwner };
+          needsSave = true;
+        }
+      } else {
+        users.push(defaultOwner);
+        needsSave = true;
+      }
+      
+      if (needsSave) {
+        saveUsers(users);
+      }
+
+      return users;
+
     } catch (error) {
       console.error('Failed to load users:', error);
-      return defaultUsers; // return defaults on error
+      saveUsers(defaultUsers);
+      return defaultUsers;
     }
   }
   return [];
