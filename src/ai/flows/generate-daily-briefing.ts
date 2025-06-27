@@ -14,7 +14,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 
-export const DailyBriefingInputSchema = z.object({
+const DailyBriefingInputSchema = z.object({
   date: z.string().describe("Today's date in ISO format."),
   jobs: z.string().describe('A JSON string of all jobs.'),
   reports: z.string().describe('A JSON string of all inspection reports.'),
@@ -33,7 +33,7 @@ const BriefingItemSchema = z.object({
   link: z.string().describe('A client-side relative URL to the relevant page (e.g., /reports/[id]).'),
 });
 
-export const DailyBriefingOutputSchema = z.object({
+const DailyBriefingOutputSchema = z.object({
   attentionItems: z.array(BriefingItemSchema).describe('A list of items that require immediate attention, like failed inspections or new high-priority issues.'),
   todaysAgenda: z.array(BriefingItemSchema).describe("A summary of what's scheduled for today, including active jobs and company events."),
   pendingActions: z.array(BriefingItemSchema).describe('A list of items awaiting administrative action, such as pending time-off or expense requests.'),
