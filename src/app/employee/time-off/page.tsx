@@ -209,7 +209,7 @@ export default function TimeOffPage() {
                                 <TableCell className="font-medium whitespace-nowrap">{format(new Date(req.endDate), 'PPP')}</TableCell>
                                 <TableCell className="text-muted-foreground">{req.reason}</TableCell>
                                 <TableCell>
-                                    <Badge variant={getStatusBadgeVariant(req.status)} className={req.status === 'approved' ? 'bg-green-600' : ''}>
+                                    <Badge variant={getStatusBadgeVariant(req.status)} className={cn(req.status === 'approved' && 'bg-primary')}>
                                         {req.status}
                                     </Badge>
                                 </TableCell>

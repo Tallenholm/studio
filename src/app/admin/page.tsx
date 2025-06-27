@@ -70,9 +70,9 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
 
   if (allItems.length === 0) {
       return (
-           <Card className="mb-8 border-green-500/50 shadow-xl bg-green-500/5 hover:shadow-green-500/20 transition-all duration-300">
+           <Card className="mb-8 border-primary/50 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline text-green-600">
+                    <CardTitle className="flex items-center gap-2 font-headline text-primary">
                     <ThumbsUp />
                     All Clear!
                     </CardTitle>

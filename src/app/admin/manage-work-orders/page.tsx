@@ -27,6 +27,7 @@ import { ClipboardEdit, Loader2, Pencil, Eye } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const workOrderSchema = z.object({
   status: z.enum(['open', 'in-progress', 'completed', 'on-hold']),
@@ -145,7 +146,7 @@ export default function ManageWorkOrdersPage() {
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.assetName}</TableCell>
                     <TableCell>
-                       <Badge variant={getStatusBadgeVariant(order.status)} className={order.status === 'completed' ? 'bg-green-600' : ''}>
+                       <Badge variant={getStatusBadgeVariant(order.status)} className={cn(order.status === 'completed' && 'bg-primary')}>
                         {getStatusLabel(order.status)}
                        </Badge>
                     </TableCell>

@@ -21,6 +21,7 @@ import { useToast } from '@/hooks/use-toast';
 import { ClipboardCheck, Loader2, Check, X } from 'lucide-react';
 import { format, eachDayOfInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
+import { cn } from '@/lib/utils';
 
 export default function ManageRequestsPage() {
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
@@ -140,7 +141,7 @@ export default function ManageRequestsPage() {
                                     <TableCell>{format(new Date(req.startDate), 'PPP')} - {format(new Date(req.endDate), 'PPP')}</TableCell>
                                     <TableCell className="text-muted-foreground max-w-xs">{req.reason}</TableCell>
                                     <TableCell>
-                                        <Badge variant={getStatusBadgeVariant(req.status)} className={req.status === 'approved' ? 'bg-green-600' : ''}>
+                                        <Badge variant={getStatusBadgeVariant(req.status)} className={cn(req.status === 'approved' && 'bg-primary')}>
                                             {req.status}
                                         </Badge>
                                     </TableCell>
@@ -148,7 +149,7 @@ export default function ManageRequestsPage() {
                                         {req.status === 'pending' && (
                                             <div className="flex gap-2 justify-end">
                                                 <Button variant="outline" size="icon" onClick={() => updateRequestStatus(req.id, 'approved')}>
-                                                    <Check className="h-4 w-4 text-green-500" />
+                                                    <Check className="h-4 w-4 text-primary" />
                                                 </Button>
                                                 <Button variant="outline" size="icon" onClick={() => updateRequestStatus(req.id, 'denied')}>
                                                     <X className="h-4 w-4 text-destructive" />

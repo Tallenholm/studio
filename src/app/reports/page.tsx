@@ -11,6 +11,7 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2, User } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
+import { cn } from '@/lib/utils';
 
 export default function ReportsListPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
@@ -73,10 +74,10 @@ export default function ReportsListPage() {
               <CardHeader className="pb-4">
                 <div className="flex justify-between items-start">
                  <CardTitle className="text-xl font-headline capitalize flex items-center gap-2">
-                    {report.overallStatus === 'pass' ? <CheckCircle2 className="h-6 w-6 text-green-500" /> : <AlertTriangle className="h-6 w-6 text-destructive" />}
+                    {report.overallStatus === 'pass' ? <CheckCircle2 className="h-6 w-6 text-primary" /> : <AlertTriangle className="h-6 w-6 text-destructive" />}
                     {report.type.replace('-', ' ')}
                   </CardTitle>
-                  <Badge variant={report.overallStatus === 'pass' ? 'default' : 'destructive'} className={`${report.overallStatus === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90'} text-primary-foreground`}>
+                  <Badge variant={report.overallStatus === 'pass' ? 'default' : 'destructive'} className={cn(report.overallStatus === 'pass' && 'bg-primary', "text-primary-foreground")}>
                     {report.overallStatus?.toUpperCase()}
                   </Badge>
                 </div>

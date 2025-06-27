@@ -12,6 +12,7 @@ import { Separator } from '../ui/separator';
 import { CHECKLIST_DATA } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 interface ReportDisplayProps {
   report: InspectionReport;
@@ -36,8 +37,8 @@ const getItemIcon = (vehicleType: string, itemId: string) => {
 
 
 export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing, onCreateWorkOrder, hasWorkOrder }: ReportDisplayProps) {
-  const overallStatusColor = report.overallStatus === 'pass' ? 'text-green-600' : 'text-destructive';
-  const overallStatusBadgeClass = report.overallStatus === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90';
+  const overallStatusColor = report.overallStatus === 'pass' ? 'text-primary' : 'text-destructive';
+  const overallStatusBadgeClass = report.overallStatus === 'pass' ? 'bg-primary' : 'bg-destructive';
 
 
   return (
@@ -67,7 +68,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
           </div>
           <Badge 
             variant={report.overallStatus === 'pass' ? 'default' : 'destructive'} 
-            className={`px-4 py-2 text-lg shrink-0 ${overallStatusBadgeClass} text-primary-foreground`}
+            className={cn(`px-4 py-2 text-lg shrink-0 text-primary-foreground`, overallStatusBadgeClass)}
           >
             Overall: {report.overallStatus?.toUpperCase()}
           </Badge>
@@ -99,13 +100,13 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
                 <AccordionContent className="px-4 py-3 border-t bg-background/50">
                   <ul className="space-y-3">
                     {section.items.map((item: CompletedInspectionItem) => (
-                      <li key={item.itemId} className={`p-3 rounded-md border ${item.status === 'pass' ? 'border-green-300 bg-green-500/10' : 'border-red-300 bg-destructive/10'}`}>
+                      <li key={item.itemId} className={`p-3 rounded-md border ${item.status === 'pass' ? 'border-primary/30 bg-primary/10' : 'border-destructive/30 bg-destructive/10'}`}>
                         <div className="flex items-center justify-between">
                           <span className="font-medium flex items-center">
                             {getItemIcon(section.vehicleType, item.itemId)}
                             {item.name}
                           </span>
-                          <Badge variant={item.status === 'pass' ? 'default' : 'destructive'} className={`${item.status === 'pass' ? 'bg-green-500 hover:bg-green-600' : 'bg-destructive hover:bg-destructive/90'} text-primary-foreground`}>
+                          <Badge variant={item.status === 'pass' ? 'default' : 'destructive'} className={cn(item.status === 'pass' && 'bg-primary', 'text-primary-foreground')}>
                             {item.status.toUpperCase()}
                           </Badge>
                         </div>
@@ -148,17 +149,17 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
             <div>
               <h3 className="text-xl font-semibold mb-3 font-headline flex items-center gap-2"><Brain className="text-primary h-6 w-6" />AI Anomaly Detection</h3>
               {report.anomalyReport ? (
-                <Card className={`border-2 ${report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 'border-destructive bg-destructive/10' : 'border-green-500 bg-green-500/10'} shadow-md`}>
+                <Card className={`border-2 ${report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 'border-destructive bg-destructive/10' : 'border-primary/50 bg-primary/10'} shadow-md`}>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       {report.anomalyReport.requiresIntervention || report.anomalyReport.requiresProcedureChange ? 
                         <AlertOctagon className="text-destructive h-6 w-6" /> : 
-                        <ThumbsUp className="text-green-600 h-6 w-6" />}
+                        <ThumbsUp className="text-primary h-6 w-6" />}
                       Analysis Results
                     </CardTitle>
                   </CardHeader>
                   <CardContent className="space-y-2">
-                    <p><strong>Anomalies Detected:</strong> {report.anomalyReport.anomaliesDetected ? <span className="font-semibold text-destructive">Yes</span> : <span className="font-semibold text-green-600">No</span>}</p>
+                    <p><strong>Anomalies Detected:</strong> {report.anomalyReport.anomaliesDetected ? <span className="font-semibold text-destructive">Yes</span> : <span className="font-semibold text-primary">No</span>}</p>
                     <p><strong>Summary:</strong> {report.anomalyReport.anomalySummary}</p>
                     <p><strong>Requires Mechanic Intervention:</strong> {report.anomalyReport.requiresIntervention ? <span className="font-bold text-destructive">Yes</span> : 'No'}</p>
                     <p><strong>Requires Procedure Change:</strong> {report.anomalyReport.requiresProcedureChange ? <span className="font-bold text-destructive">Yes</span> : 'No'}</p>
@@ -167,7 +168,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
               ) : onAnalyze ? (
                 <div className="text-center p-6 border-2 border-dashed rounded-lg">
                   <p className="mb-4 text-muted-foreground">No AI analysis has been run for this report yet.</p>
-                  <Button onClick={onAnalyze} disabled={isAnalyzing} className="bg-primary hover:bg-primary/90 text-lg px-6 py-3">
+                  <Button onClick={onAnalyze} disabled={isAnalyzing} className="text-lg px-6 py-3">
                     {isAnalyzing ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Brain className="mr-2 h-5 w-5" />}
                     {isAnalyzing ? 'Analyzing...' : 'Run AI Analysis'}
                   </Button>

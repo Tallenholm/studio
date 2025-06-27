@@ -43,6 +43,7 @@ import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-
 import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
+import { cn } from '@/lib/utils';
 
 const taskSchema = z.object({
   assignedToEmployeeId: z.string({ required_error: 'Please select an employee.' }),
@@ -153,7 +154,7 @@ export default function ManageTasksPage() {
                         <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPP')}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Badge variant={getStatusBadgeVariant(task.status)} className={task.status === 'completed' ? 'bg-green-600' : ''}>{task.status}</Badge>
+                        <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-primary')}>{task.status}</Badge>
                         <Button variant="ghost" size="icon" onClick={() => removeTask(task.id)} aria-label={`Remove task`}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>

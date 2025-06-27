@@ -236,7 +236,7 @@ export default function ManageJobsPage() {
                 {jobList.map(job => (
                   <TableRow key={job.id}>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(job.status)} className={cn(job.status === 'active' && 'bg-green-600')}>
+                      <Badge variant={getStatusBadgeVariant(job.status)} className={cn(job.status === 'active' && 'bg-primary')}>
                         {job.status}
                       </Badge>
                     </TableCell>
@@ -500,10 +500,10 @@ export default function ManageJobsPage() {
             <CardHeader className="flex-row items-center justify-between pb-2">
                 <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
                 <div className="flex items-center gap-2">
-                    <DollarSign className="h-6 w-6 text-green-500" />
+                    <DollarSign className="h-6 w-6 text-primary" />
                     <div>
                         <p className="text-sm text-muted-foreground">Total Active Value</p>
-                        <p className="text-xl font-bold text-green-600">{formatCurrency(totalActiveValue)}</p>
+                        <p className="text-xl font-bold text-primary">{formatCurrency(totalActiveValue)}</p>
                     </div>
                 </div>
             </CardHeader>
