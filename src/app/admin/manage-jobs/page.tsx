@@ -25,7 +25,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil } from 'lucide-react';
+import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -34,6 +34,7 @@ const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required.'),
   clientId: z.string({ required_error: 'Please select a client.' }),
   address: z.string().min(1, 'Job address is required.'),
+  jobValue: z.coerce.number().optional(),
   dateRange: z.object({
     from: z.date({ required_error: 'A start date is required.' }),
     to: z.date({ required_error: 'An end date is required.' }),
@@ -65,6 +66,10 @@ export default function ManageJobsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const { toast } = useToast();
+
+  const [searchTerm, setSearchTerm] = useState('');
+  const [clientFilter, setClientFilter] = useState('all');
+  const [statusFilter, setStatusFilter] = useState('all');
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -100,6 +105,7 @@ export default function ManageJobsPage() {
       name: job.name,
       clientId: job.clientId,
       address: job.address,
+      jobValue: job.jobValue,
       dateRange: {
         from: new Date(job.startDate),
         to: new Date(job.endDate),
@@ -122,6 +128,7 @@ export default function ManageJobsPage() {
             clientId: client.id,
             clientName: client.name,
             address: values.address,
+            jobValue: values.jobValue,
             startDate: values.dateRange.from.toISOString().split('T')[0],
             endDate: values.dateRange.to.toISOString().split('T')[0],
         };
@@ -134,6 +141,7 @@ export default function ManageJobsPage() {
         clientId: client.id,
         clientName: client.name,
         address: values.address,
+        jobValue: values.jobValue,
         startDate: values.dateRange.from.toISOString().split('T')[0],
         endDate: values.dateRange.to.toISOString().split('T')[0],
       };
@@ -170,14 +178,34 @@ export default function ManageJobsPage() {
     })).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   }, [jobs]);
 
-  const upcomingJobs = jobsWithStatus.filter(j => j.status === 'upcoming');
-  const activeJobs = jobsWithStatus.filter(j => j.status === 'active');
-  const completedJobs = jobsWithStatus.filter(j => j.status === 'completed');
+  const filteredJobs = useMemo(() => {
+    return jobsWithStatus.filter(job => {
+        const searchMatch = searchTerm === '' || 
+                            job.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
+                            job.address.toLowerCase().includes(searchTerm.toLowerCase());
+        const clientMatch = clientFilter === 'all' || job.clientId === clientFilter;
+        const statusMatch = statusFilter === 'all' || job.status === statusFilter;
+        return searchMatch && clientMatch && statusMatch;
+    });
+  }, [jobsWithStatus, searchTerm, clientFilter, statusFilter]);
+
+  const upcomingJobs = filteredJobs.filter(j => j.status === 'upcoming');
+  const activeJobs = filteredJobs.filter(j => j.status === 'active');
+  const completedJobs = filteredJobs.filter(j => j.status === 'completed');
+
+  const totalActiveValue = useMemo(() => {
+    return activeJobs.reduce((acc, job) => acc + (job.jobValue || 0), 0);
+  }, [activeJobs]);
+
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return 'N/A';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
 
   const renderJobsTable = (jobList: (Job & { status: JobStatus })[], title: string) => (
     <Card>
       <CardHeader>
-        <CardTitle>{title}</CardTitle>
+        <CardTitle>{title} ({jobList.length})</CardTitle>
       </CardHeader>
       <CardContent>
         {jobList.length > 0 ? (
@@ -189,6 +217,7 @@ export default function ManageJobsPage() {
                   <TableHead>Job Name</TableHead>
                   <TableHead>Client</TableHead>
                   <TableHead>Address</TableHead>
+                  <TableHead>Job Value</TableHead>
                   <TableHead>Dates</TableHead>
                   <TableHead className="text-right w-[120px]">Actions</TableHead>
                 </TableRow>
@@ -204,6 +233,7 @@ export default function ManageJobsPage() {
                     <TableCell className="font-medium">{job.name}</TableCell>
                     <TableCell>{job.clientName}</TableCell>
                     <TableCell>{job.address}</TableCell>
+                    <TableCell>{formatCurrency(job.jobValue)}</TableCell>
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
                     <TableCell className="text-right">
                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(job)} aria-label={`Edit job ${job.name}`}>
@@ -219,7 +249,7 @@ export default function ManageJobsPage() {
             </Table>
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} jobs.</div>
+          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} jobs found with current filters.</div>
         )}
       </CardContent>
     </Card>
@@ -277,30 +307,45 @@ export default function ManageJobsPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                      control={form.control}
-                      name="clientId"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Client</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a client" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              {clients.map(client => (
-                                <SelectItem key={client.id} value={client.id}>
-                                  {client.name}
-                                </SelectItem>
-                              ))}
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      <FormField
+                        control={form.control}
+                        name="clientId"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Client</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
+                              <FormControl>
+                                <SelectTrigger>
+                                  <SelectValue placeholder="Select a client" />
+                                </SelectTrigger>
+                              </FormControl>
+                              <SelectContent>
+                                {clients.map(client => (
+                                  <SelectItem key={client.id} value={client.id}>
+                                    {client.name}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                       <FormField
+                          control={form.control}
+                          name="jobValue"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Job Value (Optional)</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                    </div>
                     <FormField
                       control={form.control}
                       name="address"
@@ -368,6 +413,48 @@ export default function ManageJobsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+          <Card className="bg-muted/30">
+            <CardHeader className="flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
+                <div className="flex items-center gap-2">
+                    <DollarSign className="h-6 w-6 text-green-500" />
+                    <div>
+                        <p className="text-sm text-muted-foreground">Total Active Value</p>
+                        <p className="text-xl font-bold text-green-600">{formatCurrency(totalActiveValue)}</p>
+                    </div>
+                </div>
+            </CardHeader>
+            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <Input 
+                    placeholder="Search by name or address..."
+                    value={searchTerm}
+                    onChange={e => setSearchTerm(e.target.value)}
+                />
+                 <Select value={clientFilter} onValueChange={setClientFilter}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filter by client..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Clients</SelectItem>
+                        {clients.map(client => (
+                            <SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>
+                        ))}
+                    </SelectContent>
+                </Select>
+                 <Select value={statusFilter} onValueChange={setStatusFilter}>
+                    <SelectTrigger>
+                        <SelectValue placeholder="Filter by status..." />
+                    </SelectTrigger>
+                    <SelectContent>
+                        <SelectItem value="all">All Statuses</SelectItem>
+                        <SelectItem value="active">Active</SelectItem>
+                        <SelectItem value="upcoming">Upcoming</SelectItem>
+                        <SelectItem value="completed">Completed</SelectItem>
+                    </SelectContent>
+                </Select>
+            </CardContent>
+          </Card>
+
           {renderJobsTable(activeJobs, "Active Jobs")}
           {renderJobsTable(upcomingJobs, "Upcoming Jobs")}
           {renderJobsTable(completedJobs, "Completed Jobs")}

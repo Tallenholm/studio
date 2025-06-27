@@ -442,9 +442,9 @@ export const loadClients = (): Client[] => {
 
 // Job Management
 const defaultJobs: Job[] = [
-    { id: 'job-1', name: 'Lot 5 Excavation', clientId: 'client-1', clientName: 'Main Street Properties', address: '123 Main St, Anytown, USA', status: 'active', startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-    { id: 'job-2', name: 'Downtown Plaza Snow Removal', clientId: 'client-2', clientName: 'City Development Group', address: '456 Central Ave, Anytown, USA', status: 'upcoming', startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
-    { id: 'job-3', name: 'Old Mill Foundation', clientId: 'client-1', clientName: 'Main Street Properties', address: '789 River Rd, Anytown, USA', status: 'completed', startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+    { id: 'job-1', name: 'Lot 5 Excavation', clientId: 'client-1', clientName: 'Main Street Properties', address: '123 Main St, Anytown, USA', jobValue: 50000, startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+    { id: 'job-2', name: 'Downtown Plaza Snow Removal', clientId: 'client-2', clientName: 'City Development Group', address: '456 Central Ave, Anytown, USA', jobValue: 125000, startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
+    { id: 'job-3', name: 'Old Mill Foundation', clientId: 'client-1', clientName: 'Main Street Properties', address: '789 River Rd, Anytown, USA', jobValue: 78000, startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] },
 ];
 
 export const saveJobs = (jobs: Job[]): void => {
