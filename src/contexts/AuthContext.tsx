@@ -42,7 +42,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
       setRole(loggedInUser.role);
       setUser(loggedInUser);
-      // Routing is now handled by the AppLayout component
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
@@ -53,7 +52,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.removeItem('fleetCheckUser');
       setRole(null);
       setUser(null);
-      // Routing is now handled by the AppLayout component
     } catch (error) {
        console.error("Could not access localStorage", error);
     }

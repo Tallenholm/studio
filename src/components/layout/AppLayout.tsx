@@ -21,12 +21,17 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
-import type { NotificationMessage } from '@/lib/types';
+import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
+const FullScreenLoader = () => (
+  <div className="flex h-screen items-center justify-center bg-background">
+    <Loader2 className="h-12 w-12 animate-spin text-primary" />
+  </div>
+);
 
 // Define which routes belong to which role
 const managerRoutes = [
@@ -44,90 +49,107 @@ const ownerRoutes = [
 
 const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
 
+const isPathAllowed = (pathname: string, role: UserRole | null): boolean => {
+    if (!role) return false;
+
+    // Allow specific dynamic routes
+    if (pathname.startsWith('/reports/')) return true;
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+    
+    if (role === 'owner') return ownerRoutes.includes(pathname);
+    if (role === 'manager') return managerRoutes.includes(pathname);
+    if (role === 'employee') return employeeBaseRoutes.includes(pathname);
+    
+    return false;
+};
+
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
   const router = useRouter();
   const searchParams = useSearchParams();
   const { role, user, logout, isLoading } = useAuth();
   const [unreadCount, setUnreadCount] = useState(0);
-
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
+  // Effect to handle all routing side-effects
   useEffect(() => {
-    // Update unread notifications count
+    if (isLoading) return; // Wait until authentication state is loaded
+
+    const onLoginPage = pathname === '/login';
+
+    // If user is logged in, check if they are on the login page or a forbidden page
     if (user) {
-        const notifications = loadNotifications();
-        const userNotifications = notifications.filter(
-            notif => notif.recipientId === 'all' || notif.recipientId === user.id
-        );
-        const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
-        setUnreadCount(count);
+      if (onLoginPage || !isPathAllowed(pathname, user.role)) {
+        const destination = user.role === 'employee' ? '/employee' : '/admin';
+        router.replace(destination);
+      }
+    } 
+    // If user is not logged in, they must be on the login page
+    else {
+      if (!onLoginPage) {
+        router.replace('/login');
+      }
     }
-    
-    // --- Redirection Logic ---
-    if (isLoading) {
-      return; // Wait for auth state to be resolved
-    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, user, pathname]);
+  
+  // Effect to update notification count
+  useEffect(() => {
+      if (user) {
+          const notifications = loadNotifications();
+          const userNotifications = notifications.filter(
+              notif => notif.recipientId === 'all' || notif.recipientId === user.id
+          );
+          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+          setUnreadCount(count);
+      }
+  }, [user, pathname]);
 
-    const isAllowed = () => {
-        if (pathname.startsWith('/reports/')) return true;
-        if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+  // --- Render Logic ---
 
-        if (role === 'owner') return ownerRoutes.includes(pathname);
-        if (role === 'manager') return managerRoutes.includes(pathname);
-        if (role === 'employee') return employeeBaseRoutes.includes(pathname);
-        
-        return false;
-    };
-
-    // If user is not logged in, they must be on the login page.
-    if (!role && pathname !== '/login') {
-      router.replace('/login');
-    }
-
-    // If user is logged in, they must be on an allowed page.
-    // This handles redirecting away from /login and forbidden pages.
-    if (role && !isAllowed()) {
-      const destination = role === 'employee' ? '/employee' : '/admin';
-      router.replace(destination);
-    }
-  }, [isLoading, role, pathname, router, user]);
-
-  // --- Rendering Logic ---
-
+  // While checking auth state, show a full-screen loader
   if (isLoading) {
-    return (
-      <div className="flex h-screen items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-      </div>
-    );
+    return <FullScreenLoader />;
   }
 
-  // If a user is logged in...
-  if (role) {
-    // If they are on the login page (e.g., during the redirect), show a loader
-    // to prevent screen flashing and conflicts.
-    if (pathname === '/login') {
-       return (
-        <div className="flex h-screen items-center justify-center bg-background">
-          <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-      );
-    }
+  const onLoginPage = pathname === '/login';
+  const isAllowed = isPathAllowed(pathname, role);
 
-    // Otherwise, they are logged in and on an authorized page. Render the full app layout.
-    const isAdmin = role === 'owner' || role === 'manager';
+  // Determine if the app is in a transient state (i.e., a redirect is pending).
+  // In these cases, show a loader to prevent a flash of incorrect content.
+  const isRedirecting = 
+    (!!user && onLoginPage) ||   // Logged in, but on login page
+    (!user && !onLoginPage) ||   // Not logged in, and not on login page
+    (!!user && !isAllowed);      // Logged in, but on a forbidden page
+
+  if (isRedirecting) {
+    return <FullScreenLoader />;
+  }
+  
+  // If not logged in, and on the login page (stable state)
+  if (!user) {
     return (
-      <SidebarProvider defaultOpen>
-        <Sidebar id="tour-step-sidebar">
-          <SidebarHeader className="p-4 flex flex-col items-center">
-             <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-              <Truck className="h-8 w-8 text-primary" />
-              <h1 className="text-2xl font-headline font-bold leading-tight">Logan's Excavating</h1>
-            </Link>
-          </SidebarHeader>
-          <SidebarContent>
-            {role === 'employee' && (
+        <>
+            {children}
+            <AiAssistantWidget initialOpen={false} />
+        </>
+    );
+  }
+  
+  // If we reach here, user is logged in and on an allowed page.
+  const isAdmin = role === 'owner' || role === 'manager';
+  
+  return (
+    <SidebarProvider defaultOpen>
+      <Sidebar id="tour-step-sidebar">
+        <SidebarHeader className="p-4 flex flex-col items-center">
+           <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
+            <Truck className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-headline font-bold leading-tight">Logan's Excavating</h1>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent>
+          {role === 'employee' && (
             <SidebarGroup>
               <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
               <SidebarMenu>
@@ -391,18 +413,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       </SidebarInset>
       <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
     </SidebarProvider>
-    );
-  }
-
-  // If user is not logged in, show the login page content, or a loader if navigating.
-  return pathname === '/login' ? (
-    <>
-      {children}
-      <AiAssistantWidget initialOpen={false} />
-    </>
-  ) : (
-    <div className="flex h-screen items-center justify-center bg-background">
-      <Loader2 className="h-12 w-12 animate-spin text-primary" />
-    </div>
   );
 }
