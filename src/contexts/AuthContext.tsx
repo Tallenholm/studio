@@ -40,24 +40,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
   const login = useCallback((loggedInUser: User) => {
     try {
-      const tourKey = `hasViewedTour_${loggedInUser.role}`;
-      const hasViewedTour = localStorage.getItem(tourKey);
-      
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
       setRole(loggedInUser.role);
       setUser(loggedInUser);
-
-      const destination = loggedInUser.role === 'employee' ? '/employee' : '/admin';
-      
-      if (!hasViewedTour) {
-        router.push(`${destination}?tour=true`);
-      } else {
-        router.push(destination);
-      }
+      // The redirection logic is now fully handled by the main AppLayout component
+      // to prevent race conditions and redirect loops.
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, [router]);
+  }, []);
 
   const logout = useCallback(() => {
     try {

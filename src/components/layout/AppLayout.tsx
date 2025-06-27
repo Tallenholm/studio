@@ -55,19 +55,47 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
   useEffect(() => {
-    if (isLoading) return;
+    if (isLoading) {
+      return; // Wait for auth state to be determined from localStorage
+    }
 
+    // Unauthenticated User Logic
+    if (!role) {
+      // If not authenticated, the only allowed page is /login.
+      // Redirect if they are anywhere else.
+      if (pathname !== '/login') {
+        router.push('/login');
+      }
+      return;
+    }
+
+    // --- Authenticated User Logic ---
+    // (role is guaranteed to exist from this point on)
+    
+    const destination = role === 'employee' ? '/employee' : '/admin';
+
+    // If an authenticated user lands on the login page, redirect them to their dashboard.
+    // This handles the post-login redirect.
+    if (pathname === '/login') {
+      const tourKey = `hasViewedTour_${role}`;
+      const hasViewedTour = localStorage.getItem(tourKey);
+
+      if (!hasViewedTour) {
+        router.push(`${destination}?tour=true`);
+      } else {
+        router.push(destination);
+      }
+      return; // End of logic for this render cycle
+    }
+
+    // If an authenticated user is on any other page, check if they have permission.
     const isAllowed = () => {
-      // Return early if no role, this is handled below.
-      if (!role) return false;
-      
       if (role === 'owner') {
-        if (pathname.startsWith('/admin/jobs/')) return true;
+        if (pathname.startsWith('/admin/jobs/')) return true; // Owner can view job details
         if (pathname.startsWith('/reports/')) return true;
         return ownerRoutes.includes(pathname);
       }
       if (role === 'manager') {
-        if (pathname.startsWith('/admin/jobs/')) return true;
         if (pathname.startsWith('/reports/')) return true;
         return managerRoutes.includes(pathname);
       }
@@ -78,24 +106,10 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return false;
     };
 
-    // Case 1: Not logged in.
-    if (!role) {
-      // If they are not on the login page already, send them there.
-      if (pathname !== '/login') {
-        router.push('/login');
-      }
-      return; // End of logic for non-logged-in users.
-    }
-
-    // After this point, we know `role` exists.
-
-    // Case 2: Logged in, but on a forbidden page.
+    // If they are on a page they do not have permission for, redirect to their dashboard.
     if (!isAllowed()) {
-      // Redirect to their respective dashboard.
-      const dashboardPath = role === 'employee' ? '/employee' : '/admin';
-      router.push(dashboardPath);
+      router.push(destination);
     }
-
   }, [pathname, role, isLoading, router]);
   
   useEffect(() => {
