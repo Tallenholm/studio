@@ -22,7 +22,7 @@ interface AiAssistantWidgetProps {
     initialOpen?: boolean;
 }
 
-const welcomeMessage = "Hello! I'm your AI Assistant. I can answer questions about how to use the Logan's Excavating application, based on your role. For example, you could ask:\n\n- \"How do I submit an inspection?\"\n- \"What does the AI Daily Briefing do?\"\n\nWhat can I help you with today?";
+const welcomeMessage = "Hello! I'm your AI Assistant. For admins, I can help automate tasks like filling out new job forms from a simple description—just look for the 'Create with AI' button on the Manage Jobs page.\n\nHere, I can answer any questions you have about using the app. For example:\n\n- \"How do I submit an inspection?\"\n- \"What does the AI Daily Briefing do?\"\n\nWhat can I help you with today?";
 
 export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWidgetProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
