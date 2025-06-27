@@ -50,19 +50,26 @@ const ownerRoutes = [
 const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
 
 const isPathAllowed = (pathname: string, role: UserRole | null): boolean => {
-    if (!role) return false;
-
-    // Allow specific dynamic routes
-    if (pathname.startsWith('/reports/')) return true;
-    if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
-    
-    // Allow root page as it will be redirected from
+    // Allow root path; the layout will handle redirecting from it. This prevents getting stuck.
     if (pathname === '/') return true;
 
+    // If there is no role, the only allowed path is the login page.
+    if (!role) return pathname === '/login';
+
+    // If there IS a role, the login page is not allowed.
+    if (pathname === '/login') return false;
+
+    // Allow specific dynamic routes for any authenticated user
+    if (pathname.startsWith('/reports/')) return true;
+    
+    // Role-specific dynamic routes
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+
+    // Check against static route lists based on role
     if (role === 'owner') return ownerRoutes.includes(pathname);
     if (role === 'manager') return managerRoutes.includes(pathname);
     if (role === 'employee') return employeeBaseRoutes.includes(pathname);
-    
+
     return false;
 };
 
@@ -74,72 +81,58 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
   const [unreadCount, setUnreadCount] = useState(0);
   const showAiAssistantWelcome = searchParams.get('tour') === 'true';
 
-  // This effect is the single source of truth for navigation.
-  // It ensures the user is always on a page they are allowed to see.
+  const isAllowed = isPathAllowed(pathname, role);
+
+  // Effect to handle all routing side-effects
   useEffect(() => {
     if (isLoading) {
-      return; // Don't do anything until we know the user's auth status.
+      return; // Wait until authentication state is loaded
     }
 
-    const onLoginPage = pathname === '/login';
-
-    if (user) {
-      // User is logged in.
-      if (onLoginPage || !isPathAllowed(pathname, user.role)) {
-        // If they are on the login page or a forbidden page, redirect them to their dashboard.
-        const destination = user.role === 'employee' ? '/employee' : '/admin';
+    if (!isAllowed) {
+      if (user) {
+        // User is logged in but on a forbidden page (like '/' or an admin page they can't access)
+        const destination = role === 'employee' ? '/employee' : '/admin';
         router.replace(destination);
-      }
-    } else {
-      // User is not logged in.
-      if (!onLoginPage) {
-        // If they are on any page other than login, redirect them to login.
+      } else {
+        // User is not logged in and not on the login page
         router.replace('/login');
       }
     }
-  }, [isLoading, user, pathname, router]);
-
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLoading, isAllowed, user, role, pathname]); // pathname included to re-evaluate on navigation
+  
+  // Effect to update notification count
   useEffect(() => {
-    if (user) {
-        const notifications = loadNotifications();
-        const userNotifications = notifications.filter(
-            notif => notif.recipientId === 'all' || notif.recipientId === user.id
-        );
-        const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
-        setUnreadCount(count);
-    }
+      if (user) {
+          const notifications = loadNotifications();
+          const userNotifications = notifications.filter(
+              notif => notif.recipientId === 'all' || notif.recipientId === user.id
+          );
+          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+          setUnreadCount(count);
+      }
   }, [user, pathname]);
 
   // --- Render Logic ---
 
-  if (isLoading) {
-    return <FullScreenLoader />;
-  }
-
-  const onLoginPage = pathname === '/login';
-
-  if (!user) {
-    // If there's no user, we should only be showing the login page.
-    // The useEffect above will handle redirecting from any other page.
-    // So, if we are on the login page, render it. Otherwise, show a loader.
-    return onLoginPage ? (
-      <>
-        {children}
-        <AiAssistantWidget initialOpen={false} />
-      </>
-    ) : (
-      <FullScreenLoader />
-    );
-  }
-
-  // If there IS a user, we should only be showing an allowed page.
-  // The useEffect will handle redirecting from forbidden pages (like /login).
-  // If the path is allowed, render the app. Otherwise, show a loader while redirecting.
-  if (!isPathAllowed(pathname, user.role)) {
+  // Show loader while auth state is loading OR while a redirect is pending.
+  if (isLoading || !isAllowed) {
     return <FullScreenLoader />;
   }
   
-  // If we reach here, user is logged in and on an allowed page.
+  // If we are here, we are on an allowed page.
+  if (pathname === '/login') {
+      // This must be the login page for an unauthenticated user
+      return (
+        <>
+            {children}
+            <AiAssistantWidget initialOpen={false} />
+        </>
+      );
+  }
+  
+  // This must be an authenticated user on an allowed app page.
   const isAdmin = role === 'owner' || role === 'manager';
   
   return (
