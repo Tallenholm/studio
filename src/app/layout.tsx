@@ -6,8 +6,8 @@ import AppLayout from '@/components/layout/AppLayout';
 import { AuthProvider } from '@/contexts/AuthContext';
 
 export const metadata: Metadata = {
-  title: 'Fleet Check',
-  description: 'Fleet inspection and management for your business.',
+  title: "Logan's Excavating",
+  description: "Operational management for Logan's Excavating and Snow Removal.",
 };
 
 export default function RootLayout({

@@ -269,7 +269,7 @@ export default function FleetCheckDashboardPage() {
         <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Welcome, {user?.name}. Oversee fleet assets, users, reports, and settings.
+          Welcome, {user?.name}. Oversee operations, assets, and personnel.
         </p>
       </div>
       

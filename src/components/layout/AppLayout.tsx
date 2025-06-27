@@ -25,6 +25,7 @@ import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, L
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage } from '@/lib/types';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
 
 
 // Define which routes belong to which role
@@ -41,7 +42,7 @@ const ownerRoutes = [
   '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
 ];
 
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -56,15 +57,16 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       if (role === 'owner') {
         // Dynamic path checking for owner
         if (pathname.startsWith('/admin/jobs/')) return true;
+        if (pathname.startsWith('/reports/')) return true;
         return ownerRoutes.includes(pathname);
       }
       if (role === 'manager') {
         if (pathname.startsWith('/admin/jobs/')) return true; // Managers might need to view job details
+        if (pathname.startsWith('/reports/')) return true;
         return managerRoutes.includes(pathname);
       }
       if (role === 'employee') {
         if (pathname.startsWith('/reports/')) return true;
-        if (pathname.startsWith('/employee/')) return true;
         return employeeBaseRoutes.includes(pathname);
       }
       return false;
@@ -112,7 +114,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <SidebarHeader className="p-4 flex flex-col items-center">
            <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
             <Truck className="h-8 w-8 text-primary" />
-            <h1 className="text-2xl font-headline font-bold leading-tight">Fleet Check</h1>
+            <h1 className="text-2xl font-headline font-bold leading-tight">Logan's Excavating</h1>
           </Link>
         </SidebarHeader>
         <SidebarContent>

@@ -31,7 +31,7 @@ export default function SystemSettingsPage() {
             System Configuration
           </CardTitle>
           <CardDescription>
-            Configure global settings for the Fleet Check application. All options are illustrative.
+            Configure global settings for the Logan's Excavating application. All options are illustrative.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">

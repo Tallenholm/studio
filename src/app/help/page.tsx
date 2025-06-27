@@ -89,7 +89,7 @@ export default function HelpPage() {
             Help & Support
           </CardTitle>
           <CardDescription>
-            Find answers to common questions and learn how to use the Fleet Check application effectively.
+            Find answers to common questions and learn how to use the Logan's Excavating application effectively.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">

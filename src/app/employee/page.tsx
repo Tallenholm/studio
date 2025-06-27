@@ -11,7 +11,7 @@ import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent } from '@/lib/types';
 import { loadCalendarEvents } from '@/lib/localStorageService';
-import { isSameDay, format } from 'date-fns';
+import { isSameDay, format, parseISO } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
 
 const employeeTourSteps = [
@@ -40,12 +40,12 @@ export default function EmployeeHubPage() {
   }, [searchParams]);
 
   const eventDates = useMemo(() => {
-    return events.map(event => new Date(event.date));
+    return events.map(event => parseISO(event.date));
   }, [events]);
 
   const selectedDayEvents = useMemo(() => {
     if (!date) return [];
-    return events.filter(event => isSameDay(new Date(event.date), date));
+    return events.filter(event => isSameDay(parseISO(event.date), date));
   }, [date, events]);
   
   const getEventTypeLabel = (type: CalendarEvent['type']) => {
