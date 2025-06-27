@@ -80,7 +80,6 @@ export default function VehicleDocumentsPage() {
                             alt={`Preview of ${doc.title}`}
                             fill
                             className="object-cover object-top transition-transform group-hover:scale-105"
-                            data-ai-hint={doc.dataAiHint}
                           />
                            <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                 <Download className="h-10 w-10 text-white"/>

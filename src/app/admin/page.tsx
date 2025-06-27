@@ -14,6 +14,7 @@ import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Badge } from '@/components/ui/badge';
+import { ClipboardCheck, Send, BookCopy, Wrench, SlidersHorizontal } from 'lucide-react';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -308,7 +309,7 @@ export default function FleetCheckDashboardPage() {
       </Card>
 
 
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* People & Communication Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
@@ -321,16 +322,16 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start">Manage Employees</Button></Link>
-            <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start">Manage Time Off Requests</Button></Link>
-            <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start">Manage Expenses</Button></Link>
-            <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start">Manage Tasks</Button></Link>
-            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start">Manage Violations</Button></Link>
-            <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start">Send Notification</Button></Link>
+            <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Manage Employees</Button></Link>
+            <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start"><ClipboardCheck className="mr-2"/>Manage Time Off Requests</Button></Link>
+            <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>
+            <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo className="mr-2"/>Manage Tasks</Button></Link>
+            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><AlertTriangle className="mr-2"/>Manage Violations</Button></Link>
+            <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send className="mr-2"/>Send Notification</Button></Link>
           </CardContent>
         </Card>
 
-        {/* Content & Assets Card */}
+        {/* Assets & Content Card */}
         <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
@@ -342,35 +343,35 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start">Manage Fleet</Button></Link>
-            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start">Manage Documents</Button></Link>
-            <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start">Manage Calendar</Button></Link>
+            <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start"><Truck className="mr-2"/>Manage Fleet</Button></Link>
+            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start"><BookCopy className="mr-2"/>Manage Documents</Button></Link>
+            <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2"/>Manage Calendar</Button></Link>
           </CardContent>
         </Card>
 
         {/* Operations & Analytics Card */}
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card className="lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <LineChart className="text-primary" />
               Operations & Analytics
             </CardTitle>
             <CardDescription>
-              Review inspection reports, view maintenance logs, and access advanced analytics.
+              Review reports, logs, jobs, clients, and access advanced analytics.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start">View Inspection Reports</Button></Link>
-            <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start">View Maintenance Logs</Button></Link>
-            <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start">Manage Work Orders</Button></Link>
-            <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start">Manage Clients</Button></Link>
-            <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start">Manage Jobs</Button></Link>
-            <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start">Advanced Reports</Button></Link>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-3">
+            <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>
+            <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Manage Jobs</Button></Link>
+            <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
+            <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit className="mr-2"/>Manage Work Orders</Button></Link>
+            <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench className="mr-2"/>View Maintenance Logs</Button></Link>
+            <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start"><LineChart className="mr-2"/>Advanced Reports</Button></Link>
           </CardContent>
         </Card>
         
         {/* System & Access Card */}
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card className="col-span-1 md:col-span-2 lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Cog className="text-primary" />
@@ -380,9 +381,9 @@ export default function FleetCheckDashboardPage() {
               Configure system-wide settings and access the employee portal view.
             </CardDescription>
           </CardHeader>
-          <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start">System Settings</Button></Link>
-            <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start">Go to Employee Portal</Button></Link>
+          <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal className="mr-2"/>System Settings</Button></Link>
+            <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Go to Employee Portal</Button></Link>
           </CardContent>
         </Card>
 
