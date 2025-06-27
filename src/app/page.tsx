@@ -12,7 +12,7 @@ export default function RootPage() {
 
   useEffect(() => {
     if (!isLoading) {
-      if (role === 'manager') {
+      if (role === 'owner' || role === 'manager') {
         router.replace('/admin');
       } else if (role === 'employee') {
         router.replace('/employee');
