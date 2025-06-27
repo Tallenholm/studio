@@ -22,20 +22,31 @@ interface AiAssistantWidgetProps {
     initialOpen?: boolean;
 }
 
+const welcomeMessage = "Hello! I'm your AI Assistant. I can answer questions about how to use the Logan's Excavating application, based on your role. For example, you could ask:\n\n- \"How do I submit an inspection?\"\n- \"What does the AI Daily Briefing do?\"\n\nWhat can I help you with today?";
+
 export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWidgetProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [aiQuestion, setAiQuestion] = useState('');
-  const [aiAnswer, setAiAnswer] = useState('');
+  const [aiAnswer, setAiAnswer] = useState(welcomeMessage);
   const [isAsking, setIsAsking] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
 
   useEffect(() => {
-      setIsOpen(initialOpen);
-      if (initialOpen) {
-          setAiAnswer("Hi there! I'm your AI Assistant. I can answer any questions you have about using the application. How can I help you get started?");
-      }
+    if (initialOpen) {
+      setIsOpen(true);
+    }
   }, [initialOpen]);
+
+  const handleOpenChange = (open: boolean) => {
+    setIsOpen(open);
+    if (open) {
+      // When opening, reset the chat to the welcome message
+      setAiAnswer(welcomeMessage);
+      setAiQuestion('');
+      setIsAsking(false);
+    }
+  };
 
   const handleAskAi = async () => {
     if (!aiQuestion.trim()) return;
@@ -65,14 +76,14 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
             <Button
                 size="icon"
                 className="rounded-full w-14 h-14 shadow-lg shadow-primary/30"
-                onClick={() => setIsOpen(true)}
+                onClick={() => handleOpenChange(true)}
                 aria-label="Open AI Assistant"
             >
                 <Sparkles className="h-7 w-7" />
             </Button>
         </div>
 
-        <Sheet open={isOpen} onOpenChange={setIsOpen}>
+        <Sheet open={isOpen} onOpenChange={handleOpenChange}>
             <SheetContent>
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2 text-2xl">
