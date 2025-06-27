@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, BookOpen, ClipboardList, Receipt } from 'lucide-react';
+import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, BookOpen, ClipboardList, Receipt, ShieldAlert } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -203,6 +203,17 @@ export default function EmployeeHubPage() {
                   </CardTitle>
                   <CardDescription className="text-base mt-2">
                     View messages and alerts.
+                  </CardDescription>
+                </Card>
+              </Link>
+              <Link href="/employee/my-violations" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <ShieldAlert className="h-16 w-24 text-primary mx-auto mb-4" />
+                  <CardTitle className="text-2xl font-headline">
+                    My Violations
+                  </CardTitle>
+                  <CardDescription className="text-base mt-2">
+                    View your records.
                   </CardDescription>
                 </Card>
               </Link>

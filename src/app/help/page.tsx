@@ -71,6 +71,10 @@ export default function HelpPage() {
       answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, now conveniently separated into 'Pending' and 'Completed' lists. For completed tasks, you can review any notes and view verification photos submitted by employees, ensuring proper oversight.",
     },
     {
+      question: "How do I log or view an employee violation?",
+      answer: "As an administrator, navigate to 'Manage Violations' from your dashboard. Here you can log new incidents, including the type, date, and action taken. These records are for internal documentation. As an employee, you can view a private record of your own violations by navigating to the 'My Violations' page from your hub. This page is confidential and only displays your personal records.",
+    },
+    {
       question: "How do I log maintenance for a vehicle?",
       answer: "As an Administrator, navigate to the 'Maintenance Logs' section from your dashboard. Click 'Log New Service', fill in the details about the service performed, including the date, cost, and description, and select the asset it applies to. All past logs are visible on this page.",
     },

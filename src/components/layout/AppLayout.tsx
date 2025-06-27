@@ -42,7 +42,7 @@ const ownerRoutes = [
   '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
 ];
 
-const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense'];
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations'];
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname();
@@ -168,6 +168,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                   <Link href="/reports">
                     <SidebarMenuButton tooltip="My Reports" isActive={pathname.startsWith('/reports')}>
                       <FileText /><span>My Reports</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/my-violations">
+                    <SidebarMenuButton tooltip="My Violations" isActive={pathname.startsWith('/employee/my-violations')}>
+                      <ShieldAlert /><span>My Violations</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
