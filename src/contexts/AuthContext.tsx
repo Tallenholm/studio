@@ -21,7 +21,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [role, setRole] = useState<AuthRole>(null);
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const router = useRouter();
 
   useEffect(() => {
     try {
@@ -43,31 +42,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
       setRole(loggedInUser.role);
       setUser(loggedInUser);
-      
-      const destination = loggedInUser.role === 'employee' ? '/employee' : '/admin';
-      const tourKey = `hasViewedTour_${loggedInUser.role}`;
-      const hasViewedTour = localStorage.getItem(tourKey);
-
-      if (!hasViewedTour) {
-        router.replace(`${destination}?tour=true`);
-      } else {
-        router.replace(destination);
-      }
+      // Routing is now handled by the AppLayout component
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, [router]);
+  }, []);
 
   const logout = useCallback(() => {
     try {
       localStorage.removeItem('fleetCheckUser');
       setRole(null);
       setUser(null);
-      router.replace('/login');
+      // Routing is now handled by the AppLayout component
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, [router]);
+  }, []);
 
   return (
     <AuthContext.Provider value={{ role, user, login, logout, isLoading }}>

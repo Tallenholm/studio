@@ -1,0 +1,414 @@
+
+'use client';
+
+import Link from 'next/link';
+import { usePathname, useRouter, useSearchParams } from 'next/navigation';
+import { useEffect, useState } from 'react';
+import {
+  SidebarProvider,
+  Sidebar,
+  SidebarHeader,
+  SidebarTrigger,
+  SidebarContent,
+  SidebarMenu,
+  SidebarMenuItem,
+  SidebarMenuButton,
+  SidebarInset,
+  SidebarFooter,
+  SidebarGroup,
+  SidebarGroupLabel,
+  SidebarSeparator,
+} from '@/components/ui/sidebar';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { Home, FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import { loadNotifications } from '@/lib/localStorageService';
+import type { NotificationMessage } from '@/lib/types';
+import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetDescription } from '@/components/ui/sheet';
+import AiAssistantWidget from '@/components/common/AiAssistantWidget';
+
+
+// Define which routes belong to which role
+const managerRoutes = [
+  '/admin', '/reports', '/help', '/notifications',
+  '/admin/manage-requests', '/admin/manage-tasks', '/admin/manage-violations',
+  '/admin/send-notification', '/admin/manage-fleet', '/admin/manage-documents',
+  '/admin/manage-calendar', '/admin/maintenance-logs', '/admin/manage-work-orders',
+  '/employee' // For viewing employee portal
+];
+const ownerRoutes = [
+  ...managerRoutes,
+  '/admin/manage-users', '/admin/manage-expenses', '/admin/manage-clients',
+  '/admin/manage-jobs', '/admin/advanced-reports', '/admin/system-settings'
+];
+
+const employeeBaseRoutes = ['/employee', '/employee/fleet-check', '/pre-trip', '/post-trip', '/reports', '/help', '/employee/time-off', '/notifications', '/employee/vehicle-documents', '/employee/my-tasks', '/employee/submit-expense', '/employee/my-violations', '/employee/personal-documents', '/employee/company-documents'];
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+  const pathname = usePathname();
+  const router = useRouter();
+  const searchParams = useSearchParams();
+  const { role, user, logout, isLoading } = useAuth();
+  const [unreadCount, setUnreadCount] = useState(0);
+
+  const showAiAssistantWelcome = searchParams.get('tour') === 'true';
+
+  useEffect(() => {
+    if (isLoading) {
+      return; // Wait until auth state is loaded.
+    }
+
+    const onLoginPage = pathname === '/login';
+
+    if (role) {
+      // USER IS LOGGED IN
+      if (onLoginPage) {
+        // If a logged-in user somehow gets to the login page, redirect them away.
+        const destination = role === 'employee' ? '/employee' : '/admin';
+        const tourKey = `hasViewedTour_${role}`;
+        const hasViewedTour = localStorage.getItem(tourKey);
+        
+        if (!hasViewedTour) {
+          router.replace(`${destination}?tour=true`);
+        } else {
+          router.replace(destination);
+        }
+        return; // Stop further execution
+      }
+
+      // User is logged in and not on the login page. Check if they're allowed to be on the current page.
+      const isAllowed = () => {
+        if (pathname.startsWith('/reports/')) return true;
+        if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+
+        if (role === 'owner') return ownerRoutes.includes(pathname);
+        if (role === 'manager') return managerRoutes.includes(pathname);
+        if (role === 'employee') return employeeBaseRoutes.includes(pathname);
+        
+        return false;
+      };
+
+      if (!isAllowed()) {
+        // User is on a page they shouldn't be on (e.g., an employee on an admin page or an invalid URL).
+        // Redirect them to their designated dashboard.
+        const destination = role === 'employee' ? '/employee' : '/admin';
+        router.replace(destination);
+      }
+    } else {
+      // USER IS NOT LOGGED IN
+      if (!onLoginPage) {
+        // Not logged in and not on the login page, so redirect to login.
+        router.replace('/login');
+      }
+    }
+  }, [role, pathname, isLoading, router]);
+  
+  useEffect(() => {
+      if (user) {
+          const notifications = loadNotifications();
+          const userNotifications = notifications.filter(
+              notif => notif.recipientId === 'all' || notif.recipientId === user.id
+          );
+          const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+          setUnreadCount(count);
+      }
+  }, [user, pathname]); // Re-check on page navigation
+
+  if (isLoading) {
+    return (
+      <div className="flex h-screen items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  // Unauthenticated view (login page)
+  if (!role) {
+    return (
+      <>
+        {children}
+        <AiAssistantWidget initialOpen={false} />
+      </>
+    );
+  }
+
+  // Authenticated view
+  const isAdmin = role === 'owner' || role === 'manager';
+
+  return (
+    <SidebarProvider defaultOpen>
+      <Sidebar id="tour-step-sidebar">
+        <SidebarHeader className="p-4 flex flex-col items-center">
+           <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
+            <Truck className="h-8 w-8 text-primary" />
+            <h1 className="text-2xl font-headline font-bold leading-tight">Logan's Excavating</h1>
+          </Link>
+        </SidebarHeader>
+        <SidebarContent>
+          {role === 'employee' && (
+            <SidebarGroup>
+              <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
+              <SidebarMenu>
+                <SidebarMenuItem>
+                  <Link href="/employee">
+                    <SidebarMenuButton tooltip="Employee Hub" isActive={pathname === '/employee'}>
+                      <LayoutDashboard /><span>Employee Hub</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/fleet-check">
+                    <SidebarMenuButton tooltip="Fleet Check" isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
+                      <Truck /><span>Fleet Check</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/employee/time-off">
+                    <SidebarMenuButton tooltip="Request Time Off" isActive={pathname.startsWith('/employee/time-off')}>
+                      <CalendarPlus /><span>Time Off</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/my-tasks">
+                    <SidebarMenuButton tooltip="My Tasks" isActive={pathname.startsWith('/employee/my-tasks')}>
+                      <ClipboardList /><span>My Tasks</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/submit-expense">
+                    <SidebarMenuButton tooltip="Submit Expense" isActive={pathname.startsWith('/employee/submit-expense')}>
+                      <Receipt /><span>Submit Expense</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/employee/company-documents">
+                    <SidebarMenuButton tooltip="Company Documents" isActive={pathname.startsWith('/employee/company-documents')}>
+                      <Files /><span>Company Docs</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/employee/personal-documents">
+                    <SidebarMenuButton tooltip="Personal Documents" isActive={pathname.startsWith('/employee/personal-documents')}>
+                      <FileBadge /><span>Personal Docs</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/reports">
+                    <SidebarMenuButton tooltip="My Reports" isActive={pathname.startsWith('/reports')}>
+                      <FileText /><span>My Reports</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                <SidebarMenuItem>
+                  <Link href="/employee/my-violations">
+                    <SidebarMenuButton tooltip="My Violations" isActive={pathname.startsWith('/employee/my-violations')}>
+                      <ShieldAlert /><span>My Violations</span>
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+                 <SidebarMenuItem>
+                  <Link href="/notifications">
+                    <SidebarMenuButton tooltip="Notifications" isActive={pathname.startsWith('/notifications')}>
+                      <Bell />
+                      <span>Notifications</span>
+                      {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
+                    </SidebarMenuButton>
+                  </Link>
+                </SidebarMenuItem>
+              </SidebarMenu>
+            </SidebarGroup>
+          )}
+
+          {isAdmin && (
+              <SidebarGroup>
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                      <Link href="/admin">
+                          <SidebarMenuButton tooltip="Dashboard" isActive={pathname === '/admin'}>
+                              <LayoutDashboard /><span>Dashboard</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+                
+                <SidebarSeparator className="my-1" />
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People & Comm.</SidebarGroupLabel>
+                <SidebarMenu>
+                  {role === 'owner' && <SidebarMenuItem>
+                      <Link href="/admin/manage-users">
+                          <SidebarMenuButton tooltip="Manage Employees" isActive={pathname.startsWith('/admin/manage-users')}>
+                              <Users /><span>Manage Employees</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>}
+                    <SidebarMenuItem>
+                      <Link href="/admin/manage-requests">
+                          <SidebarMenuButton tooltip="Manage Requests" isActive={pathname.startsWith('/admin/manage-requests')}>
+                              <ClipboardCheck /><span>Time Off Requests</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                    {role === 'owner' && <SidebarMenuItem>
+                      <Link href="/admin/manage-expenses">
+                          <SidebarMenuButton tooltip="Manage Expenses" isActive={pathname.startsWith('/admin/manage-expenses')}>
+                              <Coins /><span>Manage Expenses</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>}
+                    <SidebarMenuItem>
+                      <Link href="/admin/manage-tasks">
+                          <SidebarMenuButton tooltip="Manage Tasks" isActive={pathname.startsWith('/admin/manage-tasks')}>
+                              <ClipboardList /><span>Manage Tasks</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <Link href="/admin/manage-violations">
+                          <SidebarMenuButton tooltip="Manage Violations" isActive={pathname.startsWith('/admin/manage-violations')}>
+                              <ShieldAlert /><span>Manage Violations</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Link href="/admin/send-notification">
+                          <SidebarMenuButton tooltip="Send Notification" isActive={pathname.startsWith('/admin/send-notification')}>
+                              <Send /><span>Send Notification</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+
+                <SidebarSeparator className="my-1" />
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Assets & Content</SidebarGroupLabel>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                      <Link href="/admin/manage-fleet">
+                          <SidebarMenuButton tooltip="Manage Fleet" isActive={pathname.startsWith('/admin/manage-fleet')}>
+                              <Truck /><span>Manage Fleet</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Link href="/admin/manage-documents">
+                          <SidebarMenuButton tooltip="Manage Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
+                              <BookCopy /><span>Manage Documents</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Link href="/admin/manage-calendar">
+                          <SidebarMenuButton tooltip="Manage Calendar" isActive={pathname.startsWith('/admin/manage-calendar')}>
+                              <Calendar /><span>Manage Calendar</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                </SidebarMenu>
+
+                <SidebarSeparator className="my-1" />
+                <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Ops & Analytics</SidebarGroupLabel>
+                <SidebarMenu>
+                  <SidebarMenuItem>
+                      <Link href="/reports">
+                          <SidebarMenuButton tooltip="Inspection Reports" isActive={pathname.startsWith('/reports')}>
+                              <FileText /><span>Inspection Reports</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                    <SidebarMenuItem>
+                      <Link href="/admin/maintenance-logs">
+                          <SidebarMenuButton tooltip="Maintenance Logs" isActive={pathname.startsWith('/admin/maintenance-logs')}>
+                              <Wrench /><span>Maintenance Logs</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                  <SidebarMenuItem>
+                      <Link href="/admin/manage-work-orders">
+                          <SidebarMenuButton tooltip="Manage Work Orders" isActive={pathname.startsWith('/admin/manage-work-orders')}>
+                              <ClipboardEdit /><span>Manage Work Orders</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>
+                  {role === 'owner' && <SidebarMenuItem>
+                      <Link href="/admin/manage-clients">
+                          <SidebarMenuButton tooltip="Manage Clients" isActive={pathname.startsWith('/admin/manage-clients')}>
+                              <Building2 /><span>Manage Clients</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>}
+                  {role === 'owner' && <SidebarMenuItem>
+                      <Link href="/admin/manage-jobs">
+                          <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
+                              <Briefcase /><span>Manage Jobs</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>}
+                  {role === 'owner' && <SidebarMenuItem>
+                      <Link href="/admin/advanced-reports">
+                          <SidebarMenuButton tooltip="Advanced Reports" isActive={pathname.startsWith('/admin/advanced-reports')}>
+                              <LineChart /><span>Advanced Reports</span>
+                          </SidebarMenuButton>
+                      </Link>
+                  </SidebarMenuItem>}
+                </SidebarMenu>
+                
+                {role === 'owner' && <>
+                  <SidebarSeparator className="my-1" />
+                  <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">System</SidebarGroupLabel>
+                  <SidebarMenu>
+                    <SidebarMenuItem>
+                        <Link href="/admin/system-settings">
+                            <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
+                                <SlidersHorizontal /><span>System Settings</span>
+                            </SidebarMenuButton>
+                        </Link>
+                    </SidebarMenuItem>
+                  </SidebarMenu>
+                </>}
+              </SidebarGroup>
+          )}
+        </SidebarContent>
+        <SidebarFooter className="p-2">
+            <SidebarMenu>
+                 <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
+                    <Link href="/help">
+                        <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'}>
+                            <HelpCircle /><span>Help</span>
+                        </SidebarMenuButton>
+                    </Link>
+                 </SidebarMenuItem>
+                 <SidebarMenuItem>
+                     <SidebarMenuButton tooltip="Logout" onClick={logout}>
+                        <LogOut /><span>Logout</span>
+                     </SidebarMenuButton>
+                 </SidebarMenuItem>
+            </SidebarMenu>
+        </SidebarFooter>
+      </Sidebar>
+      <SidebarInset className="bg-background min-h-screen">
+        <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
+            <SidebarTrigger className="md:hidden" />
+            <Link href="/notifications" passHref>
+             <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
+                <Bell className="h-5 w-5 text-accent-foreground" />
+                {unreadCount > 0 && (
+                    <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0 text-xs" variant="destructive">{unreadCount}</Badge>
+                )}
+             </Button>
+            </Link>
+        </header>
+        <main className="flex-1 p-6 overflow-auto">
+          {children}
+        </main>
+      </SidebarInset>
+      <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
+    </SidebarProvider>
+  );
+}
