@@ -80,7 +80,7 @@ export default function LoginPage() {
                 }}
                 placeholder="****"
                 required
-                className="text-center text-lg tracking-[0.5em]"
+                className="text-center text-2xl tracking-[0.5em] font-mono h-12"
                 aria-label="PIN Code"
               />
             </div>

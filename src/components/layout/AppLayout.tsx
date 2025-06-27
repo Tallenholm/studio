@@ -99,56 +99,56 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
               <SidebarMenu>
                 <SidebarMenuItem>
                   <Link href="/employee">
-                    <SidebarMenuButton isActive={pathname === '/employee'}>
+                    <SidebarMenuButton tooltip="Employee Hub" isActive={pathname === '/employee'}>
                       <LayoutDashboard /><span>Employee Hub</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/employee/fleet-check">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
+                    <SidebarMenuButton tooltip="Fleet Check" isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
                       <Truck /><span>Fleet Check</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/employee/time-off">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/time-off')}>
+                    <SidebarMenuButton tooltip="Request Time Off" isActive={pathname.startsWith('/employee/time-off')}>
                       <CalendarPlus /><span>Time Off</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/employee/my-tasks">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/my-tasks')}>
+                    <SidebarMenuButton tooltip="My Tasks" isActive={pathname.startsWith('/employee/my-tasks')}>
                       <ClipboardList /><span>My Tasks</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                 <SidebarMenuItem>
                   <Link href="/employee/submit-expense">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/submit-expense')}>
+                    <SidebarMenuButton tooltip="Submit Expense" isActive={pathname.startsWith('/employee/submit-expense')}>
                       <Receipt /><span>Submit Expense</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/employee/vehicle-documents">
-                    <SidebarMenuButton isActive={pathname.startsWith('/employee/vehicle-documents')}>
+                    <SidebarMenuButton tooltip="Documents" isActive={pathname.startsWith('/employee/vehicle-documents')}>
                       <BookOpen /><span>Documents</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/reports">
-                    <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                    <SidebarMenuButton tooltip="My Reports" isActive={pathname.startsWith('/reports')}>
                       <FileText /><span>My Reports</span>
                     </SidebarMenuButton>
                   </Link>
                 </SidebarMenuItem>
                  <SidebarMenuItem>
                   <Link href="/notifications">
-                    <SidebarMenuButton isActive={pathname.startsWith('/notifications')}>
+                    <SidebarMenuButton tooltip="Notifications" isActive={pathname.startsWith('/notifications')}>
                       <Bell />
                       <span>Notifications</span>
                       {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
@@ -165,7 +165,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                 <SidebarMenu>
                     <SidebarMenuItem>
                         <Link href="/admin">
-                            <SidebarMenuButton isActive={pathname === '/admin'}>
+                            <SidebarMenuButton tooltip="Dashboard" isActive={pathname === '/admin'}>
                                 <LayoutDashboard /><span>Dashboard</span>
                             </SidebarMenuButton>
                         </Link>
@@ -175,42 +175,42 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                     <SidebarMenuItem>
                         <Link href="/admin/manage-users">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-users')}>
+                            <SidebarMenuButton tooltip="Manage Employees" isActive={pathname.startsWith('/admin/manage-users')}>
                                 <Users /><span>Manage Employees</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/manage-requests">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-requests')}>
+                            <SidebarMenuButton tooltip="Manage Requests" isActive={pathname.startsWith('/admin/manage-requests')}>
                                 <ClipboardCheck /><span>Manage Requests</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/manage-expenses">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-expenses')}>
+                            <SidebarMenuButton tooltip="Manage Expenses" isActive={pathname.startsWith('/admin/manage-expenses')}>
                                 <Coins /><span>Manage Expenses</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/manage-tasks">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-tasks')}>
+                            <SidebarMenuButton tooltip="Manage Tasks" isActive={pathname.startsWith('/admin/manage-tasks')}>
                                 <ClipboardList /><span>Manage Tasks</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <Link href="/admin/manage-violations">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-violations')}>
+                            <SidebarMenuButton tooltip="Manage Violations" isActive={pathname.startsWith('/admin/manage-violations')}>
                                 <ShieldAlert /><span>Manage Violations</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/send-notification">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/send-notification')}>
+                            <SidebarMenuButton tooltip="Send Notification" isActive={pathname.startsWith('/admin/send-notification')}>
                                 <Send /><span>Send Notification</span>
                             </SidebarMenuButton>
                         </Link>
@@ -220,21 +220,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     
                     <SidebarMenuItem>
                         <Link href="/admin/manage-fleet">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-fleet')}>
+                            <SidebarMenuButton tooltip="Manage Fleet" isActive={pathname.startsWith('/admin/manage-fleet')}>
                                 <Cog /><span>Manage Fleet</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/manage-documents">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-documents')}>
+                            <SidebarMenuButton tooltip="Manage Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
                                 <BookCopy /><span>Manage Documents</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/manage-calendar">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-calendar')}>
+                            <SidebarMenuButton tooltip="Manage Calendar" isActive={pathname.startsWith('/admin/manage-calendar')}>
                                 <Calendar /><span>Manage Calendar</span>
                             </SidebarMenuButton>
                         </Link>
@@ -244,35 +244,35 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                     
                     <SidebarMenuItem>
                         <Link href="/reports">
-                            <SidebarMenuButton isActive={pathname.startsWith('/reports')}>
+                            <SidebarMenuButton tooltip="Inspection Reports" isActive={pathname.startsWith('/reports')}>
                                 <FileText /><span>Inspection Reports</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                      <SidebarMenuItem>
                         <Link href="/admin/maintenance-logs">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/maintenance-logs')}>
+                            <SidebarMenuButton tooltip="Maintenance Logs" isActive={pathname.startsWith('/admin/maintenance-logs')}>
                                 <Wrench /><span>Maintenance Logs</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <Link href="/admin/manage-clients">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-clients')}>
+                            <SidebarMenuButton tooltip="Manage Clients" isActive={pathname.startsWith('/admin/manage-clients')}>
                                 <Building2 /><span>Manage Clients</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <Link href="/admin/manage-jobs">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/manage-jobs')}>
+                            <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
                                 <Briefcase /><span>Manage Jobs</span>
                             </SidebarMenuButton>
                         </Link>
                     </SidebarMenuItem>
                     <SidebarMenuItem>
                         <Link href="/admin/advanced-reports">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/advanced-reports')}>
+                            <SidebarMenuButton tooltip="Advanced Reports" isActive={pathname.startsWith('/admin/advanced-reports')}>
                                 <LineChart /><span>Advanced Reports</span>
                             </SidebarMenuButton>
                         </Link>
@@ -282,7 +282,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
                     <SidebarMenuItem>
                         <Link href="/admin/system-settings">
-                            <SidebarMenuButton isActive={pathname.startsWith('/admin/system-settings')}>
+                            <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
                                 <SlidersHorizontal /><span>System Settings</span>
                             </SidebarMenuButton>
                         </Link>
@@ -295,13 +295,13 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             <SidebarMenu>
                  <SidebarMenuItem>
                     <Link href="/help">
-                        <SidebarMenuButton isActive={pathname === '/help'}>
+                        <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'}>
                             <HelpCircle /><span>Help</span>
                         </SidebarMenuButton>
                     </Link>
                  </SidebarMenuItem>
                  <SidebarMenuItem>
-                     <SidebarMenuButton onClick={logout}>
+                     <SidebarMenuButton tooltip="Logout" onClick={logout}>
                         <LogOut /><span>Logout</span>
                      </SidebarMenuButton>
                  </SidebarMenuItem>

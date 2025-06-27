@@ -40,7 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -145,7 +145,7 @@ export default function ManageTasksPage() {
       <CardContent className="space-y-4">
         {taskList.length > 0 ? (
           taskList.map(task => (
-            <Card key={task.id} className="p-4">
+            <Card key={task.id} className="p-4 bg-muted/30">
                 <div className="flex justify-between items-start">
                     <div>
                         <p className="font-bold text-lg">{task.title}</p>
@@ -165,7 +165,7 @@ export default function ManageTasksPage() {
                 {task.status === 'completed' && (
                     <div className="mt-4 border-t pt-3">
                         <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
-                        {task.completionNotes && <p className="text-sm mt-1 bg-muted/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
+                        {task.completionNotes && <p className="text-sm mt-1 bg-background/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
                         {task.completionPhotoUri && (
                             <div className="mt-2">
                                  <Link href={task.completionPhotoUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-32 rounded-md overflow-hidden border">

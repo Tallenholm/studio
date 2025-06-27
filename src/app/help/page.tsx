@@ -40,7 +40,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I add and manage clients?",
-      answer: "As an Administrator, go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, or remove existing ones. This client list is then used when creating and assigning jobs.",
+      answer: "As an Administrator, go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, edit existing clients, or remove them. This client list is then used when creating and assigning jobs.",
     },
     {
       question: "How do I create and track jobs?",
@@ -52,7 +52,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I manage employee tasks?",
-      answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, including any photos uploaded by employees for verification.",
+      answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, now conveniently separated into 'Pending' and 'Completed' lists, and review any photos uploaded by employees for verification.",
     },
     {
       question: "How do I log maintenance for a vehicle?",

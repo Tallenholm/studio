@@ -59,7 +59,7 @@ export default function UserManagementPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    setUsers(loadUsers());
+    setUsers(loadUsers().sort((a, b) => a.name.localeCompare(b.name)));
   }, []);
 
   useEffect(() => {
