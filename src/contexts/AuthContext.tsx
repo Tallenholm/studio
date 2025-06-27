@@ -1,7 +1,7 @@
 
 'use client';
 
-import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import React, { createContext, useContext, useEffect } from 'react';
 import { createStore, useStore } from 'zustand';
 import type { UserRole, User } from '@/lib/types';
 
@@ -12,54 +12,31 @@ interface AuthState {
   logout: () => void;
 }
 
-// We can't use the regular `create` from zustand because we need to share this
-// state between the hook and the provider logic.
 const authStore = createStore<AuthState>((set) => ({
   user: null,
   isLoading: true, // Start as loading
   login: (loggedInUser: User) => {
-    try {
-      localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
-      set({ user: loggedInUser, isLoading: false });
-    } catch (error) {
-       console.error("Could not access localStorage to login", error);
-       set({ isLoading: false });
-    }
+    // We no longer save the user to localStorage to disable automatic login.
+    set({ user: loggedInUser, isLoading: false });
   },
   logout: () => {
+    // Still good practice to clear any old data that might exist.
     try {
       localStorage.removeItem('fleetCheckUser');
-      set({ user: null, isLoading: false });
     } catch (error) {
        console.error("Could not access localStorage to logout", error);
-       set({ isLoading: false });
     }
+    set({ user: null, isLoading: false });
   },
 }));
 
-// A client-side initializer component that runs once to check localStorage.
+// A client-side initializer component. It now simply sets the app to a
+// "loaded" state without logging anyone in automatically.
 function AuthInitializer() {
     useEffect(() => {
-        let isMounted = true;
-        try {
-            const storedUser = localStorage.getItem('fleetCheckUser');
-            if (isMounted) {
-                if (storedUser) {
-                    const parsedUser: User = JSON.parse(storedUser);
-                    authStore.setState({ user: parsedUser, isLoading: false });
-                } else {
-                    authStore.setState({ user: null, isLoading: false });
-                }
-            }
-        } catch (error) {
-            console.error("Could not access localStorage to initialize auth", error);
-            if (isMounted) {
-                authStore.setState({ isLoading: false });
-            }
-        }
-        return () => {
-            isMounted = false;
-        };
+        // Set loading to false after the component mounts.
+        // This ensures we always start fresh without a logged-in user.
+        authStore.setState({ isLoading: false, user: null });
     }, []);
 
     return null; // This component renders nothing.
