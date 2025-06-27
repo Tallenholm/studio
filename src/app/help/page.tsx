@@ -12,7 +12,7 @@ export default function HelpPage() {
     },
     {
       question: "How are Work Orders created and managed?",
-      answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status, add notes, and track costs. When an admin completes a work order, the system automatically creates a corresponding entry in the Maintenance Logs, ensuring a complete and seamless audit trail for the repair.",
+      answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status, add notes, and track costs. When an admin completes a work order, the system automatically creates a corresponding entry in the Maintenance Logs, ensuring a complete and seamless audit trail for the repair. You can also click the eye icon on any work order to navigate directly back to the original inspection report that generated it.",
     },
     {
       question: "How does the AI Anomaly Detection work?",
@@ -56,7 +56,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I manage employee tasks?",
-      answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, now conveniently separated into 'Pending' and 'Completed' lists, and review any photos uploaded by employees for verification.",
+      answer: "As an Administrator, go to 'Manage Tasks' from your dashboard. You can assign new tasks with descriptions and specify if photo verification is required. You can also view the status of all assigned tasks, now conveniently separated into 'Pending' and 'Completed' lists. For completed tasks, you can review any notes and view verification photos submitted by employees, ensuring proper oversight.",
     },
     {
       question: "How do I log maintenance for a vehicle?",

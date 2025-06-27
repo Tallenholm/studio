@@ -15,6 +15,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
+import { cn } from '@/lib/utils';
 
 export default function JobDetailsPage() {
   const params = useParams();

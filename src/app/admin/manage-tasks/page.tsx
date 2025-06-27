@@ -101,7 +101,7 @@ export default function ManageTasksPage() {
       status: 'pending',
       ...values,
     };
-    setTasks(prev => [newTask, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+    setTasks(prev => [newTask, ...prev].sort((a,b) => a.title.localeCompare(b.title)));
     toast({ title: 'Task Assigned', description: `Task "${values.title}" has been assigned to ${employee.name}.` });
     setIsDialogOpen(false);
     form.reset({ title: '', description: '', requiresPhoto: false, assignedToEmployeeId: undefined });

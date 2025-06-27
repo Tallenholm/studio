@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { loadInspectionReportById, loadInspectionReports, saveInspectionReport, loadWorkOrders, saveWorkOrders } from '@/lib/localStorageService';
+import { loadInspectionReportById, loadInspectionReports, saveInspectionReport, loadWorkOrders, saveWorkOrders, loadFleetAssets } from '@/lib/localStorageService';
 import type { InspectionReport, WorkOrder } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
 import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
@@ -99,11 +99,16 @@ export default function ReportDetailsPage() {
 
     const issueDescription = failedItems.map(item => `${item.name}: ${item.notes || 'No notes provided.'}`).join('\n');
     
+    const allAssets = loadFleetAssets();
+    const assetVin = report.truckVin || report.trailerVin || report.heavyEquipmentVin || 'N/A';
+    const asset = allAssets.find(a => a.vin === assetVin);
+    const assetName = asset ? asset.name : 'Unknown Asset';
+
     const newWorkOrder: WorkOrder = {
       id: `wo-${Date.now()}`,
       reportId: report.id,
-      assetId: report.truckVin || report.trailerVin || report.heavyEquipmentVin || 'N/A',
-      assetName: 'Asset from report ' + report.id, // A better name resolution would be ideal in a real app
+      assetId: assetVin,
+      assetName: assetName,
       dateCreated: new Date().toISOString(),
       reportedBy: report.employeeName || 'Unknown',
       status: 'open',
