@@ -7,18 +7,17 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Loader2 } from 'lucide-react';
 
 export default function RootPage() {
-  const { role, isLoading } = useAuth();
+  const { isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
+    // The redirection logic is now fully handled by the main AppLayout component
+    // to prevent race conditions and redirect loops. This page is now just a
+    // loading fallback.
     if (!isLoading) {
-      if (role) {
-        router.replace(role === 'employee' ? '/employee' : '/admin');
-      } else {
-        router.replace('/login');
-      }
+      router.replace('/login');
     }
-  }, [role, isLoading, router]);
+  }, [isLoading, router]);
 
   return (
     <div className="flex h-screen w-full items-center justify-center bg-background">

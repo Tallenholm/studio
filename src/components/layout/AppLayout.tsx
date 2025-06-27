@@ -59,56 +59,34 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       return; // Wait for auth state to be determined from localStorage
     }
 
-    // Unauthenticated User Logic
+    // If the user is not logged in, they should only be on the login page.
     if (!role) {
-      // If not authenticated, the only allowed page is /login.
-      // Redirect if they are anywhere else.
       if (pathname !== '/login') {
-        router.push('/login');
+        router.replace('/login');
       }
       return;
     }
 
-    // --- Authenticated User Logic ---
-    // (role is guaranteed to exist from this point on)
+    // From here, the user is authenticated.
     
-    const destination = role === 'employee' ? '/employee' : '/admin';
-
-    // If an authenticated user lands on the login page, redirect them to their dashboard.
-    // This handles the post-login redirect.
-    if (pathname === '/login') {
-      const tourKey = `hasViewedTour_${role}`;
-      const hasViewedTour = localStorage.getItem(tourKey);
-
-      if (!hasViewedTour) {
-        router.push(`${destination}?tour=true`);
-      } else {
-        router.push(destination);
-      }
-      return; // End of logic for this render cycle
-    }
-
-    // If an authenticated user is on any other page, check if they have permission.
+    // Define allowed routes for the current user.
     const isAllowed = () => {
-      if (role === 'owner') {
-        if (pathname.startsWith('/admin/jobs/')) return true; // Owner can view job details
-        if (pathname.startsWith('/reports/')) return true;
-        return ownerRoutes.includes(pathname);
-      }
-      if (role === 'manager') {
-        if (pathname.startsWith('/reports/')) return true;
-        return managerRoutes.includes(pathname);
-      }
-      if (role === 'employee') {
-        if (pathname.startsWith('/reports/')) return true;
-        return employeeBaseRoutes.includes(pathname);
-      }
+      // Dynamic routes need special handling
+      if (pathname.startsWith('/reports/')) return true;
+      if (pathname.startsWith('/admin/jobs/')) return role === 'owner';
+
+      // Check against static route lists
+      if (role === 'owner') return ownerRoutes.includes(pathname);
+      if (role === 'manager') return managerRoutes.includes(pathname);
+      if (role === 'employee') return employeeBaseRoutes.includes(pathname);
+      
       return false;
     };
 
-    // If they are on a page they do not have permission for, redirect to their dashboard.
+    // If the user is on a page they are not allowed to see, redirect them to their dashboard.
     if (!isAllowed()) {
-      router.push(destination);
+      const destination = role === 'employee' ? '/employee' : '/admin';
+      router.replace(destination);
     }
   }, [pathname, role, isLoading, router]);
   
@@ -123,7 +101,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
       }
   }, [user, pathname]); // Re-check on page navigation
 
-  if (isLoading) {
+  if (isLoading || (!role && pathname !== '/login')) {
     return (
       <div className="flex h-screen items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -139,15 +117,6 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         <AiAssistantWidget initialOpen={false} />
       </>
     );
-  }
-
-  // Fallback for when role isn't determined but not on login page
-  if (!role) {
-     return (
-        <div className="flex h-screen items-center justify-center bg-background">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        </div>
-     );
   }
 
   // Authenticated view

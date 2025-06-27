@@ -43,12 +43,21 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       localStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
       setRole(loggedInUser.role);
       setUser(loggedInUser);
-      // The redirection logic is now fully handled by the main AppLayout component
-      // to prevent race conditions and redirect loops.
+      
+      const destination = loggedInUser.role === 'employee' ? '/employee' : '/admin';
+      
+      const tourKey = `hasViewedTour_${loggedInUser.role}`;
+      const hasViewedTour = localStorage.getItem(tourKey);
+
+      if (!hasViewedTour) {
+        router.replace(`${destination}?tour=true`);
+      } else {
+        router.replace(destination);
+      }
     } catch (error) {
        console.error("Could not access localStorage", error);
     }
-  }, []);
+  }, [router]);
 
   const logout = useCallback(() => {
     try {
