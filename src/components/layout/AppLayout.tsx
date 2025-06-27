@@ -56,7 +56,7 @@ const isPathAllowedForRole = (pathname: string, role: UserRole): boolean => {
 
     // Rule 1: Dynamic routes take precedence.
     if (pathname.startsWith('/reports/')) return true; // Anyone logged in can see a report detail.
-    if (pathname.startsWith('/admin/jobs/')) return role === 'owner'; // Only owners see job details.
+    if (pathname.startsWith('/admin/jobs/')) return role === 'owner' || role === 'manager'; // Owners and Managers see job details.
 
     // Rule 2: Check static routes based on role.
     if (role === 'owner') return ownerRoutes.includes(pathname);
@@ -82,9 +82,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
         if (user) {
             // User is logged in.
+            const destination = user.role === 'employee' ? '/employee' : '/admin';
             // If they are on the login page OR a page forbidden for their role, redirect them home.
             if (pathname === '/login' || !isPathAllowedForRole(pathname, user.role)) {
-                const destination = user.role === 'employee' ? '/employee' : '/admin';
                 router.replace(destination);
             }
         } else {
@@ -115,17 +115,17 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader />;
     }
 
-    // 2. If not logged in, only render children if we are on the login page. Otherwise, show loader while redirecting.
+    // 2. If not logged in, only render children if we are on the login page.
+    // For any other path, the gatekeeper effect is redirecting, so we show a loader.
     if (!user) {
         return pathname === '/login' ? (
             <>
                 {children}
-                <AiAssistantWidget initialOpen={false} />
             </>
         ) : <FullScreenLoader />;
     }
 
-    // 3. If logged in, but not on an allowed path, show a loader while redirecting.
+    // 3. If logged in, but not yet on an allowed path (redirecting), show a loader.
     if (!isPathAllowedForRole(pathname, user.role)) {
         return <FullScreenLoader />;
     }
