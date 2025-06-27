@@ -31,6 +31,9 @@ import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
+import { Separator } from '@/components/ui/separator';
+import { getJobStatus } from '@/lib/job-utils';
+
 
 const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required.'),
@@ -49,20 +52,6 @@ const jobSchema = z.object({
   path: ["dateRange"],
 });
 
-
-const getJobStatus = (job: Job): JobStatus => {
-  const today = startOfDay(new Date());
-  const startDate = new Date(job.startDate);
-  const endDate = new Date(job.endDate);
-
-  if (isBefore(today, startDate)) {
-    return 'upcoming';
-  } else if (isAfter(today, endDate)) {
-    return 'completed';
-  } else {
-    return 'active';
-  }
-};
 
 export default function ManageJobsPage() {
   const [clients, setClients] = useState<Client[]>([]);

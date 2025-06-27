@@ -20,7 +20,7 @@ export default function HelpPage() {
     },
     {
       question: "How do I request time off?",
-      answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page.",
+      answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page. When your request is approved, it will be automatically added to the company calendar.",
     },
     {
       question: "How do I submit an expense for reimbursement?",
