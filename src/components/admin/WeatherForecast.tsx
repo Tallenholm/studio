@@ -129,7 +129,7 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                             <p className="text-2xl font-bold text-primary">{period.temperature}°{period.temperatureUnit}</p>
                             <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
                             <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mt-2">
-                                {period.relativeHumidity.value !== null && (
+                                {period.relativeHumidity && period.relativeHumidity.value !== null && (
                                     <div className="flex items-center gap-1.5" title="Humidity">
                                         <Droplets className="h-4 w-4 text-blue-400" />
                                         <span className="text-muted-foreground">{period.relativeHumidity.value}%</span>
@@ -141,7 +141,7 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                                         <span className="text-muted-foreground">{period.heatIndex.value}°</span>
                                     </div>
                                 )}
-                                {period.probabilityOfPrecipitation.value !== null && period.probabilityOfPrecipitation.value > 0 && (
+                                {period.probabilityOfPrecipitation && period.probabilityOfPrecipitation.value !== null && period.probabilityOfPrecipitation.value > 0 && (
                                     <div className="flex items-center gap-1.5" title="Precipitation">
                                         <CloudDrizzle className="h-4 w-4 text-blue-500" />
                                         <span className="text-muted-foreground">{period.probabilityOfPrecipitation.value}%</span>
