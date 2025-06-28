@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, HeartPulse, Calculator } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -355,17 +355,17 @@ export default function FleetCheckDashboardPage() {
               People & Comms
             </CardTitle>
             <CardDescription>
-              Manage employees, requests, tasks, violations, and send notifications.
+              Manage employees, requests, tasks, violations, and notifications.
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {user?.role === 'owner' && <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Manage Employees</Button></Link>}
-            <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start"><ClipboardCheck className="mr-2"/>Manage Time Off Requests</Button></Link>
-            {user?.role === 'owner' && <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>}
-            <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo className="mr-2"/>Manage Tasks</Button></Link>
-            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><ShieldAlert className="mr-2"/>Manage Violations</Button></Link>
-            <Link href="/admin/personal-documents" passHref><Button variant="outline" className="w-full justify-start"><FileBadge className="mr-2"/>Personal Documents</Button></Link>
-            <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send className="mr-2"/>Send Notification</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/manage-users" passHref><Button variant="outline" className="w-full justify-start"><Users />Manage Employees</Button></Link>}
+            <Link href="/admin/manage-requests" passHref><Button variant="outline" className="w-full justify-start"><ClipboardCheck />Manage Time Off Requests</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins />Manage Expenses</Button></Link>}
+            <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo />Manage Tasks</Button></Link>
+            <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><ShieldAlert />Manage Violations</Button></Link>
+            <Link href="/admin/personal-documents" passHref><Button variant="outline" className="w-full justify-start"><FileBadge />Personal Documents</Button></Link>
+            <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send />Send Notification</Button></Link>
           </CardContent>
         </Card>
 
@@ -381,10 +381,10 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start"><Truck className="mr-2"/>Manage Fleet</Button></Link>
-            <Link href="/admin/manage-inventory" passHref><Button variant="outline" className="w-full justify-start"><Hammer className="mr-2"/>Manage Inventory</Button></Link>
-            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start"><BookCopy className="mr-2"/>General Documents</Button></Link>
-            <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2"/>Manage Calendar</Button></Link>
+            <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start"><Truck />Manage Fleet</Button></Link>
+            <Link href="/admin/manage-inventory" passHref><Button variant="outline" className="w-full justify-start"><Hammer />Manage Inventory</Button></Link>
+            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start"><BookCopy />General Documents</Button></Link>
+            <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start"><CalendarIcon />Manage Calendar</Button></Link>
           </CardContent>
         </Card>
 
@@ -400,15 +400,15 @@ export default function FleetCheckDashboardPage() {
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {user?.role === 'owner' && <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>}
-            {user?.role === 'owner' && <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Excavation Jobs</Button></Link>}
-            {user?.role === 'owner' && <Link href="/admin/manage-snow" passHref><Button variant="outline" className="w-full justify-start"><Snowflake className="mr-2"/>Snow Contracts</Button></Link>}
-            {user?.role === 'owner' && <Link href="/admin/manage-concrete" passHref><Button variant="outline" className="w-full justify-start"><Droplets className="mr-2"/>Concrete Jobs</Button></Link>}
-            {user?.role === 'owner' && <Link href="/admin/manage-misc" passHref><Button variant="outline" className="w-full justify-start"><Package className="mr-2"/>Misc. Jobs</Button></Link>}
-            <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
-            <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit className="mr-2"/>Manage Work Orders</Button></Link>
-            <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench className="mr-2"/>View Maintenance Logs</Button></Link>
-            {user?.role === 'owner' && <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start"><LineChart className="mr-2"/>Advanced Reports</Button></Link>}
+            {user?.role === 'owner' && <>
+            <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 />Manage Clients</Button></Link>
+            <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase />All Jobs</Button></Link>
+            </>}
+            <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText />View Inspection Reports</Button></Link>
+            <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit />Manage Work Orders</Button></Link>
+            <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench />View Maintenance Logs</Button></Link>
+            {user?.role === 'owner' && <Link href="/admin/advanced-reports" passHref><Button variant="outline" className="w-full justify-start"><LineChart />Advanced Reports</Button></Link>}
+            <Link href="/admin/fleet-health" passHref><Button variant="outline" className="w-full justify-start"><HeartPulse />Fleet Health</Button></Link>
           </CardContent>
         </Card>
         
@@ -418,15 +418,16 @@ export default function FleetCheckDashboardPage() {
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <SlidersHorizontal className="text-primary" />
-                System & Access
+                System & Tools
               </CardTitle>
               <CardDescription>
-                Configure system-wide settings and access the employee portal view.
+                Configure system-wide settings and access utilities.
               </CardDescription>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-              <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal className="mr-2"/>System Settings</Button></Link>
-              <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users className="mr-2"/>Go to Employee Portal</Button></Link>
+            <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
+              <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal />System Settings</Button></Link>
+              <Link href="/admin/fleet-tools" passHref><Button variant="outline" className="w-full justify-start"><Calculator />Fleet Tools</Button></Link>
+              <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users />Go to Employee Portal</Button></Link>
             </CardContent>
           </Card>
         )}

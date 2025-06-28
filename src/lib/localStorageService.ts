@@ -17,6 +17,8 @@ const CLIENTS_KEY = 'fleetCheckClients';
 const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
+const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
+const CURRENT_SEED_VERSION = '1.1.0'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -43,13 +45,12 @@ export const loadFleetAssets = (): FleetAsset[] => {
       if (data) {
           return JSON.parse(data);
       } else {
-          // On first load, seed with default assets
           saveFleetAssets(defaultFleetAssets);
           return defaultFleetAssets;
       }
     } catch (error) {
       console.error('Failed to load fleet assets:', error);
-      return defaultFleetAssets; // return defaults on error
+      return defaultFleetAssets; 
     }
   }
   return [];
@@ -121,37 +122,17 @@ export const loadUsers = (): User[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(USERS_KEY);
-      let users: User[] = data ? JSON.parse(data) : [];
-      let needsSave = !data;
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
 
-      // Ensure all default users exist and have the correct role and PIN.
-      // This will overwrite any conflicting data from localStorage for default users.
-      defaultUsers.forEach(defaultUser => {
-        const existingUserIndex = users.findIndex(u => u.id === defaultUser.id);
-        if (existingUserIndex > -1) {
-          // User exists, let's check if the data is correct.
-          const existingUser = users[existingUserIndex];
-          if (existingUser.role !== defaultUser.role || existingUser.pin !== defaultUser.pin || existingUser.name !== defaultUser.name) {
-            // Overwrite with default data if it's incorrect.
-            users[existingUserIndex] = { ...existingUser, ...defaultUser };
-            needsSave = true;
-          }
-        } else {
-          // User doesn't exist, add the default user.
-          users.push(defaultUser);
-          needsSave = true;
-        }
-      });
-      
-      if (needsSave) {
-        saveUsers(users);
+      if (data && version === CURRENT_SEED_VERSION) {
+        return JSON.parse(data);
       }
-
-      return users;
-
+      
+      // If no data or version mismatch, seed default data
+      saveUsers(defaultUsers);
+      return defaultUsers;
     } catch (error) {
       console.error('Failed to load users:', error);
-      // On any error, fall back to a clean default state.
       saveUsers(defaultUsers);
       return defaultUsers;
     }
@@ -184,7 +165,8 @@ export const loadCalendarEvents = (): CalendarEvent[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(CALENDAR_EVENTS_KEY);
-      if(data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if(data && version === CURRENT_SEED_VERSION) {
           return JSON.parse(data);
       } else {
           saveCalendarEvents(defaultEvents);
@@ -337,7 +319,8 @@ export const loadDocuments = (): ManagedDocument[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(DOCUMENTS_KEY);
-      if (data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
           return JSON.parse(data);
       } else {
           saveDocuments(defaultDocuments);
@@ -345,7 +328,7 @@ export const loadDocuments = (): ManagedDocument[] => {
       }
     } catch (error) {
       console.error('Failed to load documents:', error);
-      return defaultDocuments; // return defaults on error
+      return defaultDocuments; 
     }
   }
   return [];
@@ -390,7 +373,8 @@ export const loadMaintenanceLogs = (): MaintenanceLog[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(MAINTENANCE_LOGS_KEY);
-      if (data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
           return JSON.parse(data);
       } else {
           saveMaintenanceLogs(defaultMaintenanceLogs);
@@ -473,7 +457,8 @@ export const loadClients = (): Client[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(CLIENTS_KEY);
-      if (data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
           return JSON.parse(data);
       } else {
           saveClients(defaultClients);
@@ -588,25 +573,19 @@ export const loadJobs = (): Job[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(JOBS_KEY);
-      const defaultJobs = getDynamicJobs();
-      if (data) {
-          const storedJobs: Job[] = JSON.parse(data);
-          // Add jobType to any old jobs that are missing it
-          const jobsWithDefaults = storedJobs.map(job => ({...job, jobType: job.jobType || 'excavation' }));
-
-          const defaultJobIds = new Set(defaultJobs.map(j => j.id));
-          const customJobs = jobsWithDefaults.filter(j => !defaultJobIds.has(j.id));
-          
-          const jobsToSave = [...customJobs, ...defaultJobs];
-          // A simple check to see if the stored data is outdated.
-          if (storedJobs.length < defaultJobs.length || !storedJobs.every(j => 'jobType' in j) || !storedJobs.some(j => j.jobType === 'snow_removal' && j.snowServices)) {
-              saveJobs(jobsToSave);
-          }
-          return jobsToSave;
-      } else {
-          saveJobs(defaultJobs);
-          return defaultJobs;
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      
+      if (data && version === CURRENT_SEED_VERSION) {
+        return JSON.parse(data);
       }
+      
+      // If no data or version is old, re-seed all data.
+      const defaultJobs = getDynamicJobs();
+      saveJobs(defaultJobs);
+      // Mark that we've seeded this version.
+      localStorage.setItem(SEED_DATA_VERSION_KEY, CURRENT_SEED_VERSION);
+      return defaultJobs;
+
     } catch (error) {
       console.error('Failed to load jobs:', error);
       return getDynamicJobs();
@@ -663,7 +642,8 @@ export const loadInventory = (): InventoryItem[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(INVENTORY_KEY);
-      if (data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
         return JSON.parse(data);
       } else {
         saveInventory(defaultInventory);

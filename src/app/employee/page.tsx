@@ -16,11 +16,12 @@ import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import { getJobStatus } from '@/lib/job-utils';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
     { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Fleet Check'), view your tasks, request time off, and more.", side: 'bottom' },
-    { element: '#tour-step-job-board', title: "Your Job Board", content: "This section shows your currently active and upcoming jobs. You can get directions to the job site directly from here.", side: 'bottom' },
+    { element: '#tour-step-job-board', title: "Your Assignments", content: "This section shows your currently active and upcoming assignments, separated by job type. You can get directions to the job site directly from here.", side: 'bottom' },
     { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },
     { element: '#tour-step-sidebar', title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out.", side: 'right' },
     { element: '#tour-step-sidebar-help-employee', title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!", side: 'right' },
@@ -92,15 +93,17 @@ export default function EmployeeHubPage() {
     }
   }
 
-  const renderJobBoard = (title: string, icon: React.ElementType, jobs: Job[]) => (
-    <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl h-full">
-        <CardHeader>
-            <CardTitle className="font-headline flex items-center gap-2">
-                {React.createElement(icon, { className: "h-6 w-6 text-primary" })} {title}
-            </CardTitle>
-            <CardDescription>Active and upcoming assignments for you.</CardDescription>
-        </CardHeader>
-        <CardContent className="space-y-4">
+  const renderJobBoard = (jobs: Job[], jobType: Job['jobType']) => {
+      const icons = {
+          excavation: Briefcase,
+          snow_removal: Snowflake,
+          concrete: Droplets,
+          misc: Package
+      };
+      const Icon = icons[jobType];
+      
+      return (
+        <div className="space-y-4">
             {jobs.length > 0 ? (
                 jobs.map(job => (
                     <Card key={job.id} className="p-4 bg-muted/30">
@@ -119,7 +122,7 @@ export default function EmployeeHubPage() {
                             <div className="flex flex-col items-end gap-2">
                                 <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
                                 <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
-                                    <Button size="sm" variant="outline"><MapPin className="mr-2 h-4 w-4" /> Directions</Button>
+                                    <Button size="sm" variant="outline"><MapPin /> Directions</Button>
                                 </a>
                             </div>
                         </div>
@@ -127,13 +130,13 @@ export default function EmployeeHubPage() {
                 ))
             ) : (
                 <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                    {React.createElement(icon, { className: "h-8 w-8 mx-auto mb-2"})}
-                    <p>You have no active or upcoming assignments.</p>
+                    {React.createElement(Icon, { className: "h-8 w-8 mx-auto mb-2"})}
+                    <p>You have no active or upcoming assignments of this type.</p>
                 </div>
             )}
-        </CardContent>
-    </Card>
-  );
+        </div>
+      );
+  }
 
   if (!isMounted) {
      return (
@@ -208,12 +211,27 @@ export default function EmployeeHubPage() {
             </Link>
         </div>
 
-        <div id="tour-step-job-board" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            {renderJobBoard("Excavation Jobs", Briefcase, assignedExcavationJobs)}
-            {renderJobBoard("Snow Contracts", Snowflake, assignedSnowContracts)}
-            {renderJobBoard("Concrete Jobs", Droplets, assignedConcreteJobs)}
-            {renderJobBoard("Misc. Jobs", Package, assignedMiscJobs)}
-        </div>
+        <Card id="tour-step-job-board" className="mb-12">
+            <CardHeader>
+                <CardTitle className="font-headline text-2xl">My Assignments</CardTitle>
+                <CardDescription>Your active and upcoming work assignments.</CardDescription>
+            </CardHeader>
+            <CardContent>
+                <Tabs defaultValue="excavation" className="w-full">
+                    <TabsList className="grid w-full grid-cols-4">
+                        <TabsTrigger value="excavation">Excavation ({assignedExcavationJobs.length})</TabsTrigger>
+                        <TabsTrigger value="snow">Snow Removal ({assignedSnowContracts.length})</TabsTrigger>
+                        <TabsTrigger value="concrete">Concrete ({assignedConcreteJobs.length})</TabsTrigger>
+                        <TabsTrigger value="misc">Misc. ({assignedMiscJobs.length})</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="excavation" className="mt-4">{renderJobBoard(assignedExcavationJobs, 'excavation')}</TabsContent>
+                    <TabsContent value="snow" className="mt-4">{renderJobBoard(assignedSnowContracts, 'snow_removal')}</TabsContent>
+                    <TabsContent value="concrete" className="mt-4">{renderJobBoard(assignedConcreteJobs, 'concrete')}</TabsContent>
+                    <TabsContent value="misc" className="mt-4">{renderJobBoard(assignedMiscJobs, 'misc')}</TabsContent>
+                </Tabs>
+            </CardContent>
+        </Card>
+        
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
             <div id="tour-step-company-calendar" className="lg:col-span-3">

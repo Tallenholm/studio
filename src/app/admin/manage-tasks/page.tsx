@@ -44,6 +44,7 @@ import { format } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const taskSchema = z.object({
   assignedToEmployeeId: z.string({ required_error: 'Please select an employee.' }),
@@ -102,7 +103,7 @@ export default function ManageTasksPage() {
       status: 'pending',
       ...values,
     };
-    setTasks(prev => [newTask, ...prev].sort((a,b) => a.title.localeCompare(b.title)));
+    setTasks(prev => [newTask, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
     toast({ title: 'Task Assigned', description: `Task "${values.title}" has been assigned to ${employee.name}.` });
     setIsDialogOpen(false);
     form.reset({ title: '', description: '', requiresPhoto: false, assignedToEmployeeId: undefined });
@@ -138,59 +139,54 @@ export default function ManageTasksPage() {
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const completedTasks = tasks.filter(t => t.status === 'completed');
 
-  const renderTaskList = (taskList: Task[], title: string) => (
-    <Card>
-      <CardHeader>
-        <CardTitle>{title} ({taskList.length})</CardTitle>
-      </CardHeader>
-      <CardContent className="space-y-4">
-        {taskList.length > 0 ? (
-          taskList.map(task => (
-            <Card key={task.id} className="p-4 bg-muted/30">
-                <div className="flex justify-between items-start">
-                    <div>
-                        <p className="font-bold text-lg">{task.title}</p>
-                        <p className="text-sm text-muted-foreground">Assigned to: {task.assignedToEmployeeName}</p>
-                        <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPP')}</p>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
-                        <Button variant="ghost" size="icon" onClick={() => removeTask(task.id)} aria-label={`Remove task`}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
-                    </div>
-                </div>
-                <p className="mt-2 text-foreground/80">{task.description}</p>
-                {task.requiresPhoto && <p className="mt-1 text-sm font-medium flex items-center gap-1 text-accent-foreground"><Camera className="h-4 w-4"/>Photo verification required.</p>}
-                
-                {task.status === 'completed' && (
-                    <div className="mt-4 border-t pt-3">
-                        <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
-                        {task.completionNotes && <p className="text-sm mt-1 bg-background/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
-                        {task.completionPhotoUri && (
-                            <div className="mt-2">
-                                 <Link href={task.completionPhotoUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-32 rounded-md overflow-hidden border">
-                                    <Image
-                                        src={task.completionPhotoUri}
-                                        alt={`Verification for ${task.title}`}
-                                        fill
-                                        className="object-cover object-top transition-transform group-hover:scale-105"
-                                    />
-                                    <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                        <Eye className="h-8 w-8 text-white"/>
-                                    </div>
-                                </Link>
-                            </div>
-                        )}
-                    </div>
-                )}
-            </Card>
-          ))
-        ) : (
-          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} found.</div>
-        )}
-      </CardContent>
-    </Card>
+  const renderTaskList = (taskList: Task[]) => (
+    <div className="space-y-4">
+      {taskList.length > 0 ? (
+        taskList.map(task => (
+          <Card key={task.id} className="p-4 bg-muted/30">
+              <div className="flex justify-between items-start">
+                  <div>
+                      <p className="font-bold text-lg">{task.title}</p>
+                      <p className="text-sm text-muted-foreground">Assigned to: {task.assignedToEmployeeName}</p>
+                      <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPP')}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                      <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
+                      <Button variant="ghost" size="icon" onClick={() => removeTask(task.id)} aria-label={`Remove task`}>
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
+                  </div>
+              </div>
+              <p className="mt-2 text-foreground/80">{task.description}</p>
+              {task.requiresPhoto && <p className="mt-1 text-sm font-medium flex items-center gap-1 text-accent-foreground"><Camera />Photo verification required.</p>}
+              
+              {task.status === 'completed' && (
+                  <div className="mt-4 border-t pt-3">
+                      <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
+                      {task.completionNotes && <p className="text-sm mt-1 bg-background/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
+                      {task.completionPhotoUri && (
+                          <div className="mt-2">
+                               <Link href={task.completionPhotoUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-32 rounded-md overflow-hidden border">
+                                  <Image
+                                      src={task.completionPhotoUri}
+                                      alt={`Verification for ${task.title}`}
+                                      fill
+                                      className="object-cover object-top transition-transform group-hover:scale-105"
+                                  />
+                                  <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                      <Eye className="h-8 w-8 text-white"/>
+                                  </div>
+                              </Link>
+                          </div>
+                      )}
+                  </div>
+              )}
+          </Card>
+        ))
+      ) : (
+        <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No tasks in this category.</div>
+      )}
+    </div>
   );
 
   return (
@@ -210,7 +206,7 @@ export default function ManageTasksPage() {
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
               <DialogTrigger asChild>
                 <Button>
-                  <PlusCircle className="mr-2 h-5 w-5" />
+                  <PlusCircle />
                   Assign New Task
                 </Button>
               </DialogTrigger>
@@ -302,9 +298,19 @@ export default function ManageTasksPage() {
             </Dialog>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-            {renderTaskList(pendingTasks, 'Pending Tasks')}
-            {renderTaskList(completedTasks, 'Completed Tasks')}
+        <CardContent>
+             <Tabs defaultValue="pending" className="w-full">
+                <TabsList className="grid w-full grid-cols-2">
+                    <TabsTrigger value="pending">Pending ({pendingTasks.length})</TabsTrigger>
+                    <TabsTrigger value="completed">Completed ({completedTasks.length})</TabsTrigger>
+                </TabsList>
+                <TabsContent value="pending" className="mt-4">
+                    {renderTaskList(pendingTasks)}
+                </TabsContent>
+                <TabsContent value="completed" className="mt-4">
+                    {renderTaskList(completedTasks)}
+                </TabsContent>
+            </Tabs>
         </CardContent>
       </Card>
     </div>

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake, Users as UsersIcon, Droplets, Package } from 'lucide-react';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -282,25 +282,26 @@ export default function JobDetailsPage() {
              <Card>
                 <CardHeader>
                     <CardTitle className="text-xl">Job Cost Analysis</CardTitle>
-                    <CardDescription>Estimated operational costs during the job dates.</CardDescription>
+                    <CardDescription>Estimated operational costs and profitability for the job's date range.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
-                    <div>
-                        <p className="text-sm text-muted-foreground">Maintenance</p>
-                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    <div className="p-4 bg-muted/50 rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Maintenance Cost</p>
+                        <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
                     </div>
-                     <div>
-                        <p className="text-sm text-muted-foreground">Expenses</p>
-                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
+                     <div className="p-4 bg-muted/50 rounded-lg text-center">
+                        <p className="text-sm text-muted-foreground">Expense Cost</p>
+                        <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
                     </div>
-                    <div>
+                    <div className="p-4 bg-muted/50 rounded-lg text-center">
                         <p className="text-sm text-muted-foreground">Total Costs</p>
                         <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
                     </div>
-                    <div>
-                        <p className="text-sm text-muted-foreground">Est. Profit</p>
-                        <p className={`text-2xl font-bold ${estimatedProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
-                          <AnimatedCounter value={estimatedProfit} type="currency" />
+                    <div className="p-4 rounded-lg text-center" style={{background: estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
+                        <p className="text-sm" style={{color: estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>
+                        <p className={cn("text-2xl font-bold flex items-center justify-center gap-1", estimatedProfit >= 0 ? 'text-primary' : 'text-destructive' )}>
+                           {estimatedProfit >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+                           <AnimatedCounter value={Math.abs(estimatedProfit)} type="currency" />
                         </p>
                     </div>
                 </CardContent>
@@ -362,7 +363,7 @@ export default function JobDetailsPage() {
                             onChange={e => setNewNote(e.target.value)}
                         />
                         <Button onClick={handleAddNote} className="w-full">
-                            <Send className="mr-2 h-4 w-4" />
+                            <Send />
                             Add Note
                         </Button>
                     </div>
