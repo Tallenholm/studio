@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs } from '@/lib/localStorageService';
+import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs, saveFleetAssets } from '@/lib/localStorageService';
 import type { FleetAsset, MaintenanceLog, VehicleType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -54,9 +54,18 @@ const logSchema = z.object({
   assetId: z.string({ required_error: 'Please select an asset.' }),
   date: z.date({ required_error: 'A date is required.' }),
   serviceType: z.enum(['routine', 'repair', 'inspection', 'other'], { required_error: 'Service type is required.' }),
+  routineService: z.string().optional(),
   description: z.string().min(10, 'Description must be at least 10 characters.'),
   cost: z.coerce.number().optional(),
   mechanic: z.string().optional(),
+}).superRefine((data, ctx) => {
+    if (data.serviceType === 'routine' && !data.routineService) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: "Please specify the routine service performed.",
+            path: ["routineService"],
+        });
+    }
 });
 
 export default function MaintenanceLogsPage() {
@@ -74,6 +83,8 @@ export default function MaintenanceLogsPage() {
       mechanic: 'In-house',
     },
   });
+
+  const watchedServiceType = form.watch('serviceType');
 
   useEffect(() => {
     setIsMounted(true);
@@ -101,10 +112,32 @@ export default function MaintenanceLogsPage() {
       date: values.date.toISOString().split('T')[0],
       cost: values.cost,
       mechanic: values.mechanic,
+      routineService: values.routineService,
       ...values,
     };
+    
     setLogs(prev => [newLog, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    toast({ title: 'Maintenance Logged', description: `Service for ${asset.name} has been recorded.` });
+    
+    // Update asset's last service date if it was a routine service
+    if (newLog.serviceType === 'routine' && newLog.routineService) {
+        const key = newLog.routineService as keyof FleetAsset['maintenanceSchedule'];
+        if (asset.maintenanceSchedule?.[key]) {
+            const updatedAssets = assets.map(a => {
+                if (a.id === asset.id && a.maintenanceSchedule?.[key]) {
+                    a.maintenanceSchedule[key]!.lastServiceDate = newLog.date;
+                }
+                return a;
+            });
+            setAssets(updatedAssets);
+            saveFleetAssets(updatedAssets);
+            toast({ title: 'Maintenance Logged', description: `${asset.name} service record and schedule have been updated.` });
+        } else {
+            toast({ title: 'Maintenance Logged', description: `Service for ${asset.name} has been recorded.` });
+        }
+    } else {
+        toast({ title: 'Maintenance Logged', description: `Service for ${asset.name} has been recorded.` });
+    }
+    
     setIsDialogOpen(false);
     form.reset({ serviceType: 'routine', description: '', mechanic: 'In-house', cost: undefined, assetId: undefined });
   }
@@ -119,8 +152,13 @@ export default function MaintenanceLogsPage() {
     });
   }
 
-  const getServiceTypeLabel = (type: MaintenanceLog['serviceType']) => {
-    return type.charAt(0).toUpperCase() + type.slice(1);
+  const getServiceTypeLabel = (log: MaintenanceLog) => {
+    const baseType = log.serviceType.charAt(0).toUpperCase() + log.serviceType.slice(1);
+    if (log.serviceType === 'routine' && log.routineService) {
+      const routineLabel = log.routineService.replace(/([A-Z])/g, ' $1').trim();
+      return `${baseType}: ${routineLabel.charAt(0).toUpperCase() + routineLabel.slice(1)}`;
+    }
+    return baseType;
   }
 
   const renderLogsTable = (type: VehicleType, title: string) => {
@@ -162,7 +200,7 @@ export default function MaintenanceLogsPage() {
                     <TableRow key={log.id}>
                       <TableCell className="font-medium">{log.assetName}</TableCell>
                       <TableCell>{format(new Date(log.date), 'PPP')}</TableCell>
-                      <TableCell>{getServiceTypeLabel(log.serviceType)}</TableCell>
+                      <TableCell>{getServiceTypeLabel(log)}</TableCell>
                       <TableCell className="max-w-sm">{log.description}</TableCell>
                       <TableCell>{log.cost ? `$${log.cost.toFixed(2)}` : 'N/A'}</TableCell>
                       <TableCell>{log.mechanic || 'N/A'}</TableCell>
@@ -311,6 +349,31 @@ export default function MaintenanceLogsPage() {
                           </FormItem>
                       )}
                     />
+                    {watchedServiceType === 'routine' && (
+                        <FormField
+                            control={form.control}
+                            name="routineService"
+                            render={({ field }) => (
+                                <FormItem>
+                                <FormLabel>Routine Service Type</FormLabel>
+                                <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                    <FormControl>
+                                    <SelectTrigger>
+                                        <SelectValue placeholder="Select a routine service" />
+                                    </SelectTrigger>
+                                    </FormControl>
+                                    <SelectContent>
+                                        <SelectItem value="oilChange">Oil Change</SelectItem>
+                                        <SelectItem value="tireRotation">Tire Rotation</SelectItem>
+                                        <SelectItem value="brakeInspection">Brake Inspection</SelectItem>
+                                        <SelectItem value="fluidCheck">Fluid Check</SelectItem>
+                                    </SelectContent>
+                                </Select>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    )}
                     <FormField
                       control={form.control}
                       name="description"

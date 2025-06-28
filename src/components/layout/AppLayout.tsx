@@ -24,11 +24,11 @@ import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
-import type { NotificationMessage, UserRole } from '@/lib/types';
+import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
-import { format, isBefore, addDays, parseISO } from 'date-fns';
+import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -69,7 +69,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
-            const checkAndCreateExpirationNotifications = () => {
+            const checkAndCreateNotifications = () => {
                 const assets = loadFleetAssets();
                 const notifications = loadNotifications();
                 let notificationsChanged = false;
@@ -82,41 +82,50 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     // Check registration
                     if (asset.registrationDueDate) {
                         const dueDate = parseISO(asset.registrationDueDate);
-                        if (isBefore(dueDate, thirtyDaysFromNow)) { // Expired or expiring soon
-                            const notifId = `expiry-reg-${asset.id}`;
+                        const notifId = `expiry-reg-${asset.id}`;
+                        if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
                             const isExpired = isBefore(dueDate, today);
-                            if (!notifications.some(n => n.id === notifId)) {
-                                notifications.push({
-                                    id: notifId,
-                                    recipientId: 'all', // For all admins
-                                    title: `Vehicle Registration ${isExpired ? 'Expired' : 'Expiring Soon'}`,
-                                    content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
-                                    senderName: 'System Alert',
-                                    timestamp: new Date().toISOString(),
-                                    readBy: [],
-                                });
-                                notificationsChanged = true;
-                            }
+                            notifications.push({
+                                id: notifId, recipientId: 'all', title: `Vehicle Registration ${isExpired ? 'Expired' : 'Expiring Soon'}`,
+                                content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
+                                senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
+                            });
+                            notificationsChanged = true;
                         }
                     }
 
                     // Check insurance
                     if (asset.insuranceDueDate) {
                         const dueDate = parseISO(asset.insuranceDueDate);
-                        if (isBefore(dueDate, thirtyDaysFromNow)) { // Expired or expiring soon
-                            const notifId = `expiry-ins-${asset.id}`;
-                             const isExpired = isBefore(dueDate, today);
-                            if (!notifications.some(n => n.id === notifId)) {
-                                notifications.push({
-                                    id: notifId,
-                                    recipientId: 'all',
-                                    title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
-                                    content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
-                                    senderName: 'System Alert',
-                                    timestamp: new Date().toISOString(),
-                                    readBy: [],
-                                });
-                                notificationsChanged = true;
+                        const notifId = `expiry-ins-${asset.id}`;
+                        if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
+                            const isExpired = isBefore(dueDate, today);
+                            notifications.push({
+                                id: notifId, recipientId: 'all', title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
+                                content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
+                                senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
+                            });
+                            notificationsChanged = true;
+                        }
+                    }
+
+                    // Check maintenance schedule
+                    if (asset.maintenanceSchedule) {
+                        for (const [key, value] of Object.entries(asset.maintenanceSchedule)) {
+                            if (value && value.intervalMonths && value.lastServiceDate) {
+                                const nextDueDate = addMonths(parseISO(value.lastServiceDate), value.intervalMonths);
+                                const serviceName = key.replace(/([A-Z])/g, ' $1').trim();
+                                const notifId = `maint-${key}-${asset.id}`;
+
+                                if (isBefore(nextDueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
+                                    const isOverdue = isBefore(nextDueDate, today);
+                                    notifications.push({
+                                        id: notifId, recipientId: 'all', title: `Maintenance ${isOverdue ? 'Overdue' : 'Due Soon'}: ${serviceName}`,
+                                        content: `The ${serviceName} for ${asset.name} (${asset.vin}) is ${isOverdue ? 'overdue' : 'due'} on ${format(nextDueDate, 'PPP')}. Please log the service once completed.`,
+                                        senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
+                                    });
+                                    notificationsChanged = true;
+                                }
                             }
                         }
                     }
@@ -130,9 +139,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     setUnreadCount(count);
                 }
             };
-            checkAndCreateExpirationNotifications();
+            checkAndCreateNotifications();
         }
-    }, [user, pathname]); // Run on user login and page navigation
+    }, [user, pathname]);
 
 
     if (!user) {

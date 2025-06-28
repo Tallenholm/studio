@@ -15,13 +15,29 @@ export interface User {
   role: UserRole;
 }
 
+export type MaintenanceScheduleItem = {
+    intervalMonths: number;
+    lastServiceDate?: string; // YYYY-MM-DD
+};
+
+export type MaintenanceSchedule = {
+  oilChange?: MaintenanceScheduleItem;
+  tireRotation?: MaintenanceScheduleItem;
+  brakeInspection?: MaintenanceScheduleItem;
+  fluidCheck?: MaintenanceScheduleItem;
+};
+
 export interface FleetAsset {
   id: string;
   type: VehicleType;
   name: string;
   vin: string;
+  year?: string;
+  make?: string;
+  model?: string;
   registrationDueDate?: string; // YYYY-MM-DD
   insuranceDueDate?: string; // YYYY-MM-DD
+  maintenanceSchedule?: MaintenanceSchedule;
 }
 
 export interface InspectionItem {
@@ -124,6 +140,7 @@ export interface MaintenanceLog {
   assetName: string;
   date: string; // YYYY-MM-DD
   serviceType: 'routine' | 'repair' | 'inspection' | 'other';
+  routineService?: string; // e.g. 'oilChange', 'tireRotation'
   description: string;
   cost?: number;
   mechanic?: string;
@@ -169,6 +186,8 @@ export interface Client {
 
 export type JobStatus = 'upcoming' | 'active' | 'completed';
 
+export type JobType = 'excavation' | 'snow_removal' | 'concrete' | 'misc';
+
 export interface Job {
   id:string;
   name: string;
@@ -176,7 +195,7 @@ export interface Job {
   clientName: string;
   address: string;
   jobValue?: number;
-  jobType: 'excavation' | 'snow_removal' | 'concrete' | 'misc';
+  jobType: JobType;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   assignedEmployeeIds?: string[];

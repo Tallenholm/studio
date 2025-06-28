@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loadFleetAssets, saveFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
-import type { FleetAsset, VehicleType } from '@/lib/types';
+import type { FleetAsset, VehicleType, MaintenanceSchedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -43,35 +43,55 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, isBefore, addDays, parseISO } from 'date-fns';
+import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
+import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
+import { Separator } from '@/components/ui/separator';
+
+const maintenanceIntervalSchema = z.object({
+    intervalMonths: z.coerce.number().optional(),
+    lastServiceDate: z.string().optional(),
+});
 
 const assetSchema = z.object({
   type: z.enum(['truck', 'trailer', 'heavyEquipment'], { required_error: 'Asset type is required.' }),
   name: z.string().min(1, 'Asset name is required.'),
   vin: z.string().min(1, 'VIN/Serial is required.').max(17, 'VIN must be 17 characters or less.'),
+  year: z.string().optional(),
+  make: z.string().optional(),
+  model: z.string().optional(),
   registrationDueDate: z.date().optional(),
   insuranceDueDate: z.date().optional(),
+  maintenanceSchedule: z.object({
+      oilChange: maintenanceIntervalSchema.optional(),
+      tireRotation: maintenanceIntervalSchema.optional(),
+      brakeInspection: maintenanceIntervalSchema.optional(),
+      fluidCheck: maintenanceIntervalSchema.optional(),
+  }).optional(),
 });
+
+type AssetFormValues = z.infer<typeof assetSchema>;
 
 export default function FleetManagementPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
 
-  const form = useForm<z.infer<typeof assetSchema>>({
+  const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
     defaultValues: {
       type: 'truck',
       name: '',
       vin: '',
-      registrationDueDate: undefined,
-      insuranceDueDate: undefined,
+      year: '',
+      make: '',
+      model: '',
     },
   });
 
@@ -104,7 +124,34 @@ export default function FleetManagementPage() {
     setIsDialogOpen(true);
   };
 
-  function onSubmit(values: z.infer<typeof assetSchema>) {
+  const handleAiSuggest = async () => {
+    const { year, make, model } = form.getValues();
+    if (!year || !make || !model) {
+        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide Year, Make, and Model to get AI suggestions.' });
+        return;
+    }
+    setIsAiLoading(true);
+    try {
+        const schedule = await getMaintenanceSchedule({ year, make, model });
+        const currentSchedule = form.getValues('maintenanceSchedule') || {};
+        const newSchedule: MaintenanceSchedule = {
+            oilChange: schedule.oilChange ? { intervalMonths: schedule.oilChange.intervalMonths, lastServiceDate: currentSchedule.oilChange?.lastServiceDate } : undefined,
+            tireRotation: schedule.tireRotation ? { intervalMonths: schedule.tireRotation.intervalMonths, lastServiceDate: currentSchedule.tireRotation?.lastServiceDate } : undefined,
+            brakeInspection: schedule.brakeInspection ? { intervalMonths: schedule.brakeInspection.intervalMonths, lastServiceDate: currentSchedule.brakeInspection?.lastServiceDate } : undefined,
+            fluidCheck: schedule.fluidCheck ? { intervalMonths: schedule.fluidCheck.intervalMonths, lastServiceDate: currentSchedule.fluidCheck?.lastServiceDate } : undefined,
+        };
+
+        form.setValue('maintenanceSchedule', newSchedule);
+        toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been updated.' });
+    } catch (error) {
+        console.error('AI Schedule Suggestion Error:', error);
+        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });
+    } finally {
+        setIsAiLoading(false);
+    }
+  };
+
+  function onSubmit(values: AssetFormValues) {
     const assetData = {
       ...values,
       registrationDueDate: values.registrationDueDate?.toISOString().split('T')[0],
@@ -262,6 +309,41 @@ export default function FleetManagementPage() {
     );
   }
 
+  const MaintenanceScheduleField = ({ name, label }: { name: keyof MaintenanceSchedule, label: string }) => {
+    return (
+        <div className="grid grid-cols-2 gap-4 items-end">
+            <FormField
+                control={form.control}
+                name={`maintenanceSchedule.${name}.intervalMonths`}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>{label} Interval</FormLabel>
+                        <FormControl>
+                             <div className="flex items-center">
+                                <Input type="number" placeholder="e.g., 6" {...field} />
+                                <span className="ml-2 text-sm text-muted-foreground">months</span>
+                            </div>
+                        </FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+             <FormField
+                control={form.control}
+                name={`maintenanceSchedule.${name}.lastServiceDate`}
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Last Service Date</FormLabel>
+                        <FormControl><Input type="text" disabled placeholder="Updated from logs" value={field.value ? format(parseISO(field.value), 'PPP') : 'No record'} /></FormControl>
+                        <FormMessage />
+                    </FormItem>
+                )}
+            />
+        </div>
+    )
+  }
+
+
   return (
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
@@ -283,7 +365,7 @@ export default function FleetManagementPage() {
                   Add New Asset
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-xl">
+              <DialogContent className="sm:max-w-4xl">
                 <DialogHeader>
                   <DialogTitle>{editingAsset ? 'Edit Fleet Asset' : 'Add New Fleet Asset'}</DialogTitle>
                   <DialogDescription>
@@ -291,55 +373,14 @@ export default function FleetManagementPage() {
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                     <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Asset Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select an asset type" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="truck">Truck</SelectItem>
-                              <SelectItem value="trailer">Trailer</SelectItem>
-                              <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Name / Identifier</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Truck 01, Big Tex Trailer" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="vin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>VIN / Serial Number</FormLabel>
-                          <FormControl>
-                            <Input placeholder="Enter 17-character VIN" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
+                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={form.control} name="type" render={({ field }) => ( <FormItem> <FormLabel>Asset Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select an asset type" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="truck">Truck</SelectItem> <SelectItem value="trailer">Trailer</SelectItem> <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Name / Identifier</FormLabel> <FormControl><Input placeholder="e.g., Truck 01, Big Tex Trailer" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="vin" render={({ field }) => ( <FormItem> <FormLabel>VIN / Serial Number</FormLabel> <FormControl><Input placeholder="Enter 17-character VIN" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                     </div>
+                     <Separator />
+                     <h3 className="text-lg font-medium">Document Expiration Dates</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <FormField
                             control={form.control}
@@ -388,7 +429,27 @@ export default function FleetManagementPage() {
                             )}
                         />
                     </div>
-                    <DialogFooter>
+                     <Separator />
+                     <div className="space-y-2">
+                        <h3 className="text-lg font-medium">Preventative Maintenance Schedule</h3>
+                        <p className="text-sm text-muted-foreground">Set service intervals in months. Last service date is updated automatically from Maintenance Logs.</p>
+                     </div>
+                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                     </div>
+                     <Button type="button" variant="outline" onClick={handleAiSuggest} disabled={isAiLoading}>
+                        {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4"/>}
+                        {isAiLoading ? "Suggesting..." : "Suggest Schedule with AI"}
+                     </Button>
+                     <div className="space-y-4 pt-4">
+                        <MaintenanceScheduleField name="oilChange" label="Oil Change" />
+                        <MaintenanceScheduleField name="tireRotation" label="Tire Rotation" />
+                        <MaintenanceScheduleField name="brakeInspection" label="Brake Inspection" />
+                        <MaintenanceScheduleField name="fluidCheck" label="Fluid Check" />
+                     </div>
+                    <DialogFooter className="pt-4">
                       <Button type="submit">Save Asset</Button>
                     </DialogFooter>
                   </form>

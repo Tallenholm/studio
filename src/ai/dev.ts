@@ -10,3 +10,5 @@ import '@/ai/flows/answer-help-question.ts';
 import '@/ai/flows/extract-receipt-data.ts';
 import '@/ai/flows/summarize-document.ts';
 import '@/ai/flows/generate-asset-health-summary.ts';
+import '@/ai/flows/get-maintenance-schedule.ts';
+
