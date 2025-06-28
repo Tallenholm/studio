@@ -1,10 +1,10 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer, CloudDrizzle, Droplets, Flame } from 'lucide-react';
-import { format, parseISO } from 'date-fns';
+import { format, parseISO, isAfter } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
 interface ForecastPeriod {
@@ -57,8 +57,6 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
 
     useEffect(() => {
         const fetchWeather = async () => {
-            setLoading(true);
-            setError(null);
             try {
                 // Step 1: Get the forecast grid URL from weather.gov
                 const pointsResponse = await fetch(`https://api.weather.gov/points/${LATITUDE},${LONGITUDE}`);
@@ -81,18 +79,34 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                 }
                 const forecastData = await forecastResponse.json();
                 setForecast(forecastData.properties.periods);
+                setError(null); // Clear previous errors on success
             } catch (err: any) {
                 console.error("Weather fetch error:", err);
                 setError(err.message || "Could not load weather data.");
             } finally {
-                setLoading(false);
+                setLoading(false); // This will only affect the initial load's spinner
             }
         };
+        
+        fetchWeather(); // Initial fetch
+        
+        // Refresh weather data every 30 minutes
+        const intervalId = setInterval(fetchWeather, 30 * 60 * 1000);
 
-        fetchWeather();
-    }, []);
+        // Cleanup interval on component unmount
+        return () => clearInterval(intervalId);
+    }, []); // Empty dependency array ensures this setup runs only once on mount
 
-    const upcomingForecast = forecast ? forecast.slice(0, 4) : [];
+    const upcomingForecast = useMemo(() => {
+        if (!forecast) return [];
+        const now = new Date();
+        // Find the index of the first forecast period that hasn't ended yet
+        const currentIndex = forecast.findIndex(period => isAfter(parseISO(period.endTime), now));
+        // If all forecast data is in the past, return an empty array (the next fetch will get new data)
+        if (currentIndex === -1) return [];
+        // Return the current and next 3 forecast periods
+        return forecast.slice(currentIndex, currentIndex + 4);
+    }, [forecast]);
 
     const renderContent = () => {
         if (loading) {
@@ -114,7 +128,7 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
         }
         
         if (!upcomingForecast || upcomingForecast.length === 0) {
-            return <p className="text-muted-foreground text-center h-24">No forecast data available.</p>;
+            return <p className="text-muted-foreground text-center h-24 flex items-center justify-center">No forecast data available for the upcoming hours.</p>;
         }
 
         return (
