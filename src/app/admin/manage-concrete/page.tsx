@@ -541,7 +541,6 @@ export default function ManageConcretePage() {
                             />
                           </div>
                           <div className="space-y-4">
-                            <ConcreteCalculator onCalculate={(yards) => form.setValue('concreteYards', yards)} />
                             <FormField
                               control={form.control}
                               name="concreteYards"

@@ -35,6 +35,7 @@ import { Separator } from '@/components/ui/separator';
 import { getJobStatus } from '@/lib/job-utils';
 import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
 import { Textarea } from '@/components/ui/textarea';
+import AnimatedCounter from '@/components/common/AnimatedCounter';
 
 
 const jobSchema = z.object({
@@ -147,6 +148,12 @@ export default function ManageJobsPage() {
     setIsGeneratingJob(true);
     try {
       const result = await createJobFromPrompt(aiPrompt);
+
+      if (result.jobType !== 'excavation') {
+          toast({ variant: 'destructive', title: 'AI Error', description: `The AI classified this as a '${result.jobType}' job. Please use the correct management page.` });
+          setIsGeneratingJob(false);
+          return;
+      }
 
       const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
       if (!client) {
@@ -572,6 +579,7 @@ export default function ManageJobsPage() {
                       </div>
 
                       <Separator />
+                       <h3 className="text-lg font-medium">Assign Personnel & Fleet</h3>
                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                          <MultiSelectDropdown items={users} fieldName="assignedEmployeeIds" title="Assign Employees" Icon={UsersIcon} />
                          <MultiSelectDropdown items={trucks} fieldName="assignedTruckIds" title="Assign Trucks" Icon={Truck} />
@@ -597,7 +605,7 @@ export default function ManageJobsPage() {
                     <DollarSign className="h-6 w-6 text-primary" />
                     <div>
                         <p className="text-sm text-muted-foreground">Total Active Value</p>
-                        <p className="text-xl font-bold text-primary">{formatCurrency(totalActiveValue)}</p>
+                        <p className="text-xl font-bold text-primary"><AnimatedCounter value={totalActiveValue} type="currency" /></p>
                     </div>
                 </div>
             </CardHeader>
