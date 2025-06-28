@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
@@ -215,8 +215,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/employee/company-documents">
-                                        <SidebarMenuButton tooltip="Company Documents" isActive={pathname.startsWith('/employee/company-documents')}>
-                                            <Files /><span>Company Docs</span>
+                                        <SidebarMenuButton tooltip="Policies & Documents" isActive={pathname.startsWith('/employee/company-documents')}>
+                                            <BookOpen /><span>Policies & Documents</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -347,8 +347,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-documents">
-                                        <SidebarMenuButton tooltip="General Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
-                                            <BookCopy /><span>General Documents</span>
+                                        <SidebarMenuButton tooltip="Policies & Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
+                                            <BookOpen /><span>Policies & Documents</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>

@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route } from 'lucide-react';
+import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route, BookOpen } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -177,16 +177,13 @@ export default function EmployeeHubPage() {
 
       <WeatherForecast tourId="tour-step-weather-forecast-employee" />
 
-       <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
+       <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
             <Link href="/employee/fleet-check" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-12 w-12 text-primary mx-auto mb-2" />
                   <CardTitle className="text-xl font-headline">
                     Vehicle Inspections
                   </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    Daily vehicle inspections.
-                  </CardDescription>
                 </Card>
             </Link>
             <Link href="/employee/snow-routes" passHref>
@@ -195,9 +192,6 @@ export default function EmployeeHubPage() {
                   <CardTitle className="text-xl font-headline">
                     Snow Routes
                   </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    Live snow event tracking.
-                  </CardDescription>
                 </Card>
             </Link>
             <Link href="/employee/my-tasks" passHref>
@@ -206,9 +200,6 @@ export default function EmployeeHubPage() {
                   <CardTitle className="text-xl font-headline">
                     My Tasks
                   </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    View & complete assigned tasks.
-                  </CardDescription>
                 </Card>
             </Link>
             <Link href="/employee/time-off" passHref>
@@ -217,9 +208,6 @@ export default function EmployeeHubPage() {
                   <CardTitle className="text-xl font-headline">
                     Time Off
                   </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    Request time off.
-                  </CardDescription>
                 </Card>
             </Link>
             <Link href="/employee/submit-expense" passHref>
@@ -228,9 +216,14 @@ export default function EmployeeHubPage() {
                   <CardTitle className="text-xl font-headline">
                     Submit Expense
                   </CardTitle>
-                  <CardDescription className="text-sm mt-1">
-                    Upload receipts for reimbursement.
-                  </CardDescription>
+                </Card>
+            </Link>
+            <Link href="/employee/company-documents" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <BookOpen className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Policies & Documents
+                  </CardTitle>
                 </Card>
             </Link>
         </div>

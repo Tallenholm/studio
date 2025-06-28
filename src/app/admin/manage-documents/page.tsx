@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, User as UserIcon, Brain } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2, Download, Eye, FileUp, Files, User as UserIcon, Brain } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
@@ -106,7 +106,7 @@ export default function ManageDocumentsPage() {
 
   const generalCategories = useMemo(() => {
     const assetNames = fleetAssets.map(asset => asset.name);
-    return ['Company Policies', ...assetNames];
+    return ['Company Policies', 'Handbooks', ...assetNames];
   }, [fleetAssets]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
@@ -275,11 +275,11 @@ export default function ManageDocumentsPage() {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <BookCopy className="h-8 w-8 text-primary" />
-                Document Uploader
+                <BookOpen className="h-8 w-8 text-primary" />
+                Manage Policies & Documents
               </CardTitle>
               <CardDescription className="mt-2">
-                Upload and manage all company documents. Personal employee documents are viewable in the <Link href="/admin/personal-documents" className="text-primary hover:underline">Personal Documents</Link> section.
+                Upload and manage company-wide documents, policies, and sensitive employee forms.
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -311,7 +311,7 @@ export default function ManageDocumentsPage() {
                                 </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                <SelectItem value="general">General Document</SelectItem>
+                                <SelectItem value="general">Policy or General Document</SelectItem>
                                 <SelectItem value="tax">Tax Form</SelectItem>
                                 <SelectItem value="employment">Employment Form</SelectItem>
                                 </SelectContent>

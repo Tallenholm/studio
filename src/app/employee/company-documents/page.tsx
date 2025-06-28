@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Files, Download, Truck, Box, BookOpen as DocumentIcon, Loader2 } from 'lucide-react';
+import { Files, Download, Truck, Box, BookOpen as DocumentIcon, Loader2, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
@@ -16,7 +16,7 @@ const getCategoryIcon = (categoryName: string) => {
   const lowerCaseName = categoryName.toLowerCase();
   if (lowerCaseName.includes('truck')) return Truck;
   if (lowerCaseName.includes('trailer')) return Box;
-  if (lowerCaseName.includes('policies') || lowerCaseName.includes('manual')) return DocumentIcon;
+  if (lowerCaseName.includes('policies') || lowerCaseName.includes('manual') || lowerCaseName.includes('handbook')) return DocumentIcon;
   return DocumentIcon;
 };
 
@@ -107,15 +107,15 @@ export default function CompanyDocumentsPage() {
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
-        <Files className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Company Documents</h1>
+        <BookOpen className="h-16 w-16 text-primary mx-auto mb-4" />
+        <h1 className="text-4xl font-headline font-bold">Company Policies & Documents</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Access general company documents like policies, manuals, and vehicle information.
+          Access general company documents like policies, handbooks, manuals, and vehicle information.
         </p>
       </div>
 
       <div className="space-y-12">
-        {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
+        {renderGroupedDocumentSection("Policies & Documents", DocumentIcon, generalDocuments)}
       </div>
     </div>
   );

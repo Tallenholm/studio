@@ -41,7 +41,7 @@ export const faqs = {
     },
     {
       question: "Where can I find documents?",
-      answer: "There are two document pages. 'Company Documents' contains general files for all employees, like safety manuals and vehicle information. 'Personal Documents' is a secure area where you can find your own tax forms (like W-2s) and employment-related documents (like your I-9). Both can be accessed from your Employee Hub or the sidebar.",
+      answer: "There are two document pages. 'Policies & Documents' contains general files for all employees, like safety manuals and vehicle information. 'Personal Documents' is a secure area where you can find your own tax forms (like W-2s) and employment-related documents (like your I-9). Both can be accessed from your Employee Hub or the sidebar.",
     },
     {
       question: "How do I view an employee violation?",
@@ -67,7 +67,7 @@ export const faqs = {
     },
      {
       question: "How do I manage documents?",
-      answer: "Navigate to 'General Documents' from your dashboard. When adding a new document, you must select its type: General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
+      answer: "Navigate to 'Policies & Documents' from your dashboard. When adding a new document, you must select its type: Policy/General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
     },
     {
       question: "How do I manage employee tasks?",
