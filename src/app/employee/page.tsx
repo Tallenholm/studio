@@ -24,7 +24,7 @@ import WeatherForecast from '@/components/admin/WeatherForecast';
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
     { element: '#tour-step-weather-forecast-employee', title: "Daily Weather Forecast", content: "Check the local weather forecast here to help you prepare for the day's conditions.", side: 'bottom' },
-    { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Fleet Check'), view your tasks, request time off, and more.", side: 'bottom' },
+    { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Vehicle Inspections'), view your tasks, request time off, and more.", side: 'bottom' },
     { element: '#tour-step-job-board', title: "Your Assignments", content: "This section shows your currently active and upcoming assignments, separated by job type. You can get directions to the job site directly from here.", side: 'bottom' },
     { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },
     { element: '#tour-step-sidebar', title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out.", side: 'right' },
@@ -182,7 +182,7 @@ export default function EmployeeHubPage() {
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-12 w-12 text-primary mx-auto mb-2" />
                   <CardTitle className="text-xl font-headline">
-                    Fleet Check
+                    Vehicle Inspections
                   </CardTitle>
                   <CardDescription className="text-sm mt-1">
                     Daily vehicle inspections.

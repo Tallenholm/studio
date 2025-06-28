@@ -11,7 +11,7 @@ export default function FleetCheckPage() {
     <div className="container mx-auto py-8">
        <div className="mb-8 text-center">
         <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Fleet Check</h1>
+        <h1 className="text-4xl font-headline font-bold">Vehicle Inspections</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Complete your daily pre-trip and post-trip vehicle inspections.
         </p>

@@ -43,8 +43,8 @@ export default function LoginPage() {
       <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
         <CardHeader className="text-center">
           <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
-          <CardTitle className="text-3xl font-headline">Logan's Excavating Hub</CardTitle>
-          <CardDescription>Please enter your PIN to access your portal</CardDescription>
+          <CardTitle className="text-3xl font-headline">Operations Hub</CardTitle>
+          <CardDescription>Please enter your PIN to access the portal</CardDescription>
         </CardHeader>
         <CardContent>
           <form onSubmit={handleLogin} className="space-y-6">

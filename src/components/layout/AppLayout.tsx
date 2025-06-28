@@ -173,8 +173,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/employee/fleet-check">
-                                        <SidebarMenuButton tooltip="Fleet Check" isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
-                                            <Truck /><span>Fleet Check</span>
+                                        <SidebarMenuButton tooltip="Vehicle Inspections" isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
+                                            <Truck /><span>Vehicle Inspections</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
