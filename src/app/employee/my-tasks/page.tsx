@@ -16,7 +16,6 @@ import {
   DialogFooter,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from '@/components/ui/dialog';
 import {
   Form,
@@ -38,8 +37,6 @@ import Image from 'next/image';
 const completeTaskSchema = z.object({
   completionNotes: z.string().optional(),
   completionPhotoUri: z.string().optional(),
-}).superRefine((data, ctx) => {
-    // This validation logic will be dynamically applied based on the task
 });
 
 export default function MyTasksPage() {
@@ -51,7 +48,13 @@ export default function MyTasksPage() {
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-  
+
+  // New state and refs for camera functionality
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
   const form = useForm<z.infer<typeof completeTaskSchema>>({
     resolver: zodResolver(completeTaskSchema),
   });
@@ -64,6 +67,19 @@ export default function MyTasksPage() {
     }
   }, [user]);
 
+  // Effect to handle camera stream
+  useEffect(() => {
+    if (isCameraOpen && stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+    }
+    // Cleanup function to stop stream when camera is closed
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [isCameraOpen, stream]);
+
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
@@ -73,6 +89,94 @@ export default function MyTasksPage() {
         form.clearErrors('completionPhotoUri');
       };
       reader.readAsDataURL(file);
+    }
+  };
+
+  const handleOpenCamera = async () => {
+    // Stop any existing stream
+    if (stream) {
+        stream.getTracks().forEach(track => track.stop());
+    }
+    try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setStream(newStream);
+        setIsCameraOpen(true);
+    } catch (err) {
+        console.error("Camera access error:", err);
+        toast({
+            variant: 'destructive',
+            title: 'Camera Error',
+            description: 'Could not access the camera. Please check your browser permissions for this site.'
+        });
+    }
+  };
+
+  const handleCapturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+
+    const video = videoRef.current;
+    const canvas = canvasRef.current;
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    const ctx = canvas.getContext('2d');
+    if (!ctx) return;
+
+    // Draw the video frame to the canvas
+    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+    const timestamp = new Date().toLocaleString();
+
+    const drawOverlay = (geoString: string | null) => {
+        ctx.font = '24px "PT Sans", sans-serif';
+        ctx.fillStyle = 'white';
+        ctx.strokeStyle = 'black';
+        ctx.lineWidth = 5;
+        ctx.lineJoin = 'round'; // For better looking text borders
+
+        const textX = 20;
+        const textY = canvas.height - 20;
+
+        if (geoString) {
+            ctx.strokeText(timestamp, textX, textY - 30);
+            ctx.fillText(timestamp, textX, textY - 30);
+            ctx.strokeText(geoString, textX, textY);
+            ctx.fillText(geoString, textX, textY);
+        } else {
+            ctx.strokeText(timestamp, textX, textY);
+            ctx.fillText(timestamp, textX, textY);
+        }
+
+        form.setValue('completionPhotoUri', canvas.toDataURL('image/jpeg'));
+        form.clearErrors('completionPhotoUri');
+        
+        // Stop the stream and close the camera dialog
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+        setStream(null);
+        setIsCameraOpen(false);
+    }
+
+    if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+            (position) => {
+                const { latitude, longitude } = position.coords;
+                const geoString = `Lat: ${latitude.toFixed(5)}, Lon: ${longitude.toFixed(5)}`;
+                drawOverlay(geoString);
+            },
+            (error) => {
+                toast({
+                    variant: 'destructive',
+                    title: 'Location Error',
+                    description: 'Could not get location. Photo will be saved without it.'
+                });
+                drawOverlay(null); // Proceed without location
+            },
+            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
+        );
+    } else {
+        toast({ variant: 'destructive', title: 'Location Error', description: 'Geolocation is not supported by this browser.' });
+        drawOverlay(null);
     }
   };
 
@@ -128,6 +232,9 @@ export default function MyTasksPage() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
+      {/* Hidden canvas for photo processing */}
+      <canvas ref={canvasRef} className="hidden" />
+
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
             <CardTitle className="text-3xl font-headline flex items-center gap-2">
@@ -227,38 +334,28 @@ export default function MyTasksPage() {
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Verification Photo (Required)</FormLabel>
-                                    <FormControl>
-                                        <div>
-                                        <Input
-                                            type="file"
-                                            accept="image/*"
-                                            capture="environment"
-                                            ref={fileInputRef}
-                                            className="hidden"
-                                            onChange={handleFileChange}
-                                        />
-                                        <Button
-                                            type="button"
-                                            variant="outline"
-                                            className="w-full"
-                                            onClick={() => fileInputRef.current?.click()}
-                                        >
-                                            <FileUp className="mr-2 h-4 w-4" />
-                                            Upload Photo
-                                        </Button>
-                                        {field.value ? (
+                                    <div className="space-y-2">
+                                      <div className="flex items-center gap-2">
+                                          <Button type="button" variant="outline" onClick={handleOpenCamera}>
+                                              <Camera className="mr-2 h-4 w-4" /> Use Camera
+                                          </Button>
+                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
+                                              <FileUp className="mr-2 h-4 w-4" /> Upload File
+                                          </Button>
+                                          <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                                      </div>
+                                       {field.value ? (
                                             <div className="mt-2 text-sm flex items-center gap-2">
-                                                <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md" />
-                                                <span>Photo selected. Ready to save.</span>
+                                                <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md border" />
+                                                <span>Photo attached.</span>
                                             </div>
                                         ) : (
                                             <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
                                                <Camera className="h-4 w-4" />
-                                                <span>No photo selected.</span>
+                                                <span>No photo attached.</span>
                                             </div>
                                         )}
-                                        </div>
-                                    </FormControl>
+                                    </div>
                                     <FormMessage />
                                 </FormItem>
                             )}
@@ -272,6 +369,29 @@ export default function MyTasksPage() {
             </Form>
             </DialogContent>
         </Dialog>
+
+        {/* Camera Modal */}
+        <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+            <DialogContent className="max-w-3xl p-0">
+                <DialogHeader className="p-6 pb-0">
+                    <DialogTitle>Take Verification Photo</DialogTitle>
+                    <DialogDescription>
+                        Position the subject in the frame and capture the image. The time and GPS coordinates will be stamped on the photo.
+                    </DialogDescription>
+                </DialogHeader>
+                <div className="relative p-6 pt-2">
+                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
+                </div>
+                <DialogFooter className="p-6 pt-0">
+                    <Button type="button" onClick={handleCapturePhoto} className="w-full">
+                        <Camera className="mr-2 h-4 w-4" /> Capture Photo
+                    </Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
+
     </div>
   );
 }
+
+    
