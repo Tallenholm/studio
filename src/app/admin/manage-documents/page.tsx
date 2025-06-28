@@ -36,9 +36,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, User as UserIcon } from 'lucide-react';
+import { PlusCircle, Trash2, BookCopy, Loader2, Download, Eye, FileUp, Files, User as UserIcon, Brain } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
+import { summarizeDocument } from '@/ai/flows/summarize-document';
+import { parseISO } from 'date-fns';
 
 const documentSchema = z.object({
   title: z.string().min(1, 'Document title is required.'),
@@ -72,6 +74,7 @@ export default function ManageDocumentsPage() {
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isSummarizing, setIsSummarizing] = useState(false);
   const { toast } = useToast();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -106,13 +109,27 @@ export default function ManageDocumentsPage() {
     return ['Company Policies', ...assetNames];
   }, [fleetAssets]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsSummarizing(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue('documentDataUri', reader.result as string);
+      reader.onloadend = async () => {
+        const dataUri = reader.result as string;
+        form.setValue('documentDataUri', dataUri);
         form.clearErrors('documentDataUri');
+        
+        try {
+            const summary = await summarizeDocument({ documentDataUri: dataUri });
+            if (summary.title) form.setValue('title', summary.title);
+            if (summary.description) form.setValue('description', summary.description);
+            toast({ title: 'AI Assistant', description: 'Document title and description have been pre-filled.' });
+        } catch (error) {
+            console.error("AI summarization failed:", error);
+            toast({ variant: 'destructive', title: 'AI Error', description: 'Could not summarize the document.' });
+        } finally {
+            setIsSummarizing(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -225,6 +242,7 @@ export default function ManageDocumentsPage() {
                                         alt={`Preview of ${doc.title}`}
                                         fill
                                         className="object-cover object-top transition-transform group-hover:scale-105"
+                                        data-ai-hint={doc.dataAiHint}
                                       />
                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Download className="h-8 w-8 text-white"/>
@@ -275,7 +293,7 @@ export default function ManageDocumentsPage() {
                 <DialogHeader>
                   <DialogTitle>Add New Document</DialogTitle>
                   <DialogDescription>
-                    Upload a new document and assign it to a category or employee.
+                    Upload a document and the AI will help fill in the details.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
@@ -299,6 +317,38 @@ export default function ManageDocumentsPage() {
                                 </SelectContent>
                             </Select>
                             <FormMessage />
+                            </FormItem>
+                        )}
+                    />
+                     <FormField
+                        control={form.control}
+                        name="documentDataUri"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Document File</FormLabel>
+                                <FormControl>
+                                    <div>
+                                    <Input
+                                        type="file"
+                                        accept="image/*,application/pdf"
+                                        ref={fileInputRef}
+                                        className="hidden"
+                                        onChange={handleFileChange}
+                                        disabled={isSummarizing}
+                                    />
+                                    <Button
+                                        type="button"
+                                        variant="outline"
+                                        className="w-full"
+                                        onClick={() => fileInputRef.current?.click()}
+                                        disabled={isSummarizing}
+                                    >
+                                        {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                                        {isSummarizing ? 'Analyzing with AI...' : 'Upload File'}
+                                    </Button>
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
                             </FormItem>
                         )}
                     />
@@ -377,44 +427,9 @@ export default function ManageDocumentsPage() {
                         </FormItem>
                       )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="documentDataUri"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Document File</FormLabel>
-                                <FormControl>
-                                    <div>
-                                    <Input
-                                        type="file"
-                                        accept="image/*,application/pdf"
-                                        ref={fileInputRef}
-                                        className="hidden"
-                                        onChange={handleFileChange}
-                                    />
-                                    <Button
-                                        type="button"
-                                        variant="outline"
-                                        className="w-full"
-                                        onClick={() => fileInputRef.current?.click()}
-                                    >
-                                        <FileUp className="mr-2 h-4 w-4" />
-                                        Upload File
-                                    </Button>
-                                    {field.value && (
-                                        <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
-                                            <Eye className="h-4 w-4" />
-                                            <span>File selected. Ready to save.</span>
-                                        </div>
-                                    )}
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                    
                     <DialogFooter>
-                      <Button type="submit">Save Document</Button>
+                      <Button type="submit" disabled={isSummarizing}>Save Document</Button>
                     </DialogFooter>
                   </form>
                 </Form>

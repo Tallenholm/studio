@@ -16,13 +16,14 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye, DollarSign } from 'lucide-react';
+import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye, DollarSign, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 
 const expenseSchema = z.object({
   date: z.date({ required_error: 'An expense date is required.' }),
@@ -37,6 +38,7 @@ const expenseSchema = z.object({
 export default function SubmitExpensePage() {
   const [reports, setReports] = useState<ExpenseReport[]>([]);
   const [isMounted, setIsMounted] = useState(false);
+  const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -58,13 +60,29 @@ export default function SubmitExpensePage() {
     }
   }, [user]);
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
+      setIsScanning(true);
       const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue('receiptDataUri', reader.result as string);
+      reader.onloadend = async () => {
+        const dataUri = reader.result as string;
+        form.setValue('receiptDataUri', dataUri);
         form.clearErrors('receiptDataUri');
+
+        // Trigger AI OCR
+        try {
+          const extractedData = await extractReceiptData({ receiptDataUri: dataUri });
+          if (extractedData.amount) form.setValue('amount', extractedData.amount);
+          if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
+          if (extractedData.description) form.setValue('description', extractedData.description);
+          toast({ title: 'AI Assistant', description: 'Receipt details have been pre-filled.' });
+        } catch (error) {
+          console.error("AI OCR Error:", error);
+          toast({ variant: 'destructive', title: "AI Scan Failed", description: "Could not read receipt. Please enter details manually."});
+        } finally {
+          setIsScanning(false);
+        }
       };
       reader.readAsDataURL(file);
     }
@@ -92,7 +110,7 @@ export default function SubmitExpensePage() {
     setReports(prev => [newReport, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
 
     toast({ title: 'Expense Submitted', description: 'Your expense report has been submitted for review.' });
-    form.reset({ category: 'fuel', description: '', receiptDataUri: '' });
+    form.reset({ category: 'fuel', description: '', receiptDataUri: '', amount: undefined, date: undefined });
   }
 
   const getStatusBadgeVariant = (status: ExpenseReport['status']) => {
@@ -125,11 +143,49 @@ export default function SubmitExpensePage() {
                 <Receipt className="h-8 w-8 text-primary" />
                 Submit an Expense
             </CardTitle>
-            <CardDescription>Submit a new expense report for reimbursement. A photo of the receipt is required.</CardDescription>
+            <CardDescription>Upload a receipt and let the AI assistant help you fill out the report.</CardDescription>
         </CardHeader>
         <CardContent>
             <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+                    <FormField
+                        control={form.control}
+                        name="receiptDataUri"
+                        render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Receipt Photo</FormLabel>
+                                <FormControl>
+                                    <div className="flex items-center gap-4">
+                                      <Button
+                                          type="button"
+                                          variant="outline"
+                                          className="w-full md:w-auto"
+                                          onClick={() => fileInputRef.current?.click()}
+                                          disabled={isScanning}
+                                      >
+                                          {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}
+                                          {isScanning ? 'Scanning with AI...' : 'Upload Receipt'}
+                                      </Button>
+                                      <Input
+                                          type="file"
+                                          accept="image/*"
+                                          ref={fileInputRef}
+                                          className="hidden"
+                                          onChange={handleFileChange}
+                                          disabled={isScanning}
+                                      />
+                                      {field.value && (
+                                          <div className="text-sm flex items-center gap-2">
+                                              <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md" />
+                                              <span>Receipt selected.</span>
+                                          </div>
+                                      )}
+                                    </div>
+                                </FormControl>
+                                <FormMessage />
+                            </FormItem>
+                        )}
+                    />
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
                          <FormField
                             control={form.control}
@@ -218,44 +274,9 @@ export default function SubmitExpensePage() {
                             </FormItem>
                         )}
                     />
-                    <FormField
-                        control={form.control}
-                        name="receiptDataUri"
-                        render={({ field }) => (
-                            <FormItem>
-                                <FormLabel>Receipt Photo</FormLabel>
-                                <FormControl>
-                                    <div className="flex items-center gap-4">
-                                      <Button
-                                          type="button"
-                                          variant="outline"
-                                          className="w-full md:w-auto"
-                                          onClick={() => fileInputRef.current?.click()}
-                                      >
-                                          <FileUp className="mr-2 h-4 w-4" />
-                                          Upload Receipt
-                                      </Button>
-                                      <Input
-                                          type="file"
-                                          accept="image/*"
-                                          ref={fileInputRef}
-                                          className="hidden"
-                                          onChange={handleFileChange}
-                                      />
-                                      {field.value && (
-                                          <div className="text-sm flex items-center gap-2">
-                                              <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md" />
-                                              <span>Receipt selected.</span>
-                                          </div>
-                                      )}
-                                    </div>
-                                </FormControl>
-                                <FormMessage />
-                            </FormItem>
-                        )}
-                    />
+                    
                     <div className="flex justify-end">
-                        <Button type="submit">
+                        <Button type="submit" disabled={isScanning}>
                             <Send className="mr-2 h-5 w-5" />
                             Submit Expense
                         </Button>

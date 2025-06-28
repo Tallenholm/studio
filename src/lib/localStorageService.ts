@@ -1,4 +1,6 @@
+
 import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
+import { addDays, subDays } from 'date-fns';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
 const REPORTS_KEY = 'fleetCheckReports';
@@ -355,7 +357,7 @@ const defaultMaintenanceLogs: MaintenanceLog[] = [
       id: 'log-1',
       assetId: 'truck-1',
       assetName: 'Truck 01 (Dump Truck)',
-      date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 10 days ago
+      date: subDays(new Date(), 10).toISOString().split('T')[0],
       serviceType: 'routine',
       description: 'Oil change and tire rotation.',
       cost: 150.75,
@@ -365,7 +367,7 @@ const defaultMaintenanceLogs: MaintenanceLog[] = [
       id: 'log-2',
       assetId: 'heavyEquipment-1',
       assetName: 'CAT 259D3 Skid Steer',
-      date: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], // 30 days ago
+      date: subDays(new Date(), 30).toISOString().split('T')[0],
       serviceType: 'repair',
       description: 'Replaced worn hydraulic hose on lift arm.',
       cost: 325.50,
@@ -484,7 +486,9 @@ export const loadClients = (): Client[] => {
 };
 
 // Job Management
-const defaultJobs: Job[] = [
+const getDynamicJobs = (): Job[] => {
+  const now = new Date();
+  return [
     { 
       id: 'job-1', 
       name: 'Lot 5 Excavation', 
@@ -492,8 +496,8 @@ const defaultJobs: Job[] = [
       clientName: 'Main Street Properties', 
       address: '123 Main St, Anytown, USA', 
       jobValue: 50000, 
-      startDate: new Date(Date.now() - 5 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-      endDate: new Date(Date.now() + 10 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: subDays(now, 5).toISOString().split('T')[0], 
+      endDate: addDays(now, 10).toISOString().split('T')[0],
       assignedTruckIds: ['truck-1'],
       assignedHeavyEquipmentIds: ['heavyEquipment-1'],
       notes: [
@@ -511,8 +515,8 @@ const defaultJobs: Job[] = [
       clientName: 'City Development Group', 
       address: '456 Central Ave, Anytown, USA', 
       jobValue: 125000, 
-      startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-      endDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: addDays(now, 2).toISOString().split('T')[0], 
+      endDate: addDays(now, 20).toISOString().split('T')[0],
       assignedTruckIds: ['truck-1', 'truck-2'],
       notes: [],
     },
@@ -523,11 +527,12 @@ const defaultJobs: Job[] = [
       clientName: 'Main Street Properties', 
       address: '789 River Rd, Anytown, USA', 
       jobValue: 78000, 
-      startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-      endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      startDate: subDays(now, 30).toISOString().split('T')[0], 
+      endDate: subDays(now, 15).toISOString().split('T')[0],
       notes: [],
     },
-];
+  ];
+};
 
 export const saveJobs = (jobs: Job[]): void => {
   if (typeof window !== 'undefined') {
@@ -543,15 +548,29 @@ export const loadJobs = (): Job[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(JOBS_KEY);
+      const defaultJobs = getDynamicJobs();
       if (data) {
-          return JSON.parse(data);
+          // If data exists, we still want to update the dates of the default jobs
+          // to keep the dashboard looking fresh. This is a pragmatic choice for a demo app.
+          const storedJobs: Job[] = JSON.parse(data);
+          const defaultJobIds = new Set(defaultJobs.map(j => j.id));
+          // Filter out old default jobs
+          const customJobs = storedJobs.filter(j => !defaultJobIds.has(j.id));
+          // Combine custom jobs with fresh default jobs
+          const jobsToSave = [...customJobs, ...defaultJobs];
+          // Only save if the structure has changed significantly, otherwise we just return.
+          // This check is simple; a more complex app might need a proper migration strategy.
+          if (storedJobs.length < defaultJobs.length) {
+              saveJobs(jobsToSave);
+          }
+          return jobsToSave;
       } else {
           saveJobs(defaultJobs);
           return defaultJobs;
       }
     } catch (error) {
       console.error('Failed to load jobs:', error);
-      return defaultJobs;
+      return getDynamicJobs();
     }
   }
   return [];
