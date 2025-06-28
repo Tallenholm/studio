@@ -1,17 +1,16 @@
 
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
-import { loadFleetAssets, loadInspectionReports, loadMaintenanceLogs } from '@/lib/localStorageService';
-import type { FleetAsset, InspectionReport, MaintenanceLog } from '@/lib/types';
+import { useState, useEffect } from 'react';
 import { generateAssetHealthSummary } from '@/ai/flows/generate-asset-health-summary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Brain, HeartPulse, Loader2, Truck, Box, Shovel, AlertTriangle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recharts';
-import { subMonths, isAfter, parseISO } from 'date-fns';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
+import { getFleetHealthData, type FleetHealthData } from '@/app/actions/getFleetHealthData';
+import type { FleetAsset } from '@/lib/types';
 
 interface HealthSummary {
   assetId: string;
@@ -27,48 +26,22 @@ const CHART_CONFIG = {
 };
 
 export default function FleetHealthPage() {
-  const [assets, setAssets] = useState<FleetAsset[]>([]);
-  const [reports, setReports] = useState<InspectionReport[]>([]);
-  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
+  const [fleetHealthData, setFleetHealthData] = useState<FleetHealthData[] | null>(null);
   const [summaries, setSummaries] = useState<Record<string, HealthSummary>>({});
-  const [isMounted, setIsMounted] = useState(false);
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-    setAssets(loadFleetAssets());
-    setReports(loadInspectionReports());
-    setLogs(loadMaintenanceLogs());
-  }, []);
-
-  const calculateHealthScore = (assetId: string) => {
-    const last30Days = subMonths(new Date(), 1);
-    const assetReports = reports.filter(r => (r.truckVin === assetId || r.trailerVin === assetId || r.heavyEquipmentVin === assetId) && isAfter(parseISO(r.date), last30Days));
-    const failedReports = assetReports.filter(r => r.overallStatus === 'fail').length;
-
-    let score = 100;
-    score -= failedReports * 25; // Each failure in the last month costs 25 points
-
-    const assetLogs = logs.filter(l => l.assetId === assetId && isAfter(parseISO(l.date), last30Days));
-    const repairs = assetLogs.filter(l => l.serviceType === 'repair').length;
-    score -= repairs * 15; // Each repair costs 15 points
-
-    return Math.max(0, score);
-  };
-
-  const getMaintenanceCostData = (assetId: string) => {
-    const sixMonthsAgo = subMonths(new Date(), 6);
-    const assetLogs = logs.filter(l => l.assetId === assetId && isAfter(parseISO(l.date), sixMonthsAgo));
-    
-    const costByMonth: Record<string, number> = {};
-
-    assetLogs.forEach(log => {
-      const month = parseISO(log.date).toLocaleString('default', { month: 'short' });
-      costByMonth[month] = (costByMonth[month] || 0) + (log.cost || 0);
-    });
-
-    return Object.entries(costByMonth).map(([name, totalCost]) => ({ name, totalCost }));
-  };
+    const fetchData = async () => {
+      try {
+        const data = await getFleetHealthData();
+        setFleetHealthData(data);
+      } catch (error) {
+        console.error("Failed to load fleet health data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load fleet health data.' });
+      }
+    };
+    fetchData();
+  }, [toast]);
 
   const handleGenerateSummary = async (assetId: string, assetName: string) => {
     setSummaries(prev => ({ ...prev, [assetId]: { assetId, summary: '', isLoading: true } }));
@@ -91,7 +64,7 @@ export default function FleetHealthPage() {
     }
   };
 
-  if (!isMounted) {
+  if (!fleetHealthData) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -114,7 +87,7 @@ export default function FleetHealthPage() {
         </CardHeader>
       </Card>
 
-      {assets.length === 0 ? (
+      {fleetHealthData.length === 0 ? (
         <Card className="text-center py-12">
             <CardHeader>
                 <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -128,11 +101,9 @@ export default function FleetHealthPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {assets.map(asset => {
-            const healthScore = calculateHealthScore(asset.id);
+          {fleetHealthData.map(({ asset, healthScore, maintenanceCostData }) => {
             const healthColor = healthScore > 80 ? 'text-green-500' : healthScore > 50 ? 'text-yellow-500' : 'text-red-500';
-            const costData = getMaintenanceCostData(asset.id);
-
+            
             return (
               <Card key={asset.id} className="flex flex-col">
                 <CardHeader>
@@ -159,11 +130,11 @@ export default function FleetHealthPage() {
                       )}
                     </div>
                   </div>
-                   {costData.length > 0 && (
+                   {maintenanceCostData.length > 0 && (
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Maintenance Costs (Last 6 Months)</h4>
                       <ChartContainer config={CHART_CONFIG} className="h-[100px] w-full">
-                        <BarChart data={costData} layout="vertical" margin={{ left: 10, right: 10 }}>
+                        <BarChart data={maintenanceCostData} layout="vertical" margin={{ left: 10, right: 10 }}>
                           <XAxis type="number" hide />
                           <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={5} width={40} fontSize={10} />
                           <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
