@@ -1,8 +1,7 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous, Users, Gauge, Container } from 'lucide-react';
+import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous, Users, Gauge, Container, Scale } from 'lucide-react';
 import ConcreteCalculator from '@/components/tools/ConcreteCalculator';
 import FuelCostEstimator from '@/components/tools/FuelCostEstimator';
 import GravelCalculator from '@/components/tools/GravelCalculator';
@@ -21,11 +20,28 @@ import PaintCalculator from '@/components/tools/PaintCalculator';
 import LaborCostCalculator from '@/components/tools/LaborCostCalculator';
 import EquipmentRunCostCalculator from '@/components/tools/EquipmentRunCostCalculator';
 import HaulageCalculator from '@/components/tools/HaulageCalculator';
+import UnitConverter from '@/components/tools/UnitConverter';
 
 
 export default function ToolsGrid() {
   return (
     <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
+      {/* Unit Converter Card */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Scale className="h-6 w-6 text-primary" />
+            Unit Converter
+          </CardTitle>
+          <CardDescription>
+            Quickly convert between common construction units.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <UnitConverter />
+        </CardContent>
+      </Card>
+      
       {/* Concrete Calculator Card */}
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
         <CardHeader>
