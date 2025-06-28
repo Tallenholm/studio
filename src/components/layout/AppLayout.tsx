@@ -371,22 +371,65 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 const PUBLIC_PATHS = ['/login'];
-const ADMIN_PATHS = ['/admin', '/reports'];
-const EMPLOYEE_PATHS = ['/employee', '/pre-trip', '/post-trip', '/reports', '/notifications'];
+// Paths exclusively for Owners.
+const OWNER_ONLY_PATHS = [
+    '/admin/manage-users',
+    '/admin/manage-expenses',
+    '/admin/manage-clients',
+    '/admin/manage-jobs',
+    '/admin/advanced-reports',
+    '/admin/system-settings',
+];
+// Paths for ANY authenticated user.
+const SHARED_AUTH_PATHS = [
+    '/help',
+    '/notifications',
+    '/reports'
+];
+// Paths for employees (and by extension, managers and owners).
+const EMPLOYEE_PATHS = [
+    '/employee',
+    '/pre-trip',
+    '/post-trip'
+];
 
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     if (role === 'guest') {
-        return PUBLIC_PATHS.includes(pathname);
+        // Guest can only see public paths.
+        return PUBLIC_PATHS.some(p => pathname.startsWith(p));
     }
+    
     if (role === 'owner') {
-        return true; // Owner can see everything
+        // Owner can see everything.
+        return true; 
     }
-    if (role === 'manager') {
-        return pathname.startsWith('/admin') || ADMIN_PATHS.some(p => pathname.startsWith(p));
+    
+    // Check if path is in one of the allowed lists for all users
+    if (SHARED_AUTH_PATHS.some(p => pathname.startsWith(p))) {
+        return true;
     }
+    
     if (role === 'employee') {
+        // Employees can only see their designated paths.
         return EMPLOYEE_PATHS.some(p => pathname.startsWith(p));
     }
+
+    if (role === 'manager') {
+        // A manager CANNOT see owner-only paths.
+        if (OWNER_ONLY_PATHS.some(p => pathname.startsWith(p))) {
+            return false;
+        }
+        // A manager CAN see any admin path that isn't owner-only.
+        if (pathname.startsWith('/admin')) {
+            return true;
+        }
+        // A manager CAN see all employee paths.
+        if (EMPLOYEE_PATHS.some(p => pathname.startsWith(p))) {
+            return true;
+        }
+    }
+
+    // Deny by default
     return false;
 }
 
@@ -413,7 +456,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
             }
         } else {
             // User is not logged in
-            if (!PUBLIC_PATHS.includes(pathname)) {
+            if (!PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
                 destination = '/login';
             }
         }
@@ -430,7 +473,7 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader />;
     }
 
-    if (!user && PUBLIC_PATHS.includes(pathname)) {
+    if (!user && PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
         return <>{children}</>;
     }
     
