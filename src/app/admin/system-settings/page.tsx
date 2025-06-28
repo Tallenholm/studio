@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2 } from 'lucide-react';
+import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2, MapPin } from 'lucide-react';
 import { loadSystemSettings, saveSystemSettings, type SystemSettings } from '@/lib/settingsService';
 import { requestNotificationPermission } from '@/lib/firebase';
 
@@ -109,6 +109,25 @@ export default function SystemSettingsPage() {
                 </SelectContent>
               </Select>
             </div>
+          </div>
+          
+          <Separator />
+          
+          <div className="space-y-4 p-6 border rounded-lg shadow-sm">
+              <h3 className="text-xl font-semibold flex items-center gap-2"><MapPin className="h-5 w-5 text-accent" />Weather Location</h3>
+               <p className="text-sm text-muted-foreground">
+                Set the default latitude and longitude for weather forecasts.
+              </p>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <Label htmlFor="location-lat">Latitude</Label>
+                    <Input id="location-lat" type="number" placeholder="e.g., 41.1200" value={settings.locationLat} onChange={(e) => handleSettingChange('locationLat', parseFloat(e.target.value))} />
+                  </div>
+                  <div>
+                    <Label htmlFor="location-lon">Longitude</Label>
+                    <Input id="location-lon" type="number" placeholder="e.g., -87.8612" value={settings.locationLon} onChange={(e) => handleSettingChange('locationLon', parseFloat(e.target.value))} />
+                  </div>
+              </div>
           </div>
 
           <Separator />

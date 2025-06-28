@@ -6,6 +6,8 @@ export interface SystemSettings {
   defaultFontSize: 'small' | 'medium' | 'large';
   enableEmailNotifications: boolean;
   notificationEmailAddress: string;
+  locationLat: number;
+  locationLon: number;
 }
 
 const SETTINGS_KEY = 'fleetCheckSystemSettings';
@@ -15,6 +17,8 @@ const defaultSettings: SystemSettings = {
   defaultFontSize: 'medium',
   enableEmailNotifications: false,
   notificationEmailAddress: '',
+  locationLat: 41.1200, // Kankakee, IL
+  locationLon: -87.8612,
 };
 
 export const saveSystemSettings = (settings: SystemSettings): void => {

@@ -5,10 +5,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Wind, Droplets, Thermometer } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
-
-// These should match the WeatherForecast component
-const LATITUDE = 41.1200;
-const LONGITUDE = -87.8612;
+import { loadSystemSettings } from '@/lib/settingsService';
 
 interface ForecastPeriod {
     number: number;
@@ -51,7 +48,11 @@ export default function WeatherPage() {
         const fetchWeather = async () => {
             setLoading(true);
             try {
-                const pointsResponse = await fetch(`https://api.weather.gov/points/${LATITUDE},${LONGITUDE}`);
+                const settings = loadSystemSettings();
+                const lat = settings.locationLat;
+                const lon = settings.locationLon;
+
+                const pointsResponse = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
                 if (!pointsResponse.ok) throw new Error('Could not fetch weather location data.');
                 const pointsData = await pointsResponse.json();
 
@@ -131,7 +132,7 @@ export default function WeatherPage() {
                                             <p className="text-sm text-muted-foreground">{period.detailedForecast}</p>
                                         </div>
                                         <div className="flex-shrink-0 text-center">
-                                            <p className={`text-2xl font-bold ${period.isDaytime ? 'text-primary' : 'text-blue-400'}`}>{period.temperature}°{period.temperatureUnit}</p>
+                                            <p className={`text-2xl font-bold ${period.temperatureUnit === 'F' && period.temperature > 80 ? 'text-destructive' : 'text-primary'}`}>{period.temperature}°{period.temperatureUnit}</p>
                                             <p className="text-sm text-muted-foreground">{period.windSpeed} {period.windDirection}</p>
                                         </div>
                                     </div>

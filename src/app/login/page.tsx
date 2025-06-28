@@ -52,7 +52,9 @@ export default function LoginPage() {
               <Label htmlFor="pin">PIN Code</Label>
               <Input
                 id="pin"
-                type="password"
+                type="tel"
+                inputMode="numeric"
+                pattern="[0-9]*"
                 value={pin}
                 onChange={(e) => {
                   setPin(e.target.value);

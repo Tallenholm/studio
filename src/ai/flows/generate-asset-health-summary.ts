@@ -15,7 +15,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { loadInspectionReports, loadMaintenanceLogs } from '@/lib/localStorageService';
+import { loadInspectionReports, loadMaintenanceLogs, loadFleetAssets } from '@/lib/localStorageService';
 import { format } from 'date-fns';
 
 const GenerateAssetHealthSummaryInputSchema = z.object({
@@ -64,11 +64,24 @@ const generateAssetHealthSummaryFlow = ai.defineFlow(
   },
   async ({ assetId }) => {
     // Load all data
+    const allAssets = loadFleetAssets();
     const allReports = loadInspectionReports();
     const allLogs = loadMaintenanceLogs();
 
-    // Filter for the specific asset
-    const assetReports = allReports.filter(r => r.truckVin === assetId || r.trailerVin === assetId || r.heavyEquipmentVin === assetId);
+    // Find the specific asset to get its VIN
+    const asset = allAssets.find(a => a.id === assetId);
+    if (!asset) {
+      throw new Error(`Asset with ID ${assetId} not found.`);
+    }
+
+    // Filter reports by the asset's VIN
+    const assetReports = allReports.filter(r => 
+        r.truckVin === asset.vin || 
+        r.trailerVin === asset.vin || 
+        r.heavyEquipmentVin === asset.vin
+    );
+    
+    // Filter logs by the asset's unique ID
     const assetLogs = allLogs.filter(l => l.assetId === assetId);
     
     // Sort and stringify for the prompt

@@ -191,7 +191,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
         address: result.address,
         jobValue: result.jobValue,
         jobType: result.jobType,
-        concreteYards: result.jobType === 'concrete' ? 0 : undefined, // Placeholder, actual calculator is better
+        concreteYards: result.concreteYards,
         dateRange: {
           from: parseISO(result.startDate),
           to: parseISO(result.endDate),

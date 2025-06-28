@@ -7,6 +7,7 @@ import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, Al
 import { format, parseISO, isAfter } from 'date-fns';
 import { Button } from '@/components/ui/button';
 import Link from 'next/link';
+import { loadSystemSettings } from '@/lib/settingsService';
 
 interface ForecastPeriod {
     name: string;
@@ -44,9 +45,6 @@ const getWeatherIcon = (shortForecast: string) => {
     return <Thermometer className="h-8 w-8 text-gray-400" />;
 };
 
-// Kankakee / Bradley / Bourbonnais, IL Area
-const LATITUDE = 41.1200;
-const LONGITUDE = -87.8612;
 
 export default function WeatherForecast({ tourId }: { tourId?: string }) {
     const [forecast, setForecast] = useState<ForecastPeriod[] | null>(null);
@@ -57,8 +55,12 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
     useEffect(() => {
         const fetchWeather = async () => {
             try {
+                const settings = loadSystemSettings();
+                const lat = settings.locationLat;
+                const lon = settings.locationLon;
+                
                 // Step 1: Get the forecast grid URL from weather.gov
-                const pointsResponse = await fetch(`https://api.weather.gov/points/${LATITUDE},${LONGITUDE}`);
+                const pointsResponse = await fetch(`https://api.weather.gov/points/${lat},${lon}`);
                 if (!pointsResponse.ok) {
                     throw new Error(`Failed to fetch weather points (status: ${pointsResponse.status}). API may be down or location invalid.`);
                 }
