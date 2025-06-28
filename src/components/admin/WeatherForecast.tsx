@@ -3,7 +3,7 @@
 
 import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer, CloudDrizzle } from 'lucide-react';
+import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer, CloudDrizzle, Droplets, Flame } from 'lucide-react';
 import { format } from 'date-fns';
 import { Button } from '@/components/ui/button';
 
@@ -15,6 +15,14 @@ interface ForecastPeriod {
     temperature: number;
     temperatureUnit: string;
     probabilityOfPrecipitation: {
+        unitCode: string;
+        value: number | null;
+    };
+    relativeHumidity: {
+        unitCode: string;
+        value: number | null;
+    };
+    heatIndex?: {
         unitCode: string;
         value: number | null;
     };
@@ -120,12 +128,26 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                             <p className="font-bold text-lg">{period.name}</p>
                             <p className="text-2xl font-bold text-primary">{period.temperature}°{period.temperatureUnit}</p>
                             <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
-                            {period.probabilityOfPrecipitation.value !== null && period.probabilityOfPrecipitation.value > 0 && (
-                                <div className="flex items-center gap-1.5 text-sm text-blue-400 mt-1 font-medium">
-                                    <CloudDrizzle className="h-4 w-4" />
-                                    <span>{period.probabilityOfPrecipitation.value}% chance precipitation</span>
-                                </div>
-                            )}
+                            <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-sm mt-2">
+                                {period.relativeHumidity.value !== null && (
+                                    <div className="flex items-center gap-1.5" title="Humidity">
+                                        <Droplets className="h-4 w-4 text-blue-400" />
+                                        <span className="text-muted-foreground">{period.relativeHumidity.value}%</span>
+                                    </div>
+                                )}
+                                {period.heatIndex && period.heatIndex.value !== null && (
+                                    <div className="flex items-center gap-1.5" title="Heat Index">
+                                        <Flame className="h-4 w-4 text-red-500" />
+                                        <span className="text-muted-foreground">{period.heatIndex.value}°</span>
+                                    </div>
+                                )}
+                                {period.probabilityOfPrecipitation.value !== null && period.probabilityOfPrecipitation.value > 0 && (
+                                    <div className="flex items-center gap-1.5" title="Precipitation">
+                                        <CloudDrizzle className="h-4 w-4 text-blue-500" />
+                                        <span className="text-muted-foreground">{period.probabilityOfPrecipitation.value}%</span>
+                                    </div>
+                                )}
+                            </div>
                         </div>
                     </div>
                 ))}
