@@ -198,12 +198,12 @@ export interface Job {
   jobType: JobType;
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  // General Assignments
   assignedEmployeeIds?: string[];
   assignedTruckIds?: string[];
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
-  assignedPlowDriverIds?: string[];
-  assignedSidewalkCrewIds?: string[]; // For snow removal sidewalk crews
+  // Snow Service Details (assignments are handled by routes)
   snowServices?: {
     plowing?: boolean;
     salting?: boolean;
@@ -214,7 +214,9 @@ export interface Job {
     lastSalted?: string; // ISO timestamp
     lastSidewalks?: string; // ISO timestamp
   };
+  // Concrete Job Details
   concreteYards?: number;
+  // General Notes
   notes?: {
     timestamp: string; // ISO string
     content: string;
@@ -253,4 +255,13 @@ export interface InventoryItem {
   assignedToType?: AssignmentType;
   assignedToId?: string; // Corresponds to User, Job, or FleetAsset ID
   assignedToName?: string; // Denormalized for easy display
+}
+
+export interface SnowRoute {
+  id: string;
+  name: string;
+  type: 'plowing' | 'salting' | 'sidewalks';
+  assignedJobIds?: string[];
+  assignedVehicleIds?: string[];
+  assignedEmployeeIds?: string[];
 }

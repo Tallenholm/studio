@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem, SnowRoute } from './types';
 import { addDays, subDays } from 'date-fns';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
@@ -17,6 +17,7 @@ const CLIENTS_KEY = 'fleetCheckClients';
 const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
+const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
 const CURRENT_SEED_VERSION = '1.3.0'; // Increment this to force a re-seed on next load
 
@@ -507,10 +508,6 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'snow_removal',
       startDate: subDays(now, 10).toISOString().split('T')[0], 
       endDate: addDays(now, 20).toISOString().split('T')[0],
-      assignedEmployeeIds: ['1'],
-      assignedTruckIds: ['truck-2'],
-      assignedHeavyEquipmentIds: ['heavyEquipment-1'],
-      assignedSidewalkCrewIds: ['2'],
       snowServices: { plowing: true, salting: true, sidewalks: true },
       notes: [],
     },
@@ -655,4 +652,53 @@ export const loadInventory = (): InventoryItem[] => {
     }
   }
   return [];
+};
+
+// Snow Route Management
+const defaultSnowRoutes: SnowRoute[] = [
+    {
+        id: 'route-plow-1',
+        name: 'North Commercial Plow Route',
+        type: 'plowing',
+        assignedJobIds: ['job-2'],
+        assignedVehicleIds: ['truck-2', 'heavyEquipment-1'],
+        assignedEmployeeIds: ['1']
+    },
+    {
+        id: 'route-sidewalk-1',
+        name: 'Downtown Sidewalk Crew',
+        type: 'sidewalks',
+        assignedJobIds: ['job-2'],
+        assignedVehicleIds: [],
+        assignedEmployeeIds: ['2']
+    }
+];
+
+export const saveSnowRoutes = (routes: SnowRoute[]): void => {
+    if (typeof window !== 'undefined') {
+      try {
+        localStorage.setItem(SNOW_ROUTES_KEY, JSON.stringify(routes));
+      } catch (error) {
+        console.error('Failed to save snow routes:', error);
+      }
+    }
+};
+  
+export const loadSnowRoutes = (): SnowRoute[] => {
+    if (typeof window !== 'undefined') {
+      try {
+        const data = localStorage.getItem(SNOW_ROUTES_KEY);
+        const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+        if (data && version === CURRENT_SEED_VERSION) {
+          return JSON.parse(data);
+        } else {
+          saveSnowRoutes(defaultSnowRoutes);
+          return defaultSnowRoutes;
+        }
+      } catch (error) {
+        console.error('Failed to load snow routes:', error);
+        return defaultSnowRoutes;
+      }
+    }
+    return [];
 };

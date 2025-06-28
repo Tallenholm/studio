@@ -1,21 +1,19 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { loadJobs, saveJobs, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
-import type { Job, User, FleetAsset } from '@/lib/types';
+import { loadJobs, saveJobs, loadSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import type { Job, User, FleetAsset, SnowRoute } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon } from 'lucide-react';
 import { formatDistanceToNow, parseISO } from 'date-fns';
-import { getJobStatus } from '@/lib/job-utils';
 import { useToast } from '@/hooks/use-toast';
-import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 
 export default function SnowRoutesPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
+  const [routes, setRoutes] = useState<SnowRoute[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
@@ -23,21 +21,17 @@ export default function SnowRoutesPage() {
   useEffect(() => {
     if (user) {
       setIsMounted(true);
-      const allJobs = loadJobs();
-      setJobs(allJobs);
+      setJobs(loadJobs());
+      setRoutes(loadSnowRoutes());
     }
   }, [user]);
 
-  const activeSnowContracts = useMemo(() => {
+  const assignedRoutes = useMemo(() => {
     if (!user) return [];
-    return jobs
-      .filter(job => 
-        job.jobType === 'snow_removal' &&
-        getJobStatus(job) === 'active' &&
-        (job.assignedPlowDriverIds?.includes(user.id) || job.assignedSidewalkCrewIds?.includes(user.id))
-      )
-      .sort((a, b) => a.clientName.localeCompare(b.clientName));
-  }, [jobs, user]);
+    return routes
+      .filter(route => route.assignedEmployeeIds?.includes(user.id))
+      .sort((a, b) => a.name.localeCompare(b.name));
+  }, [routes, user]);
 
   const handleServiceComplete = (jobId: string, service: 'plowing' | 'salting' | 'sidewalks') => {
     if (!user) return;
@@ -102,56 +96,57 @@ export default function SnowRoutesPage() {
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
         <Snowflake className="h-16 w-16 text-primary mx-auto mb-4" />
-        <h1 className="text-4xl font-headline font-bold">Active Snow Routes</h1>
+        <h1 className="text-4xl font-headline font-bold">My Snow Routes</h1>
         <p className="text-lg text-muted-foreground mt-2">
-          Your list of active properties. Mark services as complete in real-time.
+          Your assigned routes and contracts for the current snow event.
         </p>
       </div>
 
-      {activeSnowContracts.length > 0 ? (
-        <div className="space-y-6">
-          {activeSnowContracts.map(job => (
-            <Card key={job.id} className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-              <CardHeader>
-                <div className="flex justify-between items-start">
-                    <div>
-                        <CardTitle className="text-2xl font-headline flex items-center gap-2">
-                            <Building2 className="h-6 w-6 text-primary"/>
-                            {job.clientName}
-                        </CardTitle>
-                        <CardDescription className="flex items-center gap-2 mt-1">
-                            <MapPin className="h-4 w-4"/>
-                            {job.address}
-                        </CardDescription>
-                    </div>
-                    <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
-                        <Button size="sm" variant="outline"><MapPin /> Get Directions</Button>
-                    </a>
-                </div>
-              </CardHeader>
-              <CardContent className="space-y-4">
-                <Separator />
-                <h4 className="font-semibold text-lg">Services Required</h4>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                    {job.snowServices?.plowing && <ServiceButton job={job} service="plowing" label="Plowed Lot" />}
-                    {job.snowServices?.salting && <ServiceButton job={job} service="salting" label="Salted Lot" />}
-                    {job.snowServices?.sidewalks && <ServiceButton job={job} service="sidewalks" label="Did Sidewalks" />}
-                </div>
-                 <div className="pt-2">
-                    {job.assignedPlowDriverIds?.includes(user.id) && (
-                        <Badge variant="outline" className="text-primary border-primary">
-                            <Truck className="mr-1.5 h-3 w-3" />
-                            You are assigned to the Plow Crew
-                        </Badge>
-                    )}
-                     {job.assignedSidewalkCrewIds?.includes(user.id) && (
-                        <Badge variant="outline" className="text-primary border-primary ml-2">
-                            <UsersIcon className="mr-1.5 h-3 w-3" />
-                            You are assigned to the Sidewalk Crew
-                        </Badge>
-                    )}
-                 </div>
-              </CardContent>
+      {assignedRoutes.length > 0 ? (
+        <div className="space-y-8">
+          {assignedRoutes.map(route => (
+            <Card key={route.id} className="bg-card/90 backdrop-blur-xl border-2 border-primary/20 shadow-xl">
+                <CardHeader>
+                    <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
+                    <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                    {route.assignedJobIds?.map(jobId => {
+                        const job = jobs.find(j => j.id === jobId);
+                        if (!job) return null;
+                        
+                        return (
+                             <Card key={job.id} className="bg-muted/50">
+                                <CardHeader>
+                                    <div className="flex justify-between items-start">
+                                        <div>
+                                            <CardTitle className="text-xl font-headline flex items-center gap-2">
+                                                <Building2 className="h-5 w-5"/>
+                                                {job.clientName}
+                                            </CardTitle>
+                                            <CardDescription className="flex items-center gap-2 mt-1">
+                                                <MapPin className="h-4 w-4"/>
+                                                {job.address}
+                                            </CardDescription>
+                                        </div>
+                                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
+                                            <Button size="sm" variant="outline"><MapPin /> Get Directions</Button>
+                                        </a>
+                                    </div>
+                                </CardHeader>
+                                <CardContent className="space-y-4">
+                                    <Separator />
+                                    <h4 className="font-semibold">Services Required at this Location:</h4>
+                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                        {job.snowServices?.plowing && route.type === 'plowing' && <ServiceButton job={job} service="plowing" label="Plowed Lot" />}
+                                        {job.snowServices?.salting && route.type === 'salting' && <ServiceButton job={job} service="salting" label="Salted Lot" />}
+                                        {job.snowServices?.sidewalks && route.type === 'sidewalks' && <ServiceButton job={job} service="sidewalks" label="Did Sidewalks" />}
+                                    </div>
+                                </CardContent>
+                            </Card>
+                        )
+                    })}
+                </CardContent>
             </Card>
           ))}
         </div>
@@ -163,7 +158,7 @@ export default function SnowRoutesPage() {
             </CardHeader>
             <CardContent>
                 <CardDescription className="text-lg">
-                There are currently no active snow contracts assigned to you. Check back later!
+                There are currently no active snow routes assigned to you. Check back later!
                 </CardDescription>
             </CardContent>
         </Card>

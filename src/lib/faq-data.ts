@@ -20,6 +20,10 @@ export const faqs = {
       answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. The checklists will appear on the same page. To report damage or an issue, mark the relevant item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
     {
+      question: "How do I use the Snow Routes page?",
+      answer: "During a snow event, the 'Snow Routes' page becomes your live dashboard. It will show you only the routes you've been assigned to (e.g., 'North Plowing Route', 'Downtown Sidewalks'). Under each route, you will see a list of all the properties (contracts) you need to service. As you complete a service (like plowing a lot or salting), click the corresponding button. The system will timestamp it and share the status with everyone else on your route, so your team stays perfectly in sync.",
+    },
+    {
       question: "How do I request time off?",
       answer: "From the Employee Hub, go to the 'Time Off' page. Use the calendar to select the start and end date for your request, provide a brief reason, and click 'Submit Request'. You can view the status of your past requests on the same page. When your request is approved, it will be automatically added to the company calendar.",
     },
@@ -45,6 +49,10 @@ export const faqs = {
     },
   ],
   manager: [
+    {
+      question: "How do I create and manage Snow Routes?",
+      answer: "Navigate to the 'Manage Snow Routes' page. Here, you create a route by giving it a name (e.g., 'North Commercial Plow Route') and a type (Plowing, Salting, or Sidewalks). Then, you assign the contracts, vehicles, and employees that belong to that route. This is the central tool for organizing your snow operations. The assignments you make here will automatically appear on the employees' 'Snow Routes' page.",
+    },
     {
       question: "What does the AI Daily Briefing do?",
       answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off or expense approvals. It helps you prioritize your work without having to manually check every section of the app.",

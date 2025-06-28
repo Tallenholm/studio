@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, HeartPulse, Calculator } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, HeartPulse, Calculator, Route } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -403,6 +403,7 @@ export default function FleetCheckDashboardPage() {
             {user?.role === 'owner' && <>
             <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 />Manage Clients</Button></Link>
             <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase />All Jobs</Button></Link>
+            <Link href="/admin/manage-snow-routes" passHref><Button variant="outline" className="w-full justify-start"><Route />Snow Routes</Button></Link>
             </>}
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText />View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit />Manage Work Orders</Button></Link>

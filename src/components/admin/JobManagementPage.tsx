@@ -47,9 +47,7 @@ const jobSchema = z.object({
   assignedTruckIds: z.array(z.string()).optional(),
   assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
-  // Snow Removal Assignments
-  assignedPlowDriverIds: z.array(z.string()).optional(),
-  assignedSidewalkCrewIds: z.array(z.string()).optional(),
+  // Snow Removal Services
   snowServices: z.object({
     plowing: z.boolean().default(false),
     salting: z.boolean().default(false),
@@ -99,8 +97,6 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: [],
       assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
-      assignedPlowDriverIds: [],
-      assignedSidewalkCrewIds: [],
       snowServices: { plowing: false, salting: false, sidewalks: false },
     },
   });
@@ -121,11 +117,10 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     }
   }, [jobs, isMounted]);
 
-  const { trucks, trailers, heavyEquipments, plowFleet } = useMemo(() => ({
+  const { trucks, trailers, heavyEquipments } = useMemo(() => ({
     trucks: fleetAssets.filter(a => a.type === 'truck'),
     trailers: fleetAssets.filter(a => a.type === 'trailer'),
     heavyEquipments: fleetAssets.filter(a => a.type === 'heavyEquipment'),
-    plowFleet: fleetAssets.filter(a => a.type === 'truck' || a.type === 'heavyEquipment'),
   }), [fleetAssets]);
 
   const handleDialogOpenChange = (open: boolean) => {
@@ -133,7 +128,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     if (!open) {
       form.reset({ 
           name: '', address: '', jobType: jobType,
-          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedPlowDriverIds: [], assignedSidewalkCrewIds: [], 
+          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], 
           snowServices: { plowing: false, salting: false, sidewalks: false },
           concreteYards: undefined, jobValue: undefined,
       });
@@ -157,8 +152,6 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: job.assignedTruckIds || [],
       assignedTrailerIds: job.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
-      assignedPlowDriverIds: job.assignedPlowDriverIds || [],
-      assignedSidewalkCrewIds: job.assignedSidewalkCrewIds || [],
       snowServices: job.snowServices || { plowing: false, salting: false, sidewalks: false },
       concreteYards: job.concreteYards,
     });
@@ -205,7 +198,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
         },
       });
 
-      toast({ title: 'Job Populated', description: 'Please review the generated job details and assign personnel & assets.' });
+      toast({ title: 'Job Populated', description: 'Please review the generated job details and make assignments.' });
       setIsAiDialogOpen(false);
       setIsDialogOpen(true);
 
@@ -500,31 +493,27 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                     </div>
                                 </div>
 
-                                <Separator />
-                                <h3 className="text-lg font-medium">{watchedJobType === 'snow_removal' ? 'Routing & Assignments' : 'Assign Personnel & Fleet'}</h3>
-                                {watchedJobType === 'snow_removal' ? (
-                                    <div className="space-y-4 rounded-md border p-4">
-                                        <div>
-                                            <FormLabel>Services Provided</FormLabel>
-                                            <div className="flex items-center space-x-6 mt-2">
-                                                <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
-                                                <FormField control={form.control} name="snowServices.salting" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Salting</FormLabel></FormItem>)}/>
-                                                <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
-                                            </div>
+                                {watchedJobType !== 'snow_removal' ? (
+                                    <>
+                                        <Separator />
+                                        <h3 className="text-lg font-medium">Assign Personnel & Fleet</h3>
+                                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                                            <MultiSelectDropdown items={users} fieldName="assignedEmployeeIds" title="Assign Employees" Icon={UsersIcon} />
+                                            <MultiSelectDropdown items={trucks} fieldName="assignedTruckIds" title="Assign Trucks" Icon={Truck} />
+                                            <MultiSelectDropdown items={trailers} fieldName="assignedTrailerIds" title="Assign Trailers" Icon={Box} />
+                                            <MultiSelectDropdown items={heavyEquipments} fieldName="assignedHeavyEquipmentIds" title="Assign Equipment" Icon={Shovel} />
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                            <MultiSelectDropdown items={plowFleet} fieldName="assignedTruckIds" title="Plow & Salt Fleet" Icon={Truck} />
-                                            <MultiSelectDropdown items={users} fieldName="assignedPlowDriverIds" title="Plow Drivers" Icon={UsersIcon} />
-                                            <MultiSelectDropdown items={users} fieldName="assignedSidewalkCrewIds" title="Sidewalk Crew" Icon={UsersIcon} />
-                                        </div>
-                                    </div>
+                                    </>
                                 ) : (
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                                        <MultiSelectDropdown items={users} fieldName="assignedEmployeeIds" title="Assign Employees" Icon={UsersIcon} />
-                                        <MultiSelectDropdown items={trucks} fieldName="assignedTruckIds" title="Assign Trucks" Icon={Truck} />
-                                        <MultiSelectDropdown items={trailers} fieldName="assignedTrailerIds" title="Assign Trailers" Icon={Box} />
-                                        <MultiSelectDropdown items={heavyEquipments} fieldName="assignedHeavyEquipmentIds" title="Assign Equipment" Icon={Shovel} />
-                                    </div>
+                                    <>
+                                        <Separator />
+                                        <h3 className="text-lg font-medium">Services Provided</h3>
+                                        <div className="flex items-center space-x-6 mt-2">
+                                            <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
+                                            <FormField control={form.control} name="snowServices.salting" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Salting</FormLabel></FormItem>)}/>
+                                            <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
+                                        </div>
+                                    </>
                                 )}
                                 </div>
                            </TabsContent>
