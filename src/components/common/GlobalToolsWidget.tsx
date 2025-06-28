@@ -22,10 +22,10 @@ export default function GlobalToolsWidget() {
           <SheetHeader>
               <SheetTitle className="flex items-center gap-2 text-2xl">
                   <Calculator className="h-7 w-7 text-primary" />
-                  Fleet Operations Tools
+                  Operations Toolkit
               </SheetTitle>
               <SheetDescription>
-                  Quick calculators and utilities to help with planning and quoting.
+                  A comprehensive suite of calculators for project estimation and planning.
               </SheetDescription>
           </SheetHeader>
           <ScrollArea className="h-[calc(100%-4rem)] pr-6">
