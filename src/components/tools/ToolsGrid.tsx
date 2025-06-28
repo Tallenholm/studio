@@ -2,7 +2,7 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous } from 'lucide-react';
+import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous, Users, Gauge, Container } from 'lucide-react';
 import ConcreteCalculator from '@/components/tools/ConcreteCalculator';
 import FuelCostEstimator from '@/components/tools/FuelCostEstimator';
 import GravelCalculator from '@/components/tools/GravelCalculator';
@@ -18,6 +18,9 @@ import PaverCalculator from '@/components/tools/PaverCalculator';
 import SodCalculator from '@/components/tools/SodCalculator';
 import MulchCalculator from '@/components/tools/MulchCalculator';
 import PaintCalculator from '@/components/tools/PaintCalculator';
+import LaborCostCalculator from '@/components/tools/LaborCostCalculator';
+import EquipmentRunCostCalculator from '@/components/tools/EquipmentRunCostCalculator';
+import HaulageCalculator from '@/components/tools/HaulageCalculator';
 
 
 export default function ToolsGrid() {
@@ -151,22 +154,6 @@ export default function ToolsGrid() {
         </CardContent>
       </Card>
 
-      {/* Fuel Cost Estimator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Fuel className="h-6 w-6 text-primary" />
-            Fuel Cost Estimator
-          </CardTitle>
-          <CardDescription>
-            Estimate the fuel cost for a given trip or job.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FuelCostEstimator />
-        </CardContent>
-      </Card>
-
       {/* Rebar Calculator */}
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
         <CardHeader>
@@ -260,6 +247,70 @@ export default function ToolsGrid() {
         </CardHeader>
         <CardContent>
           <PaintCalculator />
+        </CardContent>
+      </Card>
+
+      {/* Fuel Cost Estimator Card */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Fuel className="h-6 w-6 text-primary" />
+            Fuel Cost Estimator
+          </CardTitle>
+          <CardDescription>
+            Estimate the fuel cost for a given trip or job.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <FuelCostEstimator />
+        </CardContent>
+      </Card>
+
+      {/* Labor Cost Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Users className="h-6 w-6 text-primary" />
+            Labor Cost Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate total labor cost based on crew size, hours, and rate.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <LaborCostCalculator />
+        </CardContent>
+      </Card>
+
+      {/* Equipment Run Cost Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Gauge className="h-6 w-6 text-primary" />
+            Equipment Run Cost Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the total cost of operating a piece of equipment for a job.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <EquipmentRunCostCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Haulage Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Container className="h-6 w-6 text-primary" />
+            Haulage Calculator
+          </CardTitle>
+          <CardDescription>
+            Calculate the number of truck loads required to move material.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <HaulageCalculator />
         </CardContent>
       </Card>
 
