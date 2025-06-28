@@ -204,6 +204,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <Link href="/admin/personal-documents">
+                                <SidebarMenuButton tooltip="Personal Documents" isActive={pathname.startsWith('/admin/personal-documents')}>
+                                    <FileBadge /><span>Personal Documents</span>
+                                </SidebarMenuButton>
+                            </Link>
+                        </SidebarMenuItem>
                             <SidebarMenuItem>
                             <Link href="/admin/send-notification">
                                 <SidebarMenuButton tooltip="Send Notification" isActive={pathname.startsWith('/admin/send-notification')}>
@@ -225,8 +232,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         </SidebarMenuItem>
                             <SidebarMenuItem>
                             <Link href="/admin/manage-documents">
-                                <SidebarMenuButton tooltip="Manage Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
-                                    <BookCopy /><span>Manage Documents</span>
+                                <SidebarMenuButton tooltip="General Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
+                                    <BookCopy /><span>General Documents</span>
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>

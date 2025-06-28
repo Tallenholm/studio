@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -355,6 +355,7 @@ export default function FleetCheckDashboardPage() {
             {user?.role === 'owner' && <Link href="/admin/manage-expenses" passHref><Button variant="outline" className="w-full justify-start"><Coins className="mr-2"/>Manage Expenses</Button></Link>}
             <Link href="/admin/manage-tasks" passHref><Button variant="outline" className="w-full justify-start"><ListTodo className="mr-2"/>Manage Tasks</Button></Link>
             <Link href="/admin/manage-violations" passHref><Button variant="outline" className="w-full justify-start"><ShieldAlert className="mr-2"/>Manage Violations</Button></Link>
+            <Link href="/admin/personal-documents" passHref><Button variant="outline" className="w-full justify-start"><FileBadge className="mr-2"/>Personal Documents</Button></Link>
             <Link href="/admin/send-notification" passHref><Button variant="outline" className="w-full justify-start"><Send className="mr-2"/>Send Notification</Button></Link>
           </CardContent>
         </Card>
@@ -372,7 +373,7 @@ export default function FleetCheckDashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             <Link href="/admin/manage-fleet" passHref><Button variant="outline" className="w-full justify-start"><Truck className="mr-2"/>Manage Fleet</Button></Link>
-            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start"><BookCopy className="mr-2"/>Manage Documents</Button></Link>
+            <Link href="/admin/manage-documents" passHref><Button variant="outline" className="w-full justify-start"><BookCopy className="mr-2"/>General Documents</Button></Link>
             <Link href="/admin/manage-calendar" passHref><Button variant="outline" className="w-full justify-start"><CalendarIcon className="mr-2"/>Manage Calendar</Button></Link>
           </CardContent>
         </Card>
