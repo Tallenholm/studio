@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
+import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem } from './types';
 import { addDays, subDays } from 'date-fns';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
@@ -16,6 +16,7 @@ const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
 const CLIENTS_KEY = 'fleetCheckClients';
 const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
+const INVENTORY_KEY = 'fleetCheckInventory';
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -633,6 +634,44 @@ export const loadWorkOrders = (): WorkOrder[] => {
     } catch (error) {
       console.error('Failed to load work orders:', error);
       return [];
+    }
+  }
+  return [];
+};
+
+
+// Inventory Management
+const defaultInventory: InventoryItem[] = [
+  { id: 'inv-1', name: 'DeWalt Circular Saw', type: 'tool', category: 'Power Tools', quantity: 2, status: 'available' },
+  { id: 'inv-2', name: 'Shovel (Round Point)', type: 'tool', category: 'Hand Tools', quantity: 10, status: 'available' },
+  { id: 'inv-3', name: 'Safety Cones (18")', type: 'material', category: 'Safety', quantity: 25, status: 'available' },
+  { id: 'inv-4', name: '50lb Bag of Rock Salt', type: 'consumable', category: 'Winter Supplies', quantity: 100, status: 'available' },
+  { id: 'inv-5', name: 'Hammer Drill', type: 'tool', category: 'Power Tools', quantity: 1, status: 'in_use', assignedToType: 'employee', assignedToId: '1', assignedToName: 'John Doe' },
+];
+
+export const saveInventory = (inventory: InventoryItem[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(INVENTORY_KEY, JSON.stringify(inventory));
+    } catch (error) {
+      console.error('Failed to save inventory:', error);
+    }
+  }
+};
+
+export const loadInventory = (): InventoryItem[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(INVENTORY_KEY);
+      if (data) {
+        return JSON.parse(data);
+      } else {
+        saveInventory(defaultInventory);
+        return defaultInventory;
+      }
+    } catch (error) {
+      console.error('Failed to load inventory:', error);
+      return defaultInventory;
     }
   }
   return [];

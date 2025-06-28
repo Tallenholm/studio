@@ -211,3 +211,19 @@ export interface WorkOrder {
   mechanic?: string;
   cost?: number;
 }
+
+export type InventoryItemType = 'tool' | 'material' | 'consumable';
+export type InventoryItemStatus = 'available' | 'in_use' | 'maintenance' | 'lost';
+export type AssignmentType = 'employee' | 'job' | 'vehicle';
+
+export interface InventoryItem {
+  id: string;
+  name: string;
+  type: InventoryItemType;
+  category?: string; // e.g., "Power Tools", "Hand Tools", "Fasteners"
+  quantity: number;
+  status: InventoryItemStatus;
+  assignedToType?: AssignmentType;
+  assignedToId?: string; // Corresponds to User, Job, or FleetAsset ID
+  assignedToName?: string; // Denormalized for easy display
+}

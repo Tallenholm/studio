@@ -7,7 +7,7 @@ import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useRouter } from 'next/navigation';
 import { loadJobs, loadClients, loadFleetAssets } from '@/lib/localStorageService';
 import type { Job, Client, FleetAsset } from '@/lib/types';
-import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package, Hammer } from 'lucide-react';
 
 export default function CommandPalette() {
   const { isOpen, close } = useCommandPalette();
@@ -38,6 +38,7 @@ export default function CommandPalette() {
     { name: 'Admin Dashboard', href: '/admin', icon: <LayoutDashboard /> },
     { name: 'Manage Employees', href: '/admin/manage-users', icon: <Users /> },
     { name: 'Manage Fleet', href: '/admin/manage-fleet', icon: <Truck /> },
+    { name: 'Manage Inventory', href: '/admin/manage-inventory', icon: <Hammer /> },
     { name: 'Excavation Jobs', href: '/admin/manage-jobs', icon: <Briefcase /> },
     { name: 'Snow Contracts', href: '/admin/manage-snow', icon: <Snowflake /> },
     { name: 'Concrete Jobs', href: '/admin/manage-concrete', icon: <Droplets /> },
