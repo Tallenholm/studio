@@ -2,9 +2,10 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer } from 'lucide-react';
+import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
+import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer, CloudDrizzle } from 'lucide-react';
 import { format } from 'date-fns';
+import { Button } from '@/components/ui/button';
 
 interface ForecastPeriod {
     name: string;
@@ -13,6 +14,10 @@ interface ForecastPeriod {
     isDaytime: boolean;
     temperature: number;
     temperatureUnit: string;
+    probabilityOfPrecipitation: {
+        unitCode: string;
+        value: number | null;
+    };
     windSpeed: string;
     windDirection: string;
     shortForecast: string;
@@ -30,13 +35,15 @@ const getWeatherIcon = (shortForecast: string) => {
     return <Thermometer className="h-10 w-10 text-gray-400" />;
 };
 
-// Using a hardcoded location for demonstration purposes (Chicago, IL)
-const LATITUDE = 41.8781;
-const LONGITUDE = -87.6298;
+// Kankakee / Bradley / Bourbonnais, IL Area
+const LATITUDE = 41.1200;
+const LONGITUDE = -87.8612;
 
 export default function WeatherForecast({ tourId }: { tourId?: string }) {
     const [forecast, setForecast] = useState<ForecastPeriod[] | null>(null);
     const [locationName, setLocationName] = useState('your location');
+    const [hourlyUrl, setHourlyUrl] = useState('');
+    const [weeklyUrl, setWeeklyUrl] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -52,9 +59,12 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                 }
                 const pointsData = await pointsResponse.json();
                 const forecastUrl = pointsData.properties.forecast;
+                const hourlyForecastUrl = pointsData.properties.forecastHourly;
                 const locationCity = pointsData.properties.relativeLocation.properties.city;
                 const locationState = pointsData.properties.relativeLocation.properties.state;
                 setLocationName(`${locationCity}, ${locationState}`);
+                setWeeklyUrl(forecastUrl);
+                setHourlyUrl(hourlyForecastUrl);
 
                 // Step 2: Get the actual forecast
                 const forecastResponse = await fetch(forecastUrl);
@@ -110,6 +120,12 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                             <p className="font-bold text-lg">{period.name}</p>
                             <p className="text-2xl font-bold text-primary">{period.temperature}°{period.temperatureUnit}</p>
                             <p className="text-sm text-muted-foreground">{period.shortForecast}</p>
+                            {period.probabilityOfPrecipitation.value !== null && period.probabilityOfPrecipitation.value > 0 && (
+                                <div className="flex items-center gap-1.5 text-sm text-blue-400 mt-1 font-medium">
+                                    <CloudDrizzle className="h-4 w-4" />
+                                    <span>{period.probabilityOfPrecipitation.value}% chance precipitation</span>
+                                </div>
+                            )}
                         </div>
                     </div>
                 ))}
@@ -121,11 +137,17 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
         <Card id={tourId} className="mb-8">
             <CardHeader>
                 <CardTitle>Daily Forecast for {locationName}</CardTitle>
-                <CardDescription>Weather overview for {format(new Date(), 'eeee, MMMM do')}.</CardDescription>
+                <CardDescription>Weather overview for {format(new Date(), 'eeee, MMMM do')}. Click below for more detailed forecasts.</CardDescription>
             </CardHeader>
             <CardContent>
                 {renderContent()}
             </CardContent>
+             {(!loading && !error && (hourlyUrl || weeklyUrl)) && (
+                <CardFooter className="flex justify-end gap-2">
+                    {hourlyUrl && <Button asChild variant="outline" size="sm"><a href={hourlyUrl} target="_blank" rel="noopener noreferrer">Hourly Forecast</a></Button>}
+                    {weeklyUrl && <Button asChild variant="outline" size="sm"><a href={weeklyUrl} target="_blank" rel="noopener noreferrer">Full Forecast</a></Button>}
+                </CardFooter>
+            )}
         </Card>
     );
 }
