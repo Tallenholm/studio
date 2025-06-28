@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { loadClients, loadJobs, saveJobs, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
-import type { Client, Job, JobStatus, FleetAsset, User, VehicleType, JobType } from '@/lib/types';
+import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -474,7 +475,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                     <DialogTitle>{editingJob ? 'Edit Job' : addJobButtonText}</DialogTitle>
                   </DialogHeader>
                   <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
                         <Tabs defaultValue={jobType} className="w-full">
                            <TabsContent value={jobType} className="mt-0">
                                 <div className="space-y-4">

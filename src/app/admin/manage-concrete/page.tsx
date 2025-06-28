@@ -7,6 +7,7 @@ import { Droplets } from 'lucide-react';
 export default function ManageConcretePage() {
     return (
         <JobManagementPage 
+            jobType="concrete"
             pageTitle="Manage Concrete Jobs" 
             pageDescription="Assign and track all concrete pouring and finishing jobs."
             pageIcon={Droplets}

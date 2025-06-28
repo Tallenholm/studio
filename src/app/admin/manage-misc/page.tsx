@@ -7,6 +7,7 @@ import { Package } from 'lucide-react';
 export default function ManageMiscPage() {
     return (
         <JobManagementPage 
+            jobType="misc"
             pageTitle="Manage Miscellaneous Jobs" 
             pageDescription="Track general labor, deliveries, or other jobs not covered by other categories."
             pageIcon={Package}

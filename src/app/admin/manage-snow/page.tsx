@@ -7,6 +7,7 @@ import { Snowflake } from 'lucide-react';
 export default function ManageSnowPage() {
     return (
         <JobManagementPage 
+            jobType="snow_removal"
             pageTitle="Manage Snow Contracts" 
             pageDescription="Create contracts, define services, and assign routes to your fleet and crews."
             pageIcon={Snowflake}

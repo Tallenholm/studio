@@ -2,9 +2,6 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
 import { loadTimeOffRequests, saveTimeOffRequests, loadCalendarEvents, saveCalendarEvents } from '@/lib/localStorageService';
 import type { TimeOffRequest, CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';

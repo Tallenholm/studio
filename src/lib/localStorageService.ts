@@ -1,5 +1,5 @@
 
-import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem } from './types';
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem } from './types';
 import { addDays, subDays } from 'date-fns';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
@@ -18,7 +18,7 @@ const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
-const CURRENT_SEED_VERSION = '1.2.0'; // Increment this to force a re-seed on next load
+const CURRENT_SEED_VERSION = '1.3.0'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [

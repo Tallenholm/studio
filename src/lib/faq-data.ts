@@ -84,8 +84,8 @@ export const faqs = {
       answer: "There are two levels of administrative access: Manager and Owner. 'Managers' can handle day-to-day operations like managing tasks, violations, and documents. 'Owners' have full system access, including all manager permissions, plus the ability to manage users, clients, jobs, expenses, and view advanced financial reports. Only an Owner can change another user's role.",
     },
     {
-      question: "How is snow removal managed?",
-      answer: "The application now has a dedicated 'Manage Snow Contracts' section, accessible from the dashboard and sidebar. This area is completely separate from the 'Manage Excavation Jobs' section. You can create, track, and manage your snow contracts here. Employees will see their snow assignments on a separate 'Snow Route Board' on their hub, ensuring a clear distinction between seasonal and regular work.",
+      question: "How do I manage jobs for different business units (e.g., snow vs. excavation)?",
+      answer: "The application has dedicated management pages for different types of work: Excavation, Snow Removal, Concrete, and Miscellaneous. Each can be accessed from the Admin Dashboard or sidebar. This separation ensures that contracts, assignments, and terminology are specific to each operational area, preventing confusion and streamlining your workflow.",
     },
     {
       question: "How do I add and manage clients?",

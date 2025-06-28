@@ -5,18 +5,20 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package } from 'lucide-react';
+import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
 import { loadCalendarEvents, loadJobs, loadTasks, loadInspectionReports } from '@/lib/localStorageService';
-import { isSameDay, format, parseISO } from 'date-fns';
+import { isSameDay, format, parseISO, isWithinInterval } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import { getJobStatus } from '@/lib/job-utils';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Badge } from '@/components/ui/badge';
+import React from 'react';
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
@@ -238,7 +240,7 @@ export default function EmployeeHubPage() {
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
                     <CardHeader>
                     <CardTitle className="flex items-center gap-2 font-headline">
-                        <CalendarIcon className="text-primary" />
+                        <CalendarDays className="text-primary" />
                         Company Calendar
                     </CardTitle>
                     <CardDescription>
