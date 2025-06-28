@@ -1,17 +1,17 @@
 
 'use client';
 
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadMaintenanceLogs, loadExpenseReports, loadUsers } from '@/lib/localStorageService';
-import type { Job, Client, FleetAsset, User, MaintenanceLog, ExpenseReport, SnowServiceLog } from '@/lib/types';
+import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import type { Job, Client, FleetAsset, User, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown, Eye, Camera, History } from 'lucide-react';
-import { format, isWithinInterval, parseISO, formatDistanceToNow } from 'date-fns';
+import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
@@ -19,6 +19,7 @@ import { cn } from '@/lib/utils';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import Image from 'next/image';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
+import { getJobCost } from '@/app/actions/getJobCost';
 
 export default function JobDetailsPage() {
   const params = useParams();
@@ -34,8 +35,8 @@ export default function JobDetailsPage() {
   const [isMounted, setIsMounted] = useState(false);
 
   // New state for cost analysis
-  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
-  const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>([]);
+  const [jobCosts, setJobCosts] = useState({ maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 });
+  const [isLoadingCosts, setIsLoadingCosts] = useState(true);
 
   useEffect(() => {
     setIsMounted(true);
@@ -50,46 +51,27 @@ export default function JobDetailsPage() {
       }
       
       setAssets(loadFleetAssets());
-      setMaintenanceLogs(loadMaintenanceLogs());
-      setExpenseReports(loadExpenseReports());
       setAllUsers(loadUsers());
     }
   }, [jobId]);
-  
-  const jobCosts = useMemo(() => {
-    if (!job) return { maintenanceCost: 0, expenseCost: 0, totalCost: 0 };
 
-    const jobInterval = {
-      start: parseISO(job.startDate),
-      end: parseISO(job.endDate),
-    };
-
-    const assignedAssetIds = new Set([
-      ...(job.assignedTruckIds || []),
-      ...(job.assignedTrailerIds || []),
-      ...(job.assignedHeavyEquipmentIds || []),
-    ]);
-
-    const maintenanceCost = maintenanceLogs
-      .filter(log => {
-        const asset = assets.find(a => a.id === log.assetId);
-        return asset && assignedAssetIds.has(asset.id) && isWithinInterval(parseISO(log.date), jobInterval);
-      })
-      .reduce((acc, log) => acc + (log.cost || 0), 0);
-      
-    // Note: We're assuming expenses are not tied to specific assets for now. 
-    // A more complex system might link them. We filter by date.
-    const expenseCost = expenseReports
-        .filter(report => isWithinInterval(parseISO(report.date), jobInterval))
-        .reduce((acc, report) => acc + report.amount, 0);
-
-    return {
-      maintenanceCost,
-      expenseCost,
-      totalCost: maintenanceCost + expenseCost
-    };
-  }, [job, assets, maintenanceLogs, expenseReports]);
-
+  // New useEffect to fetch costs from server action
+  useEffect(() => {
+    if (job) {
+      setIsLoadingCosts(true);
+      getJobCost(job)
+        .then(costs => {
+          setJobCosts(costs);
+        })
+        .catch(error => {
+          console.error("Failed to calculate job costs:", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not calculate job costs.' });
+        })
+        .finally(() => {
+          setIsLoadingCosts(false);
+        });
+    }
+  }, [job, toast]);
 
   const handleAddNote = () => {
     if (!job || !user || !newNote.trim()) {
@@ -180,8 +162,6 @@ export default function JobDetailsPage() {
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
   
-  const estimatedProfit = (job.jobValue || 0) - jobCosts.totalCost;
-
   const renderAssetList = (assetList: (FleetAsset | User)[], title: string, Icon: React.ElementType) => (
     <div>
         <h4 className="font-semibold text-md mb-2 flex items-center gap-2"><Icon className="h-5 w-5 text-primary"/>{title}</h4>
@@ -310,26 +290,35 @@ export default function JobDetailsPage() {
                     <CardTitle className="text-xl">Job Cost Analysis</CardTitle>
                     <CardDescription>Estimated operational costs and profitability for the job's date range.</CardDescription>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Maintenance Cost</p>
-                        <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
+                <CardContent>
+                  {isLoadingCosts ? (
+                      <div className="flex justify-center items-center h-24">
+                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                          <p className="ml-4 text-muted-foreground">Calculating costs...</p>
+                      </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                        <div className="p-4 bg-muted/50 rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Maintenance Cost</p>
+                            <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Expense Cost</p>
+                            <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
+                        </div>
+                        <div className="p-4 bg-muted/50 rounded-lg text-center">
+                            <p className="text-sm text-muted-foreground">Total Costs</p>
+                            <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
+                        </div>
+                        <div className="p-4 rounded-lg text-center" style={{background: jobCosts.estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
+                            <p className="text-sm" style={{color: jobCosts.estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>
+                            <p className={cn("text-2xl font-bold flex items-center justify-center gap-1", jobCosts.estimatedProfit >= 0 ? 'text-primary' : 'text-destructive' )}>
+                              {jobCosts.estimatedProfit >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+                              <AnimatedCounter value={Math.abs(jobCosts.estimatedProfit)} type="currency" />
+                            </p>
+                        </div>
                     </div>
-                     <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Expense Cost</p>
-                        <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
-                    </div>
-                    <div className="p-4 bg-muted/50 rounded-lg text-center">
-                        <p className="text-sm text-muted-foreground">Total Costs</p>
-                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
-                    </div>
-                    <div className="p-4 rounded-lg text-center" style={{background: estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
-                        <p className="text-sm" style={{color: estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>
-                        <p className={cn("text-2xl font-bold flex items-center justify-center gap-1", estimatedProfit >= 0 ? 'text-primary' : 'text-destructive' )}>
-                           {estimatedProfit >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
-                           <AnimatedCounter value={Math.abs(estimatedProfit)} type="currency" />
-                        </p>
-                    </div>
+                  )}
                 </CardContent>
             </Card>
 
