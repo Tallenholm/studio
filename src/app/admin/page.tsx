@@ -19,6 +19,7 @@ import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send, BookCopy, Wrench, FileText, ShieldAlert } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
+import WeatherForecast from '@/components/admin/WeatherForecast';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -152,6 +153,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
 
 const managerTourSteps: TourStep[] = [
     { element: '#tour-step-admin-welcome', title: "Welcome to the Admin Dashboard", content: "This is your command center for managing all fleet operations. Let's take a quick look at the key features.", side: 'bottom' },
+    { element: '#tour-step-weather-forecast', title: "Daily Weather Forecast", content: "At the top, you'll find the daily weather forecast for your operational area, helping you plan for the day ahead.", side: 'bottom' },
     { element: '#tour-step-ai-briefing', title: "AI Daily Briefing", content: "The AI Daily Briefing is your intelligent assistant. It analyzes all data to give you a summary of the day's most important items, like failed inspections and pending requests.", side: 'bottom' },
     { element: '#tour-step-calendar', title: "Operations Calendar", content: "The Operations Calendar gives you a complete view of all scheduled jobs, company events, and approved time off. Click a date to see the agenda for that day.", side: 'bottom' },
     { element: '#tour-step-management-hubs', title: "Management Sections", content: "The cards below are your main navigation hubs. From here, you can manage everything from employees and clients to jobs, reports, and maintenance logs.", side: 'top' },
@@ -282,6 +284,8 @@ export default function FleetCheckDashboardPage() {
           Welcome, {user?.name}. Oversee operations, assets, and personnel.
         </p>
       </div>
+      
+      <WeatherForecast />
       
       <div id="tour-step-ai-briefing">
         <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />
