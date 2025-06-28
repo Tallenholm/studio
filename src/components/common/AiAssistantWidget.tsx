@@ -100,7 +100,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
         </div>
 
         <Sheet open={isOpen} onOpenChange={handleOpenChange}>
-            <SheetContent>
+            <SheetContent className="flex flex-col">
                 <SheetHeader>
                     <SheetTitle className="flex items-center gap-2 text-2xl">
                         <Brain className="h-7 w-7 text-primary" />
@@ -110,8 +110,8 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
                         Ask me anything about how to use the Logan's Excavating app.
                     </SheetDescription>
                 </SheetHeader>
-                <div className="py-4 space-y-4 h-full flex flex-col">
-                    <div className="flex-grow p-4 bg-muted/50 rounded-lg border min-h-[200px] overflow-y-auto">
+                <div className="flex-grow py-4 flex flex-col gap-4 min-h-0">
+                    <div className="flex-grow p-4 bg-muted/50 rounded-lg border overflow-y-auto">
                         {isAsking ? (
                             <div className="flex items-center gap-2 text-muted-foreground">
                                 <Loader2 className="h-5 w-5 animate-spin" />
@@ -121,7 +121,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
                             <p className="text-foreground/90 whitespace-pre-wrap">{aiAnswer}</p>
                         )}
                     </div>
-                     <div className="flex gap-2">
+                     <div className="flex-shrink-0 flex gap-2">
                         <Input 
                             type="text"
                             placeholder="How do I add a client?"
