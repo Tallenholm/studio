@@ -188,3 +188,50 @@ body {
   border-radius: var(--radius);
   transition: outline 0.3s ease-in-out, box-shadow 0.3s ease-in-out;
 }
+
+@media print {
+  .print-hidden {
+    display: none !important;
+  }
+  .print-block {
+    display: block !important;
+  }
+  .print-only {
+      display: initial !important;
+  }
+  .app-layout-main {
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+  .printable-card {
+      border: 1px solid #ddd !important;
+      box-shadow: none !important;
+      break-inside: avoid;
+      background-color: #fff !important;
+      -webkit-print-color-adjust: exact !important;
+      print-color-adjust: exact !important;
+  }
+  body {
+    background: white !important;
+    color: black !important;
+  }
+  main {
+      background: white !important;
+  }
+  .dark body, body {
+      background-image: none !important;
+  }
+  .text-muted-foreground {
+    color: #555 !important;
+  }
+  .text-primary {
+    color: #f97316 !important;
+  }
+   .text-destructive {
+    color: #ef4444 !important;
+  }
+  @page {
+      size: auto;
+      margin: 0.5in;
+  }
+}

@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -152,7 +151,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     
     return (
         <SidebarProvider defaultOpen>
-            <Sidebar id="tour-step-sidebar" variant="inset">
+            <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
                         <Truck className="h-8 w-8 text-primary" />
@@ -478,7 +477,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
+                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end print-hidden">
                     <SidebarTrigger className="md:hidden" />
                     <Link href="/notifications" passHref>
                         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
@@ -489,7 +488,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         </Button>
                     </Link>
                 </header>
-                <main className="flex-1 p-6 overflow-auto">
+                <main className="flex-1 p-6 overflow-auto app-layout-main">
                     {children}
                 </main>
             </SidebarInset>
