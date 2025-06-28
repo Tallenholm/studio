@@ -28,6 +28,8 @@ import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
+import { useGlobalTools } from '@/hooks/use-global-tools';
+import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -42,7 +44,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const [unreadCount, setUnreadCount] = useState(0);
     const searchParams = useSearchParams();
     const showAiAssistantWelcome = searchParams.get('tour') === 'true';
-    const { open } = useCommandPalette();
+    const { open: openCommandPalette } = useCommandPalette();
+    const { open: openTools } = useGlobalTools();
 
     useEffect(() => {
         if (user) {
@@ -59,12 +62,16 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       const down = (e: KeyboardEvent) => {
         if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
           e.preventDefault()
-          open()
+          openCommandPalette()
+        }
+        if (e.key === "t" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault()
+          openTools()
         }
       }
       document.addEventListener("keydown", down)
       return () => document.removeEventListener("keydown", down)
-    }, [open])
+    }, [openCommandPalette, openTools])
 
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
@@ -456,10 +463,17 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 <SidebarFooter className="p-2">
                     <SidebarMenu>
                         <SidebarMenuItem>
-                           <Button variant="ghost" className="w-full justify-start" onClick={open}>
+                           <Button variant="ghost" className="w-full justify-start" onClick={openCommandPalette}>
                              <span className="mr-auto">Search...</span>
                              <kbd className="ml-4 hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘K</kbd>
                            </Button>
+                        </SidebarMenuItem>
+                        <SidebarMenuItem>
+                            <SidebarMenuButton tooltip="Fleet Tools" onClick={openTools}>
+                                <Calculator />
+                                <span>Fleet Tools</span>
+                                <kbd className="ml-auto hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘T</kbd>
+                            </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
                             <Link href="/help">
@@ -494,6 +508,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             </SidebarInset>
             <CommandPalette />
             <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
+            <GlobalToolsWidget />
         </SidebarProvider>
     );
 }
