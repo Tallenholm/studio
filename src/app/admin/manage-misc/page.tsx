@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Users as UsersIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Users as UsersIcon, Package } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -35,7 +35,6 @@ import { Separator } from '@/components/ui/separator';
 import { getJobStatus } from '@/lib/job-utils';
 import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
 import { Textarea } from '@/components/ui/textarea';
-
 
 const jobSchema = z.object({
   name: z.string().min(1, 'Job name is required.'),
@@ -57,7 +56,7 @@ const jobSchema = z.object({
 });
 
 
-export default function ManageJobsPage() {
+export default function ManageMiscPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
@@ -79,7 +78,7 @@ export default function ManageJobsPage() {
     defaultValues: {
       name: '',
       address: '',
-      jobType: 'excavation',
+      jobType: 'misc',
       assignedEmployeeIds: [],
       assignedTruckIds: [],
       assignedTrailerIds: [],
@@ -90,7 +89,7 @@ export default function ManageJobsPage() {
   useEffect(() => {
     setIsMounted(true);
     setClients(loadClients());
-    setJobs(loadJobs().filter(j => j.jobType === 'excavation'));
+    setJobs(loadJobs().filter(j => j.jobType === 'misc'));
     setFleetAssets(loadFleetAssets());
     setUsers(loadUsers().filter(u => u.role === 'employee'));
   }, []);
@@ -98,9 +97,9 @@ export default function ManageJobsPage() {
   useEffect(() => {
     if (isMounted) {
       const allJobs = loadJobs();
-      const excavationJobs = jobs;
-      const otherJobs = allJobs.filter(j => j.jobType !== 'excavation');
-      saveJobs([...otherJobs, ...excavationJobs]);
+      const miscJobs = jobs;
+      const otherJobs = allJobs.filter(j => j.jobType !== 'misc');
+      saveJobs([...otherJobs, ...miscJobs]);
     }
   }, [jobs, isMounted]);
 
@@ -114,7 +113,7 @@ export default function ManageJobsPage() {
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset({ name: '', address: '', jobType: 'excavation', assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
+      form.reset({ name: '', address: '', jobType: 'misc', assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
       setEditingJob(null);
     }
   };
@@ -170,10 +169,6 @@ export default function ManageJobsPage() {
           from: parseISO(result.startDate),
           to: parseISO(result.endDate),
         },
-        assignedEmployeeIds: [],
-        assignedTruckIds: [],
-        assignedTrailerIds: [],
-        assignedHeavyEquipmentIds: [],
       });
 
       toast({ title: 'Job Populated', description: 'Please review the generated job details and assign personnel & assets.' });
@@ -263,10 +258,6 @@ export default function ManageJobsPage() {
   const activeJobs = filteredJobs.filter(j => j.status === 'active');
   const completedJobs = filteredJobs.filter(j => j.status === 'completed');
 
-  const totalActiveValue = useMemo(() => {
-    return activeJobs.reduce((acc, job) => acc + (job.jobValue || 0), 0);
-  }, [activeJobs]);
-
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || value === null) return 'N/A';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
@@ -288,7 +279,6 @@ export default function ManageJobsPage() {
                   <TableHead>Client</TableHead>
                   <TableHead>Job Value</TableHead>
                   <TableHead>Dates</TableHead>
-                  <TableHead>Assigned</TableHead>
                   <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -304,14 +294,6 @@ export default function ManageJobsPage() {
                     <TableCell>{job.clientName}</TableCell>
                     <TableCell>{formatCurrency(job.jobValue)}</TableCell>
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 items-center text-muted-foreground">
-                        {(job.assignedEmployeeIds?.length || 0) > 0 && <UsersIcon className="h-4 w-4" title={`${job.assignedEmployeeIds?.length} employee(s)`} />}
-                        {(job.assignedTruckIds?.length || 0) > 0 && <Truck className="h-4 w-4" title={`${job.assignedTruckIds?.length} truck(s)`} />}
-                        {(job.assignedTrailerIds?.length || 0) > 0 && <Box className="h-4 w-4" title={`${job.assignedTrailerIds?.length} trailer(s)`} />}
-                        {(job.assignedHeavyEquipmentIds?.length || 0) > 0 && <Shovel className="h-4 w-4" title={`${job.assignedHeavyEquipmentIds?.length} equipment`} />}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                          <DropdownMenuTrigger asChild>
@@ -389,7 +371,7 @@ export default function ManageJobsPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Excavation Jobs...</p>
+        <p className="text-lg text-muted-foreground">Loading Miscellaneous Jobs...</p>
       </div>
     );
   }
@@ -401,11 +383,11 @@ export default function ManageJobsPage() {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Briefcase className="h-8 w-8 text-primary" />
-                Manage Excavation Jobs
+                <Package className="h-8 w-8 text-primary" />
+                Manage Miscellaneous Jobs
               </CardTitle>
               <CardDescription className="mt-2">
-                Assign and track excavation and earth-moving jobs for your clients.
+                Track general labor, deliveries, or other jobs not covered by other categories.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -417,12 +399,12 @@ export default function ManageJobsPage() {
                       <DialogHeader>
                           <DialogTitle>Create Job with AI</DialogTitle>
                           <DialogDescription>
-                              Describe the job in plain English. The AI will populate the form for you. Include the client name, address, dates, and job value.
+                              Describe the job in plain English. The AI will populate the form for you.
                           </DialogDescription>
                       </DialogHeader>
                       <div className="py-4 space-y-4">
                           <Textarea 
-                            placeholder="e.g., Excavate the foundation for Main Street Properties at 456 Central Ave. Start tomorrow and finish in two weeks. The job is worth $75,000."
+                            placeholder="e.g., Deliver three pallets of stone to City Development Group at 456 Central Ave tomorrow."
                             value={aiPrompt}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             className="min-h-[120px]"
@@ -440,15 +422,12 @@ export default function ManageJobsPage() {
                 <DialogTrigger asChild>
                   <Button>
                     <PlusCircle className="mr-2 h-5 w-5" />
-                    Add New Job
+                    Add New Misc. Job
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-3xl">
                   <DialogHeader>
                     <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
-                    <DialogDescription>
-                      {editingJob ? 'Update the details for this job.' : 'Enter the details for a new job.'}
-                    </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
                     <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
@@ -466,7 +445,7 @@ export default function ManageJobsPage() {
                               <FormItem>
                                 <FormLabel>Job Name</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g., Lot 5 Excavation" {...field} />
+                                  <Input placeholder="e.g., Stone Delivery" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -518,7 +497,7 @@ export default function ManageJobsPage() {
                                 <FormItem>
                                   <FormLabel>Job Value (Optional)</FormLabel>
                                   <FormControl>
-                                    <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                    <Input type="number" placeholder="e.g., 500.00" {...field} />
                                   </FormControl>
                                   <FormMessage />
                                 </FormItem>
@@ -591,15 +570,8 @@ export default function ManageJobsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
           <Card className="bg-muted/30">
-            <CardHeader className="flex-row items-center justify-between pb-2">
+            <CardHeader className="pb-2">
                 <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
-                <div className="flex items-center gap-2">
-                    <DollarSign className="h-6 w-6 text-primary" />
-                    <div>
-                        <p className="text-sm text-muted-foreground">Total Active Value</p>
-                        <p className="text-xl font-bold text-primary">{formatCurrency(totalActiveValue)}</p>
-                    </div>
-                </div>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <Input 

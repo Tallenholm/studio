@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -248,6 +248,15 @@ export default function FleetCheckDashboardPage() {
     }
   }
 
+  const getJobTypeIcon = (type: Job['jobType']) => {
+    switch(type) {
+        case 'excavation': return <Briefcase className="h-5 w-5 text-primary mt-1" />;
+        case 'snow_removal': return <Snowflake className="h-5 w-5 text-primary mt-1" />;
+        case 'concrete': return <Droplets className="h-5 w-5 text-primary mt-1" />;
+        case 'misc': return <Package className="h-5 w-5 text-primary mt-1" />;
+    }
+  }
+
   if (!isMounted) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -308,7 +317,7 @@ export default function FleetCheckDashboardPage() {
                 <ul className="space-y-3 max-h-60 overflow-y-auto">
                   {selectedDayItems.map(item => (
                     <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
-                      {item.itemType === 'job' ? (item.jobType === 'snow_removal' ? <Snowflake className="h-5 w-5 text-primary mt-1" /> : <Briefcase className="h-5 w-5 text-primary mt-1" />) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
+                      {item.itemType === 'job' ? getJobTypeIcon(item.jobType) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
                       <div>
                         <p className="font-semibold">{item.title || item.name}</p>
                         {item.itemType === 'job' ? (
@@ -393,6 +402,8 @@ export default function FleetCheckDashboardPage() {
             {user?.role === 'owner' && <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>}
             {user?.role === 'owner' && <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Excavation Jobs</Button></Link>}
             {user?.role === 'owner' && <Link href="/admin/manage-snow" passHref><Button variant="outline" className="w-full justify-start"><Snowflake className="mr-2"/>Snow Contracts</Button></Link>}
+            {user?.role === 'owner' && <Link href="/admin/manage-concrete" passHref><Button variant="outline" className="w-full justify-start"><Droplets className="mr-2"/>Concrete Jobs</Button></Link>}
+            {user?.role === 'owner' && <Link href="/admin/manage-misc" passHref><Button variant="outline" className="w-full justify-start"><Package className="mr-2"/>Misc. Jobs</Button></Link>}
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit className="mr-2"/>Manage Work Orders</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench className="mr-2"/>View Maintenance Logs</Button></Link>

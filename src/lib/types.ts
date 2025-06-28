@@ -174,7 +174,7 @@ export interface Job {
   clientName: string;
   address: string;
   jobValue?: number;
-  jobType: 'excavation' | 'snow_removal';
+  jobType: 'excavation' | 'snow_removal' | 'concrete' | 'misc';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   assignedEmployeeIds?: string[];
@@ -187,6 +187,7 @@ export interface Job {
     salting?: boolean;
     sidewalks?: boolean;
   };
+  concreteYards?: number;
   notes?: {
     timestamp: string; // ISO string
     content: string;

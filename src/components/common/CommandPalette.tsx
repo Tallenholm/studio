@@ -7,7 +7,7 @@ import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useRouter } from 'next/navigation';
 import { loadJobs, loadClients, loadFleetAssets } from '@/lib/localStorageService';
 import type { Job, Client, FleetAsset } from '@/lib/types';
-import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package } from 'lucide-react';
 
 export default function CommandPalette() {
   const { isOpen, close } = useCommandPalette();
@@ -38,12 +38,24 @@ export default function CommandPalette() {
     { name: 'Admin Dashboard', href: '/admin', icon: <LayoutDashboard /> },
     { name: 'Manage Employees', href: '/admin/manage-users', icon: <Users /> },
     { name: 'Manage Fleet', href: '/admin/manage-fleet', icon: <Truck /> },
-    { name: 'Manage Excavation Jobs', href: '/admin/manage-jobs', icon: <Briefcase /> },
-    { name: 'Manage Snow Contracts', href: '/admin/manage-snow', icon: <Snowflake /> },
+    { name: 'Excavation Jobs', href: '/admin/manage-jobs', icon: <Briefcase /> },
+    { name: 'Snow Contracts', href: '/admin/manage-snow', icon: <Snowflake /> },
+    { name: 'Concrete Jobs', href: '/admin/manage-concrete', icon: <Droplets /> },
+    { name: 'Misc. Jobs', href: '/admin/manage-misc', icon: <Package /> },
     { name: 'Manage Clients', href: '/admin/manage-clients', icon: <Building2 /> },
     { name: 'View Reports', href: '/reports', icon: <FileText /> },
     { name: 'System Settings', href: '/admin/system-settings', icon: <Cog /> },
   ];
+  
+  const getJobIcon = (jobType: Job['jobType']) => {
+      switch(jobType) {
+          case 'excavation': return <Briefcase />;
+          case 'snow_removal': return <Snowflake />;
+          case 'concrete': return <Droplets />;
+          case 'misc': return <Package />;
+          default: return <Briefcase />;
+      }
+  }
 
   return (
     <CommandDialog open={isOpen} onOpenChange={close}>
@@ -65,7 +77,7 @@ export default function CommandPalette() {
         <CommandGroup heading="Jobs">
           {jobs.map(job => (
             <CommandItem key={`job-${job.id}`} onSelect={() => runCommand(() => router.push(`/admin/jobs/${job.id}`))}>
-              {job.jobType === 'snow_removal' ? <Snowflake/> : <Briefcase />}
+              {getJobIcon(job.jobType)}
               <span>{job.name}</span>
             </CommandItem>
           ))}

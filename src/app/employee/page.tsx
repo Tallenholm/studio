@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, UsersIcon } from 'lucide-react';
+import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -54,8 +54,8 @@ export default function EmployeeHubPage() {
     }
   }, [searchParams, user]);
 
-  const { assignedExcavationJobs, assignedSnowContracts } = useMemo(() => {
-    if (!user) return { assignedExcavationJobs: [], assignedSnowContracts: [] };
+  const { assignedExcavationJobs, assignedSnowContracts, assignedConcreteJobs, assignedMiscJobs } = useMemo(() => {
+    if (!user) return { assignedExcavationJobs: [], assignedSnowContracts: [], assignedConcreteJobs: [], assignedMiscJobs: [] };
     
     const assignedJobs = jobs
       .filter(job => 
@@ -69,6 +69,8 @@ export default function EmployeeHubPage() {
     return {
         assignedExcavationJobs: assignedJobs.filter(j => j.jobType === 'excavation'),
         assignedSnowContracts: assignedJobs.filter(j => j.jobType === 'snow_removal'),
+        assignedConcreteJobs: assignedJobs.filter(j => j.jobType === 'concrete'),
+        assignedMiscJobs: assignedJobs.filter(j => j.jobType === 'misc'),
     };
   }, [jobs, user]);
 
@@ -206,13 +208,11 @@ export default function EmployeeHubPage() {
             </Link>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-            <div id="tour-step-job-board">
-                {renderJobBoard("Excavation Job Board", Briefcase, assignedExcavationJobs)}
-            </div>
-            <div id="tour-step-snow-board">
-                {renderJobBoard("Snow Route Board", Snowflake, assignedSnowContracts)}
-            </div>
+        <div id="tour-step-job-board" className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            {renderJobBoard("Excavation Jobs", Briefcase, assignedExcavationJobs)}
+            {renderJobBoard("Snow Contracts", Snowflake, assignedSnowContracts)}
+            {renderJobBoard("Concrete Jobs", Droplets, assignedConcreteJobs)}
+            {renderJobBoard("Misc. Jobs", Package, assignedMiscJobs)}
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">

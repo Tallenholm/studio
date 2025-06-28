@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake, Users as UsersIcon } from 'lucide-react';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake, Users as UsersIcon, Droplets, Package } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -147,7 +147,26 @@ export default function JobDetailsPage() {
   }
 
   const jobStatus = getJobStatus(job);
-  const JobIcon = job.jobType === 'snow_removal' ? Snowflake : Briefcase;
+  
+  const JobIcon = (() => {
+      switch(job.jobType) {
+          case 'excavation': return Briefcase;
+          case 'snow_removal': return Snowflake;
+          case 'concrete': return Droplets;
+          case 'misc': return Package;
+          default: return Briefcase;
+      }
+  })();
+  
+  const getJobTypeName = () => {
+      switch(job.jobType) {
+          case 'excavation': return 'job';
+          case 'snow_removal': return 'snow contract';
+          case 'concrete': return 'concrete job';
+          case 'misc': return 'misc. job';
+          default: return 'job';
+      }
+  }
 
   const assignedEmployees = allUsers.filter(u => job?.assignedEmployeeIds?.includes(u.id));
   const assignedTrucks = assets.filter(a => job?.assignedTruckIds?.includes(a.id));
@@ -193,8 +212,8 @@ export default function JobDetailsPage() {
                 <JobIcon className="h-8 w-8 text-primary" />
                 {job.name}
               </CardTitle>
-              <CardDescription className="mt-2">
-                Detailed view of this {job.jobType === 'snow_removal' ? 'snow contract' : 'job'}, including its assignments, costs, and activity log.
+              <CardDescription className="mt-2 capitalize">
+                Detailed view of this {getJobTypeName()}, including its assignments, costs, and activity log.
               </CardDescription>
             </div>
              <Badge variant={jobStatus === 'active' ? 'default' : jobStatus === 'completed' ? 'secondary' : 'outline'} className={cn(jobStatus === 'active' && 'bg-green-600', 'text-lg')}>
@@ -240,11 +259,20 @@ export default function JobDetailsPage() {
                         </div>
                     </div>
                      {job.jobType === 'snow_removal' && (
-                        <div className="flex items-start gap-3 md:col-span-2">
+                        <div className="flex items-start gap-3">
                             <Snowflake className="h-5 w-5 text-primary mt-1" />
                             <div>
                                 <p className="text-muted-foreground">Services</p>
                                 <p className="font-semibold">{getServicesString(job.snowServices)}</p>
+                            </div>
+                        </div>
+                    )}
+                    {job.jobType === 'concrete' && job.concreteYards && (
+                        <div className="flex items-start gap-3">
+                            <Droplets className="h-5 w-5 text-primary mt-1" />
+                            <div>
+                                <p className="text-muted-foreground">Estimated Concrete</p>
+                                <p className="font-semibold">{job.concreteYards} yd³</p>
                             </div>
                         </div>
                     )}

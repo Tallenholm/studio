@@ -18,7 +18,7 @@ const CreateJobFromPromptOutputSchema = z.object({
   jobValue: z.number().optional().describe('The total monetary value of the job. Should be a number. If not mentioned, this field should be omitted.'),
   startDate: z.string().describe("The start date of the job in 'YYYY-MM-DD' format."),
   endDate: z.string().describe("The end date of the job in 'YYYY-MM-DD' format."),
-  jobType: z.enum(['excavation', 'snow_removal']).describe('The type of work. Infer this from the prompt. If it mentions plowing, salting, or snow, it is "snow_removal". Otherwise, it is "excavation".'),
+  jobType: z.enum(['excavation', 'snow_removal', 'concrete', 'misc']).describe('The type of work. Infer this from the prompt. If it mentions plowing, salting, or snow, it is "snow_removal". If it mentions "concrete", "pour", "slab", or "patio" it is "concrete". If it mentions "excavation", "digging", "grading", it is "excavation". For anything else, like deliveries or general labor, classify as "misc".'),
 });
 export type CreateJobFromPromptOutput = z.infer<typeof CreateJobFromPromptOutputSchema>;
 
@@ -36,7 +36,11 @@ Today's date is {{{currentDate}}}. Use this as a reference for relative dates li
 
 Analyze the following prompt and extract the details for the job. Infer job names from the description if not explicitly provided. Ensure all dates are in 'YYYY-MM-DD' format. If a monetary value for the job is not mentioned in the prompt, omit the 'jobValue' field entirely from your response.
 
-Critically, you must determine the 'jobType'. If the prompt mentions words like "snow", "plow", "salt", "ice", or other winter-related terms, set the jobType to 'snow_removal'. For all other work, like "excavation", "digging", "grading", etc., set the jobType to 'excavation'.
+Critically, you must determine the 'jobType' based on these rules:
+- If the prompt mentions words like "snow", "plow", "salt", "ice", or other winter-related terms, set the jobType to 'snow_removal'.
+- If the prompt mentions words like "concrete", "pour", "slab", "patio", or "foundation", set the jobType to 'concrete'.
+- If the prompt mentions "excavation", "digging", "grading", or other earth-moving terms, and is not about concrete, set it to 'excavation'.
+- For all other tasks, such as "delivery", "hauling", or general labor, classify it as 'misc'.
 
 Prompt:
 "{{{prompt}}}"

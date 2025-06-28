@@ -455,6 +455,7 @@ export const loadExpenseReports = (): ExpenseReport[] => {
 const defaultClients: Client[] = [
     { id: 'client-1', name: 'Main Street Properties', contactPerson: 'Bob Vance', contactEmail: 'bob.vance@vancerefrigeration.com', contactPhone: '555-123-4567' },
     { id: 'client-2', name: 'City Development Group', contactPerson: 'Carol Smith', contactEmail: 'carol.s@cdg.com', contactPhone: '555-987-6543' },
+    { id: 'client-3', name: 'Suburban Homes LLC', contactPerson: 'Don Patterson', contactEmail: 'don@suburban.com', contactPhone: '555-555-5555' },
 ];
 
 export const saveClients = (clients: Client[]): void => {
@@ -538,6 +539,35 @@ const getDynamicJobs = (): Job[] => {
       startDate: subDays(now, 30).toISOString().split('T')[0], 
       endDate: subDays(now, 15).toISOString().split('T')[0],
       assignedEmployeeIds: ['2'],
+      notes: [],
+    },
+    { 
+      id: 'job-4', 
+      name: 'Patio Slab Pour', 
+      clientId: 'client-3', 
+      clientName: 'Suburban Homes LLC', 
+      address: '101 Maple Court, Anytown, USA', 
+      jobValue: 15000, 
+      jobType: 'concrete',
+      startDate: addDays(now, 2).toISOString().split('T')[0], 
+      endDate: addDays(now, 4).toISOString().split('T')[0],
+      assignedEmployeeIds: ['2'],
+      assignedTruckIds: ['truck-1'],
+      concreteYards: 12.5,
+      notes: [],
+    },
+     { 
+      id: 'job-5', 
+      name: 'Gravel Delivery', 
+      clientId: 'client-1', 
+      clientName: 'Main Street Properties', 
+      address: '123 Main St, Anytown, USA', 
+      jobValue: 1200, 
+      jobType: 'misc',
+      startDate: addDays(now, 1).toISOString().split('T')[0], 
+      endDate: addDays(now, 1).toISOString().split('T')[0],
+      assignedEmployeeIds: ['1'],
+      assignedTruckIds: ['truck-1'],
       notes: [],
     },
   ];
