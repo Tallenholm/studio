@@ -98,7 +98,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     if (asset.insuranceDueDate) {
                         const dueDate = parseISO(asset.insuranceDueDate);
                         const notifId = `expiry-ins-${asset.id}`;
-                        if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
+                         if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
                             const isExpired = isBefore(dueDate, today);
                             notifications.push({
                                 id: notifId, recipientId: 'all', title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
@@ -175,6 +175,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/employee/fleet-check">
                                         <SidebarMenuButton tooltip="Fleet Check" isActive={pathname.startsWith('/employee/fleet-check') || pathname.startsWith('/pre-trip') || pathname.startsWith('/post-trip')}>
                                             <Truck /><span>Fleet Check</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <Link href="/employee/snow-routes">
+                                        <SidebarMenuButton tooltip="Snow Routes" isActive={pathname.startsWith('/employee/snow-routes')}>
+                                            <Snowflake /><span>Snow Routes</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>

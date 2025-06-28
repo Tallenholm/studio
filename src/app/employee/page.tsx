@@ -63,6 +63,7 @@ export default function EmployeeHubPage() {
     const assignedJobs = jobs
       .filter(job => 
         job.assignedEmployeeIds?.includes(user.id) ||
+        job.assignedPlowDriverIds?.includes(user.id) ||
         job.assignedSidewalkCrewIds?.includes(user.id)
       )
       .map(job => ({ ...job, status: getJobStatus(job) }))
@@ -120,6 +121,12 @@ export default function EmployeeHubPage() {
                                         Sidewalk Crew
                                     </Badge>
                                 )}
+                                {job.jobType === 'snow_removal' && job.assignedPlowDriverIds?.includes(user!.id) && (
+                                     <Badge variant="outline" className="mt-2 text-primary border-primary ml-2">
+                                        <Truck className="mr-1.5 h-3 w-3" />
+                                        Plow Crew
+                                    </Badge>
+                                )}
                             </div>
                             <div className="flex flex-col items-end gap-2">
                                 <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
@@ -166,7 +173,7 @@ export default function EmployeeHubPage() {
         </p>
       </div>
 
-       <div id="tour-step-main-tools" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+       <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
             <Link href="/employee/fleet-check" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-12 w-12 text-primary mx-auto mb-2" />
@@ -175,6 +182,17 @@ export default function EmployeeHubPage() {
                   </CardTitle>
                   <CardDescription className="text-sm mt-1">
                     Daily vehicle inspections.
+                  </CardDescription>
+                </Card>
+            </Link>
+            <Link href="/employee/snow-routes" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <Snowflake className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Snow Routes
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Live snow event tracking.
                   </CardDescription>
                 </Card>
             </Link>

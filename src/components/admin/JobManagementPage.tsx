@@ -48,12 +48,13 @@ const jobSchema = z.object({
   assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
   // Snow Removal Assignments
+  assignedPlowDriverIds: z.array(z.string()).optional(),
+  assignedSidewalkCrewIds: z.array(z.string()).optional(),
   snowServices: z.object({
     plowing: z.boolean().default(false),
     salting: z.boolean().default(false),
     sidewalks: z.boolean().default(false),
   }).optional(),
-  assignedSidewalkCrewIds: z.array(z.string()).optional(),
   // Concrete Specific
   concreteYards: z.coerce.number().optional(),
 }).refine((data) => data.dateRange.to >= data.dateRange.from, {
@@ -98,6 +99,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: [],
       assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
+      assignedPlowDriverIds: [],
       assignedSidewalkCrewIds: [],
       snowServices: { plowing: false, salting: false, sidewalks: false },
     },
@@ -131,7 +133,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     if (!open) {
       form.reset({ 
           name: '', address: '', jobType: jobType,
-          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedSidewalkCrewIds: [], 
+          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedPlowDriverIds: [], assignedSidewalkCrewIds: [], 
           snowServices: { plowing: false, salting: false, sidewalks: false },
           concreteYards: undefined, jobValue: undefined,
       });
@@ -155,6 +157,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: job.assignedTruckIds || [],
       assignedTrailerIds: job.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
+      assignedPlowDriverIds: job.assignedPlowDriverIds || [],
       assignedSidewalkCrewIds: job.assignedSidewalkCrewIds || [],
       snowServices: job.snowServices || { plowing: false, salting: false, sidewalks: false },
       concreteYards: job.concreteYards,
@@ -509,8 +512,9 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                                 <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
                                             </div>
                                         </div>
-                                        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
                                             <MultiSelectDropdown items={plowFleet} fieldName="assignedTruckIds" title="Plow & Salt Fleet" Icon={Truck} />
+                                            <MultiSelectDropdown items={users} fieldName="assignedPlowDriverIds" title="Plow Drivers" Icon={UsersIcon} />
                                             <MultiSelectDropdown items={users} fieldName="assignedSidewalkCrewIds" title="Sidewalk Crew" Icon={UsersIcon} />
                                         </div>
                                     </div>

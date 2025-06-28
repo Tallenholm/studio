@@ -202,11 +202,17 @@ export interface Job {
   assignedTruckIds?: string[];
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
+  assignedPlowDriverIds?: string[];
   assignedSidewalkCrewIds?: string[]; // For snow removal sidewalk crews
   snowServices?: {
     plowing?: boolean;
     salting?: boolean;
     sidewalks?: boolean;
+  };
+  snowStatus?: {
+    lastPlowed?: string; // ISO timestamp
+    lastSalted?: string; // ISO timestamp
+    lastSidewalks?: string; // ISO timestamp
   };
   concreteYards?: number;
   notes?: {
