@@ -7,7 +7,6 @@ import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import {
   Select,
   SelectContent,
@@ -286,39 +285,45 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
             </div>
 
             {visibleSections.length > 0 ? (
-                <Tabs defaultValue={visibleSections[0].id} className="w-full">
-                <TabsList className="grid w-full grid-cols-1 sm:grid-cols-3">
-                    {visibleSections.map(section => (
-                    <TabsTrigger key={section.id} value={section.id} className="text-base py-3 data-[state=active]:shadow-md">
-                        <section.Icon className="mr-2 h-5 w-5" /> {section.name.split('(')[0].trim()}
-                    </TabsTrigger>
-                    ))}
-                </TabsList>
+              <div className="space-y-8">
                 {fields.map((sectionField, sectionIndex) => {
-                    const isVisible = visibleSections.some(s => s.id === sectionField.vehicleType);
-                    if (!isVisible) return null;
+                  const isVisible = visibleSections.some(
+                    (s) => s.id === sectionField.vehicleType
+                  );
+                  if (!isVisible) return null;
 
-                    return (
-                        <TabsContent key={sectionField.id} value={sectionField.vehicleType}>
-                        <div className="space-y-4 mt-6">
-                            {sectionField.items.map((itemField, itemIndex) => {
-                            const originalItem = CHECKLIST_DATA[sectionIndex].items[itemIndex];
-                            const currentStatus = watchedSections[sectionIndex]?.items[itemIndex]?.status || 'pending';
-                            return (
-                                <ChecklistItemComponent
-                                key={itemField.itemId}
-                                item={originalItem}
-                                control={form.control}
-                                fieldNamePrefix={`sections.${sectionIndex}.items.${itemIndex}`}
-                                currentStatus={currentStatus}
-                                />
-                            );
-                            })}
-                        </div>
-                        </TabsContent>
-                    );
+                  const sectionData = CHECKLIST_DATA.find(s => s.id === sectionField.vehicleType);
+
+                  return (
+                    <Card key={sectionField.id} className="overflow-hidden">
+                       <CardHeader className="bg-muted/30">
+                        <CardTitle className="flex items-center gap-2 text-xl">
+                          {sectionData && <sectionData.Icon className="h-6 w-6 text-primary" />}
+                          {sectionData?.name}
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent className="pt-6 space-y-4">
+                        {sectionField.items.map((itemField, itemIndex) => {
+                          const originalItem =
+                            CHECKLIST_DATA[sectionIndex].items[itemIndex];
+                          const currentStatus =
+                            watchedSections[sectionIndex]?.items[itemIndex]
+                              ?.status || 'pending';
+                          return (
+                            <ChecklistItemComponent
+                              key={itemField.itemId}
+                              item={originalItem}
+                              control={form.control}
+                              fieldNamePrefix={`sections.${sectionIndex}.items.${itemIndex}`}
+                              currentStatus={currentStatus}
+                            />
+                          );
+                        })}
+                      </CardContent>
+                    </Card>
+                  );
                 })}
-                </Tabs>
+              </div>
             ) : (
                 <div className="text-center py-10 border-2 border-dashed rounded-lg flex flex-col items-center gap-4">
                     <ClipboardList className="h-12 w-12 text-muted-foreground" />
