@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench } from 'lucide-react';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -145,6 +145,7 @@ export default function JobDetailsPage() {
   }
 
   const jobStatus = job ? getJobStatus(job) : 'completed';
+  const JobIcon = job.jobType === 'snow_removal' ? Snowflake : Briefcase;
 
   const assignedTrucks = assets.filter(a => job?.assignedTruckIds?.includes(a.id));
   const assignedTrailers = assets.filter(a => job?.assignedTrailerIds?.includes(a.id));
@@ -177,11 +178,11 @@ export default function JobDetailsPage() {
           <div className="flex justify-between items-start">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Briefcase className="h-8 w-8 text-primary" />
+                <JobIcon className="h-8 w-8 text-primary" />
                 {job.name}
               </CardTitle>
               <CardDescription className="mt-2">
-                Detailed view of the job and its related assets and notes.
+                Detailed view of this {job.jobType === 'snow_removal' ? 'snow contract' : 'job'} and its related assets and notes.
               </CardDescription>
             </div>
              <Badge variant={jobStatus === 'active' ? 'default' : jobStatus === 'completed' ? 'secondary' : 'outline'} className={cn(jobStatus === 'active' && 'bg-green-600', 'text-lg')}>

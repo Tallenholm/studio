@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Snowflake } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -38,9 +38,9 @@ import { Textarea } from '@/components/ui/textarea';
 
 
 const jobSchema = z.object({
-  name: z.string().min(1, 'Job name is required.'),
+  name: z.string().min(1, 'Contract name is required.'),
   clientId: z.string({ required_error: 'Please select a client.' }),
-  address: z.string().min(1, 'Job address is required.'),
+  address: z.string().min(1, 'Property address is required.'),
   jobValue: z.coerce.number().optional(),
   jobType: z.enum(['excavation', 'snow_removal']),
   dateRange: z.object({
@@ -56,7 +56,7 @@ const jobSchema = z.object({
 });
 
 
-export default function ManageJobsPage() {
+export default function ManageSnowPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
@@ -77,7 +77,7 @@ export default function ManageJobsPage() {
     defaultValues: {
       name: '',
       address: '',
-      jobType: 'excavation',
+      jobType: 'snow_removal',
       assignedTruckIds: [],
       assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
@@ -87,8 +87,8 @@ export default function ManageJobsPage() {
   useEffect(() => {
     setIsMounted(true);
     setClients(loadClients());
-    // Only load excavation jobs for this page
-    setJobs(loadJobs().filter(j => j.jobType === 'excavation'));
+    // Only load snow removal jobs for this page
+    setJobs(loadJobs().filter(j => j.jobType === 'snow_removal'));
     setFleetAssets(loadFleetAssets());
   }, []);
 
@@ -96,9 +96,9 @@ export default function ManageJobsPage() {
     if (isMounted) {
       // When saving, we need to get all jobs, not just the filtered ones
       const allJobs = loadJobs();
-      const excavationJobs = jobs;
-      const otherJobs = allJobs.filter(j => j.jobType !== 'excavation');
-      saveJobs([...otherJobs, ...excavationJobs]);
+      const snowJobs = jobs;
+      const otherJobs = allJobs.filter(j => j.jobType !== 'snow_removal');
+      saveJobs([...otherJobs, ...snowJobs]);
     }
   }, [jobs, isMounted]);
 
@@ -112,7 +112,7 @@ export default function ManageJobsPage() {
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset({ name: '', address: '', jobType: 'excavation', assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
+      form.reset({ name: '', address: '', jobType: 'snow_removal', assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
       setEditingJob(null);
     }
   };
@@ -150,7 +150,7 @@ export default function ManageJobsPage() {
         toast({ 
             variant: 'destructive', 
             title: 'Client Not Found', 
-            description: `A client named "${result.clientName}" was not found. Please add them on the "Manage Clients" page before creating a job for them.`,
+            description: `A client named "${result.clientName}" was not found. Please add them on the "Manage Clients" page first.`,
             duration: 8000,
         });
         setIsGeneratingJob(false);
@@ -172,13 +172,13 @@ export default function ManageJobsPage() {
         assignedHeavyEquipmentIds: [],
       });
 
-      toast({ title: 'Job Populated', description: 'Please review the generated job details and assign assets.' });
+      toast({ title: 'Contract Populated', description: 'Please review the generated contract details and assign assets.' });
       setIsAiDialogOpen(false);
       setIsDialogOpen(true);
 
     } catch (error) {
       console.error("AI Job Generation Error:", error);
-      toast({ variant: 'destructive', title: 'AI Error', description: 'Failed to generate job from prompt. Please try again.' });
+      toast({ variant: 'destructive', title: 'AI Error', description: 'Failed to generate contract from prompt. Please try again.' });
     } finally {
       setIsGeneratingJob(false);
     }
@@ -211,7 +211,7 @@ export default function ManageJobsPage() {
             ...jobData,
         };
         setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
-        toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
+        toast({ title: 'Contract Updated', description: `Contract "${values.name}" has been updated.` });
     } else {
         const newJob: Job = {
         id: `job-${Date.now()}`,
@@ -219,7 +219,7 @@ export default function ManageJobsPage() {
         notes: [],
       };
       setJobs((prev) => [...prev, newJob]);
-      toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
+      toast({ title: 'Contract Added', description: `Contract "${values.name}" has been created.` });
     }
     
     handleDialogOpenChange(false);
@@ -229,8 +229,8 @@ export default function ManageJobsPage() {
     const jobToRemove = jobs.find(j => j.id === jobId);
     setJobs((prev) => prev.filter((j) => j.id !== jobId));
     toast({
-      title: 'Job Removed',
-      description: `Job "${jobToRemove?.name}" has been removed.`,
+      title: 'Contract Removed',
+      description: `Contract "${jobToRemove?.name}" has been removed.`,
       variant: 'destructive',
     });
   }
@@ -287,9 +287,9 @@ export default function ManageJobsPage() {
               <TableHeader>
                 <TableRow>
                   <TableHead>Status</TableHead>
-                  <TableHead>Job Name</TableHead>
+                  <TableHead>Contract Name</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Job Value</TableHead>
+                  <TableHead>Contract Value</TableHead>
                   <TableHead>Dates</TableHead>
                   <TableHead>Assigned Assets</TableHead>
                   <TableHead className="text-right w-[80px]">Actions</TableHead>
@@ -341,7 +341,7 @@ export default function ManageJobsPage() {
             </Table>
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} jobs found with current filters.</div>
+          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} contracts found with current filters.</div>
         )}
       </CardContent>
     </Card>
@@ -393,7 +393,7 @@ export default function ManageJobsPage() {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Jobs...</p>
+        <p className="text-lg text-muted-foreground">Loading Snow Contracts...</p>
       </div>
     );
   }
@@ -405,11 +405,11 @@ export default function ManageJobsPage() {
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Briefcase className="h-8 w-8 text-primary" />
-                Manage Excavation Jobs
+                <Snowflake className="h-8 w-8 text-primary" />
+                Manage Snow Contracts
               </CardTitle>
               <CardDescription className="mt-2">
-                Assign and track excavation and earth-moving jobs for your clients.
+                Assign and track snow and ice management contracts.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -419,14 +419,14 @@ export default function ManageJobsPage() {
                   </DialogTrigger>
                   <DialogContent className="sm:max-w-xl">
                       <DialogHeader>
-                          <DialogTitle>Create Job with AI</DialogTitle>
+                          <DialogTitle>Create Snow Contract with AI</DialogTitle>
                           <DialogDescription>
-                              Describe the job in plain English. The AI will populate the form for you. Include the client name, address, dates, and value.
+                              Describe the contract in plain English. The AI will populate the form for you. Include the client name, address, dates, and value.
                           </DialogDescription>
                       </DialogHeader>
                       <div className="py-4 space-y-4">
                           <Textarea 
-                            placeholder="e.g., Excavate the foundation for Main Street Properties at 456 Central Ave. Start tomorrow and finish in two weeks. The job is worth $75,000."
+                            placeholder="e.g., Plow the lot for Main Street Properties at 456 Central Ave for the whole winter season. Start Dec 1, end March 31. The contract is worth $25,000."
                             value={aiPrompt}
                             onChange={(e) => setAiPrompt(e.target.value)}
                             className="min-h-[120px]"
@@ -435,7 +435,7 @@ export default function ManageJobsPage() {
                       <DialogFooter>
                           <Button onClick={handleGenerateJob} disabled={isGeneratingJob}>
                               {isGeneratingJob ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4" />}
-                              {isGeneratingJob ? 'Generating...' : 'Generate Job'}
+                              {isGeneratingJob ? 'Generating...' : 'Generate Contract'}
                           </Button>
                       </DialogFooter>
                   </DialogContent>
@@ -444,14 +444,14 @@ export default function ManageJobsPage() {
                 <DialogTrigger asChild>
                   <Button>
                     <PlusCircle className="mr-2 h-5 w-5" />
-                    Add New Job
+                    Add New Contract
                   </Button>
                 </DialogTrigger>
                 <DialogContent className="sm:max-w-3xl">
                   <DialogHeader>
-                    <DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle>
+                    <DialogTitle>{editingJob ? 'Edit Contract' : 'Add New Contract'}</DialogTitle>
                     <DialogDescription>
-                      {editingJob ? 'Update the details for this job.' : 'Enter the details for a new job.'}
+                      {editingJob ? 'Update the details for this contract.' : 'Enter the details for a new contract.'}
                     </DialogDescription>
                   </DialogHeader>
                   <Form {...form}>
@@ -468,9 +468,9 @@ export default function ManageJobsPage() {
                             name="name"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Job Name</FormLabel>
+                                <FormLabel>Contract Name</FormLabel>
                                 <FormControl>
-                                  <Input placeholder="e.g., Lot 5 Excavation" {...field} />
+                                  <Input placeholder="e.g., Downtown Plaza Plowing" {...field} />
                                 </FormControl>
                                 <FormMessage />
                               </FormItem>
@@ -481,7 +481,7 @@ export default function ManageJobsPage() {
                             name="address"
                             render={({ field }) => (
                               <FormItem>
-                                <FormLabel>Job Site Address</FormLabel>
+                                <FormLabel>Property Address</FormLabel>
                                 <FormControl>
                                   <Input placeholder="e.g., 123 Main St, Anytown" {...field} />
                                 </FormControl>
@@ -520,7 +520,7 @@ export default function ManageJobsPage() {
                               name="jobValue"
                               render={({ field }) => (
                                 <FormItem>
-                                  <FormLabel>Job Value (Optional)</FormLabel>
+                                  <FormLabel>Contract Value (Optional)</FormLabel>
                                   <FormControl>
                                     <Input type="number" placeholder="e.g., 25000.00" {...field} />
                                   </FormControl>
@@ -583,7 +583,7 @@ export default function ManageJobsPage() {
                       </div>
 
                       <DialogFooter>
-                        <Button type="submit">Save Job</Button>
+                        <Button type="submit">Save Contract</Button>
                       </DialogFooter>
                     </form>
                   </Form>
@@ -635,9 +635,9 @@ export default function ManageJobsPage() {
             </CardContent>
           </Card>
 
-          {renderJobsTable(activeJobs, "Active Jobs")}
-          {renderJobsTable(upcomingJobs, "Upcoming Jobs")}
-          {renderJobsTable(completedJobs, "Completed Jobs")}
+          {renderJobsTable(activeJobs, "Active Contracts")}
+          {renderJobsTable(upcomingJobs, "Upcoming Contracts")}
+          {renderJobsTable(completedJobs, "Completed Contracts")}
         </CardContent>
       </Card>
     </div>

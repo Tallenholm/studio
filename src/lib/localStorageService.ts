@@ -496,6 +496,7 @@ const getDynamicJobs = (): Job[] => {
       clientName: 'Main Street Properties', 
       address: '123 Main St, Anytown, USA', 
       jobValue: 50000, 
+      jobType: 'excavation',
       startDate: subDays(now, 5).toISOString().split('T')[0], 
       endDate: addDays(now, 10).toISOString().split('T')[0],
       assignedTruckIds: ['truck-1'],
@@ -510,11 +511,12 @@ const getDynamicJobs = (): Job[] => {
     },
     { 
       id: 'job-2', 
-      name: 'Downtown Plaza Snow Removal', 
+      name: 'Downtown Plaza Snow Plowing', 
       clientId: 'client-2', 
       clientName: 'City Development Group', 
       address: '456 Central Ave, Anytown, USA', 
       jobValue: 125000, 
+      jobType: 'snow_removal',
       startDate: addDays(now, 2).toISOString().split('T')[0], 
       endDate: addDays(now, 20).toISOString().split('T')[0],
       assignedTruckIds: ['truck-1', 'truck-2'],
@@ -527,6 +529,7 @@ const getDynamicJobs = (): Job[] => {
       clientName: 'Main Street Properties', 
       address: '789 River Rd, Anytown, USA', 
       jobValue: 78000, 
+      jobType: 'excavation',
       startDate: subDays(now, 30).toISOString().split('T')[0], 
       endDate: subDays(now, 15).toISOString().split('T')[0],
       notes: [],
@@ -550,17 +553,15 @@ export const loadJobs = (): Job[] => {
       const data = localStorage.getItem(JOBS_KEY);
       const defaultJobs = getDynamicJobs();
       if (data) {
-          // If data exists, we still want to update the dates of the default jobs
-          // to keep the dashboard looking fresh. This is a pragmatic choice for a demo app.
           const storedJobs: Job[] = JSON.parse(data);
+          // Add jobType to any old jobs that are missing it
+          const jobsWithDefaults = storedJobs.map(job => ({...job, jobType: job.jobType || 'excavation' }));
+
           const defaultJobIds = new Set(defaultJobs.map(j => j.id));
-          // Filter out old default jobs
-          const customJobs = storedJobs.filter(j => !defaultJobIds.has(j.id));
-          // Combine custom jobs with fresh default jobs
+          const customJobs = jobsWithDefaults.filter(j => !defaultJobIds.has(j.id));
+          
           const jobsToSave = [...customJobs, ...defaultJobs];
-          // Only save if the structure has changed significantly, otherwise we just return.
-          // This check is simple; a more complex app might need a proper migration strategy.
-          if (storedJobs.length < defaultJobs.length) {
+          if (storedJobs.length < defaultJobs.length || !storedJobs.every(j => 'jobType' in j)) {
               saveJobs(jobsToSave);
           }
           return jobsToSave;

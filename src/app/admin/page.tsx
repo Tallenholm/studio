@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -243,7 +243,7 @@ export default function FleetCheckDashboardPage() {
     switch (type) {
         case 'time-off': return 'Time Off';
         case 'company-event': return 'Company Event';
-        case 'maintenance': return 'Event';
+        case 'maintenance': return 'Maintenance';
         default: return 'Event';
     }
   }
@@ -308,7 +308,7 @@ export default function FleetCheckDashboardPage() {
                 <ul className="space-y-3 max-h-60 overflow-y-auto">
                   {selectedDayItems.map(item => (
                     <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
-                      {item.itemType === 'job' ? <Briefcase className="h-5 w-5 text-primary mt-1" /> : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
+                      {item.itemType === 'job' ? (item.jobType === 'snow_removal' ? <Snowflake className="h-5 w-5 text-primary mt-1" /> : <Briefcase className="h-5 w-5 text-primary mt-1" />) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
                       <div>
                         <p className="font-semibold">{item.title || item.name}</p>
                         {item.itemType === 'job' ? (
@@ -391,7 +391,8 @@ export default function FleetCheckDashboardPage() {
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
             {user?.role === 'owner' && <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 className="mr-2"/>Manage Clients</Button></Link>}
-            {user?.role === 'owner' && <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Manage Jobs</Button></Link>}
+            {user?.role === 'owner' && <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase className="mr-2"/>Excavation Jobs</Button></Link>}
+            {user?.role === 'owner' && <Link href="/admin/manage-snow" passHref><Button variant="outline" className="w-full justify-start"><Snowflake className="mr-2"/>Snow Contracts</Button></Link>}
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText className="mr-2"/>View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit className="mr-2"/>Manage Work Orders</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench className="mr-2"/>View Maintenance Logs</Button></Link>

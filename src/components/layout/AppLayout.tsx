@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole } from '@/lib/types';
@@ -295,8 +295,15 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>}
                                 {user.role === 'owner' && <SidebarMenuItem>
                                     <Link href="/admin/manage-jobs">
-                                        <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
-                                            <Briefcase /><span>Manage Jobs</span>
+                                        <SidebarMenuButton tooltip="Excavation Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
+                                            <Briefcase /><span>Excavation Jobs</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>}
+                                {user.role === 'owner' && <SidebarMenuItem>
+                                    <Link href="/admin/manage-snow">
+                                        <SidebarMenuButton tooltip="Snow Contracts" isActive={pathname.startsWith('/admin/manage-snow')}>
+                                            <Snowflake /><span>Snow Contracts</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>}
@@ -377,6 +384,7 @@ const OWNER_ONLY_PATHS = [
     '/admin/manage-expenses',
     '/admin/manage-clients',
     '/admin/manage-jobs',
+    '/admin/manage-snow',
     '/admin/advanced-reports',
     '/admin/system-settings',
 ];

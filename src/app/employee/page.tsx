@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase } from 'lucide-react';
+import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -54,9 +54,10 @@ export default function EmployeeHubPage() {
     }
   }, [searchParams, user]);
 
-  const assignedJobs = useMemo(() => {
-    if (!user) return [];
-    return jobs
+  const { assignedExcavationJobs, assignedSnowContracts } = useMemo(() => {
+    if (!user) return { assignedExcavationJobs: [], assignedSnowContracts: [] };
+    
+    const assignedJobs = jobs
       .filter(job => 
         job.assignedTruckIds?.includes(user.id) ||
         job.assignedTrailerIds?.includes(user.id) ||
@@ -65,6 +66,11 @@ export default function EmployeeHubPage() {
       .map(job => ({ ...job, status: getJobStatus(job) }))
       .filter(job => job.status === 'active' || job.status === 'upcoming')
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+      
+    return {
+        assignedExcavationJobs: assignedJobs.filter(j => j.jobType === 'excavation'),
+        assignedSnowContracts: assignedJobs.filter(j => j.jobType === 'snow_removal'),
+    };
   }, [jobs, user]);
 
   const eventDates = useMemo(() => {
@@ -84,6 +90,43 @@ export default function EmployeeHubPage() {
         default: return 'Event';
     }
   }
+
+  const renderJobBoard = (title: string, icon: React.ElementType, jobs: Job[]) => (
+    <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl h-full">
+        <CardHeader>
+            <CardTitle className="font-headline flex items-center gap-2">
+                {React.createElement(icon, { className: "h-6 w-6 text-primary" })} {title}
+            </CardTitle>
+            <CardDescription>Active and upcoming assignments for you.</CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+            {jobs.length > 0 ? (
+                jobs.map(job => (
+                    <Card key={job.id} className="p-4 bg-muted/30">
+                        <div className="flex justify-between items-center gap-4">
+                            <div>
+                                <p className="font-bold">{job.name}</p>
+                                <p className="text-sm text-muted-foreground">{job.clientName}</p>
+                                <p className="text-xs text-muted-foreground">{job.address}</p>
+                            </div>
+                            <div className="flex flex-col items-end gap-2">
+                                <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
+                                <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
+                                    <Button size="sm" variant="outline"><MapPin className="mr-2 h-4 w-4" /> Directions</Button>
+                                </a>
+                            </div>
+                        </div>
+                    </Card>
+                ))
+            ) : (
+                <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                    {React.createElement(icon, { className: "h-8 w-8 mx-auto mb-2"})}
+                    <p>You have no active or upcoming assignments.</p>
+                </div>
+            )}
+        </CardContent>
+    </Card>
+  );
 
   if (!isMounted) {
      return (
@@ -158,40 +201,59 @@ export default function EmployeeHubPage() {
             </Link>
         </div>
 
+        <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
+            <div id="tour-step-job-board">
+                {renderJobBoard("Excavation Job Board", Briefcase, assignedExcavationJobs)}
+            </div>
+            <div id="tour-step-snow-board">
+                {renderJobBoard("Snow Route Board", Snowflake, assignedSnowContracts)}
+            </div>
+        </div>
+
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
-            <div id="tour-step-job-board" className="lg:col-span-3">
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl h-full">
+            <div id="tour-step-company-calendar" className="lg:col-span-3">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
                     <CardHeader>
-                        <CardTitle className="font-headline flex items-center gap-2">
-                           <Briefcase className="h-6 w-6 text-primary" /> Your Job Board
-                        </CardTitle>
-                        <CardDescription>Active and upcoming jobs assigned to you.</CardDescription>
+                    <CardTitle className="flex items-center gap-2 font-headline">
+                        <CalendarIcon className="text-primary" />
+                        Company Calendar
+                    </CardTitle>
+                    <CardDescription>
+                        View company events, approved time off, and maintenance schedules.
+                    </CardDescription>
                     </CardHeader>
-                    <CardContent className="space-y-4">
-                        {assignedJobs.length > 0 ? (
-                            assignedJobs.map(job => (
-                                <Card key={job.id} className="p-4 bg-muted/30">
-                                    <div className="flex justify-between items-center gap-4">
-                                        <div>
-                                            <p className="font-bold">{job.name}</p>
-                                            <p className="text-sm text-muted-foreground">{job.clientName}</p>
-                                            <p className="text-xs text-muted-foreground">{job.address}</p>
-                                        </div>
-                                        <div className="flex flex-col items-end gap-2">
-                                            <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
-                                            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
-                                                <Button size="sm" variant="outline"><MapPin className="mr-2 h-4 w-4" /> Directions</Button>
-                                            </a>
-                                        </div>
-                                    </div>
-                                </Card>
-                            ))
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
+                    <div>
+                        <Calendar
+                        mode="single"
+                        selected={date}
+                        onSelect={setDate}
+                        modifiers={{ event: eventDates }}
+                        modifiersClassNames={{
+                            event: 'day-with-event',
+                        }}
+                        className="rounded-md border"
+                        />
+                    </div>
+                    <div className="space-y-4">
+                        <h3 className="text-lg font-semibold">Events for {date ? format(date, 'PPP') : '...'}</h3>
+                        {selectedDayEvents.length > 0 ? (
+                            <ul className="space-y-3 max-h-48 overflow-y-auto">
+                            {selectedDayEvents.map(event => (
+                                <li key={event.id} className="p-3 rounded-md border bg-muted/50">
+                                    <p className="font-semibold">{event.title}</p>
+                                    <p className="text-sm text-muted-foreground">{getEventTypeLabel(event.type)}</p>
+                                    {event.description && <p className="text-sm text-muted-foreground mt-1">{event.description}</p>}
+                                </li>
+                            ))}
+                            </ul>
                         ) : (
                             <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                                <Briefcase className="h-8 w-8 mx-auto mb-2"/>
-                                <p>You have no active or upcoming jobs.</p>
+                                <CalendarDays className="h-8 w-8 mx-auto mb-2"/>
+                                <p>No events for this day.</p>
                             </div>
                         )}
+                    </div>
                     </CardContent>
                 </Card>
             </div>
@@ -208,53 +270,6 @@ export default function EmployeeHubPage() {
                 </Card>
             </div>
         </div>
-
-       <div id="tour-step-company-calendar">
-          <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline">
-                <CalendarIcon className="text-primary" />
-                Company Calendar
-              </CardTitle>
-              <CardDescription>
-                View company events, approved time off, and maintenance schedules.
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6 items-start">
-              <div>
-                <Calendar
-                  mode="single"
-                  selected={date}
-                  onSelect={setDate}
-                  modifiers={{ event: eventDates }}
-                  modifiersClassNames={{
-                    event: 'day-with-event',
-                  }}
-                  className="rounded-md border"
-                />
-              </div>
-              <div className="space-y-4">
-                <h3 className="text-lg font-semibold">Events for {date ? format(date, 'PPP') : '...'}</h3>
-                {selectedDayEvents.length > 0 ? (
-                    <ul className="space-y-3 max-h-48 overflow-y-auto">
-                      {selectedDayEvents.map(event => (
-                        <li key={event.id} className="p-3 rounded-md border bg-muted/50">
-                            <p className="font-semibold">{event.title}</p>
-                            <p className="text-sm text-muted-foreground">{getEventTypeLabel(event.type)}</p>
-                            {event.description && <p className="text-sm text-muted-foreground mt-1">{event.description}</p>}
-                        </li>
-                      ))}
-                    </ul>
-                ) : (
-                    <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                        <CalendarDays className="h-8 w-8 mx-auto mb-2"/>
-                        <p>No events for this day.</p>
-                    </div>
-                )}
-              </div>
-            </CardContent>
-          </Card>
-       </div>
     </div>
     </>
   );

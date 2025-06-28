@@ -1,3 +1,4 @@
+
 import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
@@ -173,6 +174,7 @@ export interface Job {
   clientName: string;
   address: string;
   jobValue?: number;
+  jobType: 'excavation' | 'snow_removal';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
   assignedTruckIds?: string[];
