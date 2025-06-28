@@ -348,7 +348,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
-            <SidebarInset className="min-h-screen">
+            <SidebarInset>
                 <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
                     <SidebarTrigger className="md:hidden" />
                     <Link href="/notifications" passHref>
