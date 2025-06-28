@@ -1,7 +1,8 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Shovel, Fuel, Layers, Cuboid, Road, PaintRoller, Sprout, TrendingUp, Construction } from 'lucide-react';
+import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous } from 'lucide-react';
 import ConcreteCalculator from '@/components/tools/ConcreteCalculator';
 import FuelCostEstimator from '@/components/tools/FuelCostEstimator';
 import GravelCalculator from '@/components/tools/GravelCalculator';
@@ -11,6 +12,13 @@ import TopsoilCalculator from '@/components/tools/TopsoilCalculator';
 import PavementSealerCalculator from '@/components/tools/PavementSealerCalculator';
 import TrenchVolumeCalculator from '@/components/tools/TrenchVolumeCalculator';
 import SlopeCalculator from '@/components/tools/SlopeCalculator';
+import RebarCalculator from '@/components/tools/RebarCalculator';
+import RetainingWallCalculator from '@/components/tools/RetainingWallCalculator';
+import PaverCalculator from '@/components/tools/PaverCalculator';
+import SodCalculator from '@/components/tools/SodCalculator';
+import MulchCalculator from '@/components/tools/MulchCalculator';
+import PaintCalculator from '@/components/tools/PaintCalculator';
+
 
 export default function ToolsGrid() {
   return (
@@ -115,7 +123,7 @@ export default function ToolsGrid() {
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
         <CardHeader>
           <CardTitle className="font-headline flex items-center gap-2">
-            <Road className="h-6 w-6 text-primary" />
+            <Route className="h-6 w-6 text-primary" />
             Asphalt Calculator
           </CardTitle>
           <CardDescription>
@@ -156,6 +164,102 @@ export default function ToolsGrid() {
         </CardHeader>
         <CardContent>
           <FuelCostEstimator />
+        </CardContent>
+      </Card>
+
+      {/* Rebar Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Grid3x3 className="h-6 w-6 text-primary" />
+            Rebar Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the linear feet of rebar needed for a concrete slab.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RebarCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Retaining Wall Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <PanelTop className="h-6 w-6 text-primary" />
+            Retaining Wall Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the number of blocks needed for a retaining wall.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <RetainingWallCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Paver Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <LayoutGrid className="h-6 w-6 text-primary" />
+            Paver Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the number of pavers for a patio or walkway.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaverCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Sod Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Leaf className="h-6 w-6 text-primary" />
+            Sod Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the square feet of sod needed for an area.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SodCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Mulch Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <TreeDeciduous className="h-6 w-6 text-primary" />
+            Mulch Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the cubic yards of mulch for a garden bed.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <MulchCalculator />
+        </CardContent>
+      </Card>
+      
+      {/* Paint Calculator */}
+      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
+        <CardHeader>
+          <CardTitle className="font-headline flex items-center gap-2">
+            <Paintbrush className="h-6 w-6 text-primary" />
+            Paint Calculator
+          </CardTitle>
+          <CardDescription>
+            Estimate the gallons of paint needed for a surface area.
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <PaintCalculator />
         </CardContent>
       </Card>
 
