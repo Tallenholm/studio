@@ -2,7 +2,7 @@
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
-import { useForm, useFieldArray } from 'react-hook-form';
+import { useForm, useFieldArray, useWatch } from 'react-hook-form';
 import * as z from 'zod';
 import { Button } from '@/components/ui/button';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -133,10 +133,10 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     name: 'sections',
   });
 
-  const watchedSections = form.watch('sections');
-  const watchedTruckVin = form.watch('truckVin');
-  const watchedTrailerVin = form.watch('trailerVin');
-  const watchedHeavyEquipmentVin = form.watch('heavyEquipmentVin');
+  const watchedSections = useWatch({ control: form.control, name: 'sections' });
+  const watchedTruckVin = useWatch({ control: form.control, name: 'truckVin' });
+  const watchedTrailerVin = useWatch({ control: form.control, name: 'trailerVin' });
+  const watchedHeavyEquipmentVin = useWatch({ control: form.control, name: 'heavyEquipmentVin' });
 
   const visibleSections = useMemo(() => {
     return CHECKLIST_DATA.filter(section => {

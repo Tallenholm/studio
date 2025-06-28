@@ -6,7 +6,7 @@ import type { LucideIcon } from 'lucide-react';
 export type { DailyBriefingOutput, DailyBriefingInput };
 
 export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
-export type UserRole = 'owner' | 'manager' | 'employee';
+export type UserRole = 'owner' | 'manager' | 'employee' | 'guest';
 
 export interface User {
   id: string;

@@ -64,6 +64,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
         title: 'AI Assistant Error',
         description: 'Could not get an answer. Please try again.'
       });
+      setAiAnswer('Sorry, I encountered an error. Please try asking your question again.');
     } finally {
       setIsAsking(false);
       setAiQuestion('');

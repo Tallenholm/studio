@@ -17,7 +17,7 @@ export const faqs = {
   employee: [
     {
       question: "How do I perform a vehicle inspection and report damage?",
-      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. To report damage or an issue, mark the relevant checklist item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
+      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. The checklists will appear on the same page. To report damage or an issue, mark the relevant item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
     {
       question: "How do I request time off?",
@@ -29,7 +29,7 @@ export const faqs = {
     },
     {
         question: "How do I complete an assigned task?",
-        answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete', add any required notes, and upload a photo if requested. Once you submit, the task will be marked as complete.",
+        answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete'. If photo verification is required, you can use your device's camera or upload a file. The photo will be stamped with the date, time, and GPS coordinates. Add any notes and submit. The task will then be marked as complete.",
     },
     {
         question: "How do I view notifications from my manager?",
@@ -55,11 +55,11 @@ export const faqs = {
     },
     {
       question: "How does the AI Anomaly Detection work?",
-      answer: "After you complete a Pre-Trip inspection, you'll be taken to the report page where you can click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
+      answer: "After an employee completes a Pre-Trip inspection, you (as an admin) can view the report and click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
     },
      {
       question: "How do I upload or manage documents as an administrator?",
-      answer: "Navigate to 'Manage Documents' from your dashboard. When adding a new document, you must select its type: General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section.",
+      answer: "Navigate to 'General Documents' from your dashboard. When adding a new document, you must select its type: General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
     },
     {
       question: "How do I manage employee tasks?",
@@ -89,7 +89,7 @@ export const faqs = {
     },
     {
       question: "How do I create and track jobs?",
-      answer: "As an 'Owner', go to the 'Manage Jobs' page. You can create a new job, give it a name, assign it to a client, set its address, and define the date range. You can also edit existing jobs, assign specific fleet assets, and track job value. You can use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
+      answer: "As an 'Owner', go to the 'Manage Jobs' page. You can create a new job manually, or use the 'Create with AI' button to generate one from a simple description. You can also edit existing jobs, assign specific fleet assets, and track job value. Use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
     },
     {
       question: "How do I approve or deny employee expenses?",

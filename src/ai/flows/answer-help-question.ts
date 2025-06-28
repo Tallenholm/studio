@@ -1,3 +1,4 @@
+
 'use server';
 /**
  * @fileOverview A Genkit flow for answering user questions about the application.
@@ -6,8 +7,7 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
 import { faqs } from '@/lib/faq-data';
-
-type Role = 'owner' | 'manager' | 'employee' | 'guest';
+import type { UserRole } from '@/lib/types';
 
 const AnswerHelpQuestionInputSchema = z.object({
   question: z.string().describe("The user's question about the application."),
@@ -22,7 +22,7 @@ export async function answerHelpQuestion(input: AnswerHelpQuestionInput): Promis
   return answerHelpQuestionFlow(input);
 }
 
-const buildContextForRole = (role: Role): string => {
+const buildContextForRole = (role: UserRole): string => {
   let combinedFaqs = [...faqs.common];
 
   if (role === 'employee' || role === 'manager' || role === 'owner') {

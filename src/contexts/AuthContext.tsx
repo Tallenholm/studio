@@ -1,9 +1,10 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect } from 'react';
+import React, { createContext, useContext, useEffect, useState } from 'react';
 import { createStore, useStore } from 'zustand';
 import type { UserRole, User } from '@/lib/types';
+import { loadUsers, saveUsers } from '@/lib/localStorageService';
 
 interface AuthState {
   user: User | null;
@@ -34,6 +35,9 @@ const authStore = createStore<AuthState>((set) => ({
 // "loaded" state without logging anyone in automatically.
 function AuthInitializer() {
     useEffect(() => {
+        // This ensures the default users are correctly seeded on app load.
+        loadUsers(); 
+        
         // Set loading to false after the component mounts.
         // This ensures we always start fresh without a logged-in user.
         authStore.setState({ isLoading: false, user: null });
@@ -54,5 +58,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
 
 // The hook to access auth state and actions from any client component.
 export function useAuth() {
-  return useStore(authStore);
+  const state = useStore(authStore);
+  
+  // Expose role for convenience
+  return { ...state, role: state.user?.role };
 }

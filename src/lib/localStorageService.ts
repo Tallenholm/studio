@@ -501,7 +501,7 @@ const defaultJobs: Job[] = [
         {
           timestamp: new Date().toISOString(),
           content: 'Initial site survey completed. Ready to break ground.',
-          author: 'Manager'
+          author: 'Operations Manager'
         }
       ]
     },
