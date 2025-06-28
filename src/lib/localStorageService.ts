@@ -1,4 +1,3 @@
-
 import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem, SnowRoute } from './types';
 import { addDays, subDays } from 'date-fns';
 
@@ -509,6 +508,7 @@ const getDynamicJobs = (): Job[] => {
       startDate: subDays(now, 10).toISOString().split('T')[0], 
       endDate: addDays(now, 20).toISOString().split('T')[0],
       snowServices: { plowing: true, salting: true, sidewalks: true },
+      snowLog: { plowing: [], salting: [], sidewalks: [] },
       notes: [],
     },
     { 

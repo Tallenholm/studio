@@ -233,10 +233,11 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
         toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
     } else {
         const newJob: Job = {
-        id: `job-${Date.now()}`,
-        ...jobData,
-        notes: [],
-      };
+            id: `job-${Date.now()}`,
+            ...jobData,
+            notes: [],
+            snowLog: values.jobType === 'snow_removal' ? { plowing: [], salting: [], sidewalks: [] } : undefined,
+        };
       setJobs((prev) => [...prev, newJob]);
       toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
     }

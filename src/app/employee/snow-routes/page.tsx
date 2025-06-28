@@ -1,15 +1,29 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useMemo, useRef } from 'react';
+import * as z from 'zod';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import Image from 'next/image';
 import { loadJobs, saveJobs, loadSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
-import type { Job, User, FleetAsset, SnowRoute } from '@/lib/types';
+import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon, Printer } from 'lucide-react';
+import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon, Printer, History, PlusCircle, Camera, FileUp, Eye } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+import { Input } from '@/components/ui/input';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+
+const logSchema = z.object({
+  photoDataUri: z.string().optional(),
+});
+
+type ServiceType = 'plowing' | 'salting' | 'sidewalks';
 
 export default function SnowRoutesPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
@@ -19,6 +33,21 @@ export default function SnowRoutesPage() {
   const [isMounted, setIsMounted] = useState(false);
   const { user } = useAuth();
   const { toast } = useToast();
+
+  // State for modals/dialogs
+  const [logServiceInfo, setLogServiceInfo] = useState<{ job: Job; service: ServiceType } | null>(null);
+  const [historyInfo, setHistoryInfo] = useState<{ job: Job; service: ServiceType } | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
+
+  const form = useForm<z.infer<typeof logSchema>>({
+    resolver: zodResolver(logSchema),
+    defaultValues: { photoDataUri: '' },
+  });
 
   useEffect(() => {
     if (user) {
@@ -30,6 +59,15 @@ export default function SnowRoutesPage() {
     }
   }, [user]);
 
+  // Camera stream cleanup
+  useEffect(() => {
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [stream]);
+
   const assignedRoutes = useMemo(() => {
     if (!user) return [];
     return routes
@@ -37,72 +75,83 @@ export default function SnowRoutesPage() {
       .sort((a, b) => a.name.localeCompare(b.name));
   }, [routes, user]);
 
-  const handleServiceComplete = (jobId: string, service: 'plowing' | 'salting' | 'sidewalks') => {
-    if (!user) return;
-    
-    let updatedJobs = [...jobs];
-    const jobIndex = updatedJobs.findIndex(j => j.id === jobId);
-    
-    if (jobIndex > -1) {
-      const jobToUpdate = { ...updatedJobs[jobIndex] };
-      const now = new Date().toISOString();
-      const statusKey = service === 'plowing' ? 'lastPlowed' : service === 'salting' ? 'lastSalted' : 'lastSidewalks';
-      
-      jobToUpdate.snowStatus = {
-        ...jobToUpdate.snowStatus,
-        [statusKey]: now,
+  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () => {
+        form.setValue('photoDataUri', reader.result as string);
+        form.clearErrors('photoDataUri');
       };
-
-      updatedJobs[jobIndex] = jobToUpdate;
-      setJobs(updatedJobs);
-      saveJobs(updatedJobs);
-
-      toast({
-        title: 'Service Logged',
-        description: `${service.charAt(0).toUpperCase() + service.slice(1)} at ${jobToUpdate.clientName} marked as complete.`,
-      });
+      reader.readAsDataURL(file);
     }
   };
 
-  const ServiceButton = ({ job, service, label }: { job: Job; service: 'plowing' | 'salting' | 'sidewalks'; label: string }) => {
-    const statusKey = service === 'plowing' ? 'lastPlowed' : service === 'salting' ? 'lastSalted' : 'lastSidewalks';
-    const lastCompleted = job.snowStatus?.[statusKey];
-    
-    return (
-        <div className="flex flex-col items-center gap-2">
-             <Button 
-                onClick={() => handleServiceComplete(job.id, service)}
-                variant={lastCompleted ? "secondary" : "default"}
-                className="w-full print-hidden"
-            >
-                <CheckCircle2 className="mr-2 h-4 w-4" />
-                {label}
-            </Button>
-            {lastCompleted && (
-                 <p className="text-xs text-muted-foreground print-hidden">
-                    Done {formatDistanceToNow(parseISO(lastCompleted), { addSuffix: true })}
-                </p>
-            )}
-        </div>
-    );
-  };
-  
-  const ServiceStatus = ({ job, service, label }: { job: Job; service: 'plowing' | 'salting' | 'sidewalks'; label: string }) => {
-    const statusKey = service === 'plowing' ? 'lastPlowed' : service === 'salting' ? 'lastSalted' : 'lastSidewalks';
-    const lastCompleted = job.snowStatus?.[statusKey];
-    
-    return (
-      <li className="flex justify-between items-center text-sm">
-        <span>{label}:</span>
-        {lastCompleted ? (
-          <span className="font-medium">Completed {formatDistanceToNow(parseISO(lastCompleted), { addSuffix: true })}</span>
-        ) : (
-          <span className="font-semibold text-destructive">PENDING</span>
-        )}
-      </li>
-    );
+  const handleOpenCamera = async () => {
+    if (stream) stream.getTracks().forEach(track => track.stop());
+    try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: true });
+        setStream(newStream);
+        setIsCameraOpen(true);
+    } catch (err) {
+        toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not access camera. Please check permissions.' });
+    }
   };
 
+  useEffect(() => {
+    if(isCameraOpen && stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+    }
+  }, [isCameraOpen, stream])
+
+  const handleCapturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
+    form.setValue('photoDataUri', canvas.toDataURL('image/jpeg'));
+    form.clearErrors('photoDataUri');
+    if (stream) stream.getTracks().forEach(track => track.stop());
+    setStream(null);
+    setIsCameraOpen(false);
+  };
+
+
+  const onLogSubmit = (values: z.infer<typeof logSchema>) => {
+    if (!user || !logServiceInfo) return;
+
+    const newLog: SnowServiceLog = {
+      timestamp: new Date().toISOString(),
+      employeeId: user.id,
+      employeeName: user.name,
+      photoDataUri: values.photoDataUri,
+    };
+    
+    const updatedJobs = jobs.map(j => {
+      if (j.id === logServiceInfo.job.id) {
+        const updatedJob = { ...j };
+        if (!updatedJob.snowLog) {
+            updatedJob.snowLog = { plowing: [], salting: [], sidewalks: [] };
+        }
+        updatedJob.snowLog[logServiceInfo.service].push(newLog);
+        return updatedJob;
+      }
+      return j;
+    });
+
+    setJobs(updatedJobs);
+    saveJobs(updatedJobs);
+    toast({ title: 'Service Logged', description: `${logServiceInfo.service} at ${logServiceInfo.job.clientName} has been recorded.` });
+    setLogServiceInfo(null);
+    form.reset();
+  };
+
+  const getMostRecentLog = (job: Job, service: ServiceType): SnowServiceLog | undefined => {
+    const logs = job.snowLog?.[service] || [];
+    if (logs.length === 0) return undefined;
+    return logs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+  }
 
   if (!isMounted || !user) {
     return (
@@ -114,6 +163,9 @@ export default function SnowRoutesPage() {
   }
 
   return (
+    <>
+    <canvas ref={canvasRef} className="hidden" />
+
     <div className="container mx-auto py-8">
       <div className="hidden print-block text-center mb-8">
         <h1 className="text-2xl font-bold">Logan's Excavating - Snow Route Report</h1>
@@ -163,6 +215,12 @@ export default function SnowRoutesPage() {
                         const job = jobs.find(j => j.id === jobId);
                         if (!job) return null;
                         
+                        const services: {key: ServiceType, label: string}[] = [
+                            ...(job.snowServices?.plowing && route.type === 'plowing' ? [{key: 'plowing' as ServiceType, label: 'Plowing'}] : []),
+                            ...(job.snowServices?.salting && route.type === 'salting' ? [{key: 'salting' as ServiceType, label: 'Salting'}] : []),
+                            ...(job.snowServices?.sidewalks && route.type === 'sidewalks' ? [{key: 'sidewalks' as ServiceType, label: 'Sidewalks'}] : [])
+                        ];
+                        
                         return (
                              <Card key={job.id} className="bg-muted/30">
                                 <CardHeader>
@@ -184,23 +242,32 @@ export default function SnowRoutesPage() {
                                 </CardHeader>
                                 <CardContent className="space-y-4">
                                     <Separator />
-                                    <h4 className="font-semibold print-hidden">Services Required:</h4>
-                                    
-                                    {/* Interactive buttons for screen */}
-                                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 print-hidden">
-                                        {job.snowServices?.plowing && route.type === 'plowing' && <ServiceButton job={job} service="plowing" label="Plowed Lot" />}
-                                        {job.snowServices?.salting && route.type === 'salting' && <ServiceButton job={job} service="salting" label="Salted Lot" />}
-                                        {job.snowServices?.sidewalks && route.type === 'sidewalks' && <ServiceButton job={job} service="sidewalks" label="Did Sidewalks" />}
-                                    </div>
-
-                                    {/* Simple status list for print */}
-                                    <div className="hidden print-block space-y-1">
-                                        <h5 className="font-semibold mb-2">Service Status:</h5>
-                                        <ul className="space-y-1">
-                                            {job.snowServices?.plowing && route.type === 'plowing' && <ServiceStatus job={job} service="plowing" label="Plowing" />}
-                                            {job.snowServices?.salting && route.type === 'salting' && <ServiceStatus job={job} service="salting" label="Salting" />}
-                                            {job.snowServices?.sidewalks && route.type === 'sidewalks' && <ServiceStatus job={job} service="sidewalks" label="Sidewalks" />}
-                                        </ul>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                    {services.map(({key, label}) => {
+                                        const lastLog = getMostRecentLog(job, key);
+                                        const logCount = job.snowLog?.[key]?.length || 0;
+                                        return (
+                                            <div key={key} className="p-3 border rounded-md bg-background/50 space-y-2 flex flex-col justify-between">
+                                                <h4 className="font-semibold">{label}</h4>
+                                                {lastLog ? (
+                                                    <div className="text-xs text-muted-foreground">
+                                                        <p>Last done {formatDistanceToNow(parseISO(lastLog.timestamp), { addSuffix: true })}</p>
+                                                        <p>by {lastLog.employeeName}</p>
+                                                    </div>
+                                                ) : (
+                                                    <p className="text-sm text-destructive font-medium">Pending</p>
+                                                )}
+                                                <div className="flex items-center gap-2 pt-2 border-t print-hidden">
+                                                    <Button size="sm" className="flex-1" onClick={() => setLogServiceInfo({ job, service: key })}>
+                                                        <PlusCircle className="mr-2 h-4 w-4" /> Log
+                                                    </Button>
+                                                    <Button size="sm" variant="outline" disabled={logCount === 0} onClick={() => setHistoryInfo({job, service: key})}>
+                                                        <History className="mr-2 h-4 w-4" /> Hist. ({logCount})
+                                                    </Button>
+                                                </div>
+                                            </div>
+                                        )
+                                    })}
                                     </div>
                                 </CardContent>
                             </Card>
@@ -224,5 +291,79 @@ export default function SnowRoutesPage() {
         </Card>
       )}
     </div>
+
+    {/* Log Service Dialog */}
+    <Dialog open={!!logServiceInfo} onOpenChange={() => { setLogServiceInfo(null); form.reset(); }}>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Log {logServiceInfo?.service} Service</DialogTitle>
+          <DialogDescription>
+            Confirming service for {logServiceInfo?.job.clientName}. Add an optional photo for verification.
+          </DialogDescription>
+        </DialogHeader>
+        <Form {...form}>
+          <form onSubmit={form.handleSubmit(onLogSubmit)} className="space-y-4 py-4">
+             <FormField
+                control={form.control}
+                name="photoDataUri"
+                render={({ field }) => (
+                    <FormItem>
+                        <FormLabel>Verification Photo (Optional)</FormLabel>
+                        <div className="flex items-center gap-2">
+                            <Button type="button" variant="outline" onClick={handleOpenCamera}><Camera className="mr-2 h-4 w-4"/>Use Camera</Button>
+                            <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}><FileUp className="mr-2 h-4 w-4"/>Upload</Button>
+                            <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                        </div>
+                        {field.value && <Image src={field.value} alt="Preview" width={80} height={80} className="rounded-md border mt-2" />}
+                    </FormItem>
+                )}
+            />
+            <DialogFooter>
+                <Button type="submit">Log Service</Button>
+            </DialogFooter>
+          </form>
+        </Form>
+      </DialogContent>
+    </Dialog>
+    
+    {/* Camera Dialog */}
+    <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+        <DialogContent className="max-w-3xl">
+            <DialogHeader><DialogTitle>Take Verification Photo</DialogTitle></DialogHeader>
+            <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline />
+            <DialogFooter>
+                <Button type="button" onClick={handleCapturePhoto} className="w-full"><Camera className="mr-2 h-4 w-4"/>Capture</Button>
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+
+    {/* History Dialog */}
+    <Dialog open={!!historyInfo} onOpenChange={() => setHistoryInfo(null)}>
+        <DialogContent className="max-w-2xl">
+             <DialogHeader>
+                <DialogTitle>{historyInfo?.service.charAt(0).toUpperCase() + historyInfo!.service.slice(1)} History</DialogTitle>
+                <DialogDescription>Service log for {historyInfo?.job.clientName}.</DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-4">
+                {(historyInfo?.job.snowLog?.[historyInfo.service] || []).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(log => (
+                    <div key={log.timestamp} className="p-3 border rounded-md flex gap-4">
+                        {log.photoDataUri && (
+                             <a href={log.photoDataUri} target="_blank" rel="noopener noreferrer" className="relative shrink-0">
+                                <Image src={log.photoDataUri} alt="Verification photo" width={80} height={80} className="rounded-md object-cover"/>
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 hover:opacity-100 transition-opacity">
+                                    <Eye className="h-6 w-6 text-white"/>
+                                </div>
+                            </a>
+                        )}
+                        <div className="text-sm">
+                            <p><strong>Completed:</strong> {format(parseISO(log.timestamp), 'PPpp')}</p>
+                            <p><strong>By:</strong> {log.employeeName}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }

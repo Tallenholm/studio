@@ -4,19 +4,21 @@
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
 import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadMaintenanceLogs, loadExpenseReports, loadUsers } from '@/lib/localStorageService';
-import type { Job, Client, FleetAsset, User, MaintenanceLog, ExpenseReport } from '@/lib/types';
+import type { Job, Client, FleetAsset, User, MaintenanceLog, ExpenseReport, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown } from 'lucide-react';
-import { format, isWithinInterval, parseISO } from 'date-fns';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown, Eye, Camera, History } from 'lucide-react';
+import { format, isWithinInterval, parseISO, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
 import { cn } from '@/lib/utils';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
+import Image from 'next/image';
+import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 
 export default function JobDetailsPage() {
   const params = useParams();
@@ -172,7 +174,6 @@ export default function JobDetailsPage() {
   const assignedTrucks = assets.filter(a => job?.assignedTruckIds?.includes(a.id));
   const assignedTrailers = assets.filter(a => job?.assignedTrailerIds?.includes(a.id));
   const assignedHeavyEquipment = assets.filter(a => job?.assignedHeavyEquipmentIds?.includes(a.id));
-  const assignedSidewalkCrew = allUsers.filter(u => job?.assignedSidewalkCrewIds?.includes(u.id));
 
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || value === null) return 'N/A';
@@ -201,6 +202,31 @@ export default function JobDetailsPage() {
         .map(([service]) => service.charAt(0).toUpperCase() + service.slice(1));
     return enabledServices.length > 0 ? enabledServices.join(', ') : 'None';
   }
+
+  const renderSnowLog = (logs: SnowServiceLog[], title: string) => (
+    <div className="space-y-2">
+      <h4 className="font-semibold text-md">{title} ({logs.length})</h4>
+      {logs.length > 0 ? (
+        <div className="max-h-60 overflow-y-auto space-y-2 pr-2">
+          {logs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map((log, index) => (
+            <div key={index} className="flex gap-3 p-2 border rounded-md bg-background">
+              {log.photoDataUri && (
+                <a href={log.photoDataUri} target="_blank" rel="noopener noreferrer">
+                  <Image src={log.photoDataUri} alt="Verification" width={48} height={48} className="rounded-md object-cover"/>
+                </a>
+              )}
+              <div className="text-xs">
+                <p><strong>By:</strong> {log.employeeName}</p>
+                <p><strong>At:</strong> {format(parseISO(log.timestamp), 'PPpp')}</p>
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className="text-sm text-muted-foreground">No {title.toLowerCase()} logs yet.</p>
+      )}
+    </div>
+  );
   
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -307,26 +333,31 @@ export default function JobDetailsPage() {
                 </CardContent>
             </Card>
 
-             <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl">{job.jobType === 'snow_removal' ? 'Routing & Assignments' : 'Assigned Personnel & Fleet'}</CardTitle>
-                </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {job.jobType === 'snow_removal' ? (
-                        <>
-                           {renderAssetList([...assignedTrucks, ...assignedHeavyEquipment], 'Plow & Salt Fleet', Truck)}
-                           {renderAssetList(assignedSidewalkCrew, 'Sidewalk Crew', UsersIcon)}
-                        </>
-                    ) : (
-                        <>
-                           {renderAssetList(assignedEmployees, 'Personnel', UsersIcon)}
-                           {renderAssetList(assignedTrucks, 'Trucks', Truck)}
-                           {renderAssetList(assignedTrailers, 'Trailers', Box)}
-                           {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
-                        </>
-                    )}
-                </CardContent>
-            </Card>
+            {job.jobType === 'snow_removal' ? (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-xl flex items-center gap-2"><History className="h-5 w-5" />Snow Service Log</CardTitle>
+                        <CardDescription>A complete history of all services performed for this contract.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                        {renderSnowLog(job.snowLog?.plowing || [], "Plowing")}
+                        {renderSnowLog(job.snowLog?.salting || [], "Salting")}
+                        {renderSnowLog(job.snowLog?.sidewalks || [], "Sidewalks")}
+                    </CardContent>
+                </Card>
+            ) : (
+                <Card>
+                    <CardHeader>
+                        <CardTitle className="text-xl">Assigned Personnel & Fleet</CardTitle>
+                    </CardHeader>
+                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {renderAssetList(assignedEmployees, 'Personnel', UsersIcon)}
+                        {renderAssetList(assignedTrucks, 'Trucks', Truck)}
+                        {renderAssetList(assignedTrailers, 'Trailers', Box)}
+                        {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
+                    </CardContent>
+                </Card>
+            )}
         </div>
 
         <div className="lg:col-span-1">

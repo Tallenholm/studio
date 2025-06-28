@@ -1,4 +1,3 @@
-
 import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
@@ -188,6 +187,13 @@ export type JobStatus = 'upcoming' | 'active' | 'completed';
 
 export type JobType = 'excavation' | 'snow_removal' | 'concrete' | 'misc';
 
+export interface SnowServiceLog {
+  timestamp: string; // ISO string
+  employeeId: string;
+  employeeName: string;
+  photoDataUri?: string;
+}
+
 export interface Job {
   id:string;
   name: string;
@@ -203,16 +209,16 @@ export interface Job {
   assignedTruckIds?: string[];
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
-  // Snow Service Details (assignments are handled by routes)
+  // Snow Service Details
   snowServices?: {
     plowing?: boolean;
     salting?: boolean;
     sidewalks?: boolean;
   };
-  snowStatus?: {
-    lastPlowed?: string; // ISO timestamp
-    lastSalted?: string; // ISO timestamp
-    lastSidewalks?: string; // ISO timestamp
+  snowLog?: {
+    plowing: SnowServiceLog[];
+    salting: SnowServiceLog[];
+    sidewalks: SnowServiceLog[];
   };
   // Concrete Job Details
   concreteYards?: number;
