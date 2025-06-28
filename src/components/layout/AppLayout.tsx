@@ -411,7 +411,7 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     
     if (role === 'employee') {
         // Employees can only see their designated paths.
-        return EMPLOYEE_PATHS.some(p => pathname.startsWith(p));
+        return EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/personal-documents');
     }
 
     if (role === 'manager') {
