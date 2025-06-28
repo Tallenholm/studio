@@ -1,217 +1,67 @@
-
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell, CartesianGrid } from 'recharts';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadExpenseReports, loadFleetAssets } from '@/lib/localStorageService';
-import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, ExpenseCategory, FleetAsset, VehicleType } from '@/lib/types';
+import { getAdvancedReportData } from '@/app/actions/getAdvancedReportData';
+import type { VehicleType } from '@/lib/types';
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { LineChart as LineChartIcon, Filter, AlertTriangle, Loader2 } from 'lucide-react';
-import { subDays, isWithinInterval, parseISO } from 'date-fns';
 
-// Define types for chart data
-interface OutcomeData {
-  name: string;
-  value: number;
-  fill: string;
-}
+// Define types for chart data to match server action return type
+interface OutcomeData { name: string; value: number; fill: string; }
+interface ServiceTypeData { name: string; value: number; fill: string; }
+interface FailureData { name: string; total: number; }
+interface CostData { name: string; totalCost: number; }
+interface TaskStatusData { name: string; value: number; fill: string; }
+interface ViolationData { name: string; value: number; fill: string; }
+interface ExpenseData { name: string; totalAmount: number; }
 
-interface ServiceTypeData {
-    name: string;
-    value: number;
-    fill: string;
-}
-
-interface FailureData {
-  name: string;
-  total: number;
-}
-
-interface CostData {
-  name: string;
-  totalCost: number;
-}
-
-interface TaskStatusData {
-    name: string;
-    value: number;
-    fill: string;
-}
-
-interface ViolationData {
-    name: string;
-    value: number;
-    fill: string;
-}
-
-interface ExpenseData {
-    name: string;
-    totalAmount: number;
+interface AdvancedReportState {
+  inspectionOutcomes: OutcomeData[];
+  maintenanceServicesByType: ServiceTypeData[];
+  frequentFailures: FailureData[];
+  maintenanceCosts: CostData[];
+  taskStatusData: TaskStatusData[];
+  violationsByTypeData: ViolationData[];
+  expensesByCategoryData: ExpenseData[];
+  hasData: boolean;
 }
 
 export default function AdvancedReportsPage() {
-  const [isMounted, setIsMounted] = useState(false);
-  const [reports, setReports] = useState<InspectionReport[]>([]);
-  const [logs, setLogs] = useState<MaintenanceLog[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [violations, setViolations] = useState<Violation[]>([]);
-  const [expenses, setExpenses] = useState<ExpenseReport[]>([]);
-  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+  const [reportData, setReportData] = useState<AdvancedReportState | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
-  const [dateRangeFilter, setDateRangeFilter] = useState('all_time');
+  const [dateRangeFilter, setDateRangeFilter] = useState<'all_time' | 'last_30_days' | 'last_quarter'>('all_time');
   const [vehicleTypeFilter, setVehicleTypeFilter] = useState<VehicleType | 'all'>('all');
 
-  useEffect(() => {
-    setIsMounted(true);
-    setReports(loadInspectionReports());
-    setLogs(loadMaintenanceLogs());
-    setTasks(loadTasks());
-    setViolations(loadViolations());
-    setExpenses(loadExpenseReports());
-    setFleetAssets(loadFleetAssets());
-  }, []);
-
-  const dateFilterRange = useMemo(() => {
-    const now = new Date();
-    if (dateRangeFilter === 'last_30_days') return { start: subDays(now, 30), end: now };
-    if (dateRangeFilter === 'last_quarter') return { start: subDays(now, 90), end: now };
-    return null; // all_time
-  }, [dateRangeFilter]);
-
-  const filteredData = useMemo(() => {
-    const filterByDate = (items: { date: string }[]) => {
-      if (!dateFilterRange) return items;
-      return items.filter(item => isWithinInterval(parseISO(item.date), dateFilterRange));
-    };
-
-    const filterByVehicleType = <T extends { assetId?: string, truckVin?: string, trailerVin?: string, heavyEquipmentVin?: string }>(items: T[]) => {
-      if (vehicleTypeFilter === 'all') return items;
-      const assetVinsOfType = fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.vin);
-      return items.filter(item => {
-        const itemAssetId = item.assetId;
-        const itemVin = item.truckVin || item.trailerVin || item.heavyEquipmentVin;
-        if(itemAssetId) { // For maintenance logs
-          const asset = fleetAssets.find(a => a.id === itemAssetId);
-          return asset?.type === vehicleTypeFilter;
-        }
-        if(itemVin) { // for inspection reports
-          return assetVinsOfType.includes(itemVin);
-        }
-        return false;
-      });
-    };
-
-    const filteredReports = filterByVehicleType(filterByDate(reports) as InspectionReport[]);
-    const filteredLogs = filterByVehicleType(filterByDate(logs) as MaintenanceLog[]);
-    
-    // Tasks, violations, and expenses are not typically asset-specific in this app's model, so only filter by date
-    const filteredTasks = filterByDate(tasks) as Task[];
-    const filteredViolations = filterByDate(violations) as Violation[];
-    const filteredExpenses = filterByDate(expenses) as ExpenseReport[];
-
-    return { filteredReports, filteredLogs, filteredTasks, filteredViolations, filteredExpenses };
-  }, [reports, logs, tasks, violations, expenses, fleetAssets, dateRangeFilter, vehicleTypeFilter, dateFilterRange]);
-
-
-  const inspectionOutcomes: OutcomeData[] = [
-    { name: 'Pass', value: filteredData.filteredReports.filter(r => r.overallStatus === 'pass').length, fill: 'hsl(var(--chart-1))' },
-    { name: 'Fail', value: filteredData.filteredReports.filter(r => r.overallStatus === 'fail').length, fill: 'hsl(var(--chart-2))' },
-  ];
-
-  const maintenanceServicesByType: ServiceTypeData[] = (() => {
-    const serviceCounts: Record<string, number> = { routine: 0, repair: 0, inspection: 0, other: 0 };
-    filteredData.filteredLogs.forEach(log => {
-        serviceCounts[log.serviceType] = (serviceCounts[log.serviceType] || 0) + 1;
-    });
-    return [
-        { name: 'Routine', value: serviceCounts.routine, fill: 'hsl(var(--chart-1))' },
-        { name: 'Repair', value: serviceCounts.repair, fill: 'hsl(var(--chart-2))' },
-        { name: 'Inspection', value: serviceCounts.inspection, fill: 'hsl(var(--chart-3))' },
-        { name: 'Other', value: serviceCounts.other, fill: 'hsl(var(--chart-5))' },
-    ];
-  })();
-
-  const frequentFailures: FailureData[] = (() => {
-    const failureCounts: { [key: string]: number } = {};
-    filteredData.filteredReports.forEach(report => {
-      report.sections.forEach(section => {
-        section.items.forEach(item => {
-          if (item.status === 'fail') {
-            failureCounts[item.name] = (failureCounts[item.name] || 0) + 1;
-          }
-        });
-      });
-    });
-    return Object.entries(failureCounts)
-      .sort((a, b) => b[1] - a[1])
-      .slice(0, 5)
-      .map(([name, total]) => ({ name, total }));
-  })();
-
-  const maintenanceCosts: CostData[] = (() => {
-    const costMap: { [key: string]: number } = {};
-    filteredData.filteredLogs.forEach(log => {
-      if (log.cost) {
-        costMap[log.assetName] = (costMap[log.assetName] || 0) + log.cost;
-      }
-    });
-    return Object.entries(costMap).map(([name, totalCost]) => ({
-      name,
-      totalCost,
-    })).sort((a, b) => b.totalCost - a.totalCost);
-  })();
-
-  const taskStatusData: TaskStatusData[] = [
-    { name: 'Pending', value: filteredData.filteredTasks.filter(t => t.status === 'pending').length, fill: 'hsl(var(--chart-4))' },
-    { name: 'Completed', value: filteredData.filteredTasks.filter(t => t.status === 'completed').length, fill: 'hsl(var(--chart-1))' },
-  ];
-
-  const expensesByCategoryData: ExpenseData[] = (() => {
-    const expenseMap: { [key in ExpenseCategory]?: number } = {};
-    filteredData.filteredExpenses.forEach(expense => {
-      expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
-    });
-    return Object.entries(expenseMap)
-      .map(([name, totalAmount]) => ({
-        name: name.charAt(0).toUpperCase() + name.slice(1),
-        totalAmount: totalAmount || 0,
-      }))
-      .sort((a, b) => b.totalAmount - a.totalAmount);
-  })();
-
-  const violationsByTypeData: ViolationData[] = (() => {
-      const counts: Record<string, number> = {};
-      filteredData.filteredViolations.forEach(v => {
-          counts[v.type] = (counts[v.type] || 0) + 1;
-      });
-      return [
-        { name: 'Safety', value: counts.safety || 0, fill: 'hsl(var(--chart-2))'},
-        { name: 'Conduct', value: counts.conduct || 0, fill: 'hsl(var(--chart-3))'},
-        { name: 'Performance', value: counts.performance || 0, fill: 'hsl(var(--chart-4))'},
-        { name: 'Other', value: counts.other || 0, fill: 'hsl(var(--chart-5))'},
-      ];
-  })();
-
-  const CHART_CONFIG = {
-    total: {
-      label: 'Failures',
-      color: 'hsl(var(--chart-1))',
-    },
-    totalCost: {
-      label: 'Cost',
-      color: 'hsl(var(--chart-2))',
-    },
-    totalAmount: {
-      label: 'Amount',
-      color: 'hsl(var(--chart-3))',
-    },
-  };
+  const fetchReportData = useCallback(async () => {
+    setIsLoading(true);
+    try {
+        const data = await getAdvancedReportData(dateRangeFilter, vehicleTypeFilter);
+        setReportData(data);
+    } catch (error) {
+        console.error("Failed to fetch advanced report data:", error);
+        // Handle error state if needed
+    } finally {
+        setIsLoading(false);
+    }
+  }, [dateRangeFilter, vehicleTypeFilter]);
   
-  if (!isMounted) {
+  useEffect(() => {
+    fetchReportData();
+  }, [fetchReportData]);
+  
+  const CHART_CONFIG = {
+    total: { label: 'Failures', color: 'hsl(var(--chart-1))' },
+    totalCost: { label: 'Cost', color: 'hsl(var(--chart-2))' },
+    totalAmount: { label: 'Amount', color: 'hsl(var(--chart-3))' },
+  };
+
+  if (!reportData) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -219,8 +69,6 @@ export default function AdvancedReportsPage() {
       </div>
     );
   }
-  
-  const noData = reports.length === 0 && logs.length === 0 && tasks.length === 0 && violations.length === 0 && expenses.length === 0;
 
   return (
     <div className="container mx-auto py-8">
@@ -242,7 +90,7 @@ export default function AdvancedReportsPage() {
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date-range">Date Range</Label>
-                 <Select value={dateRangeFilter} onValueChange={setDateRangeFilter}>
+                 <Select value={dateRangeFilter} onValueChange={(val) => setDateRangeFilter(val as 'all_time' | 'last_30_days' | 'last_quarter')}>
                   <SelectTrigger id="date-range">
                     <SelectValue placeholder="All Time" />
                   </SelectTrigger>
@@ -270,7 +118,12 @@ export default function AdvancedReportsPage() {
             </CardContent>
           </Card>
           
-          {noData ? (
+          {isLoading ? (
+             <div className="flex flex-col justify-center items-center min-h-[30rem]">
+                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+                <p className="text-lg text-muted-foreground">Generating Reports...</p>
+            </div>
+          ) : !reportData.hasData ? (
              <div className="text-center py-10 border-2 border-dashed rounded-lg">
                 <div className="flex justify-center items-center gap-4 mb-4 text-muted-foreground">
                     <AlertTriangle className="h-10 w-10" />
@@ -285,18 +138,14 @@ export default function AdvancedReportsPage() {
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card>
-                <CardHeader>
-                  <CardTitle>Inspection Outcomes</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Inspection Outcomes</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={inspectionOutcomes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {inspectionOutcomes.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
+                            <Pie data={reportData.inspectionOutcomes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {reportData.inspectionOutcomes.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                             </Pie>
                             <Legend />
                         </PieChart>
@@ -306,18 +155,14 @@ export default function AdvancedReportsPage() {
               </Card>
 
                <Card>
-                <CardHeader>
-                  <CardTitle>Maintenance by Type</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Maintenance by Type</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={maintenanceServicesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {maintenanceServicesByType.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
+                            <Pie data={reportData.maintenanceServicesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {reportData.maintenanceServicesByType.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                             </Pie>
                             <Legend />
                         </PieChart>
@@ -327,13 +172,11 @@ export default function AdvancedReportsPage() {
               </Card>
 
               <Card>
-                <CardHeader>
-                  <CardTitle>Most Frequent Failures</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Most Frequent Failures</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={CHART_CONFIG} className="h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={frequentFailures} layout="vertical" margin={{ left: 20 }}>
+                      <BarChart data={reportData.frequentFailures} layout="vertical" margin={{ left: 20 }}>
                         <XAxis type="number" hide />
                         <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={10} width={120} />
                         <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
@@ -345,18 +188,14 @@ export default function AdvancedReportsPage() {
               </Card>
 
                <Card>
-                <CardHeader>
-                  <CardTitle>Task Status</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Task Status</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={taskStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {taskStatusData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
+                            <Pie data={reportData.taskStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {reportData.taskStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                             </Pie>
                             <Legend />
                         </PieChart>
@@ -366,18 +205,14 @@ export default function AdvancedReportsPage() {
               </Card>
 
                <Card>
-                <CardHeader>
-                  <CardTitle>Violations by Type</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Violations by Type</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={violationsByTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {violationsByTypeData.map((entry, index) => (
-                                <Cell key={`cell-${index}`} fill={entry.fill} />
-                                ))}
+                            <Pie data={reportData.violationsByTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {reportData.violationsByTypeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
                             </Pie>
                             <Legend />
                         </PieChart>
@@ -387,13 +222,11 @@ export default function AdvancedReportsPage() {
               </Card>
               
               <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Maintenance Costs by Asset</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Maintenance Costs by Asset</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={CHART_CONFIG} className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={maintenanceCosts}>
+                      <BarChart data={reportData.maintenanceCosts}>
                         <CartesianGrid vertical={false} />
                         <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
                         <YAxis tickFormatter={(value) => `$${value}`} />
@@ -406,13 +239,11 @@ export default function AdvancedReportsPage() {
               </Card>
 
               <Card className="lg:col-span-2">
-                <CardHeader>
-                  <CardTitle>Expenses by Category</CardTitle>
-                </CardHeader>
+                <CardHeader><CardTitle>Expenses by Category</CardTitle></CardHeader>
                 <CardContent>
                   <ChartContainer config={CHART_CONFIG} className="h-[300px] w-full">
                     <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={expensesByCategoryData}>
+                      <BarChart data={reportData.expensesByCategoryData}>
                         <CartesianGrid vertical={false} />
                         <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
                         <YAxis tickFormatter={(value) => `$${value}`} />
@@ -425,7 +256,6 @@ export default function AdvancedReportsPage() {
               </Card>
             </div>
           )}
-
         </CardContent>
       </Card>
     </div>
