@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useMemo, useEffect } from 'react';
@@ -5,29 +6,47 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { ArrowRightLeft } from 'lucide-react';
 
-type UnitCategory = 'length' | 'area' | 'volume' | 'weight';
+type UnitCategory = 'length' | 'area' | 'volume' | 'weight' | 'pressure' | 'temperature';
 
-const units = {
+const units: Record<UnitCategory, { value: string, label: string }[]> = {
   length: [
     { value: 'feet', label: 'Feet' },
     { value: 'inches', label: 'Inches' },
-    { value: 'meters', label: 'Meters' },
     { value: 'yards', label: 'Yards' },
+    { value: 'miles', label: 'Miles' },
+    { value: 'meters', label: 'Meters' },
+    { value: 'kilometers', label: 'Kilometers' },
   ],
   area: [
     { value: 'sq_feet', label: 'Square Feet' },
     { value: 'sq_yards', label: 'Square Yards' },
+    { value: 'sq_meters', label: 'Square Meters' },
     { value: 'acres', label: 'Acres' },
+    { value: 'hectares', label: 'Hectares' },
   ],
   volume: [
     { value: 'cubic_feet', label: 'Cubic Feet' },
     { value: 'cubic_yards', label: 'Cubic Yards' },
+    { value: 'gallons_us', label: 'Gallons (US)' },
+    { value: 'liters', label: 'Liters' },
+    { value: 'cubic_meters', label: 'Cubic Meters' },
   ],
   weight: [
     { value: 'pounds', label: 'Pounds' },
-    { value: 'tons', label: 'Tons (US)' },
+    { value: 'tons_us', label: 'Tons (US)' },
     { value: 'kilograms', label: 'Kilograms' },
+    { value: 'metric_tons', label: 'Metric Tons' },
+  ],
+  pressure: [
+    { value: 'psi', label: 'PSI' },
+    { value: 'kpa', label: 'Kilopascals (kPa)' },
+    { value: 'bar', label: 'Bar' },
+  ],
+  temperature: [
+    { value: 'fahrenheit', label: 'Fahrenheit' },
+    { value: 'celsius', label: 'Celsius' },
   ],
 };
 
@@ -35,21 +54,43 @@ const conversionFactors: Record<string, number> = {
   // Length (base: feet)
   feet: 1,
   inches: 1 / 12,
-  meters: 3.28084,
   yards: 3,
+  miles: 5280,
+  meters: 3.28084,
+  kilometers: 3280.84,
   // Area (base: sq_feet)
   sq_feet: 1,
   sq_yards: 9,
+  sq_meters: 10.7639,
   acres: 43560,
+  hectares: 107639,
   // Volume (base: cubic_feet)
   cubic_feet: 1,
   cubic_yards: 27,
+  gallons_us: 0.133681,
+  liters: 0.0353147,
+  cubic_meters: 35.3147,
   // Weight (base: pounds)
   pounds: 1,
-  tons: 2000,
+  tons_us: 2000,
   kilograms: 2.20462,
+  metric_tons: 2204.62,
+  // Pressure (base: psi)
+  psi: 1,
+  kpa: 0.145038,
+  bar: 14.5038,
 };
 
+function convertTemperature(value: number, from: string, to: string): number {
+  if (from === to) return value;
+  if (from === 'celsius' && to === 'fahrenheit') {
+    return (value * 9/5) + 32;
+  }
+  if (from === 'fahrenheit' && to === 'celsius') {
+    return (value - 32) * 5/9;
+  }
+  return value; // Should not happen
+}
 
 export default function UnitConverter() {
   const [category, setCategory] = useState<UnitCategory>('length');
@@ -62,28 +103,49 @@ export default function UnitConverter() {
 
   const handleCategoryChange = (newCategory: UnitCategory) => {
     setCategory(newCategory);
-    setFromUnit(units[newCategory][0].value);
-    setToUnit(units[newCategory][1].value);
+    const newUnits = units[newCategory];
+    setFromUnit(newUnits[0].value);
+    // Set 'to' unit to the second one if available, otherwise the first
+    setToUnit(newUnits.length > 1 ? newUnits[1].value : newUnits[0].value);
     setInputValue('');
     setResult(null);
   }
 
-  const convert = () => {
-    const value = parseFloat(inputValue);
-    if (isNaN(value)) {
-      setResult(null);
-      return;
-    }
+  const handleSwapUnits = () => {
+    if (result === null) return;
+    
+    // Swap the units
+    const newFrom = toUnit;
+    const newTo = fromUnit;
+    
+    setFromUnit(newFrom);
+    setToUnit(newTo);
+    
+    // The result becomes the new input value
+    const resultAsNumberString = parseFloat(result.replace(/,/g, '')).toString();
+    setInputValue(resultAsNumberString);
+};
 
-    const valueInBaseUnit = value * conversionFactors[fromUnit];
-    const convertedValue = valueInBaseUnit / conversionFactors[toUnit];
-
-    setResult(convertedValue.toLocaleString(undefined, { maximumFractionDigits: 4 }));
-  };
-  
   useEffect(() => {
+    const convert = () => {
+        const value = parseFloat(inputValue);
+        if (isNaN(value)) {
+        setResult(null);
+        return;
+        }
+
+        let convertedValue: number;
+
+        if (category === 'temperature') {
+        convertedValue = convertTemperature(value, fromUnit, toUnit);
+        } else {
+        const valueInBaseUnit = value * conversionFactors[fromUnit];
+        convertedValue = valueInBaseUnit / conversionFactors[toUnit];
+        }
+        
+        setResult(convertedValue.toLocaleString(undefined, { maximumFractionDigits: 4 }));
+    };
     convert();
-  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [inputValue, fromUnit, toUnit, category]);
 
   return (
@@ -99,16 +161,18 @@ export default function UnitConverter() {
             <SelectItem value="area">Area</SelectItem>
             <SelectItem value="volume">Volume</SelectItem>
             <SelectItem value="weight">Weight</SelectItem>
+            <SelectItem value="pressure">Pressure</SelectItem>
+            <SelectItem value="temperature">Temperature</SelectItem>
           </SelectContent>
         </Select>
       </div>
 
-      <div className="grid grid-cols-2 gap-4">
-        <div>
+      <div className="flex flex-col sm:flex-row items-center gap-2 sm:gap-4">
+        <div className="w-full space-y-2">
           <Label htmlFor="from-value">From</Label>
-          <Input id="from-value" type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="e.g., 10" />
+          <Input id="from-value" type="number" value={inputValue} onChange={(e) => setInputValue(e.target.value)} placeholder="Enter value" />
           <Select value={fromUnit} onValueChange={setFromUnit}>
-            <SelectTrigger className="mt-2">
+            <SelectTrigger>
               <SelectValue />
             </SelectTrigger>
             <SelectContent>
@@ -119,11 +183,23 @@ export default function UnitConverter() {
           </Select>
         </div>
 
-        <div>
+        <div className="flex-shrink-0 pt-7">
+            <Button
+            type="button"
+            variant="ghost"
+            size="icon"
+            onClick={handleSwapUnits}
+            aria-label="Swap units"
+            >
+            <ArrowRightLeft className="h-5 w-5 text-muted-foreground" />
+            </Button>
+        </div>
+
+        <div className="w-full space-y-2">
             <Label htmlFor="to-value">To</Label>
-            <Input id="to-value" disabled value={result ?? '...'} className="font-bold text-primary" />
+            <Input id="to-value" disabled value={result ?? '...'} className="font-bold text-primary bg-muted/30" />
             <Select value={toUnit} onValueChange={setToUnit}>
-                <SelectTrigger className="mt-2">
+                <SelectTrigger>
                     <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
