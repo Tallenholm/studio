@@ -6,7 +6,7 @@ import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, C
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useRouter } from 'next/navigation';
 import { loadJobs, loadClients, loadFleetAssets } from '@/lib/localStorageService';
-import type { Job, Client, FleetAsset } from '@/lib/types';
+import type { Job, Client, FleetAsset, JobType } from '@/lib/types';
 import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package, Hammer, Route } from 'lucide-react';
 
 export default function CommandPalette() {
@@ -20,9 +20,12 @@ export default function CommandPalette() {
 
   useEffect(() => {
     setIsMounted(true);
-    setJobs(loadJobs());
-    setClients(loadClients());
-    setAssets(loadFleetAssets());
+    // Load data when the palette is opened to ensure it's fresh
+    if (isOpen) {
+        setJobs(loadJobs());
+        setClients(loadClients());
+        setAssets(loadFleetAssets());
+    }
   }, [isOpen]);
 
   const runCommand = (command: () => unknown) => {
