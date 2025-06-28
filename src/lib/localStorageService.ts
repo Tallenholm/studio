@@ -515,6 +515,7 @@ const defaultJobs: Job[] = [
       startDate: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
       endDate: new Date(Date.now() + 20 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
       assignedTruckIds: ['truck-1', 'truck-2'],
+      notes: [],
     },
     { 
       id: 'job-3', 
@@ -524,7 +525,8 @@ const defaultJobs: Job[] = [
       address: '789 River Rd, Anytown, USA', 
       jobValue: 78000, 
       startDate: new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString().split('T')[0], 
-      endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0] 
+      endDate: new Date(Date.now() - 15 * 24 * 60 * 60 * 1000).toISOString().split('T')[0],
+      notes: [],
     },
 ];
 

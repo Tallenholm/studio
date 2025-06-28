@@ -146,7 +146,7 @@ export default function ManageWorkOrdersPage() {
                   <TableRow key={order.id}>
                     <TableCell className="font-medium">{order.assetName}</TableCell>
                     <TableCell>
-                       <Badge variant={getStatusBadgeVariant(order.status)} className={cn(order.status === 'completed' && 'bg-primary')}>
+                       <Badge variant={getStatusBadgeVariant(order.status)} className={cn(order.status === 'completed' && 'bg-green-600')}>
                         {getStatusLabel(order.status)}
                        </Badge>
                     </TableCell>

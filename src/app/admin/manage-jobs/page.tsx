@@ -201,6 +201,7 @@ export default function ManageJobsPage() {
         const newJob: Job = {
         id: `job-${Date.now()}`,
         ...jobData,
+        notes: [],
       };
       setJobs((prev) => [...prev, newJob]);
       toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
@@ -283,7 +284,7 @@ export default function ManageJobsPage() {
                 {jobList.map(job => (
                   <TableRow key={job.id}>
                     <TableCell>
-                      <Badge variant={getStatusBadgeVariant(job.status)} className={cn(job.status === 'active' && 'bg-primary')}>
+                      <Badge variant={getStatusBadgeVariant(job.status)} className={cn(job.status === 'active' && 'bg-green-600')}>
                         {job.status}
                       </Badge>
                     </TableCell>

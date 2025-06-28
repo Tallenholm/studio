@@ -154,7 +154,7 @@ export default function ManageTasksPage() {
                         <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPP')}</p>
                     </div>
                     <div className="flex items-center gap-2">
-                        <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-primary')}>{task.status}</Badge>
+                        <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
                         <Button variant="ghost" size="icon" onClick={() => removeTask(task.id)} aria-label={`Remove task`}>
                             <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
@@ -236,7 +236,7 @@ export default function ManageTasksPage() {
                                 </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
-                                {users.map(user => (
+                                {users.filter(u => u.role === 'employee').map(user => (
                                     <SelectItem key={user.id} value={user.id}>
                                         {user.name}
                                     </SelectItem>
