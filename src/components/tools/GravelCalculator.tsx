@@ -1,16 +1,32 @@
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+
+const aggregateTypes = [
+    { value: 'custom', label: 'Custom Density', density: '1.4' },
+    { value: 'pea_gravel', label: 'Pea Gravel / #8 Stone', density: '1.35' },
+    { value: 'driveway_gravel', label: 'Driveway Gravel / #57 Stone', density: '1.45' },
+    { value: 'road_base', label: 'Road Base / Crusher Run', density: '1.55' },
+];
 
 export default function GravelCalculator() {
   const [length, setLength] = useState('');
   const [width, setWidth] = useState('');
   const [depth, setDepth] = useState('4'); // Default to 4 inches
-  const [density, setDensity] = useState('1.4'); // Customizable density
+  const [aggregateType, setAggregateType] = useState('driveway_gravel');
+  const [density, setDensity] = useState('1.45'); // Corresponds to driveway_gravel
   const [result, setResult] = useState<{ yards: number; tons: number } | null>(null);
+
+  useEffect(() => {
+    const selectedAggregate = aggregateTypes.find(agg => agg.value === aggregateType);
+    if (selectedAggregate) {
+      setDensity(selectedAggregate.density);
+    }
+  }, [aggregateType]);
 
   const calculate = () => {
     const L = parseFloat(length);
@@ -35,6 +51,21 @@ export default function GravelCalculator() {
 
   return (
     <div className="space-y-4">
+        <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
+          <div>
+            <Label htmlFor="aggregate-type">Gravel Type</Label>
+            <Select value={aggregateType} onValueChange={setAggregateType}>
+                <SelectTrigger id="aggregate-type">
+                    <SelectValue placeholder="Select gravel type..." />
+                </SelectTrigger>
+                <SelectContent>
+                    {aggregateTypes.map(agg => (
+                        <SelectItem key={agg.value} value={agg.value}>{agg.label}</SelectItem>
+                    ))}
+                </SelectContent>
+            </Select>
+          </div>
+        </div>
         <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
           <div>
             <Label htmlFor="gravel-length">Length (ft)</Label>
@@ -50,7 +81,7 @@ export default function GravelCalculator() {
           </div>
            <div>
             <Label htmlFor="gravel-density">Density (tons/yd³)</Label>
-            <Input id="gravel-density" type="number" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="e.g., 1.4" />
+            <Input id="gravel-density" type="number" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="e.g., 1.45" />
           </div>
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Gravel</Button>
