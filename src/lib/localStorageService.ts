@@ -1,4 +1,5 @@
-import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem, SnowRoute } from './types';
+
+import type { InspectionReport, FleetAsset, User, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder, InventoryItem, SnowRoute, Rental } from './types';
 import { addDays, subDays } from 'date-fns';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
@@ -17,6 +18,7 @@ const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
 const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
+const RENTALS_KEY = 'fleetCheckRentals';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
 const CURRENT_SEED_VERSION = '1.3.0'; // Increment this to force a re-seed on next load
 
@@ -701,4 +703,68 @@ export const loadSnowRoutes = (): SnowRoute[] => {
       }
     }
     return [];
+};
+
+
+// Rental Management
+const getDynamicRentals = (): Rental[] => {
+  const now = new Date();
+  return [
+    {
+      id: 'rental-1',
+      assetId: 'heavyEquipment-1',
+      assetName: 'CAT 259D3 Skid Steer',
+      renterName: 'Friendly Farms',
+      contactInfo: '555-333-4444',
+      startDate: subDays(now, 3).toISOString().split('T')[0],
+      endDate: addDays(now, 4).toISOString().split('T')[0],
+      rate: 350,
+      rateType: 'daily',
+      notes: 'Rented for post-storm cleanup.'
+    },
+    {
+      id: 'rental-2',
+      assetId: 'trailer-1',
+      assetName: 'Gooseneck Equipment Trailer',
+      renterName: 'Bob Vance',
+      contactInfo: 'Vance Refrigeration',
+      startDate: addDays(now, 10).toISOString().split('T')[0],
+      endDate: addDays(now, 17).toISOString().split('T')[0],
+      rate: 500,
+      rateType: 'weekly',
+      notes: 'Needs the trailer for moving equipment to a new site.'
+    }
+  ];
+}
+
+
+export const saveRentals = (rentals: Rental[]): void => {
+  if (typeof window !== 'undefined') {
+    try {
+      localStorage.setItem(RENTALS_KEY, JSON.stringify(rentals));
+    } catch (error) {
+      console.error('Failed to save rentals:', error);
+    }
+  }
+};
+
+export const loadRentals = (): Rental[] => {
+  if (typeof window !== 'undefined') {
+    try {
+      const data = localStorage.getItem(RENTALS_KEY);
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
+        return JSON.parse(data);
+      }
+      
+      const defaultRentals = getDynamicRentals();
+      saveRentals(defaultRentals);
+      return defaultRentals;
+
+    } catch (error) {
+      console.error('Failed to load rentals:', error);
+      return getDynamicRentals();
+    }
+  }
+  return [];
 };

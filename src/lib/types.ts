@@ -1,3 +1,4 @@
+
 import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
@@ -270,4 +271,19 @@ export interface SnowRoute {
   assignedJobIds?: string[];
   assignedVehicleIds?: string[];
   assignedEmployeeIds?: string[];
+}
+
+export type RentalRateType = 'daily' | 'weekly' | 'monthly';
+
+export interface Rental {
+  id: string;
+  assetId: string;
+  assetName: string;
+  renterName: string;
+  contactInfo?: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  rate: number;
+  rateType: RentalRateType;
+  notes?: string;
 }

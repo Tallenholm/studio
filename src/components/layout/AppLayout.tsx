@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -20,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
@@ -393,6 +394,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     </Link>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
+                                    <Link href="/admin/manage-rentals">
+                                        <SidebarMenuButton tooltip="Manage Rentals" isActive={pathname.startsWith('/admin/manage-rentals')}>
+                                            <ArrowRightLeft /><span>Manage Rentals</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <Link href="/admin/manage-concrete">
                                         <SidebarMenuButton tooltip="Concrete Jobs" isActive={pathname.startsWith('/admin/manage-concrete')}>
                                             <Droplets /><span>Concrete Jobs</span>
@@ -524,6 +532,7 @@ const OWNER_ONLY_PATHS = [
     '/admin/manage-snow-routes',
     '/admin/manage-concrete',
     '/admin/manage-misc',
+    '/admin/manage-rentals',
     '/admin/advanced-reports',
     '/admin/system-settings',
 ];
