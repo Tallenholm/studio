@@ -17,30 +17,40 @@ const authStore = createStore<AuthState>((set) => ({
   user: null,
   isLoading: true, // Start as loading
   login: (loggedInUser: User) => {
-    // We no longer save the user to localStorage to disable automatic login.
+    try {
+      sessionStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
+    } catch (error) {
+       console.error("Could not access sessionStorage to save user", error);
+    }
     set({ user: loggedInUser, isLoading: false });
   },
   logout: () => {
-    // Still good practice to clear any old data that might exist.
     try {
-      localStorage.removeItem('fleetCheckUser');
+      sessionStorage.removeItem('fleetCheckUser');
     } catch (error) {
-       console.error("Could not access localStorage to logout", error);
+       console.error("Could not access sessionStorage to logout", error);
     }
     set({ user: null, isLoading: false });
   },
 }));
 
-// A client-side initializer component. It now simply sets the app to a
-// "loaded" state without logging anyone in automatically.
+// A client-side initializer component
 function AuthInitializer() {
     useEffect(() => {
         // This ensures the default users are correctly seeded on app load.
         loadUsers(); 
         
-        // Set loading to false after the component mounts.
-        // This ensures we always start fresh without a logged-in user.
-        authStore.setState({ isLoading: false, user: null });
+        try {
+            const storedUser = sessionStorage.getItem('fleetCheckUser');
+            if (storedUser) {
+                authStore.setState({ user: JSON.parse(storedUser), isLoading: false });
+            } else {
+                authStore.setState({ isLoading: false, user: null });
+            }
+        } catch (error) {
+            console.error("Could not access sessionStorage", error);
+            authStore.setState({ isLoading: false, user: null });
+        }
     }, []);
 
     return null; // This component renders nothing.

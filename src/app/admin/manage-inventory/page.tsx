@@ -18,6 +18,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Loader2, Pencil, Hammer, Filter, CheckCircle, PackagePlus } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
+
 
 const itemSchema = z.object({
   name: z.string().min(1, 'Item name is required.'),
@@ -45,7 +47,7 @@ export default function ManageInventoryPage() {
   
   const { toast } = useToast();
 
-  const [typeFilter, setTypeFilter] = useState('all');
+  const [activeTab, setActiveTab] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const addEditForm = useForm<z.infer<typeof itemSchema>>({
@@ -163,11 +165,11 @@ export default function ManageInventoryPage() {
 
   const filteredInventory = useMemo(() => {
     return inventory.filter(item => {
-        const typeMatch = typeFilter === 'all' || item.type === typeFilter;
+        const typeMatch = activeTab === 'all' || item.type === activeTab;
         const statusMatch = statusFilter === 'all' || item.status === statusFilter;
         return typeMatch && statusMatch;
     });
-  }, [inventory, typeFilter, statusFilter]);
+  }, [inventory, activeTab, statusFilter]);
 
   const getStatusBadgeVariant = (status: InventoryItemStatus) => {
     switch (status) {
@@ -265,16 +267,7 @@ export default function ManageInventoryPage() {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filter by type..." /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="tool">Tool</SelectItem>
-                            <SelectItem value="material">Material</SelectItem>
-                            <SelectItem value="consumable">Consumable</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <CardContent>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                         <SelectContent>
@@ -287,6 +280,15 @@ export default function ManageInventoryPage() {
                     </Select>
                 </CardContent>
             </Card>
+            
+            <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
+                <TabsList className="grid w-full grid-cols-4">
+                    <TabsTrigger value="all">All Items</TabsTrigger>
+                    <TabsTrigger value="tool">Tools</TabsTrigger>
+                    <TabsTrigger value="material">Materials</TabsTrigger>
+                    <TabsTrigger value="consumable">Consumables</TabsTrigger>
+                </TabsList>
+            </Tabs>
 
           <Card>
             <CardContent className="p-0">
