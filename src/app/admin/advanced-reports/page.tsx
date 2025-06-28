@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,6 +18,12 @@ interface OutcomeData {
   name: string;
   value: number;
   fill: string;
+}
+
+interface ServiceTypeData {
+    name: string;
+    value: number;
+    fill: string;
 }
 
 interface FailureData {
@@ -114,6 +121,19 @@ export default function AdvancedReportsPage() {
     { name: 'Pass', value: filteredData.filteredReports.filter(r => r.overallStatus === 'pass').length, fill: 'hsl(var(--chart-1))' },
     { name: 'Fail', value: filteredData.filteredReports.filter(r => r.overallStatus === 'fail').length, fill: 'hsl(var(--chart-2))' },
   ];
+
+  const maintenanceServicesByType: ServiceTypeData[] = (() => {
+    const serviceCounts: Record<string, number> = { routine: 0, repair: 0, inspection: 0, other: 0 };
+    filteredData.filteredLogs.forEach(log => {
+        serviceCounts[log.serviceType] = (serviceCounts[log.serviceType] || 0) + 1;
+    });
+    return [
+        { name: 'Routine', value: serviceCounts.routine, fill: 'hsl(var(--chart-1))' },
+        { name: 'Repair', value: serviceCounts.repair, fill: 'hsl(var(--chart-2))' },
+        { name: 'Inspection', value: serviceCounts.inspection, fill: 'hsl(var(--chart-3))' },
+        { name: 'Other', value: serviceCounts.other, fill: 'hsl(var(--chart-5))' },
+    ];
+  })();
 
   const frequentFailures: FailureData[] = (() => {
     const failureCounts: { [key: string]: number } = {};
@@ -275,6 +295,27 @@ export default function AdvancedReportsPage() {
                             <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
                             <Pie data={inspectionOutcomes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
                                 {inspectionOutcomes.map((entry, index) => (
+                                <Cell key={`cell-${index}`} fill={entry.fill} />
+                                ))}
+                            </Pie>
+                            <Legend />
+                        </PieChart>
+                    </ResponsiveContainer>
+                   </ChartContainer>
+                </CardContent>
+              </Card>
+
+               <Card>
+                <CardHeader>
+                  <CardTitle>Maintenance by Type</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <PieChart>
+                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
+                            <Pie data={maintenanceServicesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
+                                {maintenanceServicesByType.map((entry, index) => (
                                 <Cell key={`cell-${index}`} fill={entry.fill} />
                                 ))}
                             </Pie>

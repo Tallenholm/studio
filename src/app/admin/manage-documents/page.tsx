@@ -5,8 +5,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadDocuments, saveDocuments, loadUsers } from '@/lib/localStorageService';
-import type { ManagedDocument, User } from '@/lib/types';
+import { loadDocuments, saveDocuments, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import type { ManagedDocument, User, FleetAsset } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -69,6 +69,7 @@ const documentSchema = z.object({
 export default function ManageDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
@@ -91,6 +92,7 @@ export default function ManageDocumentsPage() {
     setIsMounted(true);
     setDocuments(loadDocuments());
     setUsers(loadUsers());
+    setFleetAssets(loadFleetAssets());
   }, []);
 
   useEffect(() => {
@@ -98,6 +100,11 @@ export default function ManageDocumentsPage() {
       saveDocuments(documents);
     }
   }, [documents, isMounted]);
+
+  const generalCategories = useMemo(() => {
+    const assetNames = fleetAssets.map(asset => asset.name);
+    return ['Company Policies', ...assetNames];
+  }, [fleetAssets]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -335,18 +342,27 @@ export default function ManageDocumentsPage() {
                       />
                     ) : (
                       <FormField
-                        control={form.control}
-                        name="category"
-                        render={({ field }) => (
-                          <FormItem>
-                            <FormLabel>Category / Group</FormLabel>
-                            <FormControl>
-                              <Input placeholder="e.g., Truck 01, Company Policies" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                          </FormItem>
-                        )}
-                      />
+                          control={form.control}
+                          name="category"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Category / Group</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                <FormControl>
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a category" />
+                                  </SelectTrigger>
+                                </FormControl>
+                                <SelectContent>
+                                  {generalCategories.map(cat => (
+                                    <SelectItem key={cat} value={cat}>{cat}</SelectItem>
+                                  ))}
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                     )}
                     <FormField
                       control={form.control}

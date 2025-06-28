@@ -60,7 +60,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     
     return (
         <SidebarProvider defaultOpen>
-            <Sidebar id="tour-step-sidebar">
+            <Sidebar id="tour-step-sidebar" variant="inset">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
                         <Truck className="h-8 w-8 text-primary" />
@@ -321,7 +321,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
-            <SidebarInset className="bg-background min-h-screen">
+            <SidebarInset className="min-h-screen">
                 <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end">
                     <SidebarTrigger className="md:hidden" />
                     <Link href="/notifications" passHref>
