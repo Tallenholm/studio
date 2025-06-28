@@ -6,6 +6,7 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, CloudSun, Loader2, AlertTriangle, Thermometer, CloudDrizzle, Droplets, Flame } from 'lucide-react';
 import { format, parseISO, isAfter } from 'date-fns';
 import { Button } from '@/components/ui/button';
+import Link from 'next/link';
 
 interface ForecastPeriod {
     name: string;
@@ -161,8 +162,6 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
             </div>
         );
     }
-    
-    const weatherGovUrl = `https://forecast.weather.gov/MapClick.php?lat=${LATITUDE}&lon=${LONGITUDE}`;
 
     return (
         <Card id={tourId} className="mb-8">
@@ -176,7 +175,7 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
              {(!loading && !error) && (
                 <CardFooter className="flex justify-end gap-2">
                     <Button asChild variant="outline" size="sm">
-                        <a href={weatherGovUrl} target="_blank" rel="noopener noreferrer">View on Weather.gov</a>
+                        <Link href="/weather">View Full Forecast</Link>
                     </Button>
                 </CardFooter>
             )}

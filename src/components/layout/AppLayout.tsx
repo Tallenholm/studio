@@ -21,7 +21,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
@@ -189,6 +189,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/employee/snow-routes">
                                         <SidebarMenuButton tooltip="Snow Routes" isActive={pathname.startsWith('/employee/snow-routes')}>
                                             <Route /><span>Snow Routes</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <Link href="/weather">
+                                        <SidebarMenuButton tooltip="Full Forecast" isActive={pathname.startsWith('/weather')}>
+                                            <Cloud /><span>Weather</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -364,6 +371,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             <SidebarSeparator className="my-1" />
                             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Ops & Analytics</SidebarGroupLabel>
                             <SidebarMenu>
+                                <SidebarMenuItem>
+                                    <Link href="/weather">
+                                        <SidebarMenuButton tooltip="Full Forecast" isActive={pathname.startsWith('/weather')}>
+                                            <Cloud /><span>Weather Forecast</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
                                 {user.role === 'owner' && <>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-clients">
@@ -540,7 +554,8 @@ const OWNER_ONLY_PATHS = [
 const SHARED_AUTH_PATHS = [
     '/help',
     '/notifications',
-    '/reports'
+    '/reports',
+    '/weather'
 ];
 // Paths for employees (and by extension, managers and owners).
 const EMPLOYEE_PATHS = [
