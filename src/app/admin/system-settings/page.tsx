@@ -13,14 +13,20 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2 } from 'lucide-react';
 import { loadSystemSettings, saveSystemSettings, type SystemSettings } from '@/lib/settingsService';
+import { requestNotificationPermission } from '@/lib/firebase';
 
 export default function SystemSettingsPage() {
   const { toast } = useToast();
   const [settings, setSettings] = useState<SystemSettings | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [isSubscribing, setIsSubscribing] = useState(false);
+  const [notificationStatus, setNotificationStatus] = useState<string>('default');
 
   useEffect(() => {
     setSettings(loadSystemSettings());
+    if (typeof window !== 'undefined' && 'Notification' in window) {
+      setNotificationStatus(Notification.permission);
+    }
   }, []);
   
   const handleSaveChanges = () => {
@@ -37,6 +43,26 @@ export default function SystemSettingsPage() {
         });
     }, 500);
   }
+
+  const handleSubscribe = async () => {
+      setIsSubscribing(true);
+      const token = await requestNotificationPermission();
+      if (token) {
+          toast({
+              title: "Subscribed!",
+              description: "You will now receive push notifications on this device.",
+          });
+          setNotificationStatus('granted');
+      } else {
+           toast({
+              variant: 'destructive',
+              title: "Subscription Failed",
+              description: "Permission was denied or an error occurred. Check browser settings and ensure Firebase config is correct.",
+          });
+          setNotificationStatus(Notification.permission);
+      }
+      setIsSubscribing(false);
+  };
 
   if (!settings) {
     return (
@@ -89,6 +115,22 @@ export default function SystemSettingsPage() {
 
           <div className="space-y-4 p-6 border rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold flex items-center gap-2"><Bell className="h-5 w-5 text-accent" />Notification Preferences</h3>
+            <div className="flex items-center justify-between">
+                <div className="space-y-1">
+                    <Label htmlFor="push-notifications" className="text-base">Browser Push Notifications</Label>
+                    <p className="text-sm text-muted-foreground">
+                        Receive real-time alerts for critical events.
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                        Current Status: <span className="font-semibold capitalize">{notificationStatus}</span>
+                    </p>
+                </div>
+                <Button onClick={handleSubscribe} disabled={notificationStatus === 'granted' || isSubscribing}>
+                    {isSubscribing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
+                    {notificationStatus === 'granted' ? 'Subscribed' : 'Subscribe'}
+                </Button>
+            </div>
+            <Separator />
             <div className="flex items-center space-x-2">
               <Checkbox id="email-notifications" checked={settings.enableEmailNotifications} onCheckedChange={(checked) => handleSettingChange('enableEmailNotifications', checked as boolean)} />
               <Label htmlFor="email-notifications" className="text-base">Receive Email Notifications for Critical Alerts</Label>
