@@ -18,14 +18,14 @@ const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
-const CURRENT_SEED_VERSION = '1.1.0'; // Increment this to force a re-seed on next load
+const CURRENT_SEED_VERSION = '1.2.0'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [
-    { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456' },
-    { id: 'truck-2', type: 'truck', name: 'Truck 02 (Plow Truck)', vin: '1GDTY7C1XMJ123457' },
-    { id: 'trailer-1', type: 'trailer', name: 'Gooseneck Equipment Trailer', vin: '5TETL222XPA654321' },
-    { id: 'heavyEquipment-1', type: 'heavyEquipment', name: 'CAT 259D3 Skid Steer', vin: 'CAT0259D3XYZ98765' },
+    { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456', registrationDueDate: addDays(new Date(), 25).toISOString().split('T')[0], insuranceDueDate: addDays(new Date(), 90).toISOString().split('T')[0] },
+    { id: 'truck-2', type: 'truck', name: 'Truck 02 (Plow Truck)', vin: '1GDTY7C1XMJ123457', registrationDueDate: subDays(new Date(), 10).toISOString().split('T')[0], insuranceDueDate: addDays(new Date(), 15).toISOString().split('T')[0] },
+    { id: 'trailer-1', type: 'trailer', name: 'Gooseneck Equipment Trailer', vin: '5TETL222XPA654321', registrationDueDate: addDays(new Date(), 120).toISOString().split('T')[0] },
+    { id: 'heavyEquipment-1', type: 'heavyEquipment', name: 'CAT 259D3 Skid Steer', vin: 'CAT0259D3XYZ98765', insuranceDueDate: addDays(new Date(), 300).toISOString().split('T')[0] },
 ];
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {

@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, saveFleetAssets } from '@/lib/localStorageService';
+import { loadFleetAssets, saveFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { FleetAsset, VehicleType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -43,18 +43,25 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon } from 'lucide-react';
+import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
+import { cn } from '@/lib/utils';
+import { format, isBefore, addDays, parseISO } from 'date-fns';
 
 const assetSchema = z.object({
   type: z.enum(['truck', 'trailer', 'heavyEquipment'], { required_error: 'Asset type is required.' }),
   name: z.string().min(1, 'Asset name is required.'),
   vin: z.string().min(1, 'VIN/Serial is required.').max(17, 'VIN must be 17 characters or less.'),
+  registrationDueDate: z.date().optional(),
+  insuranceDueDate: z.date().optional(),
 });
 
 export default function FleetManagementPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof assetSchema>>({
@@ -63,6 +70,8 @@ export default function FleetManagementPage() {
       type: 'truck',
       name: '',
       vin: '',
+      registrationDueDate: undefined,
+      insuranceDueDate: undefined,
     },
   });
 
@@ -77,15 +86,75 @@ export default function FleetManagementPage() {
     }
   }, [assets, isMounted]);
 
+  const handleDialogOpenChange = (open: boolean) => {
+    setIsDialogOpen(open);
+    if (!open) {
+      form.reset({ type: 'truck', name: '', vin: '' });
+      setEditingAsset(null);
+    }
+  };
+
+  const handleEditClick = (asset: FleetAsset) => {
+    setEditingAsset(asset);
+    form.reset({
+      ...asset,
+      registrationDueDate: asset.registrationDueDate ? parseISO(asset.registrationDueDate) : undefined,
+      insuranceDueDate: asset.insuranceDueDate ? parseISO(asset.insuranceDueDate) : undefined,
+    });
+    setIsDialogOpen(true);
+  };
+
   function onSubmit(values: z.infer<typeof assetSchema>) {
-    const newAsset: FleetAsset = {
-      id: `${Date.now()}`,
+    const assetData = {
       ...values,
+      registrationDueDate: values.registrationDueDate?.toISOString().split('T')[0],
+      insuranceDueDate: values.insuranceDueDate?.toISOString().split('T')[0],
     };
-    setAssets((prev) => [...prev, newAsset].sort((a,b) => a.name.localeCompare(b.name)));
-    toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
-    setIsDialogOpen(false);
-    form.reset({type: 'truck', name: '', vin: ''});
+    
+    let savedAsset: FleetAsset;
+
+    if (editingAsset) {
+        savedAsset = { ...editingAsset, ...assetData };
+        setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
+        toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
+    } else {
+        savedAsset = { id: `${Date.now()}`, ...assetData };
+        setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
+        toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
+    }
+    
+    // Clean up any resolved notifications
+    const notifications = loadNotifications();
+    let notificationsChanged = false;
+
+    const today = new Date();
+    const thirtyDaysFromNow = addDays(today, 30);
+    
+    // Check registration date
+    const regNotifId = `expiry-reg-${savedAsset.id}`;
+    if (!savedAsset.registrationDueDate || isBefore(thirtyDaysFromNow, parseISO(savedAsset.registrationDueDate))) {
+      const index = notifications.findIndex(n => n.id === regNotifId);
+      if (index > -1) {
+        notifications.splice(index, 1);
+        notificationsChanged = true;
+      }
+    }
+
+    // Check insurance date
+    const insNotifId = `expiry-ins-${savedAsset.id}`;
+     if (!savedAsset.insuranceDueDate || isBefore(thirtyDaysFromNow, parseISO(savedAsset.insuranceDueDate))) {
+      const index = notifications.findIndex(n => n.id === insNotifId);
+      if (index > -1) {
+        notifications.splice(index, 1);
+        notificationsChanged = true;
+      }
+    }
+
+    if (notificationsChanged) {
+      saveNotifications(notifications);
+    }
+
+    handleDialogOpenChange(false);
   }
 
   function removeAsset(assetId: string) {
@@ -96,7 +165,36 @@ export default function FleetManagementPage() {
       description: `${assetToRemove?.name} has been removed from the fleet.`,
       variant: 'destructive',
     });
+    
+    // Also remove related notifications
+    const regNotifId = `expiry-reg-${assetId}`;
+    const insNotifId = `expiry-ins-${assetId}`;
+    const notifications = loadNotifications();
+    const updatedNotifications = notifications.filter(n => n.id !== regNotifId && n.id !== insNotifId);
+    if (notifications.length !== updatedNotifications.length) {
+      saveNotifications(updatedNotifications);
+    }
   }
+
+  const DateCell = ({ dateString }: { dateString?: string }) => {
+    if (!dateString) return <TableCell className="text-muted-foreground">N/A</TableCell>;
+
+    const date = parseISO(dateString);
+    const today = new Date();
+    today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+    const thirtyDaysFromNow = addDays(today, 30);
+    let textColor = '';
+
+    if (isBefore(date, today)) {
+      textColor = 'text-destructive font-bold'; // Expired
+    } else if (isBefore(date, thirtyDaysFromNow)) {
+      textColor = 'text-yellow-500 font-semibold'; // Expiring soon
+    }
+
+    return (
+      <TableCell className={cn(textColor)}>{format(date, 'PPP')}</TableCell>
+    );
+  };
   
   const renderIcon = (type: VehicleType) => {
     switch (type) {
@@ -122,6 +220,8 @@ export default function FleetManagementPage() {
                                 <TableRow>
                                 <TableHead>Name/Identifier</TableHead>
                                 <TableHead>VIN/Serial</TableHead>
+                                <TableHead>Registration Due</TableHead>
+                                <TableHead>Insurance Due</TableHead>
                                 <TableHead className="text-right w-[100px]">Actions</TableHead>
                                 </TableRow>
                             </TableHeader>
@@ -130,7 +230,12 @@ export default function FleetManagementPage() {
                                 <TableRow key={asset.id}>
                                     <TableCell className="font-medium">{asset.name}</TableCell>
                                     <TableCell>{asset.vin}</TableCell>
+                                    <DateCell dateString={asset.registrationDueDate} />
+                                    <DateCell dateString={asset.insuranceDueDate} />
                                     <TableCell className="text-right">
+                                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(asset)} aria-label={`Edit ${asset.name}`}>
+                                        <Pencil className="h-4 w-4" />
+                                    </Button>
                                     <Button variant="ghost" size="icon" onClick={() => removeAsset(asset.id)} aria-label={`Remove ${asset.name}`}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
@@ -171,23 +276,23 @@ export default function FleetManagementPage() {
                 Add, view, and remove the vehicles and equipment in your fleet.
               </CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
               <DialogTrigger asChild>
                 <Button>
                   <PlusCircle className="mr-2 h-5 w-5" />
                   Add New Asset
                 </Button>
               </DialogTrigger>
-              <DialogContent className="sm:max-w-[425px]">
+              <DialogContent className="sm:max-w-xl">
                 <DialogHeader>
-                  <DialogTitle>Add New Fleet Asset</DialogTitle>
+                  <DialogTitle>{editingAsset ? 'Edit Fleet Asset' : 'Add New Fleet Asset'}</DialogTitle>
                   <DialogDescription>
                     Add a new truck, trailer, or piece of equipment to your fleet list.
                   </DialogDescription>
                 </DialogHeader>
                 <Form {...form}>
                   <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
+                     <FormField
                       control={form.control}
                       name="type"
                       render={({ field }) => (
@@ -235,6 +340,54 @@ export default function FleetManagementPage() {
                         </FormItem>
                       )}
                     />
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                            control={form.control}
+                            name="registrationDueDate"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                <FormLabel>Registration Due Date</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                        {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                        <FormField
+                            control={form.control}
+                            name="insuranceDueDate"
+                            render={({ field }) => (
+                                <FormItem className="flex flex-col">
+                                <FormLabel>Insurance Due Date</FormLabel>
+                                <Popover>
+                                    <PopoverTrigger asChild>
+                                    <FormControl>
+                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                        {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
+                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                        </Button>
+                                    </FormControl>
+                                    </PopoverTrigger>
+                                    <PopoverContent className="w-auto p-0" align="start">
+                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    </PopoverContent>
+                                </Popover>
+                                <FormMessage />
+                                </FormItem>
+                            )}
+                        />
+                    </div>
                     <DialogFooter>
                       <Button type="submit">Save Asset</Button>
                     </DialogFooter>

@@ -20,6 +20,8 @@ export interface FleetAsset {
   type: VehicleType;
   name: string;
   vin: string;
+  registrationDueDate?: string; // YYYY-MM-DD
+  insuranceDueDate?: string; // YYYY-MM-DD
 }
 
 export interface InspectionItem {

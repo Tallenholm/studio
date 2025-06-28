@@ -23,11 +23,12 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadNotifications } from '@/lib/localStorageService';
+import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
+import { format, isBefore, addDays, parseISO } from 'date-fns';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -53,7 +54,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
             setUnreadCount(count);
         }
-    }, [user, pathname]);
+    }, [user, pathname]); // Re-check on navigation
     
     useEffect(() => {
       const down = (e: KeyboardEvent) => {
@@ -65,6 +66,74 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       document.addEventListener("keydown", down)
       return () => document.removeEventListener("keydown", down)
     }, [open])
+
+    useEffect(() => {
+        if (user && (user.role === 'owner' || user.role === 'manager')) {
+            const checkAndCreateExpirationNotifications = () => {
+                const assets = loadFleetAssets();
+                const notifications = loadNotifications();
+                let notificationsChanged = false;
+
+                const today = new Date();
+                today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+                const thirtyDaysFromNow = addDays(today, 30);
+
+                assets.forEach(asset => {
+                    // Check registration
+                    if (asset.registrationDueDate) {
+                        const dueDate = parseISO(asset.registrationDueDate);
+                        if (isBefore(dueDate, thirtyDaysFromNow)) { // Expired or expiring soon
+                            const notifId = `expiry-reg-${asset.id}`;
+                            const isExpired = isBefore(dueDate, today);
+                            if (!notifications.some(n => n.id === notifId)) {
+                                notifications.push({
+                                    id: notifId,
+                                    recipientId: 'all', // For all admins
+                                    title: `Vehicle Registration ${isExpired ? 'Expired' : 'Expiring Soon'}`,
+                                    content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
+                                    senderName: 'System Alert',
+                                    timestamp: new Date().toISOString(),
+                                    readBy: [],
+                                });
+                                notificationsChanged = true;
+                            }
+                        }
+                    }
+
+                    // Check insurance
+                    if (asset.insuranceDueDate) {
+                        const dueDate = parseISO(asset.insuranceDueDate);
+                        if (isBefore(dueDate, thirtyDaysFromNow)) { // Expired or expiring soon
+                            const notifId = `expiry-ins-${asset.id}`;
+                             const isExpired = isBefore(dueDate, today);
+                            if (!notifications.some(n => n.id === notifId)) {
+                                notifications.push({
+                                    id: notifId,
+                                    recipientId: 'all',
+                                    title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
+                                    content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
+                                    senderName: 'System Alert',
+                                    timestamp: new Date().toISOString(),
+                                    readBy: [],
+                                });
+                                notificationsChanged = true;
+                            }
+                        }
+                    }
+                });
+
+                if (notificationsChanged) {
+                    saveNotifications(notifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
+                    // Force a re-render to update unread count
+                    const userNotifications = notifications.filter(notif => notif.recipientId === 'all' || notif.recipientId === user.id);
+                    const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+                    setUnreadCount(count);
+                }
+            };
+            checkAndCreateExpirationNotifications();
+        }
+    }, [user, pathname]); // Run on user login and page navigation
+
 
     if (!user) {
         return <FullScreenLoader text="Redirecting..." />;
@@ -445,13 +514,13 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     }
     
     // Check if path is in one of the allowed lists for all users
-    if (SHARED_AUTH_PATHS.some(p => pathname.startsWith(p))) {
+    if (SHARED_AUTH_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/reports/')) {
         return true;
     }
     
     if (role === 'employee') {
         // Employees can only see their designated paths.
-        return EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/personal-documents');
+        return EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/');
     }
 
     if (role === 'manager') {
@@ -464,7 +533,7 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
             return true;
         }
         // A manager CAN see all employee paths.
-        if (EMPLOYEE_PATHS.some(p => pathname.startsWith(p))) {
+        if (EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/')) {
             return true;
         }
     }
