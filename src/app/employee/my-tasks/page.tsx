@@ -133,17 +133,16 @@ export default function MyTasksPage() {
         ctx.lineWidth = 5;
         ctx.lineJoin = 'round'; // For better looking text borders
 
+        const timestampY = geoString ? canvas.height - 50 : canvas.height - 20;
+        const geoStringY = canvas.height - 20;
         const textX = 20;
-        const textY = canvas.height - 20;
 
+        ctx.strokeText(timestamp, textX, timestampY);
+        ctx.fillText(timestamp, textX, timestampY);
+        
         if (geoString) {
-            ctx.strokeText(timestamp, textX, textY - 30);
-            ctx.fillText(timestamp, textX, textY - 30);
-            ctx.strokeText(geoString, textX, textY);
-            ctx.fillText(geoString, textX, textY);
-        } else {
-            ctx.strokeText(timestamp, textX, textY);
-            ctx.fillText(timestamp, textX, textY);
+            ctx.strokeText(geoString, textX, geoStringY);
+            ctx.fillText(geoString, textX, geoStringY);
         }
 
         form.setValue('completionPhotoUri', canvas.toDataURL('image/jpeg'));
@@ -393,5 +392,3 @@ export default function MyTasksPage() {
     </div>
   );
 }
-
-    

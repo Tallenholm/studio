@@ -285,68 +285,80 @@ export default function JobDetailsPage() {
                 </CardContent>
             </Card>
 
-             <Card>
-                <CardHeader>
-                    <CardTitle className="text-xl">Job Cost Analysis</CardTitle>
-                    <CardDescription>Estimated operational costs and profitability for the job's date range.</CardDescription>
-                </CardHeader>
-                <CardContent>
-                  {isLoadingCosts ? (
-                      <div className="flex justify-center items-center h-24">
-                          <Loader2 className="h-8 w-8 animate-spin text-primary" />
-                          <p className="ml-4 text-muted-foreground">Calculating costs...</p>
+            <Accordion type="multiple" defaultValue={['item-1']} className="w-full space-y-8">
+              <Card>
+                <AccordionItem value="item-1" className="border-b-0">
+                  <AccordionTrigger className="p-6 hover:no-underline">
+                      <CardTitle className="text-xl">Job Cost Analysis</CardTitle>
+                  </AccordionTrigger>
+                  <AccordionContent className="px-6 pb-6">
+                    <CardDescription className="mb-4">Estimated operational costs and profitability for the job's date range.</CardDescription>
+                    {isLoadingCosts ? (
+                        <div className="flex justify-center items-center h-24">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                            <p className="ml-4 text-muted-foreground">Calculating costs...</p>
+                        </div>
+                    ) : (
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                          <div className="p-4 bg-muted/50 rounded-lg text-center">
+                              <p className="text-sm text-muted-foreground">Maintenance Cost</p>
+                              <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
+                          </div>
+                          <div className="p-4 bg-muted/50 rounded-lg text-center">
+                              <p className="text-sm text-muted-foreground">Expense Cost</p>
+                              <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
+                          </div>
+                          <div className="p-4 bg-muted/50 rounded-lg text-center">
+                              <p className="text-sm text-muted-foreground">Total Costs</p>
+                              <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
+                          </div>
+                          <div className="p-4 rounded-lg text-center" style={{background: jobCosts.estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
+                              <p className="text-sm" style={{color: jobCosts.estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>
+                              <p className={cn("text-2xl font-bold flex items-center justify-center gap-1", jobCosts.estimatedProfit >= 0 ? 'text-primary' : 'text-destructive' )}>
+                                {jobCosts.estimatedProfit >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
+                                <AnimatedCounter value={Math.abs(jobCosts.estimatedProfit)} type="currency" />
+                              </p>
+                          </div>
                       </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                        <div className="p-4 bg-muted/50 rounded-lg text-center">
-                            <p className="text-sm text-muted-foreground">Maintenance Cost</p>
-                            <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
-                        </div>
-                        <div className="p-4 bg-muted/50 rounded-lg text-center">
-                            <p className="text-sm text-muted-foreground">Expense Cost</p>
-                            <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
-                        </div>
-                        <div className="p-4 bg-muted/50 rounded-lg text-center">
-                            <p className="text-sm text-muted-foreground">Total Costs</p>
-                            <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
-                        </div>
-                        <div className="p-4 rounded-lg text-center" style={{background: jobCosts.estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
-                            <p className="text-sm" style={{color: jobCosts.estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>
-                            <p className={cn("text-2xl font-bold flex items-center justify-center gap-1", jobCosts.estimatedProfit >= 0 ? 'text-primary' : 'text-destructive' )}>
-                              {jobCosts.estimatedProfit >= 0 ? <TrendingUp className="h-6 w-6" /> : <TrendingDown className="h-6 w-6" />}
-                              <AnimatedCounter value={Math.abs(jobCosts.estimatedProfit)} type="currency" />
-                            </p>
-                        </div>
-                    </div>
-                  )}
-                </CardContent>
-            </Card>
+                    )}
+                  </AccordionContent>
+                </AccordionItem>
+              </Card>
 
-            {job.jobType === 'snow_removal' ? (
+              {job.jobType === 'snow_removal' ? (
                 <Card>
-                    <CardHeader>
+                  <AccordionItem value="item-2" className="border-b-0">
+                    <AccordionTrigger className="p-6 hover:no-underline">
                         <CardTitle className="text-xl flex items-center gap-2"><History className="h-5 w-5" />Snow Service Log</CardTitle>
-                        <CardDescription>A complete history of all services performed for this contract.</CardDescription>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                        {renderSnowLog(job.snowLog?.plowing || [], "Plowing")}
-                        {renderSnowLog(job.snowLog?.salting || [], "Salting")}
-                        {renderSnowLog(job.snowLog?.sidewalks || [], "Sidewalks")}
-                    </CardContent>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <CardDescription className="mb-4">A complete history of all services performed for this contract.</CardDescription>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                          {renderSnowLog(job.snowLog?.plowing || [], "Plowing")}
+                          {renderSnowLog(job.snowLog?.salting || [], "Salting")}
+                          {renderSnowLog(job.snowLog?.sidewalks || [], "Sidewalks")}
+                      </div>
+                    </AccordionContent>
+                  </AccordionItem>
                 </Card>
-            ) : (
+              ) : (
                 <Card>
-                    <CardHeader>
+                   <AccordionItem value="item-3" className="border-b-0">
+                    <AccordionTrigger className="p-6 hover:no-underline">
                         <CardTitle className="text-xl">Assigned Personnel & Fleet</CardTitle>
-                    </CardHeader>
-                    <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                        {renderAssetList(assignedEmployees, 'Personnel', UsersIcon)}
-                        {renderAssetList(assignedTrucks, 'Trucks', Truck)}
-                        {renderAssetList(assignedTrailers, 'Trailers', Box)}
-                        {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
-                    </CardContent>
+                    </AccordionTrigger>
+                    <AccordionContent className="px-6 pb-6">
+                      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                          {renderAssetList(assignedEmployees, 'Personnel', UsersIcon)}
+                          {renderAssetList(assignedTrucks, 'Trucks', Truck)}
+                          {renderAssetList(assignedTrailers, 'Trailers', Box)}
+                          {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
+                      </div>
+                     </AccordionContent>
+                   </AccordionItem>
                 </Card>
-            )}
+              )}
+            </Accordion>
         </div>
 
         <div className="lg:col-span-1">

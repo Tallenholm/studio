@@ -242,7 +242,7 @@ export default function ManageDocumentsPage() {
                                         alt={`Preview of ${doc.title}`}
                                         fill
                                         className="object-cover object-top transition-transform group-hover:scale-105"
-                                        data-ai-hint={doc.dataAiHint}
+                                        data-ai-hint="official document"
                                       />
                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Download className="h-8 w-8 text-white"/>

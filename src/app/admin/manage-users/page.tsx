@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -52,6 +53,12 @@ const userSchema = z.object({
   role: z.enum(['owner', 'manager', 'employee'], { required_error: 'Role is required.' }),
 });
 
+// A slightly different schema for editing, where PIN is optional
+const editUserSchema = userSchema.extend({
+    pin: z.string().optional(),
+});
+
+
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isMounted, setIsMounted] = useState(false);
@@ -61,7 +68,7 @@ export default function UserManagementPage() {
   const { user: currentUser } = useAuth();
 
   const form = useForm<z.infer<typeof userSchema>>({
-    resolver: zodResolver(userSchema),
+    resolver: zodResolver(editingUser ? editUserSchema : userSchema),
     defaultValues: {
       name: '',
       pin: '',
@@ -86,7 +93,7 @@ export default function UserManagementPage() {
     setEditingUser(user);
     form.reset({
       name: user.name,
-      pin: user.pin,
+      pin: '', // Clear PIN for editing for security
       role: user.role,
     });
     setIsDialogOpen(true);
@@ -95,7 +102,7 @@ export default function UserManagementPage() {
   function onSubmit(values: z.infer<typeof userSchema>) {
     if (editingUser) {
       // Logic for editing a user
-      if (users.some(u => u.pin === values.pin && u.id !== editingUser.id)) {
+      if (values.pin && users.some(u => u.pin === values.pin && u.id !== editingUser.id)) {
         form.setError("pin", { message: "This PIN is already in use." });
         return;
       }
@@ -106,9 +113,18 @@ export default function UserManagementPage() {
         return;
       }
 
-      const updatedUsers = users.map(u => 
-        u.id === editingUser.id ? { ...u, ...values } : u
-      );
+      const updatedUsers = users.map(u => {
+        if (u.id === editingUser.id) {
+            return {
+                ...u,
+                name: values.name,
+                role: values.role,
+                // Only update PIN if a new one was entered
+                pin: values.pin ? values.pin : u.pin,
+            }
+        }
+        return u;
+      });
       setUsers(updatedUsers.sort((a,b) => a.name.localeCompare(b.name)));
       saveUsers(updatedUsers);
       toast({ title: 'User Updated', description: `User "${values.name}" has been updated.` });
@@ -212,7 +228,7 @@ export default function UserManagementPage() {
                         <FormItem>
                           <FormLabel>Login PIN</FormLabel>
                           <FormControl>
-                            <Input type="password" placeholder="Enter a 4-8 digit PIN" {...field} />
+                            <Input type="password" placeholder={editingUser ? "Enter new PIN to change" : "Enter a 4-8 digit PIN"} {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>

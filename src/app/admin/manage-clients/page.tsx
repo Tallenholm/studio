@@ -270,7 +270,11 @@ export default function ManageClientsPage() {
                             </Table>
                         </div>
                     ) : (
-                        <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No clients added yet.</div>
+                        <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                          <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                          <h3 className="text-xl font-semibold text-foreground">No Clients Found</h3>
+                          <p className="mt-2">Click "Add New Client" to get started.</p>
+                        </div>
                     )}
                 </CardContent>
             </Card>
