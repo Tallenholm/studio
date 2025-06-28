@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs, saveFleetAssets } from '@/lib/localStorageService';
+import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs, saveFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { FleetAsset, MaintenanceLog, VehicleType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -118,10 +118,12 @@ export default function MaintenanceLogsPage() {
     
     setLogs(prev => [newLog, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     
+    let scheduleWasUpdated = false;
     // Update asset's last service date if it was a routine service
     if (newLog.serviceType === 'routine' && newLog.routineService) {
         const key = newLog.routineService as keyof FleetAsset['maintenanceSchedule'];
         if (asset.maintenanceSchedule?.[key]) {
+            scheduleWasUpdated = true;
             const updatedAssets = assets.map(a => {
                 if (a.id === asset.id && a.maintenanceSchedule?.[key]) {
                     a.maintenanceSchedule[key]!.lastServiceDate = newLog.date;
@@ -130,13 +132,21 @@ export default function MaintenanceLogsPage() {
             });
             setAssets(updatedAssets);
             saveFleetAssets(updatedAssets);
-            toast({ title: 'Maintenance Logged', description: `${asset.name} service record and schedule have been updated.` });
-        } else {
-            toast({ title: 'Maintenance Logged', description: `Service for ${asset.name} has been recorded.` });
+
+             // Remove the corresponding maintenance notification
+            const notifId = `maint-${key}-${asset.id}`;
+            const notifications = loadNotifications();
+            const updatedNotifications = notifications.filter(n => n.id !== notifId);
+            if (notifications.length !== updatedNotifications.length) {
+                saveNotifications(updatedNotifications);
+            }
         }
-    } else {
-        toast({ title: 'Maintenance Logged', description: `Service for ${asset.name} has been recorded.` });
     }
+    
+    toast({ 
+        title: 'Maintenance Logged', 
+        description: `Service for ${asset.name} has been recorded.${scheduleWasUpdated ? ' The maintenance schedule has also been updated.' : ''}`
+    });
     
     setIsDialogOpen(false);
     form.reset({ serviceType: 'routine', description: '', mechanic: 'In-house', cost: undefined, assetId: undefined });

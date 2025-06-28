@@ -165,7 +165,8 @@ export default function FleetManagementPage() {
         setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
-        savedAsset = { id: `${Date.now()}`, ...assetData };
+        const newId = `asset-${Date.now()}`;
+        savedAsset = { id: newId, ...assetData };
         setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
     }
@@ -179,7 +180,7 @@ export default function FleetManagementPage() {
     
     // Check registration date
     const regNotifId = `expiry-reg-${savedAsset.id}`;
-    if (!savedAsset.registrationDueDate || isBefore(thirtyDaysFromNow, parseISO(savedAsset.registrationDueDate))) {
+    if (!savedAsset.registrationDueDate || !isBefore(parseISO(savedAsset.registrationDueDate), thirtyDaysFromNow)) {
       const index = notifications.findIndex(n => n.id === regNotifId);
       if (index > -1) {
         notifications.splice(index, 1);
@@ -189,7 +190,7 @@ export default function FleetManagementPage() {
 
     // Check insurance date
     const insNotifId = `expiry-ins-${savedAsset.id}`;
-     if (!savedAsset.insuranceDueDate || isBefore(thirtyDaysFromNow, parseISO(savedAsset.insuranceDueDate))) {
+     if (!savedAsset.insuranceDueDate || !isBefore(parseISO(savedAsset.insuranceDueDate), thirtyDaysFromNow)) {
       const index = notifications.findIndex(n => n.id === insNotifId);
       if (index > -1) {
         notifications.splice(index, 1);
@@ -214,10 +215,12 @@ export default function FleetManagementPage() {
     });
     
     // Also remove related notifications
-    const regNotifId = `expiry-reg-${assetId}`;
-    const insNotifId = `expiry-ins-${assetId}`;
     const notifications = loadNotifications();
-    const updatedNotifications = notifications.filter(n => n.id !== regNotifId && n.id !== insNotifId);
+    const updatedNotifications = notifications.filter(n => {
+        const parts = n.id.split('-');
+        return parts[parts.length - 1] !== assetId;
+    });
+
     if (notifications.length !== updatedNotifications.length) {
       saveNotifications(updatedNotifications);
     }
