@@ -1,18 +1,11 @@
-
 'use client';
 
 import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Calculator } from 'lucide-react';
 
-interface ConcreteCalculatorProps {
-  onCalculate: (yards: number) => void;
-}
-
-export default function ConcreteCalculator({ onCalculate }: ConcreteCalculatorProps) {
+export default function ConcreteCalculator() {
   const [length, setLength] = useState('');
   const [width, setWidth] = useState('');
   const [thickness, setThickness] = useState('4'); // Default to 4 inches
@@ -33,19 +26,10 @@ export default function ConcreteCalculator({ onCalculate }: ConcreteCalculatorPr
     const roundedYards = Math.round(yards * 100) / 100; // Round to 2 decimal places
 
     setCubicYards(roundedYards);
-    onCalculate(roundedYards);
   };
 
   return (
-    <Card className="bg-muted/50 border-dashed">
-      <CardHeader className="pb-4">
-        <CardTitle className="text-lg flex items-center gap-2">
-          <Calculator className="h-5 w-5 text-primary" />
-          Concrete Slab Calculator
-        </CardTitle>
-        <CardDescription>Calculate the required cubic yards for a slab.</CardDescription>
-      </CardHeader>
-      <CardContent className="space-y-4">
+    <div className="space-y-4">
         <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
           <div>
             <Label htmlFor="length">Length (ft)</Label>
@@ -67,7 +51,6 @@ export default function ConcreteCalculator({ onCalculate }: ConcreteCalculatorPr
             <p className="text-2xl font-bold text-primary">{cubicYards.toFixed(2)} cubic yards</p>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </div>
   );
 }
