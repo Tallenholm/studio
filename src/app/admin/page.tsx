@@ -10,8 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
-import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
-import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
+import { getAdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -180,40 +179,33 @@ export default function FleetCheckDashboardPage() {
         setIsTourOpen(true);
     }
 
-    const loadedEvents = loadCalendarEvents();
-    const loadedJobs = loadJobs();
-    
-    setEvents(loadedEvents);
-    setJobs(loadedJobs);
-    
-    // Generate AI Briefing
-    const runBriefing = async () => {
+    const fetchData = async () => {
+        setIsBriefingLoading(true);
         try {
-            const briefingInput = {
-                date: new Date().toISOString(),
-                jobs: JSON.stringify(loadedJobs),
-                reports: JSON.stringify(loadInspectionReports()),
-                timeOffRequests: JSON.stringify(loadTimeOffRequests()),
-                expenseReports: JSON.stringify(loadExpenseReports()),
-                tasks: JSON.stringify(loadTasks()),
-                events: JSON.stringify(loadedEvents),
-            };
-            const result = await generateDailyBriefing(briefingInput);
-            setBriefing(result);
+            const data = await getAdminDashboardData();
+            setBriefing(data.briefing);
+            setEvents(data.events);
+            setJobs(data.jobs);
+            if (!data.briefing) {
+                toast({
+                    variant: 'destructive',
+                    title: 'AI Briefing Failed',
+                    description: 'Could not generate the daily briefing.'
+                });
+            }
         } catch (error) {
-            console.error("Failed to generate daily briefing:", error);
+            console.error("Failed to fetch dashboard data:", error);
             toast({
                 variant: 'destructive',
-                title: 'AI Briefing Failed',
-                description: 'Could not generate the daily briefing. Please check the logs.'
-            })
-            setBriefing(null);
+                title: 'Dashboard Error',
+                description: 'Could not load all dashboard data.'
+            });
         } finally {
             setIsBriefingLoading(false);
         }
     };
-    runBriefing();
 
+    fetchData();
   }, [toast, searchParams]);
 
   const { eventDates, jobRanges } = useMemo(() => {
