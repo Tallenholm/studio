@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
@@ -10,17 +11,44 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
-import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap } from 'lucide-react';
+import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2 } from 'lucide-react';
+import { loadSystemSettings, saveSystemSettings, type SystemSettings } from '@/lib/settingsService';
 
 export default function SystemSettingsPage() {
   const { toast } = useToast();
+  const [settings, setSettings] = useState<SystemSettings | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
 
+  useEffect(() => {
+    setSettings(loadSystemSettings());
+  }, []);
+  
   const handleSaveChanges = () => {
-    toast({
-        title: "Settings Saved (Illustrative)",
-        description: "In a real application, your configuration would now be saved.",
-    });
+    if (!settings) return;
+    setIsSaving(true);
+    saveSystemSettings(settings);
+    
+    // Simulate network delay
+    setTimeout(() => {
+        setIsSaving(false);
+        toast({
+            title: "Settings Saved",
+            description: "Your new system configuration has been saved.",
+        });
+    }, 500);
   }
+
+  if (!settings) {
+    return (
+      <div className="flex h-64 items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
+  }
+
+  const handleSettingChange = (key: keyof SystemSettings, value: any) => {
+    setSettings(prev => prev ? { ...prev, [key]: value } : null);
+  };
 
   return (
     <div className="container mx-auto py-8">
@@ -31,7 +59,7 @@ export default function SystemSettingsPage() {
             System Configuration
           </CardTitle>
           <CardDescription>
-            Configure global settings for the Logan's Excavating application. All options are illustrative.
+            Configure global settings for the Logan's Excavating application.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">
@@ -40,11 +68,11 @@ export default function SystemSettingsPage() {
             <h3 className="text-xl font-semibold flex items-center gap-2"><Palette className="h-5 w-5 text-accent" />Appearance</h3>
             <div className="flex items-center justify-between">
               <Label htmlFor="dark-mode-toggle" className="text-base">Enable Dark Mode by Default</Label>
-              <Switch id="dark-mode-toggle" disabled checked />
+              <Switch id="dark-mode-toggle" checked={settings.enableDarkMode} onCheckedChange={(checked) => handleSettingChange('enableDarkMode', checked)} />
             </div>
             <div className="space-y-2">
               <Label htmlFor="default-font-size" className="text-base">Default Font Size</Label>
-              <Select disabled>
+              <Select value={settings.defaultFontSize} onValueChange={(value) => handleSettingChange('defaultFontSize', value)}>
                 <SelectTrigger id="default-font-size" className="w-[180px]">
                   <SelectValue placeholder="Medium" />
                 </SelectTrigger>
@@ -62,13 +90,16 @@ export default function SystemSettingsPage() {
           <div className="space-y-4 p-6 border rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold flex items-center gap-2"><Bell className="h-5 w-5 text-accent" />Notification Preferences</h3>
             <div className="flex items-center space-x-2">
-              <Checkbox id="email-notifications" disabled />
+              <Checkbox id="email-notifications" checked={settings.enableEmailNotifications} onCheckedChange={(checked) => handleSettingChange('enableEmailNotifications', checked as boolean)} />
               <Label htmlFor="email-notifications" className="text-base">Receive Email Notifications for Critical Alerts</Label>
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="notification-email" className="text-base">Notification Email Address</Label>
-              <Input id="notification-email" type="email" placeholder="admin@example.com" disabled />
-            </div>
+            {settings.enableEmailNotifications && (
+              <div className="space-y-2 pl-6 animate-in fade-in duration-300">
+                <Label htmlFor="notification-email" className="text-base">Notification Email Address</Label>
+                <Input id="notification-email" type="email" placeholder="admin@example.com" value={settings.notificationEmailAddress} onChange={(e) => handleSettingChange('notificationEmailAddress', e.target.value)} />
+                <p className="text-xs text-muted-foreground">This address will receive system alerts. A backend email service is required for this to function.</p>
+              </div>
+            )}
           </div>
 
           <Separator />
@@ -88,6 +119,7 @@ export default function SystemSettingsPage() {
                   <SelectItem value="forever">Forever</SelectItem>
                 </SelectContent>
               </Select>
+               <p className="text-xs text-muted-foreground">This setting is illustrative and would require a backend to implement.</p>
             </div>
             <Button variant="outline" disabled className="w-full md:w-auto">
               <DownloadCloud className="mr-2 h-4 w-4" /> Export All Inspection Data (JSON)
@@ -99,9 +131,9 @@ export default function SystemSettingsPage() {
           </div>
           
           <div className="flex justify-end pt-4">
-            <Button onClick={handleSaveChanges} className="text-lg py-3 px-6">
-              <Save className="mr-2 h-5 w-5" />
-              Save Settings
+            <Button onClick={handleSaveChanges} className="text-lg py-3 px-6" disabled={isSaving}>
+              {isSaving ? <Loader2 className="mr-2 h-5 w-5 animate-spin" /> : <Save className="mr-2 h-5 w-5" />}
+              {isSaving ? 'Saving...' : 'Save Settings'}
             </Button>
           </div>
         </CardContent>
