@@ -9,3 +9,4 @@ import '@/ai/flows/create-job-from-prompt.ts';
 import '@/ai/flows/answer-help-question.ts';
 import '@/ai/flows/extract-receipt-data.ts';
 import '@/ai/flows/summarize-document.ts';
+import '@/ai/flows/generate-asset-health-summary.ts';

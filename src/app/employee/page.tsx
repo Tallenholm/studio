@@ -5,20 +5,23 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge } from 'lucide-react';
+import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
-import type { CalendarEvent } from '@/lib/types';
-import { loadCalendarEvents } from '@/lib/localStorageService';
+import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
+import { loadCalendarEvents, loadJobs, loadTasks, loadInspectionReports } from '@/lib/localStorageService';
 import { isSameDay, format, parseISO } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
+import { getJobStatus } from '@/lib/job-utils';
+import AnimatedCounter from '@/components/common/AnimatedCounter';
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
+    { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Fleet Check'), view your tasks, request time off, and more.", side: 'bottom' },
+    { element: '#tour-step-job-board', title: "Your Job Board", content: "This section shows your currently active and upcoming jobs. You can get directions to the job site directly from here.", side: 'bottom' },
     { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },
-    { element: '#tour-step-main-tools', title: "Your Main Tools", content: "The cards on the right are your main tools. Here you can start vehicle inspections ('Fleet Check'), request time off, complete tasks, submit expenses, and more.", side: 'left' },
     { element: '#tour-step-sidebar', title: "Sidebar Navigation", content: "You can also access all these tools from the sidebar menu on the left. New notifications will appear with a badge, so keep an eye out.", side: 'right' },
     { element: '#tour-step-sidebar-help-employee', title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!", side: 'right' },
 ];
@@ -28,7 +31,12 @@ export default function EmployeeHubPage() {
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
+  
   const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [reports, setReports] = useState<InspectionReport[]>([]);
+
   const [isTourOpen, setIsTourOpen] = useState(false);
 
    useEffect(() => {
@@ -37,8 +45,27 @@ export default function EmployeeHubPage() {
     if (searchParams.get('tour') === 'true' && !hasViewedTour) {
         setIsTourOpen(true);
     }
-    setEvents(loadCalendarEvents());
-  }, [searchParams]);
+    
+    if (user) {
+        setEvents(loadCalendarEvents());
+        setJobs(loadJobs());
+        setTasks(loadTasks().filter(t => t.assignedToEmployeeId === user.id));
+        setReports(loadInspectionReports().filter(r => r.employeeId === user.id));
+    }
+  }, [searchParams, user]);
+
+  const assignedJobs = useMemo(() => {
+    if (!user) return [];
+    return jobs
+      .filter(job => 
+        job.assignedTruckIds?.includes(user.id) ||
+        job.assignedTrailerIds?.includes(user.id) ||
+        job.assignedHeavyEquipmentIds?.includes(user.id)
+      )
+      .map(job => ({ ...job, status: getJobStatus(job) }))
+      .filter(job => job.status === 'active' || job.status === 'upcoming')
+      .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
+  }, [jobs, user]);
 
   const eventDates = useMemo(() => {
     return events.map(event => parseISO(event.date));
@@ -84,8 +111,106 @@ export default function EmployeeHubPage() {
         </p>
       </div>
 
-       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8 mb-12">
-          <Card id="tour-step-company-calendar" className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+       <div id="tour-step-main-tools" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-12">
+            <Link href="/employee/fleet-check" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <Truck className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Fleet Check
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Daily vehicle inspections.
+                  </CardDescription>
+                </Card>
+            </Link>
+            <Link href="/employee/my-tasks" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <ClipboardList className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    My Tasks
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    View & complete assigned tasks.
+                  </CardDescription>
+                </Card>
+            </Link>
+            <Link href="/employee/time-off" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <CalendarPlus className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Time Off
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Request time off.
+                  </CardDescription>
+                </Card>
+            </Link>
+            <Link href="/employee/submit-expense" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <Receipt className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Submit Expense
+                  </CardTitle>
+                  <CardDescription className="text-sm mt-1">
+                    Upload receipts for reimbursement.
+                  </CardDescription>
+                </Card>
+            </Link>
+        </div>
+
+        <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
+            <div id="tour-step-job-board" className="lg:col-span-3">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl h-full">
+                    <CardHeader>
+                        <CardTitle className="font-headline flex items-center gap-2">
+                           <Briefcase className="h-6 w-6 text-primary" /> Your Job Board
+                        </CardTitle>
+                        <CardDescription>Active and upcoming jobs assigned to you.</CardDescription>
+                    </CardHeader>
+                    <CardContent className="space-y-4">
+                        {assignedJobs.length > 0 ? (
+                            assignedJobs.map(job => (
+                                <Card key={job.id} className="p-4 bg-muted/30">
+                                    <div className="flex justify-between items-center gap-4">
+                                        <div>
+                                            <p className="font-bold">{job.name}</p>
+                                            <p className="text-sm text-muted-foreground">{job.clientName}</p>
+                                            <p className="text-xs text-muted-foreground">{job.address}</p>
+                                        </div>
+                                        <div className="flex flex-col items-end gap-2">
+                                            <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
+                                            <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer">
+                                                <Button size="sm" variant="outline"><MapPin className="mr-2 h-4 w-4" /> Directions</Button>
+                                            </a>
+                                        </div>
+                                    </div>
+                                </Card>
+                            ))
+                        ) : (
+                            <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                                <Briefcase className="h-8 w-8 mx-auto mb-2"/>
+                                <p>You have no active or upcoming jobs.</p>
+                            </div>
+                        )}
+                    </CardContent>
+                </Card>
+            </div>
+            <div className="lg:col-span-2 grid grid-cols-2 gap-6">
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
+                    <Check className="h-8 w-8 text-primary mb-2" />
+                    <p className="text-4xl font-bold"><AnimatedCounter value={tasks.filter(t => t.status === 'completed').length} /></p>
+                    <p className="text-sm text-muted-foreground">Tasks Completed</p>
+                </Card>
+                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
+                    <FileText className="h-8 w-8 text-primary mb-2" />
+                    <p className="text-4xl font-bold"><AnimatedCounter value={reports.length} /></p>
+                    <p className="text-sm text-muted-foreground">Inspections Done</p>
+                </Card>
+            </div>
+        </div>
+
+       <div id="tour-step-company-calendar">
+          <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
             <CardHeader>
               <CardTitle className="flex items-center gap-2 font-headline">
                 <CalendarIcon className="text-primary" />
@@ -129,107 +254,6 @@ export default function EmployeeHubPage() {
               </div>
             </CardContent>
           </Card>
-          <div id="tour-step-main-tools" className="grid grid-cols-1 sm:grid-cols-2 gap-8">
-              <Link href="/employee/fleet-check" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <Truck className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Fleet Check
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Daily vehicle inspections.
-                  </CardDescription>
-                </Card>
-              </Link>
-              <Link href="/employee/time-off" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <CalendarPlus className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Time Off
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Request time off.
-                  </CardDescription>
-                </Card>
-              </Link>
-              <Link href="/employee/my-tasks" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <ClipboardList className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    My Tasks
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    View & complete assigned tasks.
-                  </CardDescription>
-                </Card>
-              </Link>
-              <Link href="/employee/submit-expense" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <Receipt className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Submit Expense
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Upload receipts for reimbursement.
-                  </CardDescription>
-                </Card>
-              </Link>
-               <Link href="/employee/company-documents" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <Files className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Company Documents
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Policies, manuals, & vehicle docs.
-                  </CardDescription>
-                </Card>
-              </Link>
-              <Link href="/employee/personal-documents" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <FileBadge className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Personal Documents
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    Tax & employment forms.
-                  </CardDescription>
-                </Card>
-              </Link>
-                <Link href="/reports" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <FileText className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    My Reports
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    View your past inspections.
-                  </CardDescription>
-                </Card>
-              </Link>
-               <Link href="/notifications" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <Bell className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    Notifications
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    View messages and alerts.
-                  </CardDescription>
-                </Card>
-              </Link>
-              <Link href="/employee/my-violations" passHref>
-                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <ShieldAlert className="h-16 w-24 text-primary mx-auto mb-4" />
-                  <CardTitle className="text-2xl font-headline">
-                    My Violations
-                  </CardTitle>
-                  <CardDescription className="text-base mt-2">
-                    View your records.
-                  </CardDescription>
-                </Card>
-              </Link>
-          </div>
        </div>
     </div>
     </>

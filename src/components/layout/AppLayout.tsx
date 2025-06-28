@@ -21,11 +21,13 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookCopy, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { loadNotifications } from '@/lib/localStorageService';
 import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
+import CommandPalette from '@/components/common/CommandPalette';
+import { useCommandPalette } from '@/hooks/use-command-palette';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -40,6 +42,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const [unreadCount, setUnreadCount] = useState(0);
     const searchParams = useSearchParams();
     const showAiAssistantWelcome = searchParams.get('tour') === 'true';
+    const { open } = useCommandPalette();
 
     useEffect(() => {
         if (user) {
@@ -51,6 +54,17 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             setUnreadCount(count);
         }
     }, [user, pathname]);
+    
+    useEffect(() => {
+      const down = (e: KeyboardEvent) => {
+        if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+          e.preventDefault()
+          open()
+        }
+      }
+      document.addEventListener("keydown", down)
+      return () => document.removeEventListener("keydown", down)
+    }, [open])
 
     if (!user) {
         return <FullScreenLoader text="Redirecting..." />;
@@ -226,6 +240,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     </Link>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
+                                    <Link href="/admin/fleet-health">
+                                        <SidebarMenuButton tooltip="Fleet Health" isActive={pathname.startsWith('/admin/fleet-health')}>
+                                            <HeartPulse /><span>Fleet Health</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <Link href="/admin/manage-documents">
                                         <SidebarMenuButton tooltip="General Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
                                             <BookCopy /><span>General Documents</span>
@@ -306,6 +327,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </SidebarContent>
                 <SidebarFooter className="p-2">
                     <SidebarMenu>
+                        <SidebarMenuItem>
+                           <Button variant="ghost" className="w-full justify-start" onClick={open}>
+                             <span className="mr-auto">Search...</span>
+                             <kbd className="ml-4 hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘K</kbd>
+                           </Button>
+                        </SidebarMenuItem>
                         <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
                             <Link href="/help">
                                 <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'}>
@@ -337,6 +364,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     {children}
                 </main>
             </SidebarInset>
+            <CommandPalette />
             <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
         </SidebarProvider>
     );

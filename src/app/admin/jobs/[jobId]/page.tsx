@@ -1,21 +1,22 @@
 
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { loadJobs, saveJobs, loadClients, loadFleetAssets } from '@/lib/localStorageService';
-import type { Job, Client, FleetAsset, User } from '@/lib/types';
+import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadMaintenanceLogs, loadExpenseReports } from '@/lib/localStorageService';
+import type { Job, Client, FleetAsset, User, MaintenanceLog, ExpenseReport } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon } from 'lucide-react';
-import { format } from 'date-fns';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench } from 'lucide-react';
+import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
 import { cn } from '@/lib/utils';
+import AnimatedCounter from '@/components/common/AnimatedCounter';
 
 export default function JobDetailsPage() {
   const params = useParams();
@@ -28,6 +29,10 @@ export default function JobDetailsPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [newNote, setNewNote] = useState('');
   const [isMounted, setIsMounted] = useState(false);
+
+  // New state for cost analysis
+  const [maintenanceLogs, setMaintenanceLogs] = useState<MaintenanceLog[]>([]);
+  const [expenseReports, setExpenseReports] = useState<ExpenseReport[]>([]);
 
   useEffect(() => {
     setIsMounted(true);
@@ -42,8 +47,45 @@ export default function JobDetailsPage() {
       }
       
       setAssets(loadFleetAssets());
+      setMaintenanceLogs(loadMaintenanceLogs());
+      setExpenseReports(loadExpenseReports());
     }
   }, [jobId]);
+  
+  const jobCosts = useMemo(() => {
+    if (!job) return { maintenanceCost: 0, expenseCost: 0, totalCost: 0 };
+
+    const jobInterval = {
+      start: parseISO(job.startDate),
+      end: parseISO(job.endDate),
+    };
+
+    const assignedAssetIds = new Set([
+      ...(job.assignedTruckIds || []),
+      ...(job.assignedTrailerIds || []),
+      ...(job.assignedHeavyEquipmentIds || []),
+    ]);
+
+    const maintenanceCost = maintenanceLogs
+      .filter(log => {
+        const asset = assets.find(a => a.id === log.assetId);
+        return asset && assignedAssetIds.has(asset.id) && isWithinInterval(parseISO(log.date), jobInterval);
+      })
+      .reduce((acc, log) => acc + (log.cost || 0), 0);
+      
+    // Note: We're assuming expenses are not tied to specific assets for now. 
+    // A more complex system might link them. We filter by date.
+    const expenseCost = expenseReports
+        .filter(report => isWithinInterval(parseISO(report.date), jobInterval))
+        .reduce((acc, report) => acc + report.amount, 0);
+
+    return {
+      maintenanceCost,
+      expenseCost,
+      totalCost: maintenanceCost + expenseCost
+    };
+  }, [job, assets, maintenanceLogs, expenseReports]);
+
 
   const handleAddNote = () => {
     if (!job || !user || !newNote.trim()) {
@@ -112,6 +154,8 @@ export default function JobDetailsPage() {
     if (value === undefined || value === null) return 'N/A';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
+  
+  const estimatedProfit = (job.jobValue || 0) - jobCosts.totalCost;
 
   const renderAssetList = (assetList: FleetAsset[], title: string, Icon: React.ElementType) => (
     <div>
@@ -151,9 +195,9 @@ export default function JobDetailsPage() {
         <div className="lg:col-span-2 space-y-8">
             <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Job Details</CardTitle>
+                    <CardTitle className="text-xl">Job Overview</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4 text-sm">
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-6">
                     <div className="flex items-start gap-3">
                         <Building2 className="h-5 w-5 text-primary mt-1" />
                         <div>
@@ -175,12 +219,39 @@ export default function JobDetailsPage() {
                             <p className="font-semibold">{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</p>
                         </div>
                     </div>
-                     <div className="flex items-start gap-3">
+                    <div className="flex items-start gap-3">
                         <DollarSign className="h-5 w-5 text-primary mt-1" />
                         <div>
                             <p className="text-muted-foreground">Job Value</p>
                             <p className="font-semibold">{formatCurrency(job.jobValue)}</p>
                         </div>
+                    </div>
+                </CardContent>
+            </Card>
+
+             <Card>
+                <CardHeader>
+                    <CardTitle className="text-xl">Job Cost Analysis</CardTitle>
+                    <CardDescription>Estimated operational costs during the job dates.</CardDescription>
+                </CardHeader>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 text-center">
+                    <div>
+                        <p className="text-sm text-muted-foreground">Maintenance</p>
+                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
+                    </div>
+                     <div>
+                        <p className="text-sm text-muted-foreground">Expenses</p>
+                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Total Costs</p>
+                        <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
+                    </div>
+                    <div>
+                        <p className="text-sm text-muted-foreground">Est. Profit</p>
+                        <p className={`text-2xl font-bold ${estimatedProfit >= 0 ? 'text-primary' : 'text-destructive'}`}>
+                          <AnimatedCounter value={estimatedProfit} type="currency" />
+                        </p>
                     </div>
                 </CardContent>
             </Card>
