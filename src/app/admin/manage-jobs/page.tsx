@@ -427,7 +427,7 @@ export default function ManageJobsPage() {
                       <DialogHeader>
                           <DialogTitle>Create Job with AI</DialogTitle>
                           <DialogDescription>
-                              Describe the job in plain English. The AI will populate the form for you. Include the client name, address, dates, and value.
+                              Describe the job in plain English. The AI will populate the form for you. Include the client name, address, dates, and job value.
                           </DialogDescription>
                       </DialogHeader>
                       <div className="py-4 space-y-4">

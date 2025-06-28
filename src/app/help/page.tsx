@@ -53,7 +53,7 @@ export default function HelpPage() {
             Help & Support
           </CardTitle>
           <CardDescription>
-            Find answers to common questions and learn how to use the Logan's Excavating application effectively. For immediate help, use the AI Assistant floating in the corner of your screen.
+            Find answers to your questions below, or use the AI Assistant in the corner for immediate help.
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-8">

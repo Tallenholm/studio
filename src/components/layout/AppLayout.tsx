@@ -176,7 +176,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
                             
                             <SidebarSeparator className="my-1" />
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People & Comm.</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People & Comms</SidebarGroupLabel>
                             <SidebarMenu>
                                 {user.role === 'owner' && <SidebarMenuItem>
                                     <Link href="/admin/manage-users">

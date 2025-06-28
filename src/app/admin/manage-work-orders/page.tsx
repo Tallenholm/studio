@@ -101,7 +101,7 @@ export default function ManageWorkOrdersPage() {
                 mechanic: values.mechanic,
             };
             saveMaintenanceLogs([...maintenanceLogs, newLog]);
-            toastDescription += ' A maintenance log was automatically created.';
+            toastDescription += ' A maintenance log was also created.';
         }
     }
     

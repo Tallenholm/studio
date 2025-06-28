@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake } from 'lucide-react';
+import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, CheckCircle2, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
@@ -285,7 +285,7 @@ export default function FleetCheckDashboardPage() {
             Operations Calendar
           </CardTitle>
           <CardDescription>
-            At-a-glance view of jobs, company events, time off, and maintenance schedules. <Link href="/admin/manage-calendar" className="text-primary hover:underline">Click here to manage events.</Link>
+            At-a-glance view of jobs, company events, and approved time off. <Link href="/admin/manage-calendar" className="text-primary hover:underline">Manage company events here.</Link>
           </CardDescription>
         </CardHeader>
         <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -343,7 +343,7 @@ export default function FleetCheckDashboardPage() {
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline">
               <Users className="text-primary" />
-              People & Communication
+              People & Comms
             </CardTitle>
             <CardDescription>
               Manage employees, requests, tasks, violations, and send notifications.

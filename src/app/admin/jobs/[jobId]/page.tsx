@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake } from 'lucide-react';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Wrench, Snowflake, Users as UsersIcon } from 'lucide-react';
 import { format, isWithinInterval, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -194,7 +194,7 @@ export default function JobDetailsPage() {
                 {job.name}
               </CardTitle>
               <CardDescription className="mt-2">
-                Detailed view of this {job.jobType === 'snow_removal' ? 'snow contract' : 'job'} and its related assets and notes.
+                Detailed view of this {job.jobType === 'snow_removal' ? 'snow contract' : 'job'}, including its assignments, costs, and activity log.
               </CardDescription>
             </div>
              <Badge variant={jobStatus === 'active' ? 'default' : jobStatus === 'completed' ? 'secondary' : 'outline'} className={cn(jobStatus === 'active' && 'bg-green-600', 'text-lg')}>

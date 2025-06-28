@@ -417,7 +417,7 @@ export default function ManageSnowPage() {
                       <DialogHeader>
                           <DialogTitle>Create Snow Contract with AI</DialogTitle>
                           <DialogDescription>
-                              Describe the contract in plain English. The AI will populate the form for you. Include the client name, address, dates, and value.
+                              Describe the contract in plain English. The AI will populate the form for you. Include the client name, address, dates, and contract value.
                           </DialogDescription>
                       </DialogHeader>
                       <div className="py-4 space-y-4">

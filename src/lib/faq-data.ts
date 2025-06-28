@@ -6,7 +6,7 @@ export const faqs = {
       answer: "Welcome! The first time you log in, the application provides a brief guided tour to introduce you to the key features of your dashboard. This tour is designed to help you get started quickly. It will only appear once.",
     },
     {
-      question: "How do I use the new AI assistant?",
+      question: "How do I use the AI Assistant?",
       answer: "The AI assistant is available via the floating icon in the bottom-right corner of your screen. You can ask it questions about how to use the application at any time. On the 'Manage Jobs' page, administrators can also use the 'Create with AI' button to generate a new job from a simple text description, which speeds up the form-filling process.",
     },
     {
@@ -32,7 +32,7 @@ export const faqs = {
         answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete'. If photo verification is required, you can use your device's camera or upload a file. The photo will be stamped with the date, time, and GPS coordinates. Add any notes and submit. The task will then be marked as complete.",
     },
     {
-        question: "How do I view notifications from my manager?",
+        question: "How do I view notifications?",
         answer: "Click on the 'Notifications' link in the sidebar or on the Employee Hub. This will take you to your message center. New, unread messages will be highlighted. Click on a message to expand it and mark it as read.",
     },
     {
@@ -46,7 +46,7 @@ export const faqs = {
   ],
   manager: [
     {
-      question: "How do I use the AI Daily Briefing on the Admin Dashboard?",
+      question: "What does the AI Daily Briefing do?",
       answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off or expense approvals. It helps you prioritize your work without having to manually check every section of the app.",
     },
     {
@@ -58,7 +58,7 @@ export const faqs = {
       answer: "After an employee completes a Pre-Trip inspection, you (as an admin) can view the report and click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
     },
      {
-      question: "How do I upload or manage documents as an administrator?",
+      question: "How do I manage documents?",
       answer: "Navigate to 'General Documents' from your dashboard. When adding a new document, you must select its type: General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
     },
     {
@@ -70,7 +70,7 @@ export const faqs = {
       answer: "As an administrator, navigate to 'Manage Violations' from your dashboard. Here you can log new incidents, including the type, date, and action taken. These records are for internal documentation.",
     },
     {
-      question: "How do I log maintenance for a vehicle?",
+      question: "How do I log maintenance?",
       answer: "As an Administrator, navigate to the 'Maintenance Logs' section from your dashboard. Click 'Log New Service', fill in the details about the service performed, including the date, cost, and description, and select the asset it applies to. All past logs are visible on this page.",
     },
   ],
@@ -80,11 +80,11 @@ export const faqs = {
       answer: "Navigate to 'Advanced Reports' from the Admin Dashboard or sidebar. This page provides a powerful analytics overview of your fleet's data. You can use the filters at the top to narrow down the data by a specific date range (e.g., 'Last 30 Days') or by vehicle type (e.g., 'Trucks only'). The charts will update in real-time to reflect your selections, allowing you to gain deeper insights into trends and costs.",
     },
     {
-      question: "What are the different Admin roles and what can they do?",
+      question: "What can different Admin roles do?",
       answer: "There are two levels of administrative access: Manager and Owner. 'Managers' can handle day-to-day operations like managing tasks, violations, and documents. 'Owners' have full system access, including all manager permissions, plus the ability to manage users, clients, jobs, expenses, and view advanced financial reports. Only an Owner can change another user's role.",
     },
     {
-      question: "How do I manage snow removal work differently from excavation?",
+      question: "How is snow removal managed?",
       answer: "The application now has a dedicated 'Manage Snow Contracts' section, accessible from the dashboard and sidebar. This area is completely separate from the 'Manage Excavation Jobs' section. You can create, track, and manage your snow contracts here. Employees will see their snow assignments on a separate 'Snow Route Board' on their hub, ensuring a clear distinction between seasonal and regular work.",
     },
     {
@@ -92,11 +92,11 @@ export const faqs = {
       answer: "As an 'Owner', go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, edit existing clients, or remove them. This client list is then used when creating and assigning jobs.",
     },
     {
-      question: "How do I create and track jobs?",
+      question: "How do I create and track excavation jobs?",
       answer: "As an 'Owner', go to the 'Manage Jobs' page. You can create a new job manually, or use the 'Create with AI' button to generate one from a simple description. You can also edit existing jobs, assign specific fleet assets, and track job value. Use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
     },
     {
-      question: "How do I approve or deny employee expenses?",
+      question: "How do I manage expense reports?",
       answer: "As an 'Owner', go to 'Manage Expenses' from your dashboard. You will see a list of all pending expense reports. You can review the details, view the uploaded receipt, and then choose to 'Approve' or 'Deny' the request. The employee will see the updated status in their portal.",
     },
   ],
