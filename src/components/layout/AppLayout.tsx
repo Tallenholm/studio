@@ -372,36 +372,43 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         if (isLoading) return;
 
         const role = user?.role || 'guest';
-        const isAllowed = isPathAllowed(pathname, role);
-        let destination = '';
-
-        if (user && PUBLIC_PATHS.includes(pathname)) {
-            destination = user.role === 'employee' ? '/employee' : '/admin';
-        } else if (!user && !PUBLIC_PATHS.includes(pathname)) {
-            destination = '/login';
-        } else if (user && !isAllowed) {
-            destination = '/'; // Go to root, which will then redirect to correct hub
-        }
         
-        if (pathname === '/' && user) {
-            destination = user.role === 'employee' ? '/employee' : '/admin';
+        let destination: string | null = null;
+
+        if (user) {
+            // User is logged in
+            if (PUBLIC_PATHS.includes(pathname) || pathname === '/') {
+                destination = role === 'employee' ? '/employee' : '/admin';
+            } else if (!isPathAllowed(pathname, role)) {
+                // Logged in user on a forbidden path, send to their hub
+                destination = role === 'employee' ? '/employee' : '/admin';
+            }
+        } else {
+            // User is not logged in
+            if (!PUBLIC_PATHS.includes(pathname)) {
+                destination = '/login';
+            }
         }
 
         if (destination) {
             router.replace(destination);
         } else {
-            setIsRouteChecked(true);
+            setIsRouteChecked(true); // Path is allowed, stop loading
         }
-
     }, [isLoading, user, pathname, router]);
+
 
     if (isLoading || !isRouteChecked) {
         return <FullScreenLoader />;
     }
 
-    if (!user) {
+    if (!user && PUBLIC_PATHS.includes(pathname)) {
         return <>{children}</>;
     }
+    
+    if (user) {
+        return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+    }
 
-    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+    return <FullScreenLoader />;
 }
