@@ -17,11 +17,11 @@ interface ForecastPeriod {
     probabilityOfPrecipitation: {
         unitCode: string;
         value: number | null;
-    };
+    } | null;
     relativeHumidity: {
         unitCode: string;
         value: number | null;
-    };
+    } | null;
     heatIndex?: {
         unitCode: string;
         value: number | null;
@@ -50,8 +50,6 @@ const LONGITUDE = -87.8612;
 export default function WeatherForecast({ tourId }: { tourId?: string }) {
     const [forecast, setForecast] = useState<ForecastPeriod[] | null>(null);
     const [locationName, setLocationName] = useState('your location');
-    const [hourlyUrl, setHourlyUrl] = useState('');
-    const [weeklyUrl, setWeeklyUrl] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
 
@@ -64,13 +62,10 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
                     throw new Error(`Failed to fetch weather points (status: ${pointsResponse.status}). API may be down or location invalid.`);
                 }
                 const pointsData = await pointsResponse.json();
-                const forecastUrl = pointsData.properties.forecast;
                 const hourlyForecastUrl = pointsData.properties.forecastHourly;
                 const locationCity = pointsData.properties.relativeLocation.properties.city;
                 const locationState = pointsData.properties.relativeLocation.properties.state;
                 setLocationName(`${locationCity}, ${locationState}`);
-                setWeeklyUrl(forecastUrl);
-                setHourlyUrl(hourlyForecastUrl);
 
                 // Step 2: Get the HOURLY forecast for more detailed data
                 const forecastResponse = await fetch(hourlyForecastUrl);
@@ -166,20 +161,23 @@ export default function WeatherForecast({ tourId }: { tourId?: string }) {
             </div>
         );
     }
+    
+    const weatherGovUrl = `https://forecast.weather.gov/MapClick.php?lat=${LATITUDE}&lon=${LONGITUDE}`;
 
     return (
         <Card id={tourId} className="mb-8">
             <CardHeader>
                 <CardTitle>Upcoming Hourly Forecast for {locationName}</CardTitle>
-                <CardDescription>Weather for {format(new Date(), 'eeee, MMMM do')}. Click below for more detailed forecasts.</CardDescription>
+                <CardDescription>Weather for {format(new Date(), 'eeee, MMMM do')}. Click below for the detailed forecast.</CardDescription>
             </CardHeader>
             <CardContent>
                 {renderContent()}
             </CardContent>
-             {(!loading && !error && (hourlyUrl || weeklyUrl)) && (
+             {(!loading && !error) && (
                 <CardFooter className="flex justify-end gap-2">
-                    {hourlyUrl && <Button asChild variant="outline" size="sm"><a href={hourlyUrl} target="_blank" rel="noopener noreferrer">Full Hourly Forecast</a></Button>}
-                    {weeklyUrl && <Button asChild variant="outline" size="sm"><a href={weeklyUrl} target="_blank" rel="noopener noreferrer">7-Day Forecast</a></Button>}
+                    <Button asChild variant="outline" size="sm">
+                        <a href={weatherGovUrl} target="_blank" rel="noopener noreferrer">View on Weather.gov</a>
+                    </Button>
                 </CardFooter>
             )}
         </Card>
