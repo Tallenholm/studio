@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -22,21 +21,39 @@ interface AiAssistantWidgetProps {
     initialOpen?: boolean;
 }
 
-const welcomeMessage = "Hello! I'm your AI Assistant. For admins, I can help automate tasks like filling out new job forms from a simple description—just look for the 'Create with AI' button on the Manage Jobs page.\n\nHere, I can answer any questions you have about using the app. For example:\n\n- \"How do I submit an inspection?\"\n- \"What does the AI Daily Briefing do?\"\n\nWhat can I help you with today?";
+const getWelcomeMessage = (role: UserRole | 'guest') => {
+    const baseIntro = "Hello! I'm your AI Assistant. I can answer any questions you have about using this application.";
+
+    if (role === 'owner' || role === 'manager') {
+        return `${baseIntro}\n\nFor example, you can ask:\n- "How do I create a job with AI?"\n- "What does the AI Daily Briefing do?"\n- "How are work orders created?"\n\nWhat can I help you with today?`;
+    }
+    
+    return `${baseIntro}\n\nFor example, you can ask:\n- "How do I submit an inspection?"\n- "How do I request time off?"\n- "Where do I see my assigned tasks?"\n\nWhat can I help you with today?`;
+}
+
 
 export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWidgetProps) {
   const [isOpen, setIsOpen] = useState(initialOpen);
   const [aiQuestion, setAiQuestion] = useState('');
-  const [aiAnswer, setAiAnswer] = useState(welcomeMessage);
+  const [aiAnswer, setAiAnswer] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
+  
+  const userRole = user?.role || 'guest';
+  const welcomeMessage = getWelcomeMessage(userRole);
 
   useEffect(() => {
     if (initialOpen) {
       setIsOpen(true);
     }
   }, [initialOpen]);
+
+  useEffect(() => {
+    // Set initial welcome message when the component mounts or user changes
+    setAiAnswer(welcomeMessage);
+  }, [welcomeMessage]);
+
 
   const handleOpenChange = (open: boolean) => {
     setIsOpen(open);
@@ -53,9 +70,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
     setIsAsking(true);
     setAiAnswer('');
     try {
-      // Use the logged-in user's role, or 'guest' if not logged in
-      const role = user?.role || 'guest';
-      const answer = await answerHelpQuestion({ question: aiQuestion, role });
+      const answer = await answerHelpQuestion({ question: aiQuestion, role: userRole });
       setAiAnswer(answer);
     } catch (error) {
       console.error("AI Help Error:", error);

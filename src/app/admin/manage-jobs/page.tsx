@@ -139,7 +139,12 @@ export default function ManageJobsPage() {
 
       const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
       if (!client) {
-        toast({ variant: 'destructive', title: 'Client Not Found', description: `Could not find a client named "${result.clientName}". Please add them first.` });
+        toast({ 
+            variant: 'destructive', 
+            title: 'Client Not Found', 
+            description: `A client named "${result.clientName}" was not found. Please add them on the "Manage Clients" page before creating a job for them.`,
+            duration: 8000,
+        });
         setIsGeneratingJob(false);
         return;
       }
