@@ -177,9 +177,16 @@ export interface Job {
   jobType: 'excavation' | 'snow_removal';
   startDate: string; // YYYY-MM-DD
   endDate: string; // YYYY-MM-DD
+  assignedEmployeeIds?: string[];
   assignedTruckIds?: string[];
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
+  assignedSidewalkCrewIds?: string[]; // For snow removal sidewalk crews
+  snowServices?: {
+    plowing?: boolean;
+    salting?: boolean;
+    sidewalks?: boolean;
+  };
   notes?: {
     timestamp: string; // ISO string
     content: string;

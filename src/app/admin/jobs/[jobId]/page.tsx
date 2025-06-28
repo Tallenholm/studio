@@ -3,7 +3,7 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import { useParams } from 'next/navigation';
-import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadMaintenanceLogs, loadExpenseReports } from '@/lib/localStorageService';
+import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadMaintenanceLogs, loadExpenseReports, loadUsers } from '@/lib/localStorageService';
 import type { Job, Client, FleetAsset, User, MaintenanceLog, ExpenseReport } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -27,6 +27,7 @@ export default function JobDetailsPage() {
   const [job, setJob] = useState<Job | null | undefined>(undefined);
   const [client, setClient] = useState<Client | null | undefined>(undefined);
   const [assets, setAssets] = useState<FleetAsset[]>([]);
+  const [allUsers, setAllUsers] = useState<User[]>([]);
   const [newNote, setNewNote] = useState('');
   const [isMounted, setIsMounted] = useState(false);
 
@@ -49,6 +50,7 @@ export default function JobDetailsPage() {
       setAssets(loadFleetAssets());
       setMaintenanceLogs(loadMaintenanceLogs());
       setExpenseReports(loadExpenseReports());
+      setAllUsers(loadUsers());
     }
   }, [jobId]);
   
@@ -116,7 +118,7 @@ export default function JobDetailsPage() {
     toast({ title: 'Note Added', description: 'Your note has been added to the job log.' });
   };
   
-  if (!isMounted) {
+  if (!isMounted || job === undefined) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -144,12 +146,14 @@ export default function JobDetailsPage() {
     );
   }
 
-  const jobStatus = job ? getJobStatus(job) : 'completed';
+  const jobStatus = getJobStatus(job);
   const JobIcon = job.jobType === 'snow_removal' ? Snowflake : Briefcase;
 
+  const assignedEmployees = allUsers.filter(u => job?.assignedEmployeeIds?.includes(u.id));
   const assignedTrucks = assets.filter(a => job?.assignedTruckIds?.includes(a.id));
   const assignedTrailers = assets.filter(a => job?.assignedTrailerIds?.includes(a.id));
   const assignedHeavyEquipment = assets.filter(a => job?.assignedHeavyEquipmentIds?.includes(a.id));
+  const assignedSidewalkCrew = allUsers.filter(u => job?.assignedSidewalkCrewIds?.includes(u.id));
 
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || value === null) return 'N/A';
@@ -158,7 +162,7 @@ export default function JobDetailsPage() {
   
   const estimatedProfit = (job.jobValue || 0) - jobCosts.totalCost;
 
-  const renderAssetList = (assetList: FleetAsset[], title: string, Icon: React.ElementType) => (
+  const renderAssetList = (assetList: (FleetAsset | User)[], title: string, Icon: React.ElementType) => (
     <div>
         <h4 className="font-semibold text-md mb-2 flex items-center gap-2"><Icon className="h-5 w-5 text-primary"/>{title}</h4>
         {assetList.length > 0 ? (
@@ -170,6 +174,14 @@ export default function JobDetailsPage() {
         )}
     </div>
   );
+
+  const getServicesString = (services?: { plowing?: boolean, salting?: boolean, sidewalks?: boolean }) => {
+    if (!services) return 'N/A';
+    const enabledServices = Object.entries(services)
+        .filter(([, enabled]) => enabled)
+        .map(([service]) => service.charAt(0).toUpperCase() + service.slice(1));
+    return enabledServices.length > 0 ? enabledServices.join(', ') : 'None';
+  }
   
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -223,10 +235,19 @@ export default function JobDetailsPage() {
                     <div className="flex items-start gap-3">
                         <DollarSign className="h-5 w-5 text-primary mt-1" />
                         <div>
-                            <p className="text-muted-foreground">Job Value</p>
+                            <p className="text-muted-foreground">{job.jobType === 'snow_removal' ? 'Contract Value' : 'Job Value'}</p>
                             <p className="font-semibold">{formatCurrency(job.jobValue)}</p>
                         </div>
                     </div>
+                     {job.jobType === 'snow_removal' && (
+                        <div className="flex items-start gap-3 md:col-span-2">
+                            <Snowflake className="h-5 w-5 text-primary mt-1" />
+                            <div>
+                                <p className="text-muted-foreground">Services</p>
+                                <p className="font-semibold">{getServicesString(job.snowServices)}</p>
+                            </div>
+                        </div>
+                    )}
                 </CardContent>
             </Card>
 
@@ -259,12 +280,22 @@ export default function JobDetailsPage() {
 
              <Card>
                 <CardHeader>
-                    <CardTitle className="text-xl">Assigned Fleet</CardTitle>
+                    <CardTitle className="text-xl">{job.jobType === 'snow_removal' ? 'Routing & Assignments' : 'Assigned Personnel & Fleet'}</CardTitle>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                    {renderAssetList(assignedTrucks, 'Trucks', Truck)}
-                    {renderAssetList(assignedTrailers, 'Trailers', Box)}
-                    {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
+                    {job.jobType === 'snow_removal' ? (
+                        <>
+                           {renderAssetList([...assignedTrucks, ...assignedHeavyEquipment], 'Plow & Salt Fleet', Truck)}
+                           {renderAssetList(assignedSidewalkCrew, 'Sidewalk Crew', UsersIcon)}
+                        </>
+                    ) : (
+                        <>
+                           {renderAssetList(assignedEmployees, 'Personnel', UsersIcon)}
+                           {renderAssetList(assignedTrucks, 'Trucks', Truck)}
+                           {renderAssetList(assignedTrailers, 'Trailers', Box)}
+                           {renderAssetList(assignedHeavyEquipment, 'Heavy Equipment', Shovel)}
+                        </>
+                    )}
                 </CardContent>
             </Card>
         </div>

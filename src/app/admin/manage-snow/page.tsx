@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, loadJobs, saveJobs, loadFleetAssets } from '@/lib/localStorageService';
-import type { Client, Job, JobStatus, FleetAsset, VehicleType } from '@/lib/types';
+import { loadClients, loadJobs, saveJobs, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import type { Client, Job, JobStatus, FleetAsset, VehicleType, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Snowflake } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Snowflake, Users as UsersIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -35,6 +35,7 @@ import { Separator } from '@/components/ui/separator';
 import { getJobStatus } from '@/lib/job-utils';
 import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
 import { Textarea } from '@/components/ui/textarea';
+import { Checkbox } from '@/components/ui/checkbox';
 
 
 const jobSchema = z.object({
@@ -48,8 +49,13 @@ const jobSchema = z.object({
     to: z.date({ required_error: 'An end date is required.' }),
   }),
   assignedTruckIds: z.array(z.string()).optional(),
-  assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
+  assignedSidewalkCrewIds: z.array(z.string()).optional(),
+  snowServices: z.object({
+    plowing: z.boolean().default(false),
+    salting: z.boolean().default(false),
+    sidewalks: z.boolean().default(false),
+  }).optional(),
 }).refine((data) => data.dateRange.to >= data.dateRange.from, {
   message: "End date cannot be before start date.",
   path: ["dateRange"],
@@ -60,6 +66,7 @@ export default function ManageSnowPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -79,22 +86,22 @@ export default function ManageSnowPage() {
       address: '',
       jobType: 'snow_removal',
       assignedTruckIds: [],
-      assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
+      assignedSidewalkCrewIds: [],
+      snowServices: { plowing: false, salting: false, sidewalks: false },
     },
   });
 
   useEffect(() => {
     setIsMounted(true);
     setClients(loadClients());
-    // Only load snow removal jobs for this page
     setJobs(loadJobs().filter(j => j.jobType === 'snow_removal'));
     setFleetAssets(loadFleetAssets());
+    setUsers(loadUsers().filter(u => u.role === 'employee'));
   }, []);
 
   useEffect(() => {
     if (isMounted) {
-      // When saving, we need to get all jobs, not just the filtered ones
       const allJobs = loadJobs();
       const snowJobs = jobs;
       const otherJobs = allJobs.filter(j => j.jobType !== 'snow_removal');
@@ -102,17 +109,15 @@ export default function ManageSnowPage() {
     }
   }, [jobs, isMounted]);
 
-  const { trucks, trailers, heavyEquipments } = useMemo(() => ({
-    trucks: fleetAssets.filter(a => a.type === 'truck'),
-    trailers: fleetAssets.filter(a => a.type === 'trailer'),
-    heavyEquipments: fleetAssets.filter(a => a.type === 'heavyEquipment'),
+  const { plowFleet } = useMemo(() => ({
+    plowFleet: fleetAssets.filter(a => a.type === 'truck' || a.type === 'heavyEquipment'),
   }), [fleetAssets]);
 
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset({ name: '', address: '', jobType: 'snow_removal', assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
+      form.reset({ name: '', address: '', jobType: 'snow_removal', assignedTruckIds: [], assignedHeavyEquipmentIds: [], assignedSidewalkCrewIds: [], snowServices: { plowing: false, salting: false, sidewalks: false } });
       setEditingJob(null);
     }
   };
@@ -130,8 +135,9 @@ export default function ManageSnowPage() {
         to: new Date(job.endDate),
       },
       assignedTruckIds: job.assignedTruckIds || [],
-      assignedTrailerIds: job.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
+      assignedSidewalkCrewIds: job.assignedSidewalkCrewIds || [],
+      snowServices: job.snowServices || { plowing: false, salting: false, sidewalks: false },
     });
     setIsDialogOpen(true);
   };
@@ -167,9 +173,6 @@ export default function ManageSnowPage() {
           from: parseISO(result.startDate),
           to: parseISO(result.endDate),
         },
-        assignedTruckIds: [],
-        assignedTrailerIds: [],
-        assignedHeavyEquipmentIds: [],
       });
 
       toast({ title: 'Contract Populated', description: 'Please review the generated contract details and assign assets.' });
@@ -192,17 +195,10 @@ export default function ManageSnowPage() {
     }
 
     const jobData = {
-      name: values.name,
-      clientId: client.id,
+      ...values,
       clientName: client.name,
-      address: values.address,
-      jobValue: values.jobValue,
-      jobType: values.jobType,
       startDate: values.dateRange.from.toISOString().split('T')[0],
       endDate: values.dateRange.to.toISOString().split('T')[0],
-      assignedTruckIds: values.assignedTruckIds || [],
-      assignedTrailerIds: values.assignedTrailerIds || [],
-      assignedHeavyEquipmentIds: values.assignedHeavyEquipmentIds || [],
     };
 
     if (editingJob) {
@@ -274,6 +270,14 @@ export default function ManageSnowPage() {
     if (value === undefined || value === null) return 'N/A';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
+  
+  const getServicesString = (services?: { plowing?: boolean, salting?: boolean, sidewalks?: boolean }) => {
+    if (!services) return 'N/A';
+    const enabledServices = Object.entries(services)
+        .filter(([, enabled]) => enabled)
+        .map(([service]) => service.charAt(0).toUpperCase() + service.slice(1));
+    return enabledServices.length > 0 ? enabledServices.join(', ') : 'None';
+  }
 
   const renderJobsTable = (jobList: (Job & { status: JobStatus })[], title: string) => (
     <Card>
@@ -288,10 +292,10 @@ export default function ManageSnowPage() {
                 <TableRow>
                   <TableHead>Status</TableHead>
                   <TableHead>Contract Name</TableHead>
+                  <TableHead>Services</TableHead>
                   <TableHead>Client</TableHead>
-                  <TableHead>Contract Value</TableHead>
+                  <TableHead>Value</TableHead>
                   <TableHead>Dates</TableHead>
-                  <TableHead>Assigned Assets</TableHead>
                   <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -304,16 +308,10 @@ export default function ManageSnowPage() {
                       </Badge>
                     </TableCell>
                     <TableCell className="font-medium">{job.name}</TableCell>
+                    <TableCell className="text-muted-foreground">{getServicesString(job.snowServices)}</TableCell>
                     <TableCell>{job.clientName}</TableCell>
                     <TableCell>{formatCurrency(job.jobValue)}</TableCell>
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
-                    <TableCell>
-                      <div className="flex gap-2 items-center text-muted-foreground">
-                        {(job.assignedTruckIds?.length || 0) > 0 && <Truck className="h-4 w-4" title={`${job.assignedTruckIds?.length} truck(s)`} />}
-                        {(job.assignedTrailerIds?.length || 0) > 0 && <Box className="h-4 w-4" title={`${job.assignedTrailerIds?.length} trailer(s)`} />}
-                        {(job.assignedHeavyEquipmentIds?.length || 0) > 0 && <Shovel className="h-4 w-4" title={`${job.assignedHeavyEquipmentIds?.length} equipment`} />}
-                      </div>
-                    </TableCell>
                     <TableCell className="text-right">
                        <DropdownMenu>
                          <DropdownMenuTrigger asChild>
@@ -347,37 +345,35 @@ export default function ManageSnowPage() {
     </Card>
   );
 
-  const AssetMultiSelect = ({ assetType, assets, fieldName }: { assetType: VehicleType, assets: FleetAsset[], fieldName: "assignedTruckIds" | "assignedTrailerIds" | "assignedHeavyEquipmentIds" }) => {
+  const MultiSelectDropdown = ({ items, fieldName, title, Icon }: { items: { id: string, name: string }[], fieldName: "assignedTruckIds" | "assignedHeavyEquipmentIds" | "assignedSidewalkCrewIds", title: string, Icon: React.ElementType }) => {
     const selectedIds = form.watch(fieldName) || [];
-    const Icon = assetType === 'truck' ? Truck : assetType === 'trailer' ? Box : Shovel;
-
     return (
       <FormField
         control={form.control}
         name={fieldName}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /> Assign {assetType.charAt(0).toUpperCase() + assetType.slice(1)}s</FormLabel>
+            <FormLabel className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /> {title}</FormLabel>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select assets...'}
+                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select...'}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64" align="start">
-                <DropdownMenuLabel>Available {assetType}s</DropdownMenuLabel>
+                <DropdownMenuLabel>{title}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {assets.map(asset => (
+                {items.map(item => (
                   <DropdownMenuCheckboxItem
-                    key={asset.id}
-                    checked={field.value?.includes(asset.id)}
+                    key={item.id}
+                    checked={field.value?.includes(item.id)}
                     onCheckedChange={(checked) => {
                       return checked
-                        ? field.onChange([...(field.value || []), asset.id])
-                        : field.onChange(field.value?.filter(value => value !== asset.id))
+                        ? field.onChange([...(field.value || []), item.id])
+                        : field.onChange(field.value?.filter(value => value !== item.id))
                     }}
                   >
-                    {asset.name}
+                    {item.name}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -409,7 +405,7 @@ export default function ManageSnowPage() {
                 Manage Snow Contracts
               </CardTitle>
               <CardDescription className="mt-2">
-                Assign and track snow and ice management contracts.
+                Create contracts, define services, and assign routes to your fleet and crews.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -489,7 +485,9 @@ export default function ManageSnowPage() {
                               </FormItem>
                             )}
                           />
-                          <FormField
+                        </div>
+                        <div className="space-y-4">
+                           <FormField
                             control={form.control}
                             name="clientId"
                             render={({ field }) => (
@@ -513,73 +511,110 @@ export default function ManageSnowPage() {
                               </FormItem>
                             )}
                           />
+                          <FormField
+                            control={form.control}
+                            name="jobValue"
+                            render={({ field }) => (
+                              <FormItem>
+                                <FormLabel>Contract Value (Optional)</FormLabel>
+                                <FormControl>
+                                  <Input type="number" placeholder="e.g., 25000.00" {...field} />
+                                </FormControl>
+                                <FormMessage />
+                              </FormItem>
+                            )}
+                          />
                         </div>
-                        <div className="space-y-4">
-                            <FormField
-                              control={form.control}
-                              name="jobValue"
-                              render={({ field }) => (
-                                <FormItem>
-                                  <FormLabel>Contract Value (Optional)</FormLabel>
-                                  <FormControl>
-                                    <Input type="number" placeholder="e.g., 25000.00" {...field} />
-                                  </FormControl>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                            <FormField
-                              control={form.control}
-                              name="dateRange"
-                              render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                  <FormLabel>Start & End Date</FormLabel>
-                                  <Popover>
-                                    <PopoverTrigger asChild>
-                                      <FormControl>
-                                        <Button
-                                          id="date"
-                                          variant={"outline"}
-                                          className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
-                                        >
-                                          <CalendarIcon className="mr-2 h-4 w-4" />
-                                          {field.value?.from ? (
-                                            field.value.to ? (
-                                              <>
-                                                {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
-                                              </>
-                                            ) : (
-                                              format(field.value.from, "LLL dd, y")
-                                            )
-                                          ) : (
-                                            <span>Pick a date range</span>
-                                          )}
-                                        </Button>
-                                      </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                        initialFocus
-                                        mode="range"
-                                        defaultMonth={field.value?.from}
-                                        selected={{ from: field.value?.from, to: field.value?.to }}
-                                        onSelect={field.onChange}
-                                        numberOfMonths={2}
-                                      />
-                                    </PopoverContent>
-                                  </Popover>
-                                  <FormMessage />
-                                </FormItem>
-                              )}
-                            />
-                          </div>
                       </div>
-
+                       <FormField
+                          control={form.control}
+                          name="dateRange"
+                          render={({ field }) => (
+                            <FormItem className="flex flex-col">
+                              <FormLabel>Start & End Date</FormLabel>
+                              <Popover>
+                                <PopoverTrigger asChild>
+                                  <FormControl>
+                                    <Button
+                                      id="date"
+                                      variant={"outline"}
+                                      className={cn("justify-start text-left font-normal", !field.value?.from && "text-muted-foreground")}
+                                    >
+                                      <CalendarIcon className="mr-2 h-4 w-4" />
+                                      {field.value?.from ? (
+                                        field.value.to ? (
+                                          <>
+                                            {format(field.value.from, "LLL dd, y")} - {format(field.value.to, "LLL dd, y")}
+                                          </>
+                                        ) : (
+                                          format(field.value.from, "LLL dd, y")
+                                        )
+                                      ) : (
+                                        <span>Pick a date range</span>
+                                      )}
+                                    </Button>
+                                  </FormControl>
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
+                                  <Calendar
+                                    initialFocus
+                                    mode="range"
+                                    defaultMonth={field.value?.from}
+                                    selected={{ from: field.value?.from, to: field.value?.to }}
+                                    onSelect={field.onChange}
+                                    numberOfMonths={2}
+                                  />
+                                </PopoverContent>
+                              </Popover>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
                       <Separator />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <AssetMultiSelect assetType="truck" assets={trucks} fieldName="assignedTruckIds" />
-                         <AssetMultiSelect assetType="trailer" assets={trailers} fieldName="assignedTrailerIds" />
-                         <AssetMultiSelect assetType="heavyEquipment" assets={heavyEquipments} fieldName="assignedHeavyEquipmentIds" />
+
+                      <div>
+                        <h3 className="text-lg font-medium mb-2">Routing &amp; Assignments</h3>
+                        <div className="space-y-4 rounded-md border p-4">
+                           <div>
+                                <FormLabel>Services Provided</FormLabel>
+                                <div className="flex items-center space-x-6 mt-2">
+                                     <FormField
+                                        control={form.control}
+                                        name="snowServices.plowing"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormLabel>Plowing</FormLabel>
+                                            </FormItem>
+                                        )}
+                                    />
+                                     <FormField
+                                        control={form.control}
+                                        name="snowServices.salting"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormLabel>Salting</FormLabel>
+                                            </FormItem>
+                                        )}
+                                    />
+                                    <FormField
+                                        control={form.control}
+                                        name="snowServices.sidewalks"
+                                        render={({ field }) => (
+                                            <FormItem className="flex items-center space-x-2 space-y-0">
+                                                <FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl>
+                                                <FormLabel>Sidewalks</FormLabel>
+                                            </FormItem>
+                                        )}
+                                    />
+                                </div>
+                            </div>
+                           <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                             <MultiSelectDropdown items={plowFleet} fieldName="assignedTruckIds" title="Plow & Salt Fleet" Icon={Truck} />
+                             <MultiSelectDropdown items={users} fieldName="assignedSidewalkCrewIds" title="Sidewalk Crew" Icon={UsersIcon} />
+                           </div>
+                        </div>
                       </div>
 
                       <DialogFooter>

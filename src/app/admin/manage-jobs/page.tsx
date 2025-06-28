@@ -5,8 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, loadJobs, saveJobs, loadFleetAssets } from '@/lib/localStorageService';
-import type { Client, Job, JobStatus, FleetAsset, VehicleType } from '@/lib/types';
+import { loadClients, loadJobs, saveJobs, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import type { Client, Job, JobStatus, FleetAsset, VehicleType, User } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -26,7 +26,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain } from 'lucide-react';
+import { PlusCircle, Trash2, Briefcase, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Users as UsersIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, isAfter, isBefore, startOfDay, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -47,6 +47,7 @@ const jobSchema = z.object({
     from: z.date({ required_error: 'A start date is required.' }),
     to: z.date({ required_error: 'An end date is required.' }),
   }),
+  assignedEmployeeIds: z.array(z.string()).optional(),
   assignedTruckIds: z.array(z.string()).optional(),
   assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
@@ -60,6 +61,7 @@ export default function ManageJobsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+  const [users, setUsers] = useState<User[]>([]);
   const [isMounted, setIsMounted] = useState(false);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -78,6 +80,7 @@ export default function ManageJobsPage() {
       name: '',
       address: '',
       jobType: 'excavation',
+      assignedEmployeeIds: [],
       assignedTruckIds: [],
       assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
@@ -90,6 +93,7 @@ export default function ManageJobsPage() {
     // Only load excavation jobs for this page
     setJobs(loadJobs().filter(j => j.jobType === 'excavation'));
     setFleetAssets(loadFleetAssets());
+    setUsers(loadUsers().filter(u => u.role === 'employee'));
   }, []);
 
   useEffect(() => {
@@ -112,7 +116,7 @@ export default function ManageJobsPage() {
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset({ name: '', address: '', jobType: 'excavation', assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
+      form.reset({ name: '', address: '', jobType: 'excavation', assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [] });
       setEditingJob(null);
     }
   };
@@ -129,6 +133,7 @@ export default function ManageJobsPage() {
         from: new Date(job.startDate),
         to: new Date(job.endDate),
       },
+      assignedEmployeeIds: job.assignedEmployeeIds || [],
       assignedTruckIds: job.assignedTruckIds || [],
       assignedTrailerIds: job.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
@@ -167,12 +172,13 @@ export default function ManageJobsPage() {
           from: parseISO(result.startDate),
           to: parseISO(result.endDate),
         },
+        assignedEmployeeIds: [],
         assignedTruckIds: [],
         assignedTrailerIds: [],
         assignedHeavyEquipmentIds: [],
       });
 
-      toast({ title: 'Job Populated', description: 'Please review the generated job details and assign assets.' });
+      toast({ title: 'Job Populated', description: 'Please review the generated job details and assign personnel & assets.' });
       setIsAiDialogOpen(false);
       setIsDialogOpen(true);
 
@@ -200,6 +206,7 @@ export default function ManageJobsPage() {
       jobType: values.jobType,
       startDate: values.dateRange.from.toISOString().split('T')[0],
       endDate: values.dateRange.to.toISOString().split('T')[0],
+      assignedEmployeeIds: values.assignedEmployeeIds || [],
       assignedTruckIds: values.assignedTruckIds || [],
       assignedTrailerIds: values.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: values.assignedHeavyEquipmentIds || [],
@@ -291,7 +298,7 @@ export default function ManageJobsPage() {
                   <TableHead>Client</TableHead>
                   <TableHead>Job Value</TableHead>
                   <TableHead>Dates</TableHead>
-                  <TableHead>Assigned Assets</TableHead>
+                  <TableHead>Assigned</TableHead>
                   <TableHead className="text-right w-[80px]">Actions</TableHead>
                 </TableRow>
               </TableHeader>
@@ -309,6 +316,7 @@ export default function ManageJobsPage() {
                     <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
                     <TableCell>
                       <div className="flex gap-2 items-center text-muted-foreground">
+                        {(job.assignedEmployeeIds?.length || 0) > 0 && <UsersIcon className="h-4 w-4" title={`${job.assignedEmployeeIds?.length} employee(s)`} />}
                         {(job.assignedTruckIds?.length || 0) > 0 && <Truck className="h-4 w-4" title={`${job.assignedTruckIds?.length} truck(s)`} />}
                         {(job.assignedTrailerIds?.length || 0) > 0 && <Box className="h-4 w-4" title={`${job.assignedTrailerIds?.length} trailer(s)`} />}
                         {(job.assignedHeavyEquipmentIds?.length || 0) > 0 && <Shovel className="h-4 w-4" title={`${job.assignedHeavyEquipmentIds?.length} equipment`} />}
@@ -347,37 +355,35 @@ export default function ManageJobsPage() {
     </Card>
   );
 
-  const AssetMultiSelect = ({ assetType, assets, fieldName }: { assetType: VehicleType, assets: FleetAsset[], fieldName: "assignedTruckIds" | "assignedTrailerIds" | "assignedHeavyEquipmentIds" }) => {
+  const MultiSelectDropdown = ({ items, fieldName, title, Icon }: { items: { id: string, name: string }[], fieldName: "assignedEmployeeIds" | "assignedTruckIds" | "assignedTrailerIds" | "assignedHeavyEquipmentIds", title: string, Icon: React.ElementType }) => {
     const selectedIds = form.watch(fieldName) || [];
-    const Icon = assetType === 'truck' ? Truck : assetType === 'trailer' ? Box : Shovel;
-
     return (
       <FormField
         control={form.control}
         name={fieldName}
         render={({ field }) => (
           <FormItem>
-            <FormLabel className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /> Assign {assetType.charAt(0).toUpperCase() + assetType.slice(1)}s</FormLabel>
+            <FormLabel className="flex items-center gap-2"><Icon className="h-4 w-4 text-primary" /> {title}</FormLabel>
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : 'Select assets...'}
+                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : `Select...`}
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64" align="start">
-                <DropdownMenuLabel>Available {assetType}s</DropdownMenuLabel>
+                <DropdownMenuLabel>{title}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
-                {assets.map(asset => (
+                {items.map(item => (
                   <DropdownMenuCheckboxItem
-                    key={asset.id}
-                    checked={field.value?.includes(asset.id)}
+                    key={item.id}
+                    checked={field.value?.includes(item.id)}
                     onCheckedChange={(checked) => {
                       return checked
-                        ? field.onChange([...(field.value || []), asset.id])
-                        : field.onChange(field.value?.filter(value => value !== asset.id))
+                        ? field.onChange([...(field.value || []), item.id])
+                        : field.onChange(field.value?.filter(value => value !== item.id))
                     }}
                   >
-                    {asset.name}
+                    {item.name}
                   </DropdownMenuCheckboxItem>
                 ))}
               </DropdownMenuContent>
@@ -576,10 +582,11 @@ export default function ManageJobsPage() {
                       </div>
 
                       <Separator />
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                         <AssetMultiSelect assetType="truck" assets={trucks} fieldName="assignedTruckIds" />
-                         <AssetMultiSelect assetType="trailer" assets={trailers} fieldName="assignedTrailerIds" />
-                         <AssetMultiSelect assetType="heavyEquipment" assets={heavyEquipments} fieldName="assignedHeavyEquipmentIds" />
+                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                         <MultiSelectDropdown items={users} fieldName="assignedEmployeeIds" title="Assign Employees" Icon={UsersIcon} />
+                         <MultiSelectDropdown items={trucks} fieldName="assignedTruckIds" title="Assign Trucks" Icon={Truck} />
+                         <MultiSelectDropdown items={trailers} fieldName="assignedTrailerIds" title="Assign Trailers" Icon={Box} />
+                         <MultiSelectDropdown items={heavyEquipments} fieldName="assignedHeavyEquipmentIds" title="Assign Equipment" Icon={Shovel} />
                       </div>
 
                       <DialogFooter>

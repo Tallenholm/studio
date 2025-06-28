@@ -20,7 +20,7 @@ const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 
 const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-1', type: 'truck', name: 'Truck 01 (Dump Truck)', vin: '1GDTY7C1XMJ123456' },
-    { id: 'truck-2', type: 'truck', name: 'Truck 02 (Dump Truck)', vin: '1GDTY7C1XMJ123457' },
+    { id: 'truck-2', type: 'truck', name: 'Truck 02 (Plow Truck)', vin: '1GDTY7C1XMJ123457' },
     { id: 'trailer-1', type: 'trailer', name: 'Gooseneck Equipment Trailer', vin: '5TETL222XPA654321' },
     { id: 'heavyEquipment-1', type: 'heavyEquipment', name: 'CAT 259D3 Skid Steer', vin: 'CAT0259D3XYZ98765' },
 ];
@@ -499,6 +499,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'excavation',
       startDate: subDays(now, 5).toISOString().split('T')[0], 
       endDate: addDays(now, 10).toISOString().split('T')[0],
+      assignedEmployeeIds: ['1'],
       assignedTruckIds: ['truck-1'],
       assignedHeavyEquipmentIds: ['heavyEquipment-1'],
       notes: [
@@ -517,9 +518,13 @@ const getDynamicJobs = (): Job[] => {
       address: '456 Central Ave, Anytown, USA', 
       jobValue: 125000, 
       jobType: 'snow_removal',
-      startDate: addDays(now, 2).toISOString().split('T')[0], 
+      startDate: subDays(now, 10).toISOString().split('T')[0], 
       endDate: addDays(now, 20).toISOString().split('T')[0],
-      assignedTruckIds: ['truck-1', 'truck-2'],
+      assignedEmployeeIds: ['1'],
+      assignedTruckIds: ['truck-2'],
+      assignedHeavyEquipmentIds: ['heavyEquipment-1'],
+      assignedSidewalkCrewIds: ['2'],
+      snowServices: { plowing: true, salting: true, sidewalks: true },
       notes: [],
     },
     { 
@@ -532,6 +537,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'excavation',
       startDate: subDays(now, 30).toISOString().split('T')[0], 
       endDate: subDays(now, 15).toISOString().split('T')[0],
+      assignedEmployeeIds: ['2'],
       notes: [],
     },
   ];
@@ -561,7 +567,8 @@ export const loadJobs = (): Job[] => {
           const customJobs = jobsWithDefaults.filter(j => !defaultJobIds.has(j.id));
           
           const jobsToSave = [...customJobs, ...defaultJobs];
-          if (storedJobs.length < defaultJobs.length || !storedJobs.every(j => 'jobType' in j)) {
+          // A simple check to see if the stored data is outdated.
+          if (storedJobs.length < defaultJobs.length || !storedJobs.every(j => 'jobType' in j) || !storedJobs.some(j => j.jobType === 'snow_removal' && j.snowServices)) {
               saveJobs(jobsToSave);
           }
           return jobsToSave;

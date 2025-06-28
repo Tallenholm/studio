@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake } from 'lucide-react';
+import { Truck, User, Calendar as CalendarIcon, CalendarDays, CalendarPlus, Loader2, FileText, Bell, Files, ClipboardList, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, UsersIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -59,9 +59,8 @@ export default function EmployeeHubPage() {
     
     const assignedJobs = jobs
       .filter(job => 
-        job.assignedTruckIds?.includes(user.id) ||
-        job.assignedTrailerIds?.includes(user.id) ||
-        job.assignedHeavyEquipmentIds?.includes(user.id)
+        job.assignedEmployeeIds?.includes(user.id) ||
+        job.assignedSidewalkCrewIds?.includes(user.id)
       )
       .map(job => ({ ...job, status: getJobStatus(job) }))
       .filter(job => job.status === 'active' || job.status === 'upcoming')
@@ -103,11 +102,17 @@ export default function EmployeeHubPage() {
             {jobs.length > 0 ? (
                 jobs.map(job => (
                     <Card key={job.id} className="p-4 bg-muted/30">
-                        <div className="flex justify-between items-center gap-4">
+                        <div className="flex justify-between items-start gap-4">
                             <div>
                                 <p className="font-bold">{job.name}</p>
                                 <p className="text-sm text-muted-foreground">{job.clientName}</p>
                                 <p className="text-xs text-muted-foreground">{job.address}</p>
+                                {job.jobType === 'snow_removal' && job.assignedSidewalkCrewIds?.includes(user!.id) && (
+                                    <Badge variant="outline" className="mt-2 text-primary border-primary">
+                                        <UsersIcon className="mr-1.5 h-3 w-3" />
+                                        Sidewalk Crew
+                                    </Badge>
+                                )}
                             </div>
                             <div className="flex flex-col items-end gap-2">
                                 <Badge variant={job.status === 'active' ? 'default' : 'outline'} className={job.status === 'active' ? 'bg-green-600' : ''}>{job.status}</Badge>
