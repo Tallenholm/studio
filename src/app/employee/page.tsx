@@ -5,7 +5,7 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList } from 'lucide-react';
+import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
@@ -19,9 +19,11 @@ import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
+import WeatherForecast from '@/components/admin/WeatherForecast';
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
+    { element: '#tour-step-weather-forecast-employee', title: "Daily Weather Forecast", content: "Check the local weather forecast here to help you prepare for the day's conditions.", side: 'bottom' },
     { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Fleet Check'), view your tasks, request time off, and more.", side: 'bottom' },
     { element: '#tour-step-job-board', title: "Your Assignments", content: "This section shows your currently active and upcoming assignments, separated by job type. You can get directions to the job site directly from here.", side: 'bottom' },
     { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },
@@ -63,7 +65,7 @@ export default function EmployeeHubPage() {
     const assignedJobs = jobs
       .filter(job => 
         job.assignedEmployeeIds?.includes(user.id) ||
-        job.assignedPlowDriverIds?.includes(user.id) ||
+        job.assignedTruckIds?.includes(user.id) || // For older data model compatibility
         job.assignedSidewalkCrewIds?.includes(user.id)
       )
       .map(job => ({ ...job, status: getJobStatus(job) }))
@@ -121,7 +123,7 @@ export default function EmployeeHubPage() {
                                         Sidewalk Crew
                                     </Badge>
                                 )}
-                                {job.jobType === 'snow_removal' && job.assignedPlowDriverIds?.includes(user!.id) && (
+                                {job.jobType === 'snow_removal' && job.assignedTruckIds?.includes(user!.id) && (
                                      <Badge variant="outline" className="mt-2 text-primary border-primary ml-2">
                                         <Truck className="mr-1.5 h-3 w-3" />
                                         Plow Crew
@@ -173,6 +175,8 @@ export default function EmployeeHubPage() {
         </p>
       </div>
 
+      <WeatherForecast tourId="tour-step-weather-forecast-employee" />
+
        <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 gap-6 mb-12">
             <Link href="/employee/fleet-check" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
@@ -187,7 +191,7 @@ export default function EmployeeHubPage() {
             </Link>
             <Link href="/employee/snow-routes" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
-                  <Snowflake className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <Route className="h-12 w-12 text-primary mx-auto mb-2" />
                   <CardTitle className="text-xl font-headline">
                     Snow Routes
                   </CardTitle>

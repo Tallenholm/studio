@@ -285,7 +285,7 @@ export default function FleetCheckDashboardPage() {
         </p>
       </div>
       
-      <WeatherForecast />
+      <WeatherForecast tourId="tour-step-weather-forecast" />
       
       <div id="tour-step-ai-briefing">
         <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />

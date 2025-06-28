@@ -34,7 +34,7 @@ const getWeatherIcon = (shortForecast: string) => {
 const LATITUDE = 41.8781;
 const LONGITUDE = -87.6298;
 
-export default function WeatherForecast() {
+export default function WeatherForecast({ tourId }: { tourId?: string }) {
     const [forecast, setForecast] = useState<ForecastPeriod[] | null>(null);
     const [locationName, setLocationName] = useState('your location');
     const [loading, setLoading] = useState(true);
@@ -118,7 +118,7 @@ export default function WeatherForecast() {
     }
 
     return (
-        <Card id="tour-step-weather-forecast" className="mb-8">
+        <Card id={tourId} className="mb-8">
             <CardHeader>
                 <CardTitle>Daily Forecast for {locationName}</CardTitle>
                 <CardDescription>Weather overview for {format(new Date(), 'eeee, MMMM do')}.</CardDescription>
