@@ -1,4 +1,3 @@
-
 import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';

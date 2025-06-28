@@ -1,4 +1,3 @@
-
 import type { InspectionReport, FleetAsset, User, UserRole, CalendarEvent, TimeOffRequest, NotificationMessage, Violation, ManagedDocument, MaintenanceLog, Task, ExpenseReport, Client, Job, WorkOrder } from './types';
 
 const FLEET_ASSETS_KEY = 'fleetCheckAssets';
