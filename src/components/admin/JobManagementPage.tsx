@@ -18,7 +18,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Users as UsersIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Calendar as CalendarIcon, Pencil, Filter, DollarSign, MoreHorizontal, Eye, Truck, Box, Shovel, Brain, Users as UsersIcon, AlertCircle } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -42,17 +42,18 @@ const jobSchema = z.object({
     from: z.date({ required_error: 'A start date is required.' }),
     to: z.date({ required_error: 'An end date is required.' }),
   }),
-  // Excavation / Concrete / Misc Assignments
+  // General Assignments
   assignedEmployeeIds: z.array(z.string()).optional(),
   assignedTruckIds: z.array(z.string()).optional(),
   assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
-  // Snow Removal Services
+  // Snow Removal Specific
   snowServices: z.object({
     plowing: z.boolean().default(false),
     salting: z.boolean().default(false),
     sidewalks: z.boolean().default(false),
   }).optional(),
+  assignedSidewalkCrewIds: z.array(z.string()).optional(),
   // Concrete Specific
   concreteYards: z.coerce.number().optional(),
 }).refine((data) => data.dateRange.to >= data.dateRange.from, {
@@ -80,6 +81,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
   const [isGeneratingJob, setIsGeneratingJob] = useState(false);
+  const [aiError, setAiError] = useState<string | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
   const { toast } = useToast();
 
@@ -96,6 +98,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: [],
       assignedTrailerIds: [],
       assignedHeavyEquipmentIds: [],
+      assignedSidewalkCrewIds: [],
       snowServices: { plowing: false, salting: false, sidewalks: false },
     },
   });
@@ -127,13 +130,22 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     if (!open) {
       form.reset({ 
           name: '', address: '', jobType: jobType,
-          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], 
+          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedSidewalkCrewIds: [],
           snowServices: { plowing: false, salting: false, sidewalks: false },
           concreteYards: undefined, jobValue: undefined,
       });
       setEditingJob(null);
     }
   };
+
+  const handleAiDialogOpenChange = (open: boolean) => {
+    setIsAiDialogOpen(open);
+    if (!open) {
+        setAiPrompt('');
+        setAiError(null);
+        setIsGeneratingJob(false);
+    }
+  }
 
   const handleEditClick = (job: Job) => {
     setEditingJob(job);
@@ -151,6 +163,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       assignedTruckIds: job.assignedTruckIds || [],
       assignedTrailerIds: job.assignedTrailerIds || [],
       assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
+      assignedSidewalkCrewIds: job.assignedSidewalkCrewIds || [],
       snowServices: job.snowServices || { plowing: false, salting: false, sidewalks: false },
       concreteYards: job.concreteYards,
     });
@@ -159,27 +172,23 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
 
   async function handleGenerateJob() {
     if (!aiPrompt.trim()) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Prompt cannot be empty.' });
+      setAiError('Prompt cannot be empty.');
       return;
     }
     setIsGeneratingJob(true);
+    setAiError(null);
     try {
       const result = await createJobFromPrompt(aiPrompt);
 
       if (result.jobType !== jobType) {
-          toast({ variant: 'destructive', title: 'AI Mismatch', description: `The AI classified this as a '${result.jobType}' job. Please use the correct management page.`, duration: 8000 });
+          setAiError(`The AI classified this as a '${result.jobType}' job. Please use the correct management page.`);
           setIsGeneratingJob(false);
           return;
       }
 
       const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
       if (!client) {
-        toast({ 
-            variant: 'destructive', 
-            title: 'Client Not Found', 
-            description: `A client named "${result.clientName}" was not found. Please add them on the "Manage Clients" page before creating a job for them.`,
-            duration: 8000,
-        });
+        setAiError(`Client "${result.clientName}" not found. Please add them on the "Manage Clients" page.`);
         setIsGeneratingJob(false);
         return;
       }
@@ -198,12 +207,12 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       });
 
       toast({ title: 'Job Populated', description: 'Please review the generated job details and make assignments.' });
-      setIsAiDialogOpen(false);
+      handleAiDialogOpenChange(false);
       setIsDialogOpen(true);
 
     } catch (error) {
       console.error("AI Job Generation Error:", error);
-      toast({ variant: 'destructive', title: 'AI Error', description: 'Failed to generate job from prompt. Please try again.' });
+      setAiError('Failed to generate job from prompt. The AI may be unavailable or the prompt was too complex.');
     } finally {
       setIsGeneratingJob(false);
     }
@@ -431,7 +440,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
               </CardDescription>
             </div>
             <div className="flex gap-2">
-              <Dialog open={isAiDialogOpen} onOpenChange={setIsAiDialogOpen}>
+              <Dialog open={isAiDialogOpen} onOpenChange={handleAiDialogOpenChange}>
                   <DialogTrigger asChild>
                     <Button variant="outline"><Brain className="mr-2 h-5 w-5" /> Create with AI</Button>
                   </DialogTrigger>
@@ -449,6 +458,12 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                             onChange={(e) => setAiPrompt(e.target.value)}
                             className="min-h-[120px]"
                           />
+                           {aiError && (
+                            <div className="flex items-start gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
+                                <AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" />
+                                <p>{aiError}</p>
+                            </div>
+                           )}
                       </div>
                       <DialogFooter>
                           <Button onClick={handleGenerateJob} disabled={isGeneratingJob}>
@@ -506,12 +521,27 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                 ) : (
                                     <>
                                         <Separator />
-                                        <h3 className="text-lg font-medium">Services Provided</h3>
-                                        <div className="flex items-center space-x-6 mt-2">
-                                            <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
-                                            <FormField control={form.control} name="snowServices.salting" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Salting</FormLabel></FormItem>)}/>
-                                            <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
-                                        </div>
+                                        <h3 className="text-lg font-medium">Services & Assignments</h3>
+                                         <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                                            <h4 className="font-semibold">Services Provided</h4>
+                                            <div className="flex items-center space-x-6">
+                                                <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
+                                                <FormField control={form.control} name="snowServices.salting" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Salting</FormLabel></FormItem>)}/>
+                                                <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
+                                            </div>
+                                            <Separator />
+                                            <h4 className="font-semibold">Assign Plowing Crew & Fleet</h4>
+                                             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <MultiSelectDropdown items={users} fieldName="assignedEmployeeIds" title="Assign Plow Crew" Icon={UsersIcon} />
+                                                <MultiSelectDropdown items={trucks} fieldName="assignedTruckIds" title="Assign Trucks" Icon={Truck} />
+                                                <MultiSelectDropdown items={heavyEquipments} fieldName="assignedHeavyEquipmentIds" title="Assign Loaders" Icon={Shovel} />
+                                            </div>
+                                             <Separator />
+                                            <h4 className="font-semibold">Assign Sidewalk Crew</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                 <MultiSelectDropdown items={users} fieldName="assignedSidewalkCrewIds" title="Assign Sidewalk Crew" Icon={UsersIcon} />
+                                            </div>
+                                         </div>
                                     </>
                                 )}
                                 </div>

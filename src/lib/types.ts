@@ -10,8 +10,8 @@ export type UserRole = 'owner' | 'manager' | 'employee' | 'guest';
 
 export interface User {
   uid: string; // Firebase Authentication User ID
-  name: string;
   email: string;
+  name: string;
   role: UserRole;
 }
 
@@ -211,6 +211,7 @@ export interface Job {
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
   // Snow Service Details
+  assignedSidewalkCrewIds?: string[];
   snowServices?: {
     plowing?: boolean;
     salting?: boolean;
