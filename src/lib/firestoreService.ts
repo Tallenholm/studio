@@ -5,46 +5,42 @@ import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, Maintena
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
-    if (!db) {
-        console.error(`Firestore not initialized. Cannot create service for ${collectionName}.`);
-        // Return dummy functions if Firestore is not available
-        return {
-            getAll: async (): Promise<T[]> => [],
-            getById: async (id: string): Promise<T | null> => null,
-            add: async (data: Omit<T, 'id'>): Promise<string> => { throw new Error("Firestore not initialized."); },
-            update: async (id: string, data: Partial<T>): Promise<void> => { throw new Error("Firestore not initialized."); },
-            delete: async (id: string): Promise<void> => { throw new Error("Firestore not initialized."); },
-            batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => { throw new Error("Firestore not initialized."); },
-        };
-    }
-    const serviceCollection = collection(db, collectionName);
+    
+    const getCollection = () => {
+        if (!db) {
+            throw new Error(`Firestore not initialized. Cannot access collection '${collectionName}'.`);
+        }
+        return collection(db, collectionName);
+    };
 
     return {
         getAll: async (): Promise<T[]> => {
-            const snapshot = await getDocs(serviceCollection);
+            const snapshot = await getDocs(getCollection());
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
         },
         getById: async (id: string): Promise<T | null> => {
-            const docRef = doc(db, collectionName, id);
+            const docRef = doc(getCollection(), id);
             const docSnap = await getDoc(docRef);
             return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
         },
         add: async (data: Omit<T, 'id'>): Promise<string> => {
-            const docRef = await addDoc(serviceCollection, data);
+            const docRef = await addDoc(getCollection(), data);
             return docRef.id;
         },
         update: async (id: string, data: Partial<T>): Promise<void> => {
-            const docRef = doc(db, collectionName, id);
+            const docRef = doc(getCollection(), id);
             await updateDoc(docRef, data);
         },
         delete: async (id: string): Promise<void> => {
-            const docRef = doc(db, collectionName, id);
+            const docRef = doc(getCollection(), id);
             await deleteDoc(docRef);
         },
         batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
-            const batch = writeBatch(db!);
+            if (!db) throw new Error("Firestore not initialized.");
+            const batch = writeBatch(db);
+            const col = getCollection();
             data.forEach(item => {
-                const docRef = doc(serviceCollection);
+                const docRef = doc(col);
                 batch.set(docRef, item);
             });
             await batch.commit();
