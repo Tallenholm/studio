@@ -54,10 +54,22 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: userData.role,
           });
         } else {
-          // This case might happen if a user is in Auth but not Firestore.
-          // You might want to log them out or create a default doc.
-          console.warn(`No user document found in Firestore for UID: ${firebaseUser.uid}`);
-          setUser(null); 
+          // Fallback for when a Firestore user document doesn't exist yet.
+          // This is common during initial setup. We'll use the local seed data.
+          console.warn(`No user document found in Firestore for UID: ${firebaseUser.uid}. Falling back to local data. Please create a 'users' collection in Firestore and add a document for this user.`);
+          const localUsers = loadUsers();
+          const localUser = localUsers.find(u => u.email === firebaseUser.email);
+          
+          if (localUser) {
+            setUser({
+              ...localUser,
+              uid: firebaseUser.uid, // Use the real Firebase UID
+            });
+          } else {
+            // If user is not even in the local data, then they can't log in.
+            console.error(`User with email ${firebaseUser.email} not found in Firestore or local seed data.`);
+            setUser(null);
+          }
         }
       } else {
         // User is signed out
