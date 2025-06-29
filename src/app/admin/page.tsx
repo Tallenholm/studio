@@ -19,6 +19,7 @@ import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import WeatherForecast from '@/components/admin/WeatherForecast';
+import { loadCalendarEvents, loadInspectionReports, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -182,10 +183,26 @@ export default function FleetCheckDashboardPage() {
     const fetchData = async () => {
         setIsBriefingLoading(true);
         try {
-            const data = await getAdminDashboardData();
+            // Load data from localStorage on the client
+            const localReports = loadInspectionReports();
+            const localTimeOffRequests = loadTimeOffRequests();
+            const localExpenseReports = loadExpenseReports();
+            const localTasks = loadTasks();
+            const localEvents = loadCalendarEvents();
+
+            // Pass stringified data to the server action
+            const data = await getAdminDashboardData(
+              JSON.stringify(localReports),
+              JSON.stringify(localTimeOffRequests),
+              JSON.stringify(localExpenseReports),
+              JSON.stringify(localTasks),
+              JSON.stringify(localEvents)
+            );
+            
             setBriefing(data.briefing);
             setEvents(data.events);
             setJobs(data.jobs);
+
             if (!data.briefing) {
                 toast({
                     variant: 'destructive',
