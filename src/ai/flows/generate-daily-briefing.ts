@@ -62,6 +62,7 @@ Analyze all the data and synthesize it into three categories:
 3.  **pendingActions**: List all items that are awaiting a decision from the administrator.
     -   Include all time-off requests with a 'pending' status. The summary should be "Time-off request from [Employee Name]". Set priority to 'medium'. The link should be to '/admin/manage-requests'.
     -   Include all expense reports with a 'pending' status. The summary should be "Expense report from [Employee Name] for $[Amount]". Set priority to 'low'. The link should be to '/admin/manage-expenses'.
+    -   Include all tasks with a 'pending' status. The summary should be "Task: '[Task Title]' for [Employee Name]". Set priority to 'low'. The link should be to '/admin/manage-tasks'.
     
 Do not include items that are completed, approved, denied, or otherwise resolved. Focus only on actionable, pending, or active items for today.
 

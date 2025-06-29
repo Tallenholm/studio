@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, saveFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
 import type { FleetAsset, VehicleType, MaintenanceSchedule } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -51,6 +50,8 @@ import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
 import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset } from '@/lib/firestoreService';
+import { loadNotifications, saveNotifications } from '@/lib/localStorageService';
 
 const maintenanceIntervalSchema = z.object({
     intervalMonths: z.coerce.number().optional(),
@@ -78,7 +79,7 @@ type AssetFormValues = z.infer<typeof assetSchema>;
 
 export default function FleetManagementPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
@@ -97,15 +98,20 @@ export default function FleetManagementPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setAssets(loadFleetAssets());
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveFleetAssets(assets);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const data = await getFleetAssets();
+            setAssets(data);
+        } catch (error) {
+            console.error("Failed to fetch fleet assets:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load fleet assets.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [assets, isMounted]);
+    fetchData();
+  }, [toast]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -152,7 +158,7 @@ export default function FleetManagementPage() {
     }
   };
 
-  function onSubmit(values: AssetFormValues) {
+  async function onSubmit(values: AssetFormValues) {
     const assetData = {
       ...values,
       registrationDueDate: values.registrationDueDate?.toISOString().split('T')[0],
@@ -162,11 +168,13 @@ export default function FleetManagementPage() {
     let savedAsset: FleetAsset;
 
     if (editingAsset) {
-        savedAsset = { ...editingAsset, ...assetData };
+        const updateData: Partial<FleetAsset> = assetData;
+        await updateFleetAsset(editingAsset.id, updateData);
+        savedAsset = { ...editingAsset, ...updateData };
         setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
-        const newId = `asset-${Date.now()}`;
+        const newId = await addFleetAsset(assetData);
         savedAsset = { id: newId, ...assetData };
         setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
@@ -206,8 +214,9 @@ export default function FleetManagementPage() {
     handleDialogOpenChange(false);
   }
 
-  function removeAsset(assetId: string) {
+  async function removeAsset(assetId: string) {
     const assetToRemove = assets.find(a => a.id === assetId);
+    await deleteFleetAsset(assetId);
     setAssets((prev) => prev.filter((asset) => asset.id !== assetId));
     toast({
       title: 'Asset Removed',
@@ -316,7 +325,7 @@ export default function FleetManagementPage() {
     )
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

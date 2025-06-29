@@ -1,7 +1,7 @@
 
 import { db } from './firebase';
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent } from './types';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User } from './types';
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
@@ -27,7 +27,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const docRef = await addDoc(getCollection(), data);
             return docRef.id;
         },
-        update: async (id: string, data: Partial<T>): Promise<void> => {
+        update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
             const docRef = doc(getCollection(), id);
             await updateDoc(docRef, data);
         },
@@ -51,6 +51,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
 // Create services for each collection
 export const { getAll: getJobs, getById: getJobById, add: addJob, update: updateJob, delete: deleteJob } = createCrudService<Job>('jobs');
 export const { getAll: getClients, add: addClient, update: updateClient, delete: deleteClient } = createCrudService<Client>('clients');
+export const { getAll: getUsers, getById: getUserById, add: addUser, update: updateUser, delete: deleteUser } = createCrudService<User>('users');
 export const { getAll: getExpenseReports, add: addExpenseReport, update: updateExpenseReport } = createCrudService<ExpenseReport>('expenseReports');
 export const { getAll: getFleetAssets, add: addFleetAsset, update: updateFleetAsset, delete: deleteFleetAsset } = createCrudService<FleetAsset>('fleetAssets');
 export const { getAll: getInspectionReports, getById: getInspectionReportById, add: addInspectionReport, update: updateInspectionReport } = createCrudService<InspectionReport>('inspectionReports');

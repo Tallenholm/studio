@@ -2,38 +2,8 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useForm } from 'react-hook-form';
-import * as z from 'zod';
-import { zodResolver } from '@hookform/resolvers/zod';
-import { loadUsers, saveUsers } from '@/lib/localStorageService';
 import type { User, UserRole } from '@/lib/types';
-import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from '@/components/ui/dialog';
-import {
-  Form,
-  FormControl,
-  FormField,
-  FormItem,
-  FormLabel,
-  FormMessage,
-} from '@/components/ui/form';
-import { Input } from '@/components/ui/input';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 import {
   Table,
   TableBody,
@@ -42,28 +12,38 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Users, Loader2, Pencil, MoreHorizontal } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { Users, Loader2 } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { getUsers } from '@/lib/firestoreService';
+import { useToast } from '@/hooks/use-toast';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
-  const { user: currentUser } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
+  const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-    setUsers(loadUsers().sort((a, b) => a.name.localeCompare(b.name)));
-  }, []);
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            const loadedUsers = await getUsers();
+            setUsers(loadedUsers.sort((a, b) => a.name.localeCompare(b.name)));
+        } catch (error) {
+            console.error("Failed to fetch users:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load user data.' });
+        } finally {
+            setIsLoading(false);
+        }
+    };
+    fetchUsers();
+  }, [toast]);
   
   const getRoleLabel = (role: UserRole) => {
     if (!role) return 'Guest';
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

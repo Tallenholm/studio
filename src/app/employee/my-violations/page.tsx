@@ -2,27 +2,31 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loadViolations } from '@/lib/localStorageService';
 import type { Violation } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { getViolations } from '@/lib/firestoreService';
 
 export default function MyViolationsPage() {
   const [violations, setViolations] = useState<Violation[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   
   useEffect(() => {
-    if (user) {
-      const allViolations = loadViolations();
-      const userViolations = allViolations
-        .filter(v => v.employeeId === user.id)
-        .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-      setViolations(userViolations);
+    async function fetchData() {
+        if (user) {
+            setIsLoading(true);
+            const allViolations = await getViolations();
+            const userViolations = allViolations
+                .filter(v => v.employeeId === user.uid)
+                .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setViolations(userViolations);
+            setIsLoading(false);
+        }
     }
-    setIsMounted(true);
+    fetchData();
   }, [user]);
 
   const getViolationTypeLabel = (type: Violation['type']) => {
@@ -34,7 +38,7 @@ export default function MyViolationsPage() {
     }
   }
 
-  if (!isMounted || !user) {
+  if (isLoading || !user) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

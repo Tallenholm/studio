@@ -5,7 +5,6 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadInventory, saveInventory, loadUsers, loadJobs, loadFleetAssets } from '@/lib/localStorageService';
 import type { InventoryItem, User, Job, FleetAsset, InventoryItemType, InventoryItemStatus, AssignmentType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,6 +19,7 @@ import { PlusCircle, Trash2, Loader2, Pencil, Hammer, Filter, MoreHorizontal } f
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { getInventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, getUsers, getJobs, getFleetAssets } from '@/lib/firestoreService';
 
 
 const itemSchema = z.object({
@@ -40,7 +40,7 @@ export default function ManageInventoryPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
 
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isAddEditDialogOpen, setIsAddEditDialogOpen] = useState(false);
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
@@ -60,18 +60,28 @@ export default function ManageInventoryPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setInventory(loadInventory());
-    setUsers(loadUsers());
-    setJobs(loadJobs());
-    setFleetAssets(loadFleetAssets());
-  }, []);
-  
-  useEffect(() => {
-    if(isMounted) {
-      saveInventory(inventory);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [inv, usrs, jbs, assets] = await Promise.all([
+                getInventory(),
+                getUsers(),
+                getJobs(),
+                getFleetAssets(),
+            ]);
+            setInventory(inv);
+            setUsers(usrs);
+            setJobs(jbs);
+            setFleetAssets(assets);
+        } catch (error) {
+            console.error("Failed to fetch inventory data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load inventory data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [inventory, isMounted]);
+    fetchData();
+  }, [toast]);
 
   const handleAddEditDialogChange = (open: boolean) => {
     setIsAddEditDialogOpen(open);
@@ -100,24 +110,25 @@ export default function ManageInventoryPage() {
     setIsAssignDialogOpen(true);
   };
   
-  function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
+  async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
+      await updateInventoryItem(editingItem.id, values);
       const updatedItems = inventory.map(i => i.id === editingItem.id ? { ...i, ...values } : i);
       setInventory(updatedItems.sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
-      const newItem: InventoryItem = {
-        id: `inv-${Date.now()}`,
+      const newItemData: Omit<InventoryItem, 'id'> = {
         status: 'available',
         ...values,
       };
-      setInventory(prev => [...prev, newItem].sort((a,b) => a.name.localeCompare(b.name)));
+      const newId = await addInventoryItem(newItemData);
+      setInventory(prev => [...prev, {id: newId, ...newItemData}].sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Item Added', description: `Item "${values.name}" has been added.` });
     }
     handleAddEditDialogChange(false);
   }
 
-  function onAssignmentSubmit(values: z.infer<typeof assignmentSchema>) {
+  async function onAssignmentSubmit(values: z.infer<typeof assignmentSchema>) {
     if (!assigningItem) return;
 
     let assignedToName = '';
@@ -131,7 +142,7 @@ export default function ManageInventoryPage() {
     }
     assignedToName = assignedEntity?.name || 'Unknown';
     
-    updateItemStatus(assigningItem.id, 'in_use', {
+    await updateItemStatus(assigningItem.id, 'in_use', {
       assignedToType: values.assignedToType,
       assignedToId: values.assignedToId,
       assignedToName
@@ -141,20 +152,30 @@ export default function ManageInventoryPage() {
     handleAssignDialogChange(false);
   }
 
-  const updateItemStatus = (itemId: string, newStatus: InventoryItemStatus, assignmentInfo?: Partial<InventoryItem>) => {
+  const updateItemStatus = async (itemId: string, newStatus: InventoryItemStatus, assignmentInfo?: Partial<InventoryItem>) => {
     const itemToUpdate = inventory.find(i => i.id === itemId);
     if (!itemToUpdate) return;
     
+    const isNowInUse = newStatus === 'in_use';
+    const updateData: Partial<InventoryItem> = {
+        status: newStatus,
+        assignedToType: isNowInUse ? (assignmentInfo?.assignedToType || itemToUpdate.assignedToType) : undefined,
+        assignedToId: isNowInUse ? (assignmentInfo?.assignedToId || itemToUpdate.assignedToId) : undefined,
+        assignedToName: isNowInUse ? (assignmentInfo?.assignedToName || itemToUpdate.assignedToName) : undefined,
+    };
+    
+    // Clear fields if not in use
+    if (!isNowInUse) {
+        updateData.assignedToType = undefined;
+        updateData.assignedToId = undefined;
+        updateData.assignedToName = undefined;
+    }
+
+    await updateInventoryItem(itemId, updateData);
+
     setInventory(inventory.map(i => {
         if (i.id === itemId) {
-            const isNowInUse = newStatus === 'in_use';
-            return {
-                ...i,
-                status: newStatus,
-                assignedToType: isNowInUse ? (assignmentInfo?.assignedToType || i.assignedToType) : undefined,
-                assignedToId: isNowInUse ? (assignmentInfo?.assignedToId || i.assignedToId) : undefined,
-                assignedToName: isNowInUse ? (assignmentInfo?.assignedToName || i.assignedToName) : undefined,
-            };
+            return { ...i, ...updateData };
         }
         return i;
     }).sort((a,b) => a.name.localeCompare(b.name)));
@@ -163,8 +184,9 @@ export default function ManageInventoryPage() {
   };
   
 
-  function removeItem(itemId: string) {
+  async function removeItem(itemId: string) {
     const itemToRemove = inventory.find(i => i.id === itemId);
+    await deleteInventoryItem(itemId);
     setInventory(prev => prev.filter(i => i.id !== itemId));
     toast({ title: 'Item Removed', description: `"${itemToRemove?.name}" has been deleted.`, variant: 'destructive' });
   }
@@ -188,7 +210,7 @@ export default function ManageInventoryPage() {
     }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

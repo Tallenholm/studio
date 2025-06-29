@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadUsers, loadViolations, saveViolations } from '@/lib/localStorageService';
 import type { User, Violation } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,6 +48,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, ShieldAlert, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
+import { getUsers, getViolations, addViolation, deleteViolation } from '@/lib/firestoreService';
 
 const violationSchema = z.object({
   employeeId: z.string({ required_error: 'Please select an employee.' }),
@@ -61,7 +61,7 @@ const violationSchema = z.object({
 export default function ManageViolationsPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [violations, setViolations] = useState<Violation[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -75,38 +75,47 @@ export default function ManageViolationsPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setUsers(loadUsers());
-    setViolations(loadViolations().sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveViolations(violations);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [loadedUsers, loadedViolations] = await Promise.all([
+                getUsers(),
+                getViolations()
+            ]);
+            setUsers(loadedUsers);
+            setViolations(loadedViolations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load violations data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [violations, isMounted]);
+    fetchData();
+  }, [toast]);
 
-  function onSubmit(values: z.infer<typeof violationSchema>) {
+  async function onSubmit(values: z.infer<typeof violationSchema>) {
     const employee = users.find(u => u.id === values.employeeId);
     if (!employee) {
         toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
         return;
     }
 
-    const newViolation: Violation = {
-      id: `vio-${Date.now()}`,
+    const newViolationData: Omit<Violation, 'id'> = {
       employeeName: employee.name,
       date: values.date.toISOString().split('T')[0],
       ...values,
     };
-    setViolations(prev => [newViolation, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    const newId = await addViolation(newViolationData);
+    setViolations(prev => [{id: newId, ...newViolationData}, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     toast({ title: 'Violation Logged', description: `Violation for ${employee.name} has been recorded.` });
     setIsDialogOpen(false);
     form.reset({ type: 'safety', description: '', actionTaken: '' });
   }
 
-  function removeViolation(violationId: string) {
+  async function removeViolation(violationId: string) {
     const violationToRemove = violations.find(v => v.id === violationId);
+    await deleteViolation(violationId);
     setViolations(prev => prev.filter(v => v.id !== violationId));
     toast({
       title: 'Violation Removed',
@@ -124,7 +133,7 @@ export default function ManageViolationsPage() {
     }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

@@ -5,7 +5,6 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadTimeOffRequests, saveTimeOffRequests } from '@/lib/localStorageService';
 import type { TimeOffRequest } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,6 +20,7 @@ import { format, addDays } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
+import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
 
 const requestSchema = z.object({
   dateRange: z.object({
@@ -32,7 +32,7 @@ const requestSchema = z.object({
 
 export default function TimeOffPage() {
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useAuth();
 
@@ -44,21 +44,24 @@ export default function TimeOffPage() {
   });
 
   useEffect(() => {
-    if (user) {
-        setIsMounted(true);
-        const allRequests = loadTimeOffRequests();
-        setRequests(allRequests.filter(r => r.employeeId === user.id).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+    async function fetchRequests() {
+        if (user) {
+            setIsLoading(true);
+            const allRequests = await getTimeOffRequests();
+            setRequests(allRequests.filter(r => r.employeeId === user.uid).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+            setIsLoading(false);
+        }
     }
+    fetchRequests();
   }, [user]);
 
-  function onSubmit(values: z.infer<typeof requestSchema>) {
+  async function onSubmit(values: z.infer<typeof requestSchema>) {
     if (!user) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to make a request.' });
         return;
     }
-    const newRequest: TimeOffRequest = {
-      id: `${Date.now()}`,
-      employeeId: user.id,
+    const newRequestData: Omit<TimeOffRequest, 'id'> = {
+      employeeId: user.uid,
       employeeName: user.name,
       startDate: values.dateRange.from.toISOString().split('T')[0],
       endDate: values.dateRange.to.toISOString().split('T')[0],
@@ -66,9 +69,8 @@ export default function TimeOffPage() {
       status: 'pending',
     };
     
-    const allRequests = loadTimeOffRequests();
-    saveTimeOffRequests([...allRequests, newRequest]);
-    setRequests(prev => [newRequest, ...prev]);
+    const newId = await addTimeOffRequest(newRequestData);
+    setRequests(prev => [{id: newId, ...newRequestData}, ...prev]);
 
     toast({ title: 'Request Submitted', description: 'Your time off request has been submitted for review.' });
     form.reset();
@@ -83,7 +85,7 @@ export default function TimeOffPage() {
       }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
