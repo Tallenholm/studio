@@ -5,8 +5,7 @@ import { useEffect, useState } from 'react';
 import { CommandDialog, CommandEmpty, CommandGroup, CommandInput, CommandItem, CommandList, CommandSeparator } from '@/components/ui/command';
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useRouter } from 'next/navigation';
-import { loadFleetAssets } from '@/lib/localStorageService';
-import { getJobs, getClients } from '@/lib/firestoreService';
+import { getJobs, getClients, getFleetAssets } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, JobType } from '@/lib/types';
 import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package, Hammer, Route } from 'lucide-react';
 
@@ -25,7 +24,7 @@ export default function CommandPalette() {
     if (isOpen) {
         getJobs().then(setJobs);
         getClients().then(setClients);
-        setAssets(loadFleetAssets());
+        getFleetAssets().then(setAssets);
     }
   }, [isOpen]);
 

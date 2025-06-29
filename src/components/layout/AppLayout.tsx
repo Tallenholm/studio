@@ -23,7 +23,8 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
+import { loadNotifications, saveNotifications } from '@/lib/localStorageService';
+import { getFleetAssets } from '@/lib/firestoreService';
 import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
@@ -57,7 +58,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
             setUnreadCount(count);
         }
-    }, [user, pathname]); // Re-check on navigation
+    }, [user, pathname]);
     
     useEffect(() => {
       const down = (e: KeyboardEvent) => {
@@ -76,8 +77,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
-            const checkAndCreateNotifications = () => {
-                const assets = loadFleetAssets();
+            const checkAndCreateNotifications = async () => {
+                const assets = await getFleetAssets();
                 const notifications = loadNotifications();
                 let notificationsChanged = false;
 
@@ -661,3 +662,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return <FullScreenLoader />;
 }
+
+    
