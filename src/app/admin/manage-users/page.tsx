@@ -48,125 +48,18 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
-const userSchema = z.object({
-  name: z.string().min(1, 'Employee name is required.'),
-  pin: z.string().min(4, 'PIN must be at least 4 digits.').max(8, 'PIN must be 8 digits or less.'),
-  role: z.enum(['owner', 'manager', 'employee'], { required_error: 'Role is required.' }),
-});
-
-// A slightly different schema for editing, where PIN is optional
-const editUserSchema = userSchema.extend({
-    pin: z.string().optional(),
-});
-
-
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isMounted, setIsMounted] = useState(false);
-  const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const { toast } = useToast();
   const { user: currentUser } = useAuth();
-
-  const form = useForm<z.infer<typeof userSchema>>({
-    resolver: zodResolver(editingUser ? editUserSchema : userSchema),
-    defaultValues: {
-      name: '',
-      pin: '',
-      role: 'employee',
-    },
-  });
 
   useEffect(() => {
     setIsMounted(true);
     setUsers(loadUsers().sort((a, b) => a.name.localeCompare(b.name)));
   }, []);
-
-  const handleDialogOpenChange = (open: boolean) => {
-    setIsDialogOpen(open);
-    if (!open) {
-      form.reset({ name: '', pin: '', role: 'employee' });
-      setEditingUser(null);
-    }
-  };
-
-  const handleEditClick = (user: User) => {
-    setEditingUser(user);
-    form.reset({
-      name: user.name,
-      pin: '', // Clear PIN for editing for security
-      role: user.role,
-    });
-    setIsDialogOpen(true);
-  };
-
-  function onSubmit(values: z.infer<typeof userSchema>) {
-    if (editingUser) {
-      // Logic for editing a user
-      if (values.pin && users.some(u => u.pin === values.pin && u.id !== editingUser.id)) {
-        form.setError("pin", { message: "This PIN is already in use." });
-        return;
-      }
-      
-      const ownersCount = users.filter(u => u.role === 'owner').length;
-      if (editingUser.role === 'owner' && values.role !== 'owner' && ownersCount <= 1) {
-        toast({ variant: 'destructive', title: 'Action Prohibited', description: 'Cannot demote the last owner.' });
-        return;
-      }
-
-      const updatedUsers = users.map(u => {
-        if (u.id === editingUser.id) {
-            return {
-                ...u,
-                name: values.name,
-                role: values.role,
-                // Only update PIN if a new one was entered
-                pin: values.pin ? values.pin : u.pin,
-            }
-        }
-        return u;
-      });
-      setUsers(updatedUsers.sort((a,b) => a.name.localeCompare(b.name)));
-      saveUsers(updatedUsers);
-      toast({ title: 'User Updated', description: `User "${values.name}" has been updated.` });
-    } else {
-      // Logic for adding a new user
-      if (users.some(u => u.pin === values.pin)) {
-        form.setError("pin", { message: "This PIN is already in use." });
-        return;
-      }
-      const newUser: User = {
-        id: `user-${Date.now()}`,
-        ...values,
-      };
-      const newUsers = [...users, newUser].sort((a,b) => a.name.localeCompare(b.name));
-      setUsers(newUsers);
-      saveUsers(newUsers);
-      toast({ title: 'User Added', description: `Employee ${values.name} has been added.` });
-    }
-    
-    handleDialogOpenChange(false);
-  }
-
-  function removeUser(userId: string) {
-    const userToRemove = users.find(u => u.id === userId);
-    if (!userToRemove) return;
-
-    if (userToRemove.role === 'owner' && users.filter(u => u.role === 'owner').length <= 1) {
-      toast({ variant: 'destructive', title: 'Action Prohibited', description: 'Cannot delete the last owner.' });
-      return;
-    }
-    
-    setUsers((prev) => prev.filter((user) => user.id !== userId));
-    saveUsers(users.filter((user) => user.id !== userId));
-    toast({
-      title: 'User Removed',
-      description: `Employee ${userToRemove.name} has been removed.`,
-      variant: 'destructive',
-    });
-  }
   
   const getRoleLabel = (role: UserRole) => {
+    if (!role) return 'Guest';
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
   
@@ -190,84 +83,9 @@ export default function UserManagementPage() {
                 Manage Employees
               </CardTitle>
               <CardDescription className="mt-2">
-                Add, view, and manage employee accounts, PINs, and roles.
+                View employees and their roles. User creation and password management are handled in the Firebase Console.
               </CardDescription>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setIsDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Employee
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-md">
-                <DialogHeader>
-                  <DialogTitle>{editingUser ? 'Edit Employee' : 'Add New Employee'}</DialogTitle>
-                  <DialogDescription>
-                    {editingUser ? 'Update the details for this employee.' : 'Create a new employee account.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <FormField
-                      control={form.control}
-                      name="name"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Employee Name</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., John Doe" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="pin"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Login PIN</FormLabel>
-                          <FormControl>
-                            <Input type="password" placeholder={editingUser ? "Enter new PIN to change" : "Enter a 4-8 digit PIN"} {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="role"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Role</FormLabel>
-                          <Select 
-                            onValueChange={field.onChange} 
-                            defaultValue={field.value}
-                            disabled={currentUser?.role !== 'owner' && (field.value === 'owner' || editingUser?.role === 'owner')}
-                          >
-                            <FormControl>
-                              <SelectTrigger>
-                                <SelectValue placeholder="Select a role" />
-                              </SelectTrigger>
-                            </FormControl>
-                            <SelectContent>
-                              <SelectItem value="employee">Employee</SelectItem>
-                              <SelectItem value="manager">Manager</SelectItem>
-                              <SelectItem value="owner" disabled={currentUser?.role !== 'owner'}>Owner</SelectItem>
-                            </SelectContent>
-                          </Select>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button type="submit">Save Changes</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
           </div>
         </CardHeader>
         <CardContent>
@@ -282,37 +100,16 @@ export default function UserManagementPage() {
                                 <TableHeader>
                                     <TableRow>
                                     <TableHead>Employee Name</TableHead>
+                                    <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
-                                    <TableHead>PIN</TableHead>
-                                    <TableHead className="text-right w-[100px]">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
                                 <TableBody>
                                     {users.map(user => (
-                                    <TableRow key={user.id}>
+                                    <TableRow key={user.uid}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
+                                        <TableCell className="text-muted-foreground">{user.email}</TableCell>
                                         <TableCell><Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge></TableCell>
-                                        <TableCell>••••</TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                    <Button variant="ghost" size="icon">
-                                                        <MoreHorizontal className="h-4 w-4" />
-                                                        <span className="sr-only">Actions</span>
-                                                    </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => handleEditClick(user)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Edit
-                                                    </DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => removeUser(user.id)} disabled={currentUser?.id === user.id} className="text-destructive">
-                                                        <Trash2 className="mr-2 h-4 w-4" />
-                                                        Delete
-                                                    </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
                                     </TableRow>
                                     ))}
                                 </TableBody>

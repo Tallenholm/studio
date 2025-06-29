@@ -6,12 +6,12 @@ importScripts('https://www.gstatic.com/firebasejs/10.12.2/firebase-messaging-com
 // IMPORTANT: This file cannot use environment variables.
 // You must copy your Firebase project's configuration here manually.
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-  appId: "YOUR_APP_ID",
+  apiKey: "AIzaSyAUV-T8mKonfudqI8dsvQiEeScOjwKRhqE",
+  authDomain: "fleet-check-633wb.firebaseapp.com",
+  projectId: "fleet-check-633wb",
+  storageBucket: "fleet-check-633wb.firebasestorage.app",
+  messagingSenderId: "540298110924",
+  appId: "1:540298110924:web:90febf010a4f90b8a3df69",
 };
 
 // Initialize the Firebase app in the service worker
