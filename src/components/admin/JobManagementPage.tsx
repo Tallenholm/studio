@@ -85,7 +85,6 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
 
   const [searchTerm, setSearchTerm] = useState('');
   const [clientFilter, setClientFilter] = useState('all');
-  const [statusFilter, setStatusFilter] = useState('all');
 
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
@@ -277,10 +276,9 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                             job.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
                             job.address.toLowerCase().includes(searchTerm.toLowerCase());
         const clientMatch = clientFilter === 'all' || job.clientId === clientFilter;
-        const statusMatch = statusFilter === 'all' || job.status === statusFilter;
-        return searchMatch && clientMatch && statusMatch;
+        return searchMatch && clientMatch;
     });
-  }, [jobsWithStatus, searchTerm, clientFilter, statusFilter]);
+  }, [jobsWithStatus, searchTerm, clientFilter]);
 
   const upcomingJobs = filteredJobs.filter(j => j.status === 'upcoming');
   const activeJobs = filteredJobs.filter(j => j.status === 'active');
@@ -542,22 +540,13 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                     </div>
                 </div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="Search by name or address..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                  <Select value={clientFilter} onValueChange={setClientFilter}>
                     <SelectTrigger><SelectValue placeholder="Filter by client..." /></SelectTrigger>
                     <SelectContent>
                         <SelectItem value="all">All Clients</SelectItem>
                         {clients.map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}
-                    </SelectContent>
-                </Select>
-                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="active">Active</SelectItem>
-                        <SelectItem value="upcoming">Upcoming</SelectItem>
-                        <SelectItem value="completed">Completed</SelectItem>
                     </SelectContent>
                 </Select>
             </CardContent>
