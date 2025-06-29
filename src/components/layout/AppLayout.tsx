@@ -158,7 +158,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const isAdmin = user.role === 'owner' || user.role === 'manager';
     
     return (
-        <SidebarProvider defaultOpen>
+        <SidebarProvider defaultOpen={false}>
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
@@ -661,5 +661,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return <FullScreenLoader />;
 }
-
-    

@@ -1,7 +1,10 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs"
 import { Shovel, Fuel, Layers, Cuboid, Route, PaintRoller, Sprout, TrendingUp, Construction, Paintbrush, Grid3x3, PanelTop, Leaf, LayoutGrid, TreeDeciduous, Users, Gauge, Container, Scale } from 'lucide-react';
+
 import ConcreteCalculator from '@/components/tools/ConcreteCalculator';
 import FuelCostEstimator from '@/components/tools/FuelCostEstimator';
 import GravelCalculator from '@/components/tools/GravelCalculator';
@@ -22,314 +25,60 @@ import EquipmentRunCostCalculator from '@/components/tools/EquipmentRunCostCalcu
 import HaulageCalculator from '@/components/tools/HaulageCalculator';
 import UnitConverter from '@/components/tools/UnitConverter';
 
+const tools = [
+  { id: 'unit-converter', title: 'Unit Converter', description: 'Convert common construction units.', icon: Scale, component: <UnitConverter /> },
+  { id: 'concrete', title: 'Concrete', description: 'Estimate cubic yards for a slab.', icon: Shovel, component: <ConcreteCalculator /> },
+  { id: 'gravel', title: 'Gravel', description: 'Estimate volume and weight.', icon: Layers, component: <GravelCalculator /> },
+  { id: 'topsoil', title: 'Topsoil', description: 'Estimate volume and weight.', icon: Sprout, component: <TopsoilCalculator /> },
+  { id: 'excavation', title: 'Excavation Volume', description: 'Estimate bank and loose soil.', icon: Cuboid, component: <SoilVolumeCalculator /> },
+  { id: 'trench', title: 'Trench Volume', description: 'Estimate excavation for a trench.', icon: Construction, component: <TrenchVolumeCalculator /> },
+  { id: 'slope', title: 'Slope & Grade', description: 'Calculate slope, grade, and angle.', icon: TrendingUp, component: <SlopeCalculator /> },
+  { id: 'asphalt', title: 'Asphalt', description: 'Estimate tons needed for paving.', icon: Route, component: <AsphaltCalculator /> },
+  { id: 'sealer', title: 'Pavement Sealer', description: 'Estimate gallons of sealer.', icon: PaintRoller, component: <PavementSealerCalculator /> },
+  { id: 'rebar', title: 'Rebar', description: 'Estimate linear feet for a slab.', icon: Grid3x3, component: <RebarCalculator /> },
+  { id: 'retaining-wall', title: 'Retaining Wall', description: 'Estimate blocks needed.', icon: PanelTop, component: <RetainingWallCalculator /> },
+  { id: 'paver', title: 'Pavers', description: 'Estimate pavers for a patio.', icon: LayoutGrid, component: <PaverCalculator /> },
+  { id: 'sod', title: 'Sod', description: 'Estimate sq. ft. of sod.', icon: Leaf, component: <SodCalculator /> },
+  { id: 'mulch', title: 'Mulch', description: 'Estimate cubic yards of mulch.', icon: TreeDeciduous, component: <MulchCalculator /> },
+  { id: 'paint', title: 'Paint', description: 'Estimate gallons of paint.', icon: Paintbrush, component: <PaintCalculator /> },
+  { id: 'fuel-cost', title: 'Fuel Cost', description: 'Estimate fuel cost for a trip.', icon: Fuel, component: <FuelCostEstimator /> },
+  { id: 'labor-cost', title: 'Labor Cost', description: 'Estimate cost based on crew.', icon: Users, component: <LaborCostCalculator /> },
+  { id: 'run-cost', title: 'Equipment Run Cost', description: 'Estimate total operating cost.', icon: Gauge, component: <EquipmentRunCostCalculator /> },
+  { id: 'haulage', title: 'Haulage', description: 'Calculate truck loads needed.', icon: Container, component: <HaulageCalculator /> },
+];
+
 
 export default function ToolsGrid() {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-6">
-      {/* Unit Converter Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Scale className="h-6 w-6 text-primary" />
-            Unit Converter
-          </CardTitle>
-          <CardDescription>
-            Quickly convert between common construction units.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <UnitConverter />
-        </CardContent>
-      </Card>
-      
-      {/* Concrete Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Shovel className="h-6 w-6 text-primary" />
-            Concrete Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the cubic yards of concrete needed for a rectangular slab.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <ConcreteCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Gravel Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Layers className="h-6 w-6 text-primary" />
-            Gravel Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the volume (yd³) and weight (tons) of gravel for an area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <GravelCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Topsoil Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Sprout className="h-6 w-6 text-primary" />
-            Topsoil Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the volume (yd³) and weight (tons) of topsoil required.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TopsoilCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Soil Volume Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Cuboid className="h-6 w-6 text-primary" />
-            Excavation Volume Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the volume of soil to be excavated from an area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SoilVolumeCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Trench Volume Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Construction className="h-6 w-6 text-primary" />
-            Trench Volume Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate excavation volume for a trench.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <TrenchVolumeCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Slope & Grade Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <TrendingUp className="h-6 w-6 text-primary" />
-            Slope & Grade Calculator
-          </CardTitle>
-          <CardDescription>
-            Calculate the slope, grade, and angle between two points.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SlopeCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Asphalt Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Route className="h-6 w-6 text-primary" />
-            Asphalt Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the tons of asphalt needed for paving projects.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <AsphaltCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Pavement Sealer Calculator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <PaintRoller className="h-6 w-6 text-primary" />
-            Pavement Sealer Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate gallons of sealer needed for a given area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PavementSealerCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Rebar Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Grid3x3 className="h-6 w-6 text-primary" />
-            Rebar Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the linear feet of rebar needed for a concrete slab.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RebarCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Retaining Wall Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <PanelTop className="h-6 w-6 text-primary" />
-            Retaining Wall Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the number of blocks needed for a retaining wall.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <RetainingWallCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Paver Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <LayoutGrid className="h-6 w-6 text-primary" />
-            Paver Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the number of pavers for a patio or walkway.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PaverCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Sod Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Leaf className="h-6 w-6 text-primary" />
-            Sod Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the square feet of sod needed for an area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <SodCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Mulch Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <TreeDeciduous className="h-6 w-6 text-primary" />
-            Mulch Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the cubic yards of mulch for a garden bed.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <MulchCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Paint Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Paintbrush className="h-6 w-6 text-primary" />
-            Paint Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the gallons of paint needed for a surface area.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <PaintCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Fuel Cost Estimator Card */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Fuel className="h-6 w-6 text-primary" />
-            Fuel Cost Estimator
-          </CardTitle>
-          <CardDescription>
-            Estimate the fuel cost for a given trip or job.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <FuelCostEstimator />
-        </CardContent>
-      </Card>
-
-      {/* Labor Cost Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Users className="h-6 w-6 text-primary" />
-            Labor Cost Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate total labor cost based on crew size, hours, and rate.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <LaborCostCalculator />
-        </CardContent>
-      </Card>
-
-      {/* Equipment Run Cost Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Gauge className="h-6 w-6 text-primary" />
-            Equipment Run Cost Calculator
-          </CardTitle>
-          <CardDescription>
-            Estimate the total cost of operating a piece of equipment for a job.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <EquipmentRunCostCalculator />
-        </CardContent>
-      </Card>
-      
-      {/* Haulage Calculator */}
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl">
-        <CardHeader>
-          <CardTitle className="font-headline flex items-center gap-2">
-            <Container className="h-6 w-6 text-primary" />
-            Haulage Calculator
-          </CardTitle>
-          <CardDescription>
-            Calculate the number of truck loads required to move material.
-          </CardDescription>
-        </CardHeader>
-        <CardContent>
-          <HaulageCalculator />
-        </CardContent>
-      </Card>
-
-    </div>
+    <Tabs defaultValue={tools[0].id} orientation="vertical" className="flex flex-col md:flex-row gap-6 md:gap-8">
+      <TabsList className="grid grid-cols-2 md:grid-cols-1 md:h-auto md:w-64 shrink-0 justify-start">
+        {tools.map((tool) => (
+          <TabsTrigger key={tool.id} value={tool.id} className="w-full justify-start gap-3 px-3 py-2 text-base">
+            <tool.icon className="h-5 w-5" />
+            <span>{tool.title}</span>
+          </TabsTrigger>
+        ))}
+      </TabsList>
+      <div className="flex-1 min-w-0">
+        {tools.map((tool) => (
+          <TabsContent key={tool.id} value={tool.id} className="m-0 focus-visible:ring-0 focus-visible:ring-offset-0">
+             <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl h-full">
+                <CardHeader>
+                    <CardTitle className="font-headline flex items-center gap-3 text-2xl">
+                        <tool.icon className="h-7 w-7 text-primary" />
+                        {tool.title}
+                    </CardTitle>
+                    <CardDescription>
+                        {tool.description}
+                    </CardDescription>
+                </CardHeader>
+                <CardContent>
+                    {tool.component}
+                </CardContent>
+            </Card>
+          </TabsContent>
+        ))}
+      </div>
+    </Tabs>
   );
 }
