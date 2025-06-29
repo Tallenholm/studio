@@ -219,7 +219,7 @@ export interface Job {
   snowLog?: {
     plowing: SnowServiceLog[];
     salting: SnowServiceLog[];
-    sidewalks: [];
+    sidewalks: SnowServiceLog[];
   };
   // Concrete Job Details
   concreteYards?: number;

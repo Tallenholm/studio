@@ -152,6 +152,30 @@ export default function SnowRoutesPage() {
     if (logs.length === 0) return undefined;
     return logs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
   }
+  
+  const generateOptimizedRouteUrl = (route: SnowRoute) => {
+    const routeJobs = (route.assignedJobIds || [])
+      .map(id => jobs.find(j => j.id === id))
+      .filter((j): j is Job => !!j);
+      
+    if (routeJobs.length === 0) {
+        toast({variant: 'destructive', title: 'No Jobs', description: 'This route has no jobs assigned to it.'});
+        return;
+    }
+
+    const addresses = routeJobs.map(j => encodeURIComponent(j.address));
+    if (addresses.length === 1) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${addresses[0]}`, '_blank');
+        return;
+    }
+    
+    const origin = addresses[0];
+    const destination = addresses[addresses.length - 1];
+    const waypoints = addresses.slice(1, -1).join('|');
+
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+    window.open(url, '_blank');
+  };
 
   if (!isMounted || !user) {
     return (
@@ -191,12 +215,20 @@ export default function SnowRoutesPage() {
           {assignedRoutes.map(route => {
              const routeCrew = users.filter(u => route.assignedEmployeeIds?.includes(u.id));
              const routeFleet = fleetAssets.filter(a => route.assignedVehicleIds?.includes(a.id));
+             const routeJobs = (route.assignedJobIds || []).map(id => jobs.find(j => j.id === id)).filter((j): j is Job => !!j);
 
             return (
             <Card key={route.id} className="printable-card bg-card/90 backdrop-blur-xl border-2 border-primary/20 shadow-xl">
                 <CardHeader>
-                    <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
-                    <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
+                    <div className="flex justify-between items-start">
+                        <div>
+                            <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
+                            <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
+                        </div>
+                        <Button onClick={() => generateOptimizedRouteUrl(route)} className="print-hidden">
+                           <MapPin className="mr-2 h-4 w-4" /> Optimize Route
+                        </Button>
+                    </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm p-4 border rounded-lg bg-muted/50">
@@ -211,10 +243,7 @@ export default function SnowRoutesPage() {
                             <span className="text-muted-foreground">{routeFleet.map(f => f.name).join(', ') || 'N/A'}</span>
                         </div>
                    </div>
-                    {route.assignedJobIds?.map(jobId => {
-                        const job = jobs.find(j => j.id === jobId);
-                        if (!job) return null;
-                        
+                    {routeJobs.map(job => {
                         const services: {key: ServiceType, label: string}[] = [
                             ...(job.snowServices?.plowing && route.type === 'plowing' ? [{key: 'plowing' as ServiceType, label: 'Plowing'}] : []),
                             ...(job.snowServices?.salting && route.type === 'salting' ? [{key: 'salting' as ServiceType, label: 'Salting'}] : []),
@@ -235,9 +264,6 @@ export default function SnowRoutesPage() {
                                                 {job.address}
                                             </CardDescription>
                                         </div>
-                                        <a href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(job.address)}`} target="_blank" rel="noopener noreferrer" className="print-hidden">
-                                            <Button size="sm" variant="outline"><MapPin /> Get Directions</Button>
-                                        </a>
                                     </div>
                                 </CardHeader>
                                 <CardContent className="space-y-4">

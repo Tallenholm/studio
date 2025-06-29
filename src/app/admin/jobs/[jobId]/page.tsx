@@ -378,7 +378,7 @@ export default function JobDetailsPage() {
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold text-sm">{note.author}</p>
-                                            <p className="text-xs text-muted-foreground">{format(new Date(note.timestamp), 'MMM d, h:mm a')}</p>
+                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(note.timestamp), { addSuffix: true })}</p>
                                         </div>
                                         <p className="text-sm text-foreground/80">{note.content}</p>
                                     </div>
