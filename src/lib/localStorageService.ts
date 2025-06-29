@@ -19,7 +19,7 @@ const INVENTORY_KEY = 'fleetCheckInventory';
 const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
 const RENTALS_KEY = 'fleetCheckRentals';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
-const CURRENT_SEED_VERSION = '1.3.1'; // Increment this to force a re-seed on next load
+const CURRENT_SEED_VERSION = '1.3.2'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -221,6 +221,7 @@ export const loadInspectionReportById = (id: string): InspectionReport | undefin
 // You must also create a `users` collection in Firestore and add documents with
 // these UIDs, including `name` and `role` fields.
 const defaultUsers: User[] = [
+    { uid: 'tallenholm-owner-uid', name: 'Tallen Holmgren', email: 'tallenholm@gmail.com', role: 'owner' },
     { uid: 'owner-uid', name: 'Fleet Owner', email: 'owner@company.com', role: 'owner' },
     { uid: 'manager-uid', name: 'Operations Manager', email: 'manager@company.com', role: 'manager' },
     { uid: 'employee-1-uid', name: 'John Doe', email: 'john.doe@company.com', role: 'employee' },
