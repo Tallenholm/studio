@@ -1,4 +1,3 @@
-
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -69,12 +68,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase Auth not initialized.");
+    if (!auth) throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
     await signInWithEmailAndPassword(auth, email, password);
   };
 
   const logout = async () => {
-    if (!auth) throw new Error("Firebase Auth not initialized.");
+    if (!auth) throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
     await signOut(auth);
   };
 
