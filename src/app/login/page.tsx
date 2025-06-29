@@ -31,21 +31,14 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    // We shouldn't get here if not configured, but as a safeguard.
     if (!isFirebaseConfigured) return;
 
     try {
       await login(values.email, values.password);
       toast({ title: 'Login Successful', description: 'Welcome back!' });
     } catch (error: any) {
-      console.error(error);
-      let errorMessage = 'An unknown error occurred.';
-      if (error.code) { // Handle Firebase specific errors
-        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-          errorMessage = 'Invalid email or password. Please try again.';
-        }
-      }
-      form.setError('root', { message: errorMessage });
+      // The error message from the context is already user-friendly.
+      form.setError('root', { message: error.message || 'An unknown login error occurred.' });
     }
   };
   

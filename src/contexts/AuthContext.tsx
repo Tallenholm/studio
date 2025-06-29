@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -56,7 +57,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // Fallback for when a Firestore user document doesn't exist yet.
           // This is common during initial setup. We'll use the local seed data.
-          console.warn(`No user document found in Firestore for UID: ${firebaseUser.uid}. Falling back to local data. Please create a 'users' collection in Firestore and add a document for this user.`);
           const localUsers = loadUsers();
           const localUser = localUsers.find(u => u.email === firebaseUser.email);
           
@@ -82,12 +82,43 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    if (!auth) throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
-    await signInWithEmailAndPassword(auth, email, password);
+    if (!isFirebaseConfigured) {
+      throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
+    }
+    if (!auth) throw new Error("Firebase Auth not initialized.");
+
+    let firebaseUser: FirebaseUser;
+    try {
+        const userCredential = await signInWithEmailAndPassword(auth, email, password);
+        firebaseUser = userCredential.user;
+    } catch (error: any) {
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+            throw new Error('Invalid email or password. Please try again.');
+        }
+        // Re-throw other auth errors so they can be logged if needed
+        throw error;
+    }
+    
+    // Check for the profile in Firestore.
+    const userDocRef = doc(db!, 'users', firebaseUser.uid);
+    const userDoc = await getDoc(userDocRef);
+
+    // Check for the profile in local seed data as a fallback.
+    const localUsers = loadUsers();
+    const localUser = localUsers.find(u => u.email === firebaseUser.email);
+
+    // If the user's profile doesn't exist in either location, they are not authorized.
+    if (!userDoc.exists() && !localUser) {
+      // Sign them out of Firebase to prevent a logged-in but unusable state.
+      await signOut(auth);
+      throw new Error(`Your account (${email}) is not registered in this application. Please contact an administrator.`);
+    }
+    
+    // If a profile was found, onAuthStateChanged will handle setting the user state.
   };
 
   const logout = async () => {
-    if (!auth) throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
+    if (!auth) throw new Error("Firebase Auth not initialized.");
     await signOut(auth);
   };
 
