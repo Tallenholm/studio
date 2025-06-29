@@ -1,6 +1,7 @@
 
 'use client';
 
+import { useState, useRef } from 'react';
 import type { Control } from 'react-hook-form';
 import {
   FormControl,
@@ -13,11 +14,12 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { InspectionItem, InspectionStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Camera, Trash2 } from 'lucide-react';
+import { Camera, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
-import { useRef } from 'react';
+import { uploadFile } from '@/lib/firebase';
+import { useToast } from '@/hooks/use-toast';
 
 interface ChecklistItemProps {
   item: InspectionItem;
@@ -34,15 +36,24 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const { toast } = useToast();
 
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>, field: { onChange: (value: string) => void }) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>, field: { onChange: (value: string) => void }) => {
     const file = event.target.files?.[0];
     if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        field.onChange(reader.result as string);
-      };
-      reader.readAsDataURL(file);
+      setIsUploading(true);
+      try {
+        const path = `inspections/${Date.now()}-${file.name}`;
+        const downloadUrl = await uploadFile(file, path);
+        field.onChange(downloadUrl);
+        toast({ title: 'Success', description: 'Photo uploaded successfully.' });
+      } catch (error) {
+        console.error('File upload error:', error);
+        toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the photo.' });
+      } finally {
+        setIsUploading(false);
+      }
     }
   };
 
@@ -119,7 +130,7 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
           <div className="mt-2 md:mt-0">
             <FormField
               control={control}
-              name={`${fieldNamePrefix}.photoDataUri`}
+              name={`${fieldNamePrefix}.photoUrl`}
               render={({ field }) => (
                 <FormItem>
                   <FormLabel className="text-sm text-muted-foreground">Photo Evidence</FormLabel>
@@ -133,6 +144,7 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
                         className="hidden"
                         onChange={(e) => handleFileChange(e, field)}
                         aria-label={`Upload photo for ${item.name}`}
+                        disabled={isUploading}
                       />
                       {!field.value ? (
                         <Button
@@ -140,18 +152,18 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
                           variant="outline"
                           className="w-full md:w-auto"
                           onClick={() => fileInputRef.current?.click()}
+                          disabled={isUploading}
                         >
-                          <Camera className="mr-2 h-4 w-4" />
-                          Add Photo
+                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
+                          {isUploading ? 'Uploading...' : 'Add Photo'}
                         </Button>
                       ) : (
                         <div className="relative w-32 h-32">
                           <Image
                             src={field.value}
                             alt={`Preview for ${item.name}`}
-                            layout="fill"
-                            objectFit="cover"
-                            className="rounded-md border"
+                            fill
+                            className="object-cover rounded-md border"
                           />
                           <Button
                             type="button"

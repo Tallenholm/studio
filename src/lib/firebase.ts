@@ -4,7 +4,7 @@
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
-import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getStorage, ref, uploadBytes, getDownloadURL, type FirebaseStorage } from 'firebase/storage';
 import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
@@ -50,6 +50,16 @@ if (isFirebaseConfigured) {
   }
 } else {
     console.warn("Firebase config is not fully provided in environment variables. Firebase services are disabled.");
+}
+
+export async function uploadFile(file: File, path: string): Promise<string> {
+  if (!storage) {
+    throw new Error("Firebase Storage is not initialized.");
+  }
+  const storageRef = ref(storage, path);
+  await uploadBytes(storageRef, file);
+  const downloadUrl = await getDownloadURL(storageRef);
+  return downloadUrl;
 }
 
 export async function requestNotificationPermission() {

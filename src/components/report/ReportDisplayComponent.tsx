@@ -111,16 +111,16 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
                           </Badge>
                         </div>
                         
-                        {(item.notes || item.photoDataUri) && (
+                        {(item.notes || item.photoUrl) && (
                             <div className="mt-2 pl-7 flex items-start gap-4">
                                 {item.notes && (
                                     <p className={`text-sm ${item.status === 'fail' ? 'text-destructive-foreground font-semibold' : 'text-muted-foreground'} flex-1`}><strong>Notes:</strong> {item.notes}</p>
                                 )}
-                                {item.photoDataUri && (
+                                {item.photoUrl && (
                                   <div className="flex-shrink-0">
-                                    <Link href={item.photoDataUri} target="_blank" rel="noopener noreferrer" className="block relative group">
+                                    <Link href={item.photoUrl} target="_blank" rel="noopener noreferrer" className="block relative group">
                                         <Image
-                                            src={item.photoDataUri}
+                                            src={item.photoUrl}
                                             alt={`Photo for ${item.name}`}
                                             width={100}
                                             height={100}

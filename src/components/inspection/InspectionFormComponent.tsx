@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -28,7 +29,7 @@ const completedItemSchema = z.object({
   name: z.string(),
   status: z.enum(['pass', 'fail', 'pending']),
   notes: z.string().optional(),
-  photoDataUri: z.string().optional(),
+  photoUrl: z.string().optional(),
 });
 
 const sectionSchema = z.object({
@@ -117,7 +118,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
         name: item.name,
         status: 'pending' as InspectionStatus,
         notes: '',
-        photoDataUri: '',
+        photoUrl: '',
       })),
     })),
   };
@@ -183,7 +184,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
           name: item.name,
           status: item.status,
           notes: item.notes,
-          photoDataUri: item.photoDataUri,
+          photoUrl: item.photoUrl,
         })),
       })),
       overallStatus,
