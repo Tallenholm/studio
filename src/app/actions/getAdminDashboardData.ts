@@ -14,17 +14,21 @@ export interface AdminDashboardData {
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
+  // Step 1: Fetch all necessary data first, with fallbacks for individual failures.
+  const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents] = await Promise.all([
+    getJobs().catch(() => []),
+    getExpenseReports().catch(() => []),
+    getInspectionReports().catch(() => []),
+    getTimeOffRequests().catch(() => []),
+    getTasks().catch(() => []),
+    getCalendarEvents().catch(() => []),
+  ]);
+
+  let briefing: DailyBriefingOutput | null = null;
+  
+  // Step 2: Try to generate the briefing in a separate try/catch block.
   try {
     const today = new Date();
-    // Fetch all data from Firestore.
-    const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents] = await Promise.all([
-        getJobs(),
-        getExpenseReports(),
-        getInspectionReports(),
-        getTimeOffRequests(),
-        getTasks(),
-        getCalendarEvents(),
-    ]);
 
     // Pre-filter data on the server before sending it to the AI.
     const attentionReports = allReports.filter(r => 
@@ -53,23 +57,17 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         events: JSON.stringify(todaysEvents),
     };
 
-    const briefing = await generateDailyBriefing(briefingInput);
+    briefing = await generateDailyBriefing(briefingInput);
 
-    // Return all jobs and events for the calendar display, not just the filtered ones for the AI.
-    return {
-        briefing,
-        jobs: allJobs,
-        events: allEvents,
-    };
   } catch (error) {
-    console.error("Failed to get admin dashboard data:", error);
-    // In case of AI failure, return the data needed for the page to render without the briefing.
-    const jobs = await getJobs().catch(() => []);
-    const events = await getCalendarEvents().catch(() => []);
-    return {
-      briefing: null,
-      jobs: jobs,
-      events: events,
-    };
+    console.error("Failed to generate AI daily briefing:", error);
+    // The 'briefing' variable will remain null, which is the intended behavior on failure.
   }
+  
+  // Step 3: Always return the fetched data, with or without a successful briefing.
+  return {
+      briefing,
+      jobs: allJobs,
+      events: allEvents,
+  };
 }
