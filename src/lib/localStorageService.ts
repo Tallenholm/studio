@@ -20,7 +20,7 @@ const INVENTORY_KEY = 'fleetCheckInventory';
 const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
 const RENTALS_KEY = 'fleetCheckRentals';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
-const CURRENT_SEED_VERSION = '1.3.0'; // Increment this to force a re-seed on next load
+const CURRENT_SEED_VERSION = '1.3.1'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -28,6 +28,118 @@ const defaultFleetAssets: FleetAsset[] = [
     { id: 'truck-2', type: 'truck', name: 'Truck 02 (Plow Truck)', vin: '1GDTY7C1XMJ123457', registrationDueDate: subDays(new Date(), 10).toISOString().split('T')[0], insuranceDueDate: addDays(new Date(), 15).toISOString().split('T')[0] },
     { id: 'trailer-1', type: 'trailer', name: 'Gooseneck Equipment Trailer', vin: '5TETL222XPA654321', registrationDueDate: addDays(new Date(), 120).toISOString().split('T')[0] },
     { id: 'heavyEquipment-1', type: 'heavyEquipment', name: 'CAT 259D3 Skid Steer', vin: 'CAT0259D3XYZ98765', insuranceDueDate: addDays(new Date(), 300).toISOString().split('T')[0] },
+];
+
+const defaultEvents: CalendarEvent[] = [
+    {
+        id: '1',
+        date: new Date().toISOString().split('T')[0],
+        title: 'Team Meeting',
+        type: 'company-event',
+        description: 'All-hands meeting in the main conference room.'
+    }
+];
+
+const defaultDocuments: ManagedDocument[] = [
+    {
+      id: 'doc-1',
+      category: 'Truck 01 (Dump Truck)',
+      title: 'Vehicle Registration - 2024',
+      description: 'Official state vehicle registration document.',
+      documentType: 'general',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'official document',
+    },
+    {
+      id: 'doc-2',
+      category: 'Truck 01 (Dump Truck)',
+      title: 'Insurance Card - 2024',
+      description: 'Proof of liability insurance.',
+      documentType: 'general',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'insurance card',
+    },
+    {
+      id: 'doc-4',
+      category: 'Company Policies',
+      title: 'Fleet Safety Manual',
+      description: 'Company safety procedures and guidelines.',
+      documentType: 'general',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'manual safety',
+    },
+    {
+      id: 'doc-5',
+      category: 'John Doe',
+      title: 'W-2 Form - 2023',
+      description: 'Employee copy of W-2 tax form.',
+      documentType: 'tax',
+      employeeId: '1',
+      employeeName: 'John Doe',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'tax form',
+    },
+    {
+      id: 'doc-6',
+      category: 'John Doe',
+      title: 'I-9 Form',
+      description: 'Employment Eligibility Verification form.',
+      documentType: 'employment',
+      employeeId: '1',
+      employeeName: 'John Doe',
+      documentDataUri: 'https://placehold.co/850x1100.png',
+      dataAiHint: 'employment form',
+    }
+];
+
+const defaultMaintenanceLogs: MaintenanceLog[] = [
+    {
+      id: 'log-1',
+      assetId: 'truck-1',
+      assetName: 'Truck 01 (Dump Truck)',
+      date: subDays(new Date(), 10).toISOString().split('T')[0],
+      serviceType: 'routine',
+      description: 'Oil change and tire rotation.',
+      cost: 150.75,
+      mechanic: 'City Auto Repair'
+    },
+    {
+      id: 'log-2',
+      assetId: 'heavyEquipment-1',
+      assetName: 'CAT 259D3 Skid Steer',
+      date: subDays(new Date(), 30).toISOString().split('T')[0],
+      serviceType: 'repair',
+      description: 'Replaced worn hydraulic hose on lift arm.',
+      cost: 325.50,
+      mechanic: 'In-house'
+    }
+];
+
+const defaultInventory: InventoryItem[] = [
+  { id: 'inv-1', name: 'DeWalt Circular Saw', type: 'tool', category: 'Power Tools', quantity: 2, status: 'available' },
+  { id: 'inv-2', name: 'Shovel (Round Point)', type: 'tool', category: 'Hand Tools', quantity: 10, status: 'available' },
+  { id: 'inv-3', name: 'Safety Cones (18")', type: 'material', category: 'Safety', quantity: 25, status: 'available' },
+  { id: 'inv-4', name: '50lb Bag of Rock Salt', type: 'consumable', category: 'Winter Supplies', quantity: 100, status: 'available' },
+  { id: 'inv-5', name: 'Hammer Drill', type: 'tool', category: 'Power Tools', quantity: 1, status: 'in_use', assignedToType: 'employee', assignedToId: '1', assignedToName: 'John Doe' },
+];
+
+const defaultSnowRoutes: SnowRoute[] = [
+    {
+        id: 'route-plow-1',
+        name: 'North Commercial Plow Route',
+        type: 'plowing',
+        assignedJobIds: ['job-2'],
+        assignedVehicleIds: ['truck-2', 'heavyEquipment-1'],
+        assignedEmployeeIds: ['1']
+    },
+    {
+        id: 'route-sidewalk-1',
+        name: 'Downtown Sidewalk Crew',
+        type: 'sidewalks',
+        assignedJobIds: ['job-2'],
+        assignedVehicleIds: [],
+        assignedEmployeeIds: ['2']
+    }
 ];
 
 export const saveFleetAssets = (assets: FleetAsset[]): void => {
@@ -44,7 +156,8 @@ export const loadFleetAssets = (): FleetAsset[] => {
   if (typeof window !== 'undefined') {
     try {
       const data = localStorage.getItem(FLEET_ASSETS_KEY);
-      if (data) {
+      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+      if (data && version === CURRENT_SEED_VERSION) {
           return JSON.parse(data);
       } else {
           saveFleetAssets(defaultFleetAssets);
@@ -143,16 +256,6 @@ export const loadUsers = (): User[] => {
 };
 
 // Calendar Events
-const defaultEvents: CalendarEvent[] = [
-    {
-        id: '1',
-        date: new Date().toISOString().split('T')[0],
-        title: 'Team Meeting',
-        type: 'company-event',
-        description: 'All-hands meeting in the main conference room.'
-    }
-];
-
 export const saveCalendarEvents = (events: CalendarEvent[]): void => {
   if (typeof window !== 'undefined') {
     try {
@@ -255,58 +358,6 @@ export const loadViolations = (): Violation[] => {
 };
 
 // Documents
-const defaultDocuments: ManagedDocument[] = [
-    {
-      id: 'doc-1',
-      category: 'Truck 01 (Dump Truck)',
-      title: 'Vehicle Registration - 2024',
-      description: 'Official state vehicle registration document.',
-      documentType: 'general',
-      documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'official document',
-    },
-    {
-      id: 'doc-2',
-      category: 'Truck 01 (Dump Truck)',
-      title: 'Insurance Card - 2024',
-      description: 'Proof of liability insurance.',
-      documentType: 'general',
-      documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'insurance card',
-    },
-    {
-      id: 'doc-4',
-      category: 'Company Policies',
-      title: 'Fleet Safety Manual',
-      description: 'Company safety procedures and guidelines.',
-      documentType: 'general',
-      documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'manual safety',
-    },
-    {
-      id: 'doc-5',
-      category: 'John Doe',
-      title: 'W-2 Form - 2023',
-      description: 'Employee copy of W-2 tax form.',
-      documentType: 'tax',
-      employeeId: '1',
-      employeeName: 'John Doe',
-      documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'tax form',
-    },
-    {
-      id: 'doc-6',
-      category: 'John Doe',
-      title: 'I-9 Form',
-      description: 'Employment Eligibility Verification form.',
-      documentType: 'employment',
-      employeeId: '1',
-      employeeName: 'John Doe',
-      documentDataUri: 'https://placehold.co/850x1100.png',
-      dataAiHint: 'employment form',
-    }
-];
-
 export const saveDocuments = (documents: ManagedDocument[]): void => {
   if (typeof window !== 'undefined') {
     try {
@@ -338,29 +389,6 @@ export const loadDocuments = (): ManagedDocument[] => {
 
 
 // Maintenance Logs
-const defaultMaintenanceLogs: MaintenanceLog[] = [
-    {
-      id: 'log-1',
-      assetId: 'truck-1',
-      assetName: 'Truck 01 (Dump Truck)',
-      date: subDays(new Date(), 10).toISOString().split('T')[0],
-      serviceType: 'routine',
-      description: 'Oil change and tire rotation.',
-      cost: 150.75,
-      mechanic: 'City Auto Repair'
-    },
-    {
-      id: 'log-2',
-      assetId: 'heavyEquipment-1',
-      assetName: 'CAT 259D3 Skid Steer',
-      date: subDays(new Date(), 30).toISOString().split('T')[0],
-      serviceType: 'repair',
-      description: 'Replaced worn hydraulic hose on lift arm.',
-      cost: 325.50,
-      mechanic: 'In-house'
-    }
-];
-
 export const saveMaintenanceLogs = (logs: MaintenanceLog[]): void => {
   if (typeof window !== 'undefined') {
     try {
@@ -619,14 +647,6 @@ export const loadWorkOrders = (): WorkOrder[] => {
 
 
 // Inventory Management
-const defaultInventory: InventoryItem[] = [
-  { id: 'inv-1', name: 'DeWalt Circular Saw', type: 'tool', category: 'Power Tools', quantity: 2, status: 'available' },
-  { id: 'inv-2', name: 'Shovel (Round Point)', type: 'tool', category: 'Hand Tools', quantity: 10, status: 'available' },
-  { id: 'inv-3', name: 'Safety Cones (18")', type: 'material', category: 'Safety', quantity: 25, status: 'available' },
-  { id: 'inv-4', name: '50lb Bag of Rock Salt', type: 'consumable', category: 'Winter Supplies', quantity: 100, status: 'available' },
-  { id: 'inv-5', name: 'Hammer Drill', type: 'tool', category: 'Power Tools', quantity: 1, status: 'in_use', assignedToType: 'employee', assignedToId: '1', assignedToName: 'John Doe' },
-];
-
 export const saveInventory = (inventory: InventoryItem[]): void => {
   if (typeof window !== 'undefined') {
     try {
@@ -657,25 +677,6 @@ export const loadInventory = (): InventoryItem[] => {
 };
 
 // Snow Route Management
-const defaultSnowRoutes: SnowRoute[] = [
-    {
-        id: 'route-plow-1',
-        name: 'North Commercial Plow Route',
-        type: 'plowing',
-        assignedJobIds: ['job-2'],
-        assignedVehicleIds: ['truck-2', 'heavyEquipment-1'],
-        assignedEmployeeIds: ['1']
-    },
-    {
-        id: 'route-sidewalk-1',
-        name: 'Downtown Sidewalk Crew',
-        type: 'sidewalks',
-        assignedJobIds: ['job-2'],
-        assignedVehicleIds: [],
-        assignedEmployeeIds: ['2']
-    }
-];
-
 export const saveSnowRoutes = (routes: SnowRoute[]): void => {
     if (typeof window !== 'undefined') {
       try {
@@ -768,3 +769,5 @@ export const loadRentals = (): Rental[] => {
   }
   return [];
 };
+
+    
