@@ -19,6 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Loader2, Pencil, Hammer, Filter, MoreHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 
 const itemSchema = z.object({
@@ -274,26 +275,24 @@ export default function ManageInventoryPage() {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
                 </CardHeader>
-                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                     <Select value={typeFilter} onValueChange={setTypeFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filter by type..." /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Types</SelectItem>
-                            <SelectItem value="tool">Tools</SelectItem>
-                            <SelectItem value="material">Materials</SelectItem>
-                            <SelectItem value="consumable">Consumables</SelectItem>
-                        </SelectContent>
-                    </Select>
-                    <Select value={statusFilter} onValueChange={setStatusFilter}>
-                        <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
-                        <SelectContent>
-                            <SelectItem value="all">All Statuses</SelectItem>
-                            <SelectItem value="available">Available</SelectItem>
-                            <SelectItem value="in_use">In Use</SelectItem>
-                            <SelectItem value="maintenance">Maintenance</SelectItem>
-                             <SelectItem value="lost">Lost</SelectItem>
-                        </SelectContent>
-                    </Select>
+                <CardContent className="space-y-4">
+                    <Tabs defaultValue="all" onValueChange={setTypeFilter}>
+                        <TabsList>
+                            <TabsTrigger value="all">All Types</TabsTrigger>
+                            <TabsTrigger value="tool">Tools</TabsTrigger>
+                            <TabsTrigger value="material">Materials</TabsTrigger>
+                            <TabsTrigger value="consumable">Consumables</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                    <Tabs defaultValue="all" onValueChange={setStatusFilter}>
+                        <TabsList>
+                            <TabsTrigger value="all">All Statuses</TabsTrigger>
+                            <TabsTrigger value="available">Available</TabsTrigger>
+                            <TabsTrigger value="in_use">In Use</TabsTrigger>
+                            <TabsTrigger value="maintenance">Maintenance</TabsTrigger>
+                            <TabsTrigger value="lost">Lost</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </CardContent>
             </Card>
 

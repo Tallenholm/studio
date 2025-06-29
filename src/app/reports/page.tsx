@@ -8,11 +8,12 @@ import type { InspectionReport, FleetAsset, VehicleType } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2, User, Filter, Truck, Box, Shovel } from 'lucide-react';
+import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2, User, Filter } from 'lucide-react';
 import { format } from 'date-fns';
 import { useAuth } from '@/contexts/AuthContext';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 export default function ReportsListPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
@@ -75,26 +76,24 @@ export default function ReportsListPage() {
                 <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                 <Select value={statusFilter} onValueChange={setStatusFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by status..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Statuses</SelectItem>
-                        <SelectItem value="pass">Pass</SelectItem>
-                        <SelectItem value="fail">Fail</SelectItem>
-                    </SelectContent>
-                </Select>
-                 <Select value={typeFilter} onValueChange={setTypeFilter}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Filter by type..." />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Types</SelectItem>
-                        <SelectItem value="pre-trip">Pre-Trip</SelectItem>
-                        <SelectItem value="post-trip">Post-Trip</SelectItem>
-                    </SelectContent>
-                </Select>
+                <div className="space-y-2">
+                    <Tabs defaultValue="all" onValueChange={setStatusFilter}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="all">All Statuses</TabsTrigger>
+                            <TabsTrigger value="pass">Pass</TabsTrigger>
+                            <TabsTrigger value="fail">Fail</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
+                 <div className="space-y-2">
+                    <Tabs defaultValue="all" onValueChange={setTypeFilter}>
+                        <TabsList className="grid w-full grid-cols-3">
+                            <TabsTrigger value="all">All Types</TabsTrigger>
+                            <TabsTrigger value="pre-trip">Pre-Trip</TabsTrigger>
+                            <TabsTrigger value="post-trip">Post-Trip</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
+                </div>
                  <Select value={vehicleFilter} onValueChange={setVehicleFilter}>
                     <SelectTrigger>
                         <SelectValue placeholder="Filter by vehicle..." />
