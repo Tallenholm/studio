@@ -1,6 +1,4 @@
 
-'use client';
-
 import { db } from './firebase';
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
 import type { Job } from './types';
