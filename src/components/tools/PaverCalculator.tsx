@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function PaverCalculator() {
   const [areaLength, setAreaLength] = useState('');
@@ -60,11 +62,18 @@ export default function PaverCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Pavers</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Pavers Needed</p>
-            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} pavers</p>
-            <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Estimated Pavers Needed</p>
+              <p className="text-2xl font-bold text-primary">{result.toLocaleString()} pavers</p>
+              <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Paver Calculator" 
+              resultString={`${result.toLocaleString()} pavers (with ${waste}% waste)`} 
+            />
+          </>
         )}
     </div>
   );

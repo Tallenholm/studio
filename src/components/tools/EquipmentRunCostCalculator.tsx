@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function EquipmentRunCostCalculator() {
   const [fuelCostPerHour, setFuelCostPerHour] = useState('');
@@ -31,6 +33,8 @@ export default function EquipmentRunCostCalculator() {
     setResult(totalCost);
   };
 
+  const formattedResult = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result || 0);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -53,12 +57,19 @@ export default function EquipmentRunCostCalculator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Run Cost</Button>
       {result !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Total Equipment Run Cost</p>
-          <p className="text-2xl font-bold text-primary">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result)}
-          </p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Total Equipment Run Cost</p>
+            <p className="text-2xl font-bold text-primary">
+              {formattedResult}
+            </p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Equipment Run Cost" 
+            resultString={formattedResult} 
+          />
+        </>
       )}
     </div>
   );

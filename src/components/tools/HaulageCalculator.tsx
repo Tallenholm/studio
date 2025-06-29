@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function HaulageCalculator() {
   const [totalVolume, setTotalVolume] = useState('');
@@ -38,10 +40,17 @@ export default function HaulageCalculator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Loads</Button>
       {result !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Number of Loads</p>
-          <p className="text-2xl font-bold text-primary">{result.toLocaleString()} truck loads</p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Number of Loads</p>
+            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} truck loads</p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Haulage Calculator" 
+            resultString={`${result.toLocaleString()} truck loads`} 
+          />
+        </>
       )}
     </div>
   );

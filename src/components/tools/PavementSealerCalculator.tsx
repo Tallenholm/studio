@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function PavementSealerCalculator() {
   const [area, setArea] = useState('');
@@ -45,11 +47,18 @@ export default function PavementSealerCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Sealer</Button>
         {gallons !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Required Sealer</p>
-            <p className="text-2xl font-bold text-primary">{gallons} gallons</p>
-            <p className="text-xs text-muted-foreground">(approx. {gallons > 5 ? Math.ceil(gallons / 5) : 1} 5-gallon pails)</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Required Sealer</p>
+              <p className="text-2xl font-bold text-primary">{gallons} gallons</p>
+              <p className="text-xs text-muted-foreground">(approx. {gallons > 5 ? Math.ceil(gallons / 5) : 1} 5-gallon pails)</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Pavement Sealer" 
+              resultString={`${gallons} gallons`} 
+            />
+          </>
         )}
     </div>
   );

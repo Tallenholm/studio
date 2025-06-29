@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function SodCalculator() {
   const [length, setLength] = useState('');
@@ -46,11 +48,18 @@ export default function SodCalculator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Sod</Button>
       {result !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Sod Needed</p>
-          <p className="text-2xl font-bold text-primary">{result.toLocaleString()} sq ft</p>
-          <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Sod Needed</p>
+            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} sq ft</p>
+            <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Sod Calculator" 
+            resultString={`${result.toLocaleString()} sq ft (with ${waste}% waste)`} 
+          />
+        </>
       )}
     </div>
   );

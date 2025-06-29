@@ -5,6 +5,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function LaborCostCalculator() {
   const [numWorkers, setNumWorkers] = useState('');
@@ -26,6 +28,8 @@ export default function LaborCostCalculator() {
     setResult(totalCost);
   };
 
+  const formattedResult = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result || 0);
+
   return (
     <div className="space-y-4">
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
@@ -44,12 +48,19 @@ export default function LaborCostCalculator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Labor Cost</Button>
       {result !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Total Labor Cost</p>
-          <p className="text-2xl font-bold text-primary">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result)}
-          </p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Total Labor Cost</p>
+            <p className="text-2xl font-bold text-primary">
+              {formattedResult}
+            </p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Labor Cost Calculator" 
+            resultString={formattedResult} 
+          />
+        </>
       )}
     </div>
   );

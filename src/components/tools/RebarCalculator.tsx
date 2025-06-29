@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function RebarCalculator() {
   const [slabLength, setSlabLength] = useState('');
@@ -58,11 +60,18 @@ export default function RebarCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Rebar</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Total Linear Feet of Rebar</p>
-            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} ft</p>
-            <p className="text-xs text-muted-foreground">(includes {overlap}% for overlap)</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Total Linear Feet of Rebar</p>
+              <p className="text-2xl font-bold text-primary">{result.toLocaleString()} ft</p>
+              <p className="text-xs text-muted-foreground">(includes {overlap}% for overlap)</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Rebar Calculator" 
+              resultString={`${result.toLocaleString()} ft (with ${overlap}% overlap)`} 
+            />
+          </>
         )}
     </div>
   );

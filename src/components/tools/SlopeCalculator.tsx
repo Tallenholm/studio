@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function SlopeCalculator() {
   const [rise, setRise] = useState('');
@@ -47,23 +49,30 @@ export default function SlopeCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Slope</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Calculated Slope</p>
-            <div className="flex justify-around items-center mt-2">
-                <div>
-                    <p className="text-2xl font-bold text-primary">{result.grade.toFixed(2)}%</p>
-                    <p className="text-xs text-muted-foreground">Grade</p>
-                </div>
-                <div>
-                    <p className="text-2xl font-bold text-primary">{result.angle.toFixed(1)}°</p>
-                    <p className="text-xs text-muted-foreground">Angle</p>
-                </div>
-                 <div>
-                    <p className="text-2xl font-bold text-primary">{result.ratio}</p>
-                    <p className="text-xs text-muted-foreground">Ratio</p>
-                </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Calculated Slope</p>
+              <div className="flex justify-around items-center mt-2">
+                  <div>
+                      <p className="text-2xl font-bold text-primary">{result.grade.toFixed(2)}%</p>
+                      <p className="text-xs text-muted-foreground">Grade</p>
+                  </div>
+                  <div>
+                      <p className="text-2xl font-bold text-primary">{result.angle.toFixed(1)}°</p>
+                      <p className="text-xs text-muted-foreground">Angle</p>
+                  </div>
+                   <div>
+                      <p className="text-2xl font-bold text-primary">{result.ratio}</p>
+                      <p className="text-xs text-muted-foreground">Ratio</p>
+                  </div>
+              </div>
             </div>
-          </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Slope Calculator" 
+              resultString={`Grade: ${result.grade.toFixed(2)}%, Angle: ${result.angle.toFixed(1)}°, Ratio: ${result.ratio}`} 
+            />
+          </>
         )}
     </div>
   );

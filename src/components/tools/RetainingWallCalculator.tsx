@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function RetainingWallCalculator() {
   const [wallLength, setWallLength] = useState('');
@@ -59,11 +61,18 @@ export default function RetainingWallCalculator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Blocks</Button>
       {result !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Blocks Needed</p>
-          <p className="text-2xl font-bold text-primary">{result.toLocaleString()} blocks</p>
-          <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Blocks Needed</p>
+            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} blocks</p>
+            <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Retaining Wall Blocks" 
+            resultString={`${result.toLocaleString()} blocks (with ${waste}% waste)`} 
+          />
+        </>
       )}
     </div>
   );

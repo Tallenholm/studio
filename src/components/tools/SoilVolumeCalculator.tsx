@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function SoilVolumeCalculator() {
   const [length, setLength] = useState('');
@@ -56,13 +58,20 @@ export default function SoilVolumeCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Soil Volume</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Bank (In-Ground) Volume</p>
-            <p className="text-xl font-bold text-primary">{result.bankYards.toFixed(2)} cubic yards</p>
-            <p className="text-sm text-muted-foreground mt-2">Loose (Excavated) Volume</p>
-            <p className="text-2xl font-bold text-primary">{result.looseYards.toFixed(2)} cubic yards</p>
-            <p className="text-xs text-muted-foreground">(with {swell}% swell)</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Bank (In-Ground) Volume</p>
+              <p className="text-xl font-bold text-primary">{result.bankYards.toFixed(2)} cubic yards</p>
+              <p className="text-sm text-muted-foreground mt-2">Loose (Excavated) Volume</p>
+              <p className="text-2xl font-bold text-primary">{result.looseYards.toFixed(2)} cubic yards</p>
+              <p className="text-xs text-muted-foreground">(with {swell}% swell)</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Excavation Volume" 
+              resultString={`Bank: ${result.bankYards.toFixed(2)} yd³, Loose: ${result.looseYards.toFixed(2)} yd³`} 
+            />
+          </>
         )}
     </div>
   );

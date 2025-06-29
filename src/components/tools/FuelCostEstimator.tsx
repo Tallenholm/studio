@@ -5,7 +5,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Calculator } from 'lucide-react';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function FuelCostEstimator() {
   const [distance, setDistance] = useState('');
@@ -28,6 +29,8 @@ export default function FuelCostEstimator() {
 
     setTotalCost(cost);
   };
+  
+  const formattedResult = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalCost || 0);
 
   return (
     <div className="space-y-4">
@@ -47,12 +50,19 @@ export default function FuelCostEstimator() {
       </div>
       <Button type="button" onClick={calculate} className="w-full">Calculate Cost</Button>
       {totalCost !== null && (
-        <div className="text-center pt-2">
-          <p className="text-sm text-muted-foreground">Estimated Fuel Cost</p>
-          <p className="text-2xl font-bold text-primary">
-            {new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalCost)}
-          </p>
-        </div>
+        <>
+          <div className="text-center pt-2">
+            <p className="text-sm text-muted-foreground">Estimated Fuel Cost</p>
+            <p className="text-2xl font-bold text-primary">
+              {formattedResult}
+            </p>
+          </div>
+          <Separator className="my-4" />
+          <SaveToJob 
+            calculatorName="Fuel Cost Estimator" 
+            resultString={formattedResult} 
+          />
+        </>
       )}
     </div>
   );

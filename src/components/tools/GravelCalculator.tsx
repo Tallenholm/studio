@@ -5,6 +5,8 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 const aggregateTypes = [
     { value: 'custom', label: 'Custom Density', density: '1.4' },
@@ -86,11 +88,18 @@ export default function GravelCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Gravel</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Gravel Needed</p>
-            <p className="text-2xl font-bold text-primary">{result.yards.toFixed(2)} cubic yards</p>
-            <p className="text-lg text-muted-foreground">~ {result.tons.toFixed(2)} tons</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Estimated Gravel Needed</p>
+              <p className="text-2xl font-bold text-primary">{result.yards.toFixed(2)} cubic yards</p>
+              <p className="text-lg text-muted-foreground">~ {result.tons.toFixed(2)} tons</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Gravel Calculator" 
+              resultString={`${result.yards.toFixed(2)} cubic yards (~${result.tons.toFixed(2)} tons)`} 
+            />
+          </>
         )}
     </div>
   );

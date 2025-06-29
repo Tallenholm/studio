@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function ConcreteCalculator() {
   const [length, setLength] = useState('');
@@ -46,10 +48,17 @@ export default function ConcreteCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate</Button>
         {cubicYards !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Required Concrete</p>
-            <p className="text-2xl font-bold text-primary">{cubicYards.toFixed(2)} cubic yards</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Required Concrete</p>
+              <p className="text-2xl font-bold text-primary">{cubicYards.toFixed(2)} cubic yards</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Concrete Calculator" 
+              resultString={`${cubicYards.toFixed(2)} cubic yards`} 
+            />
+          </>
         )}
     </div>
   );

@@ -4,6 +4,8 @@ import { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
+import { Separator } from '@/components/ui/separator';
+import SaveToJob from '@/components/tools/SaveToJob';
 
 export default function AsphaltCalculator() {
   const [length, setLength] = useState('');
@@ -55,11 +57,18 @@ export default function AsphaltCalculator() {
         </div>
         <Button type="button" onClick={calculate} className="w-full">Calculate Asphalt</Button>
         {result !== null && (
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Asphalt Needed</p>
-            <p className="text-2xl font-bold text-primary">{result.yards.toFixed(2)} cubic yards</p>
-            <p className="text-lg text-muted-foreground">~ {result.tons.toFixed(2)} tons</p>
-          </div>
+          <>
+            <div className="text-center pt-2">
+              <p className="text-sm text-muted-foreground">Estimated Asphalt Needed</p>
+              <p className="text-2xl font-bold text-primary">{result.yards.toFixed(2)} cubic yards</p>
+              <p className="text-lg text-muted-foreground">~ {result.tons.toFixed(2)} tons</p>
+            </div>
+            <Separator className="my-4" />
+            <SaveToJob 
+              calculatorName="Asphalt Calculator" 
+              resultString={`${result.yards.toFixed(2)} cubic yards (~${result.tons.toFixed(2)} tons)`} 
+            />
+          </>
         )}
     </div>
   );
