@@ -5,7 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, loadJobs, saveJobs, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import { loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import { addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
 import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -76,7 +77,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [users, setUsers] = useState<User[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
   const [aiPrompt, setAiPrompt] = useState('');
@@ -106,18 +107,28 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
   const watchedJobType = form.watch('jobType');
 
   useEffect(() => {
-    setIsMounted(true);
-    setClients(loadClients());
-    setJobs(loadJobs());
-    setFleetAssets(loadFleetAssets());
-    setUsers(loadUsers().filter(u => u.role === 'employee'));
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveJobs(jobs);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [loadedJobs, loadedClients, loadedAssets, loadedUsers] = await Promise.all([
+                getJobs(),
+                loadClients(),
+                loadFleetAssets(),
+                loadUsers(),
+            ]);
+            setJobs(loadedJobs);
+            setClients(loadedClients);
+            setFleetAssets(loadedAssets);
+            setUsers(loadedUsers.filter(u => u.role === 'employee'));
+        } catch (error) {
+            console.error("Failed to fetch initial data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load page data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [jobs, isMounted]);
+    fetchData();
+  }, [toast]);
 
   const { trucks, trailers, heavyEquipments } = useMemo(() => ({
     trucks: fleetAssets.filter(a => a.type === 'truck'),
@@ -218,7 +229,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     }
   }
 
-  function onSubmit(values: z.infer<typeof jobSchema>) {
+  async function onSubmit(values: z.infer<typeof jobSchema>) {
     const client = clients.find(c => c.id === values.clientId);
     if (!client) {
         toast({ variant: 'destructive', title: 'Error', description: 'Selected client not found.' });
@@ -232,35 +243,43 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
       endDate: values.dateRange.to.toISOString().split('T')[0],
     };
 
-    if (editingJob) {
-        const updatedJob: Job = {
-            ...editingJob,
-            ...jobData,
-        };
-        setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
-        toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
-    } else {
-        const newJob: Job = {
-            id: `job-${Date.now()}`,
-            ...jobData,
-            notes: [],
-            snowLog: values.jobType === 'snow_removal' ? { plowing: [], salting: [], sidewalks: [] } : undefined,
-        };
-      setJobs((prev) => [...prev, newJob]);
-      toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
+    try {
+        if (editingJob) {
+            const updatedJob: Job = { ...editingJob, ...jobData };
+            await updateJob(editingJob.id, updatedJob);
+            setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
+            toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
+        } else {
+            const newJob: Omit<Job, 'id'> = {
+                ...jobData,
+                notes: [],
+                snowLog: values.jobType === 'snow_removal' ? { plowing: [], salting: [], sidewalks: [] } : undefined,
+            };
+            const newId = await addJob(newJob);
+            setJobs(prev => [...prev, {id: newId, ...newJob}]);
+            toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
+        }
+        handleDialogOpenChange(false);
+    } catch (error) {
+        console.error("Firestore Error:", error);
+        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not save job.' });
     }
-    
-    handleDialogOpenChange(false);
   }
 
-  function removeJob(jobId: string) {
+  async function removeJob(jobId: string) {
     const jobToRemove = jobs.find(j => j.id === jobId);
-    setJobs((prev) => prev.filter((j) => j.id !== jobId));
-    toast({
-      title: 'Job Removed',
-      description: `Job "${jobToRemove?.name}" has been removed.`,
-      variant: 'destructive',
-    });
+    try {
+        await deleteJob(jobId);
+        setJobs(prev => prev.filter(j => j.id !== jobId));
+        toast({
+            title: 'Job Removed',
+            description: `Job "${jobToRemove?.name}" has been removed.`,
+            variant: 'destructive',
+        });
+    } catch (error) {
+        console.error("Firestore Error:", error);
+        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not remove job.' });
+    }
   }
   
   const getStatusBadgeVariant = (status: JobStatus) => {
@@ -416,11 +435,11 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
     )
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading...</p>
+        <p className="text-lg text-muted-foreground">Loading Jobs...</p>
       </div>
     );
   }

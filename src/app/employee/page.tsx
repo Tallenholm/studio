@@ -10,7 +10,8 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
-import { loadCalendarEvents, loadJobs, loadTasks, loadInspectionReports } from '@/lib/localStorageService';
+import { loadCalendarEvents, loadTasks, loadInspectionReports } from '@/lib/localStorageService';
+import { getJobs } from '@/lib/firestoreService';
 import { isSameDay, format, parseISO, isWithinInterval } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
@@ -34,7 +35,7 @@ const employeeTourSteps: TourStep[] = [
 export default function EmployeeHubPage() {
   const { user } = useAuth();
   const searchParams = useSearchParams();
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [date, setDate] = useState<Date | undefined>(new Date());
   
   const [events, setEvents] = useState<CalendarEvent[]>([]);
@@ -45,18 +46,30 @@ export default function EmployeeHubPage() {
   const [isTourOpen, setIsTourOpen] = useState(false);
 
    useEffect(() => {
-    setIsMounted(true);
     const hasViewedTour = localStorage.getItem('hasViewedTour_employee');
     if (searchParams.get('tour') === 'true' && !hasViewedTour) {
         setIsTourOpen(true);
     }
     
-    if (user) {
-        setEvents(loadCalendarEvents());
-        setJobs(loadJobs());
-        setTasks(loadTasks().filter(t => t.assignedToEmployeeId === user.id));
-        setReports(loadInspectionReports().filter(r => r.employeeId === user.id));
+    async function fetchData() {
+        if (user) {
+            setIsLoading(true);
+            const [loadedJobs, loadedEvents, loadedTasks, loadedReports] = await Promise.all([
+                getJobs(),
+                loadCalendarEvents(),
+                loadTasks(),
+                loadInspectionReports(),
+            ]);
+
+            setJobs(loadedJobs);
+            setEvents(loadedEvents);
+            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.id));
+            setReports(loadedReports.filter(r => r.employeeId === user.id));
+            setIsLoading(false);
+        }
     }
+
+    fetchData();
   }, [searchParams, user]);
 
   const { assignedExcavationJobs, assignedSnowContracts, assignedConcreteJobs, assignedMiscJobs } = useMemo(() => {
@@ -149,7 +162,7 @@ export default function EmployeeHubPage() {
       );
   }
 
-  if (!isMounted) {
+  if (isLoading) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

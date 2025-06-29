@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
-import { loadJobs, saveJobs } from '@/lib/localStorageService';
+import { getJobs, addNoteToJob } from '@/lib/firestoreService';
 import type { Job } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Save } from 'lucide-react';
@@ -23,15 +24,18 @@ export default function SaveToJob({ calculatorName, resultString }: SaveToJobPro
   const { toast } = useToast();
 
   useEffect(() => {
-    const allJobs = loadJobs();
-    const activeOrUpcomingJobs = allJobs.filter(job => {
-      const status = getJobStatus(job);
-      return status === 'active' || status === 'upcoming';
-    });
-    setJobs(activeOrUpcomingJobs);
+    const fetchJobs = async () => {
+      const allJobs = await getJobs();
+      const activeOrUpcomingJobs = allJobs.filter(job => {
+        const status = getJobStatus(job);
+        return status === 'active' || status === 'upcoming';
+      });
+      setJobs(activeOrUpcomingJobs);
+    };
+    fetchJobs();
   }, []);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!selectedJobId || !user) {
       toast({
         variant: 'destructive',
@@ -40,35 +44,24 @@ export default function SaveToJob({ calculatorName, resultString }: SaveToJobPro
       });
       return;
     }
-
-    const allJobs = loadJobs();
-    const jobIndex = allJobs.findIndex(j => j.id === selectedJobId);
-
-    if (jobIndex === -1) {
-      toast({ variant: 'destructive', title: 'Error', description: 'Selected job not found.' });
-      return;
-    }
     
-    const jobToUpdate = allJobs[jobIndex];
     const newNote = {
       timestamp: new Date().toISOString(),
       content: `[${calculatorName}]: ${resultString}`,
       author: user.name,
     };
-
-    const updatedJob = {
-      ...jobToUpdate,
-      notes: [...(jobToUpdate.notes || []), newNote],
-    };
-
-    allJobs[jobIndex] = updatedJob;
-    saveJobs(allJobs);
-
-    toast({
-      title: 'Note Saved',
-      description: `Calculation saved to job: ${jobToUpdate.name}.`,
-    });
-    setSelectedJobId(''); // Reset after saving
+    
+    try {
+        await addNoteToJob(selectedJobId, newNote);
+        const job = jobs.find(j => j.id === selectedJobId);
+        toast({
+          title: 'Note Saved',
+          description: `Calculation saved to job: ${job?.name}.`,
+        });
+        setSelectedJobId(''); // Reset after saving
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not save note to job.' });
+    }
   };
 
   if (jobs.length === 0) {

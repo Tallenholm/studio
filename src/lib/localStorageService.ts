@@ -14,7 +14,6 @@ const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 const TASKS_KEY = 'fleetCheckTasks';
 const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
 const CLIENTS_KEY = 'fleetCheckClients';
-const JOBS_KEY = 'fleetCheckJobs';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
 const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
@@ -507,125 +506,6 @@ export const loadClients = (): Client[] => {
   return [];
 };
 
-// Job Management
-const getDynamicJobs = (): Job[] => {
-  const now = new Date();
-  return [
-    { 
-      id: 'job-1', 
-      name: 'Lot 5 Excavation', 
-      clientId: 'client-1', 
-      clientName: 'Main Street Properties', 
-      address: '123 Main St, Anytown, USA', 
-      jobValue: 50000, 
-      jobType: 'excavation',
-      startDate: subDays(now, 5).toISOString().split('T')[0], 
-      endDate: addDays(now, 10).toISOString().split('T')[0],
-      assignedEmployeeIds: ['employee-1-uid'],
-      assignedTruckIds: ['truck-1'],
-      assignedHeavyEquipmentIds: ['heavyEquipment-1'],
-      notes: [
-        {
-          timestamp: new Date().toISOString(),
-          content: 'Initial site survey completed. Ready to break ground.',
-          author: 'Operations Manager'
-        }
-      ]
-    },
-    { 
-      id: 'job-2', 
-      name: 'Downtown Plaza Snow Plowing', 
-      clientId: 'client-2', 
-      clientName: 'City Development Group', 
-      address: '456 Central Ave, Anytown, USA', 
-      jobValue: 125000, 
-      jobType: 'snow_removal',
-      startDate: subDays(now, 10).toISOString().split('T')[0], 
-      endDate: addDays(now, 20).toISOString().split('T')[0],
-      snowServices: { plowing: true, salting: true, sidewalks: true },
-      snowLog: { plowing: [], salting: [], sidewalks: [] },
-      notes: [],
-    },
-    { 
-      id: 'job-3', 
-      name: 'Old Mill Foundation', 
-      clientId: 'client-1', 
-      clientName: 'Main Street Properties', 
-      address: '789 River Rd, Anytown, USA', 
-      jobValue: 78000, 
-      jobType: 'excavation',
-      startDate: subDays(now, 30).toISOString().split('T')[0], 
-      endDate: subDays(now, 15).toISOString().split('T')[0],
-      assignedEmployeeIds: ['employee-2-uid'],
-      notes: [],
-    },
-    { 
-      id: 'job-4', 
-      name: 'Patio Slab Pour', 
-      clientId: 'client-3', 
-      clientName: 'Suburban Homes LLC', 
-      address: '101 Maple Court, Anytown, USA', 
-      jobValue: 15000, 
-      jobType: 'concrete',
-      startDate: addDays(now, 2).toISOString().split('T')[0], 
-      endDate: addDays(now, 4).toISOString().split('T')[0],
-      assignedEmployeeIds: ['employee-2-uid'],
-      assignedTruckIds: ['truck-1'],
-      concreteYards: 12.5,
-      notes: [],
-    },
-     { 
-      id: 'job-5', 
-      name: 'Gravel Delivery', 
-      clientId: 'client-1', 
-      clientName: 'Main Street Properties', 
-      address: '123 Main St, Anytown, USA', 
-      jobValue: 1200, 
-      jobType: 'misc',
-      startDate: addDays(now, 1).toISOString().split('T')[0], 
-      endDate: addDays(now, 1).toISOString().split('T')[0],
-      assignedEmployeeIds: ['employee-1-uid'],
-      assignedTruckIds: ['truck-1'],
-      notes: [],
-    },
-  ];
-};
-
-export const saveJobs = (jobs: Job[]): void => {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(JOBS_KEY, JSON.stringify(jobs));
-    } catch (error) {
-      console.error('Failed to save jobs:', error);
-    }
-  }
-};
-
-export const loadJobs = (): Job[] => {
-  if (typeof window !== 'undefined') {
-    try {
-      const data = localStorage.getItem(JOBS_KEY);
-      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
-      
-      if (data && version === CURRENT_SEED_VERSION) {
-        return JSON.parse(data);
-      }
-      
-      // If no data or version is old, re-seed all data.
-      const defaultJobs = getDynamicJobs();
-      saveJobs(defaultJobs);
-      // Mark that we've seeded this version.
-      localStorage.setItem(SEED_DATA_VERSION_KEY, CURRENT_SEED_VERSION);
-      return defaultJobs;
-
-    } catch (error) {
-      console.error('Failed to load jobs:', error);
-      return getDynamicJobs();
-    }
-  }
-  return [];
-};
-
 // Work Order Management
 export const saveWorkOrders = (workOrders: WorkOrder[]): void => {
   if (typeof window !== 'undefined') {
@@ -774,3 +654,23 @@ export const loadRentals = (): Rental[] => {
   }
   return [];
 };
+
+// Seed version check on initial load.
+if (typeof window !== 'undefined') {
+  const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
+  if (version !== CURRENT_SEED_VERSION) {
+      localStorage.removeItem(FLEET_ASSETS_KEY);
+      localStorage.removeItem(USERS_KEY);
+      localStorage.removeItem(CALENDAR_EVENTS_KEY);
+      localStorage.removeItem(DOCUMENTS_KEY);
+      localStorage.removeItem(MAINTENANCE_LOGS_KEY);
+      localStorage.removeItem(CLIENTS_KEY);
+      localStorage.removeItem(INVENTORY_KEY);
+      localStorage.removeItem(SNOW_ROUTES_KEY);
+      localStorage.removeItem(RENTALS_KEY);
+      // We don't clear reports, requests, notifications, violations, tasks, or work orders to preserve user-generated history.
+      
+      // Set the new version
+      localStorage.setItem(SEED_DATA_VERSION_KEY, CURRENT_SEED_VERSION);
+  }
+}

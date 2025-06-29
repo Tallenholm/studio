@@ -5,7 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadSnowRoutes, saveSnowRoutes, loadJobs, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import { loadSnowRoutes, saveSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import { getJobs } from '@/lib/firestoreService';
 import type { SnowRoute, Job, User, FleetAsset } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -84,10 +85,14 @@ export default function ManageSnowRoutesPage() {
 
   useEffect(() => {
     setIsMounted(true);
-    setRoutes(loadSnowRoutes());
-    setJobs(loadJobs().filter(j => j.jobType === 'snow_removal'));
-    setUsers(loadUsers());
-    setFleetAssets(loadFleetAssets().filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));
+    const fetchData = async () => {
+        setRoutes(loadSnowRoutes());
+        const allJobs = await getJobs();
+        setJobs(allJobs.filter(j => j.jobType === 'snow_removal'));
+        setUsers(loadUsers());
+        setFleetAssets(loadFleetAssets().filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));
+    }
+    fetchData();
   }, []);
 
   useEffect(() => {

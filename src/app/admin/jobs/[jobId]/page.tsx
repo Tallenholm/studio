@@ -3,7 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { loadJobs, saveJobs, loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import { loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import { getJobById, addNoteToJob } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, User, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -32,24 +33,24 @@ export default function JobDetailsPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [allUsers, setAllUsers] = useState<User[]>([]);
   const [newNote, setNewNote] = useState('');
-  const [isMounted, setIsMounted] = useState(false);
 
   // New state for cost analysis
   const [jobCosts, setJobCosts] = useState({ maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 });
   const [isLoadingCosts, setIsLoadingCosts] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
     if (jobId) {
-      const allJobs = loadJobs();
-      const jobData = allJobs.find(j => j.id === jobId);
-      setJob(jobData);
+      const fetchJobData = async () => {
+        const jobData = await getJobById(jobId);
+        setJob(jobData);
+        
+        if (jobData) {
+          const allClients = loadClients();
+          setClient(allClients.find(c => c.id === jobData.clientId));
+        }
+      };
       
-      if (jobData) {
-        const allClients = loadClients();
-        setClient(allClients.find(c => c.id === jobData.clientId));
-      }
-      
+      fetchJobData();
       setAssets(loadFleetAssets());
       setAllUsers(loadUsers());
     }
@@ -73,7 +74,7 @@ export default function JobDetailsPage() {
     }
   }, [job, toast]);
 
-  const handleAddNote = () => {
+  const handleAddNote = async () => {
     if (!job || !user || !newNote.trim()) {
         toast({
             variant: 'destructive',
@@ -89,20 +90,18 @@ export default function JobDetailsPage() {
       author: user.name,
     };
 
-    const updatedJob = {
-      ...job,
-      notes: [...(job.notes || []), note],
-    };
-
-    const allJobs = loadJobs();
-    const updatedJobs = allJobs.map(j => (j.id === jobId ? updatedJob : j));
-    saveJobs(updatedJobs);
-    setJob(updatedJob);
-    setNewNote('');
-    toast({ title: 'Note Added', description: 'Your note has been added to the job log.' });
+    try {
+        await addNoteToJob(job.id, note);
+        const updatedJob = { ...job, notes: [...(job.notes || []), note] };
+        setJob(updatedJob);
+        setNewNote('');
+        toast({ title: 'Note Added', description: 'Your note has been added to the job log.' });
+    } catch (error) {
+        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not add note.' });
+    }
   };
   
-  if (!isMounted || job === undefined) {
+  if (job === undefined) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

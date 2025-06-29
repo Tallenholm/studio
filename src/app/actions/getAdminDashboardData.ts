@@ -1,6 +1,8 @@
+
 'use server';
 
-import { loadCalendarEvents, loadInspectionReports, loadFleetAssets, loadJobs, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
+import { loadCalendarEvents, loadInspectionReports, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
+import { getJobs } from '@/lib/firestoreService';
 import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import type { CalendarEvent, Job } from '@/lib/types';
 
@@ -12,7 +14,7 @@ export interface AdminDashboardData {
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   try {
-    const jobs = loadJobs();
+    const jobs = await getJobs();
     const reports = loadInspectionReports();
     const timeOffRequests = loadTimeOffRequests();
     const expenseReports = loadExpenseReports();
@@ -39,10 +41,11 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   } catch (error) {
     console.error("Failed to get admin dashboard data:", error);
     // Return the essential data for the page to render, even if AI fails
+    const jobs = await getJobs().catch(() => []); // Fallback for jobs
     return {
       briefing: null,
       events: loadCalendarEvents(),
-      jobs: loadJobs(),
+      jobs: jobs,
     };
   }
 }

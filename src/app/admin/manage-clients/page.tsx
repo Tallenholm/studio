@@ -5,7 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, saveClients, loadJobs } from '@/lib/localStorageService';
+import { loadClients, saveClients } from '@/lib/localStorageService';
+import { getJobs } from '@/lib/firestoreService';
 import type { Client, Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,7 +68,7 @@ export default function ManageClientsPage() {
   useEffect(() => {
     setIsMounted(true);
     setClients(loadClients());
-    setJobs(loadJobs());
+    getJobs().then(setJobs);
   }, []);
 
   useEffect(() => {
