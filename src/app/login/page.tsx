@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -20,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, isLoading } = useAuth();
+  const { login, isLoading, isFirebaseConfigured } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -32,10 +31,12 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    // We shouldn't get here if not configured, but as a safeguard.
+    if (!isFirebaseConfigured) return;
+
     try {
       await login(values.email, values.password);
       toast({ title: 'Login Successful', description: 'Welcome back!' });
-      // The auth context will handle redirection
     } catch (error: any) {
       console.error(error);
       let errorMessage = 'An unknown error occurred.';
@@ -43,12 +44,12 @@ export default function LoginPage() {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
           errorMessage = 'Invalid email or password. Please try again.';
         }
-      } else if (error.message) { // Handle generic errors (like our config error)
-        errorMessage = error.message;
       }
       form.setError('root', { message: errorMessage });
     }
   };
+  
+  const isFormDisabled = !isFirebaseConfigured || form.formState.isSubmitting || isLoading;
 
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
@@ -61,32 +62,34 @@ export default function LoginPage() {
         <CardContent>
           <Form {...form}>
             <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
-              <FormField
-                control={form.control}
-                name="email"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Email</FormLabel>
-                    <FormControl>
-                      <Input placeholder="name@company.com" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
-              <FormField
-                control={form.control}
-                name="password"
-                render={({ field }) => (
-                  <FormItem>
-                    <FormLabel>Password</FormLabel>
-                    <FormControl>
-                      <Input type="password" placeholder="••••••••" {...field} />
-                    </FormControl>
-                    <FormMessage />
-                  </FormItem>
-                )}
-              />
+              <fieldset disabled={isFormDisabled} className="space-y-4">
+                <FormField
+                  control={form.control}
+                  name="email"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Email</FormLabel>
+                      <FormControl>
+                        <Input placeholder="name@company.com" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+                <FormField
+                  control={form.control}
+                  name="password"
+                  render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Password</FormLabel>
+                      <FormControl>
+                        <Input type="password" placeholder="••••••••" {...field} />
+                      </FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )}
+                />
+              </fieldset>
               
               {form.formState.errors.root && (
                 <div className="flex items-center gap-2 text-sm text-destructive">
@@ -95,7 +98,14 @@ export default function LoginPage() {
                 </div>
               )}
 
-              <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting || isLoading}>
+              {!isFirebaseConfigured && (
+                  <div className="flex items-center gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
+                    <AlertCircle className="h-4 w-4" />
+                    <p>Firebase is not configured. Please add project credentials to the .env file to enable login.</p>
+                  </div>
+              )}
+
+              <Button type="submit" className="w-full text-lg py-6" disabled={isFormDisabled}>
                 <LogIn className="mr-2 h-5 w-5" />
                 Sign In
               </Button>

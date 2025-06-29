@@ -1,7 +1,7 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db } from '@/lib/firebase';
+import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
 import { doc, getDoc } from 'firebase/firestore';
 import type { User, UserRole } from '@/lib/types';
@@ -10,6 +10,7 @@ import { loadUsers } from '@/lib/localStorageService'; // For seeding/fallback
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
+  isFirebaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
   logout: () => Promise<void>;
   role: UserRole | 'guest';
@@ -18,6 +19,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType>({
   user: null,
   isLoading: true,
+  isFirebaseConfigured: false,
   login: async () => {},
   logout: async () => {},
   role: 'guest',
@@ -31,16 +33,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     // This ensures default data is seeded if it doesn't exist
     loadUsers();
 
-    if (!auth || !db) {
+    if (!isFirebaseConfigured) {
         console.warn("Firebase not initialized, auth will not work.");
         setIsLoading(false);
         return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth!, async (firebaseUser) => {
       if (firebaseUser) {
         // User is signed in, fetch their custom data from Firestore
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocRef = doc(db!, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
@@ -80,6 +82,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const value = {
     user,
     isLoading,
+    isFirebaseConfigured,
     login,
     logout,
     role: user?.role || 'guest',

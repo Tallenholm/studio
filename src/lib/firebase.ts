@@ -23,7 +23,7 @@ let storage: FirebaseStorage | null = null;
 let messaging: Messaging | null = null;
 
 // Check if all necessary Firebase config keys are present
-const isFirebaseConfigured = firebaseConfig.projectId && firebaseConfig.apiKey;
+export const isFirebaseConfigured = !!(firebaseConfig.projectId && firebaseConfig.apiKey);
 
 if (isFirebaseConfigured) {
   if (!getApps().length) {
