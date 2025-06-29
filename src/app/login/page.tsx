@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -9,33 +9,41 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Truck, LogIn, AlertCircle } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
-import { useRouter } from 'next/navigation';
-import { loadUsers } from '@/lib/localStorageService';
-import type { User } from '@/lib/types';
+import { zodResolver } from '@hookform/resolvers/zod';
+import { useForm } from 'react-hook-form';
+import * as z from 'zod';
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
+
+const loginSchema = z.object({
+  email: z.string().email({ message: 'Please enter a valid email address.' }),
+  password: z.string().min(1, { message: 'Password is required.' }),
+});
 
 export default function LoginPage() {
   const { login, isLoading } = useAuth();
-  const [pin, setPin] = useState('');
-  const [error, setError] = useState('');
   const { toast } = useToast();
-  const [users, setUsers] = useState<User[]>([]);
 
-  useEffect(() => {
-    setUsers(loadUsers());
-  }, []);
+  const form = useForm<z.infer<typeof loginSchema>>({
+    resolver: zodResolver(loginSchema),
+    defaultValues: {
+      email: '',
+      password: '',
+    },
+  });
 
-  const handleLogin = (e: React.FormEvent) => {
-    e.preventDefault();
-    setError('');
-
-    const user = users.find(u => u.pin === pin);
-    if (user) {
-      toast({ title: 'Login Successful', description: `Welcome, ${user.name}!` });
-      login(user);
-      return;
+  const onSubmit = async (values: z.infer<typeof loginSchema>) => {
+    try {
+      await login(values.email, values.password);
+      toast({ title: 'Login Successful', description: 'Welcome back!' });
+      // The auth context will handle redirection
+    } catch (error: any) {
+      console.error(error);
+      let errorMessage = 'An unknown error occurred.';
+      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+        errorMessage = 'Invalid email or password. Please try again.';
+      }
+      form.setError('root', { message: errorMessage });
     }
-
-    setError('Invalid PIN. Please try again.');
   };
 
   return (
@@ -44,39 +52,51 @@ export default function LoginPage() {
         <CardHeader className="text-center">
           <Truck className="h-12 w-12 text-primary mx-auto mb-4" />
           <CardTitle className="text-3xl font-headline">Operations Hub</CardTitle>
-          <CardDescription>Please enter your PIN to access the portal</CardDescription>
+          <CardDescription>Please sign in to access the portal</CardDescription>
         </CardHeader>
         <CardContent>
-          <form onSubmit={handleLogin} className="space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="pin">PIN Code</Label>
-              <Input
-                id="pin"
-                type="tel"
-                inputMode="numeric"
-                pattern="[0-9]*"
-                value={pin}
-                onChange={(e) => {
-                  setPin(e.target.value);
-                  setError('');
-                }}
-                placeholder="****"
-                required
-                className="text-center text-3xl tracking-[0.5em] font-mono h-14"
-                aria-label="PIN Code"
+          <Form {...form}>
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+              <FormField
+                control={form.control}
+                name="email"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Email</FormLabel>
+                    <FormControl>
+                      <Input placeholder="name@company.com" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
               />
-            </div>
-            {error && (
-              <div className="flex items-center gap-2 text-sm text-destructive">
-                <AlertCircle className="h-4 w-4" />
-                <p>{error}</p>
-              </div>
-            )}
-            <Button type="submit" className="w-full text-lg py-6" disabled={isLoading}>
-              <LogIn className="mr-2 h-5 w-5" />
-              Sign In
-            </Button>
-          </form>
+              <FormField
+                control={form.control}
+                name="password"
+                render={({ field }) => (
+                  <FormItem>
+                    <FormLabel>Password</FormLabel>
+                    <FormControl>
+                      <Input type="password" placeholder="••••••••" {...field} />
+                    </FormControl>
+                    <FormMessage />
+                  </FormItem>
+                )}
+              />
+              
+              {form.formState.errors.root && (
+                <div className="flex items-center gap-2 text-sm text-destructive">
+                  <AlertCircle className="h-4 w-4" />
+                  <p>{form.formState.errors.root.message}</p>
+                </div>
+              )}
+
+              <Button type="submit" className="w-full text-lg py-6" disabled={form.formState.isSubmitting || isLoading}>
+                <LogIn className="mr-2 h-5 w-5" />
+                Sign In
+              </Button>
+            </form>
+          </Form>
         </CardContent>
       </Card>
     </div>

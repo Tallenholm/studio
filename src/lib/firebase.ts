@@ -1,8 +1,11 @@
 
 'use client';
 
-import { initializeApp, getApps, getApp, FirebaseApp } from 'firebase/app';
-import { getMessaging, getToken, onMessage, Messaging } from 'firebase/messaging';
+import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
+import { getAuth, type Auth } from 'firebase/auth';
+import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getStorage, type FirebaseStorage } from 'firebase/storage';
+import { getMessaging, type Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -13,53 +16,41 @@ const firebaseConfig = {
   appId: process.env.NEXT_PUBLIC_FIREBASE_APP_ID,
 };
 
-let app: FirebaseApp;
-if (!getApps().length) {
-  if (!firebaseConfig.projectId) {
-    console.warn("Firebase config not found. Push notifications will not be initialized.");
-    app = {} as FirebaseApp;
+let app: FirebaseApp | null = null;
+let auth: Auth | null = null;
+let db: Firestore | null = null;
+let storage: FirebaseStorage | null = null;
+let messaging: Messaging | null = null;
+
+// Check if all necessary Firebase config keys are present
+const isFirebaseConfigured = firebaseConfig.projectId && firebaseConfig.apiKey;
+
+if (isFirebaseConfigured) {
+  if (!getApps().length) {
+    try {
+      app = initializeApp(firebaseConfig);
+    } catch (e) {
+      console.error("Failed to initialize Firebase", e);
+    }
   } else {
-    app = initializeApp(firebaseConfig);
+    app = getApp();
+  }
+
+  if (app) {
+    auth = getAuth(app);
+    db = getFirestore(app);
+    storage = getStorage(app);
+    if (typeof window !== 'undefined') {
+      try {
+        messaging = getMessaging(app);
+      } catch (e) {
+        console.error("Failed to initialize Firebase Messaging", e);
+      }
+    }
   }
 } else {
-  app = getApp();
+    console.warn("Firebase config is not fully provided in environment variables. Firebase services are disabled.");
 }
 
-const messaging = (typeof window !== 'undefined' && app.options.projectId) ? getMessaging(app) : null;
 
-export const requestNotificationPermission = async () => {
-  if (!messaging) {
-    console.log("Messaging not supported or initialized.");
-    return null;
-  }
-
-  try {
-    const permission = await Notification.requestPermission();
-    if (permission === 'granted') {
-      const token = await getToken(messaging, {
-        vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
-      });
-      console.log('FCM Token:', token);
-      // Here you would typically send the token to your backend to store it against the user
-      return token;
-    } else {
-      console.log('Notification permission denied.');
-      return null;
-    }
-  } catch (error) {
-    console.error('An error occurred while getting notification permission.', error);
-    return null;
-  }
-};
-
-export const onMessageListener = () =>
-  new Promise<{}>((resolve) => {
-    if (messaging) {
-      onMessage(messaging, (payload) => {
-        resolve(payload);
-      });
-    }
-  });
-
-
-export { app, messaging };
+export { app, auth, db, storage, messaging };

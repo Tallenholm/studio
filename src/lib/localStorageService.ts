@@ -74,7 +74,7 @@ const defaultDocuments: ManagedDocument[] = [
       title: 'W-2 Form - 2023',
       description: 'Employee copy of W-2 tax form.',
       documentType: 'tax',
-      employeeId: '1',
+      employeeId: 'employee-1-uid',
       employeeName: 'John Doe',
       documentDataUri: 'https://placehold.co/850x1100.png',
       dataAiHint: 'tax form',
@@ -85,7 +85,7 @@ const defaultDocuments: ManagedDocument[] = [
       title: 'I-9 Form',
       description: 'Employment Eligibility Verification form.',
       documentType: 'employment',
-      employeeId: '1',
+      employeeId: 'employee-1-uid',
       employeeName: 'John Doe',
       documentDataUri: 'https://placehold.co/850x1100.png',
       dataAiHint: 'employment form',
@@ -120,7 +120,7 @@ const defaultInventory: InventoryItem[] = [
   { id: 'inv-2', name: 'Shovel (Round Point)', type: 'tool', category: 'Hand Tools', quantity: 10, status: 'available' },
   { id: 'inv-3', name: 'Safety Cones (18")', type: 'material', category: 'Safety', quantity: 25, status: 'available' },
   { id: 'inv-4', name: '50lb Bag of Rock Salt', type: 'consumable', category: 'Winter Supplies', quantity: 100, status: 'available' },
-  { id: 'inv-5', name: 'Hammer Drill', type: 'tool', category: 'Power Tools', quantity: 1, status: 'in_use', assignedToType: 'employee', assignedToId: '1', assignedToName: 'John Doe' },
+  { id: 'inv-5', name: 'Hammer Drill', type: 'tool', category: 'Power Tools', quantity: 1, status: 'in_use', assignedToType: 'employee', assignedToId: 'employee-1-uid', assignedToName: 'John Doe' },
 ];
 
 const defaultSnowRoutes: SnowRoute[] = [
@@ -130,7 +130,7 @@ const defaultSnowRoutes: SnowRoute[] = [
         type: 'plowing',
         assignedJobIds: ['job-2'],
         assignedVehicleIds: ['truck-2', 'heavyEquipment-1'],
-        assignedEmployeeIds: ['1']
+        assignedEmployeeIds: ['employee-1-uid']
     },
     {
         id: 'route-sidewalk-1',
@@ -138,7 +138,7 @@ const defaultSnowRoutes: SnowRoute[] = [
         type: 'sidewalks',
         assignedJobIds: ['job-2'],
         assignedVehicleIds: [],
-        assignedEmployeeIds: ['2']
+        assignedEmployeeIds: ['employee-2-uid']
     }
 ];
 
@@ -216,11 +216,16 @@ export const loadInspectionReportById = (id: string): InspectionReport | undefin
 
 
 // User Management
+// NOTE: This default user data is for local development and will be replaced by
+// your Firebase Authentication and Firestore user data in production.
+// The `uid` should match a user you create in Firebase Auth.
+// You must also create a `users` collection in Firestore and add documents with
+// these UIDs, including `name` and `role` fields.
 const defaultUsers: User[] = [
-    { id: 'owner-1', name: 'Fleet Owner', pin: '5678', role: 'owner' },
-    { id: 'manager-1', name: 'Operations Manager', pin: '8765', role: 'manager' },
-    { id: '1', name: 'John Doe', pin: '1234', role: 'employee' },
-    { id: '2', name: 'Jane Smith', pin: '4321', role: 'employee' },
+    { uid: 'owner-uid', name: 'Fleet Owner', email: 'owner@company.com', role: 'owner' },
+    { uid: 'manager-uid', name: 'Operations Manager', email: 'manager@company.com', role: 'manager' },
+    { uid: 'employee-1-uid', name: 'John Doe', email: 'john.doe@company.com', role: 'employee' },
+    { uid: 'employee-2-uid', name: 'Jane Smith', email: 'jane.smith@company.com', role: 'employee' },
 ];
 
 export const saveUsers = (users: User[]): void => {
@@ -516,7 +521,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'excavation',
       startDate: subDays(now, 5).toISOString().split('T')[0], 
       endDate: addDays(now, 10).toISOString().split('T')[0],
-      assignedEmployeeIds: ['1'],
+      assignedEmployeeIds: ['employee-1-uid'],
       assignedTruckIds: ['truck-1'],
       assignedHeavyEquipmentIds: ['heavyEquipment-1'],
       notes: [
@@ -551,7 +556,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'excavation',
       startDate: subDays(now, 30).toISOString().split('T')[0], 
       endDate: subDays(now, 15).toISOString().split('T')[0],
-      assignedEmployeeIds: ['2'],
+      assignedEmployeeIds: ['employee-2-uid'],
       notes: [],
     },
     { 
@@ -564,7 +569,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'concrete',
       startDate: addDays(now, 2).toISOString().split('T')[0], 
       endDate: addDays(now, 4).toISOString().split('T')[0],
-      assignedEmployeeIds: ['2'],
+      assignedEmployeeIds: ['employee-2-uid'],
       assignedTruckIds: ['truck-1'],
       concreteYards: 12.5,
       notes: [],
@@ -579,7 +584,7 @@ const getDynamicJobs = (): Job[] => {
       jobType: 'misc',
       startDate: addDays(now, 1).toISOString().split('T')[0], 
       endDate: addDays(now, 1).toISOString().split('T')[0],
-      assignedEmployeeIds: ['1'],
+      assignedEmployeeIds: ['employee-1-uid'],
       assignedTruckIds: ['truck-1'],
       notes: [],
     },
@@ -769,5 +774,3 @@ export const loadRentals = (): Rental[] => {
   }
   return [];
 };
-
-    

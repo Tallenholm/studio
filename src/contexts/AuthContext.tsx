@@ -2,74 +2,93 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { createStore, useStore } from 'zustand';
-import type { UserRole, User } from '@/lib/types';
-import { loadUsers, saveUsers } from '@/lib/localStorageService';
+import { auth, db } from '@/lib/firebase';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser } from 'firebase/auth';
+import { doc, getDoc } from 'firebase/firestore';
+import type { User, UserRole } from '@/lib/types';
+import { loadUsers } from '@/lib/localStorageService'; // For seeding/fallback
 
-interface AuthState {
+interface AuthContextType {
   user: User | null;
   isLoading: boolean;
-  login: (user: User) => void;
-  logout: () => void;
+  login: (email: string, password: string) => Promise<void>;
+  logout: () => Promise<void>;
+  role: UserRole | 'guest';
 }
 
-const authStore = createStore<AuthState>((set) => ({
+const AuthContext = createContext<AuthContextType>({
   user: null,
-  isLoading: true, // Start as loading
-  login: (loggedInUser: User) => {
-    try {
-      sessionStorage.setItem('fleetCheckUser', JSON.stringify(loggedInUser));
-    } catch (error) {
-       console.error("Could not access sessionStorage to save user", error);
-    }
-    set({ user: loggedInUser, isLoading: false });
-  },
-  logout: () => {
-    try {
-      sessionStorage.removeItem('fleetCheckUser');
-    } catch (error) {
-       console.error("Could not access sessionStorage to logout", error);
-    }
-    set({ user: null, isLoading: false });
-  },
-}));
+  isLoading: true,
+  login: async () => {},
+  logout: async () => {},
+  role: 'guest',
+});
 
-// A client-side initializer component
-function AuthInitializer() {
-    useEffect(() => {
-        // This ensures the default users are correctly seeded on app load.
-        loadUsers(); 
-        
-        try {
-            const storedUser = sessionStorage.getItem('fleetCheckUser');
-            if (storedUser) {
-                authStore.setState({ user: JSON.parse(storedUser), isLoading: false });
-            } else {
-                authStore.setState({ isLoading: false, user: null });
-            }
-        } catch (error) {
-            console.error("Could not access sessionStorage", error);
-            authStore.setState({ isLoading: false, user: null });
-        }
-    }, []);
-
-    return null; // This component renders nothing.
-}
-
-// The provider component wraps the app and includes the initializer.
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  return (
-    <>
-      <AuthInitializer />
-      {children}
-    </>
-  );
+  const [user, setUser] = useState<User | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    // This ensures default data is seeded if it doesn't exist
+    loadUsers();
+
+    if (!auth || !db) {
+        console.warn("Firebase not initialized, auth will not work.");
+        setIsLoading(false);
+        return;
+    }
+    
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      if (firebaseUser) {
+        // User is signed in, fetch their custom data from Firestore
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDoc = await getDoc(userDocRef);
+
+        if (userDoc.exists()) {
+          const userData = userDoc.data();
+          setUser({
+            uid: firebaseUser.uid,
+            email: firebaseUser.email || '',
+            name: userData.name,
+            role: userData.role,
+          });
+        } else {
+          // This case might happen if a user is in Auth but not Firestore.
+          // You might want to log them out or create a default doc.
+          console.warn(`No user document found in Firestore for UID: ${firebaseUser.uid}`);
+          setUser(null); 
+        }
+      } else {
+        // User is signed out
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  const login = async (email: string, password: string) => {
+    if (!auth) throw new Error("Firebase Auth not initialized.");
+    await signInWithEmailAndPassword(auth, email, password);
+  };
+
+  const logout = async () => {
+    if (!auth) throw new Error("Firebase Auth not initialized.");
+    await signOut(auth);
+  };
+
+  const value = {
+    user,
+    isLoading,
+    login,
+    logout,
+    role: user?.role || 'guest',
+  };
+
+  return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
 }
 
-// The hook to access auth state and actions from any client component.
-export function useAuth() {
-  const state = useStore(authStore);
-  
-  // Expose role for convenience
-  return { ...state, role: state.user?.role };
-}
+export const useAuth = () => {
+  return useContext(AuthContext);
+};
