@@ -128,8 +128,7 @@ export interface ManagedDocument {
   description: string;
   category: string;
   documentType: 'general' | 'tax' | 'employment';
-  documentDataUri: string;
-  dataAiHint?: string;
+  documentUrl: string; // URL from Firebase Storage
   employeeId?: string;
   employeeName?: string;
 }
@@ -159,7 +158,7 @@ export interface Task {
   status: 'pending' | 'completed';
   requiresPhoto: boolean;
   completionNotes?: string;
-  completionPhotoUri?: string;
+  completionPhotoUri?: string; // This can stay as data URI for simplicity or also be migrated.
 }
 
 export type ExpenseCategory = 'fuel' | 'food' | 'lodging' | 'supplies' | 'other';
@@ -273,6 +272,8 @@ export interface SnowRoute {
   assignedVehicleIds?: string[];
   assignedEmployeeIds?: string[];
 }
+
+export type RentalRateType = 'daily' | 'weekly' | 'monthly';
 
 export interface Rental {
   id: string;

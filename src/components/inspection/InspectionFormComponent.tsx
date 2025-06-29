@@ -18,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CHECKLIST_DATA } from '@/lib/data';
 import type { InspectionReport, InspectionStatus, FleetAsset, VehicleType } from '@/lib/types';
 import ChecklistItemComponent from './ChecklistItemComponent';
-import { saveInspectionReport, loadFleetAssets } from '@/lib/localStorageService';
+import { addInspectionReport, getFleetAssets } from '@/lib/firestoreService';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import { Loader2, Send, Truck, Box, Shovel, ClipboardList } from 'lucide-react';
@@ -95,7 +95,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
 
   useEffect(() => {
     setIsMounted(true);
-    setFleetAssets(loadFleetAssets());
+    getFleetAssets().then(setFleetAssets);
   }, []);
   
   const { trucks, trailers, heavyEquipments } = useMemo(() => {
@@ -166,9 +166,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       });
     });
 
-    const reportId = `${inspectionType}-${Date.now()}`;
-    const report: InspectionReport = {
-      id: reportId,
+    const reportData: Omit<InspectionReport, 'id'> = {
       type: inspectionType,
       date: new Date().toISOString(),
       employeeId: user?.id,
@@ -190,15 +188,23 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
       overallStatus,
     };
 
-    await new Promise(resolve => setTimeout(resolve, 1000));
-
-    saveInspectionReport(report);
-    toast({
-      title: `${inspectionType === 'pre-trip' ? 'Pre-Trip' : 'Post-Trip'} Inspection Submitted`,
-      description: 'Your inspection report has been saved.',
-    });
-    setIsSubmitting(false);
-    router.push(`/reports/${reportId}${inspectionType === 'pre-trip' ? '?analyze=true' : ''}`);
+    try {
+        const reportId = await addInspectionReport(reportData);
+        toast({
+            title: `${inspectionType === 'pre-trip' ? 'Pre-Trip' : 'Post-Trip'} Inspection Submitted`,
+            description: 'Your inspection report has been saved.',
+        });
+        router.push(`/reports/${reportId}${inspectionType === 'pre-trip' ? '?analyze=true' : ''}`);
+    } catch (error) {
+        console.error("Failed to submit inspection report:", error);
+        toast({
+            variant: 'destructive',
+            title: 'Submission Failed',
+            description: 'Could not save the inspection report to the database.',
+        });
+    } finally {
+        setIsSubmitting(false);
+    }
   }
 
   if (!isMounted) {

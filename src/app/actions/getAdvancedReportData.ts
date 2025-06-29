@@ -1,8 +1,7 @@
 
 'use server';
 
-import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadFleetAssets } from '@/lib/localStorageService';
-import { getExpenseReports } from '@/lib/firestoreService';
+import { getInspectionReports, getMaintenanceLogs, getTasks, getViolations, getFleetAssets, getExpenseReports } from '@/lib/firestoreService';
 import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, FleetAsset, VehicleType, ExpenseCategory } from '@/lib/types';
 import { subDays, isWithinInterval, parseISO } from 'date-fns';
 
@@ -21,14 +20,16 @@ export async function getAdvancedReportData(
   dateRangeFilter: 'all_time' | 'last_30_days' | 'last_quarter', 
   vehicleTypeFilter: VehicleType | 'all'
 ): Promise<AdvancedReportData> {
-  // Load data on the server
-  const reports = loadInspectionReports();
-  const logs = loadMaintenanceLogs();
-  const tasks = loadTasks();
-  const violations = loadViolations();
-  const expenses = await getExpenseReports(); // Now from Firestore
-  const fleetAssets = loadFleetAssets();
-
+  // Load data from Firestore
+  const [reports, logs, tasks, violations, expenses, fleetAssets] = await Promise.all([
+    getInspectionReports(),
+    getMaintenanceLogs(),
+    getTasks(),
+    getViolations(),
+    getExpenseReports(),
+    getFleetAssets()
+  ]);
+  
   if (reports.length === 0 && logs.length === 0 && tasks.length === 0 && violations.length === 0 && expenses.length === 0) {
     return {
       inspectionOutcomes: [],
@@ -48,9 +49,12 @@ export async function getAdvancedReportData(
                         : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
                         : null;
 
-  const filterByDate = <T extends { date: string }>(items: T[]) => {
+  const filterByDate = <T extends { date?: string, dateAssigned?: string }>(items: T[]) => {
     if (!dateFilterRange) return items;
-    return items.filter(item => isWithinInterval(parseISO(item.date), dateFilterRange));
+    return items.filter(item => {
+        const itemDate = item.date || item.dateAssigned;
+        return itemDate ? isWithinInterval(parseISO(itemDate), dateFilterRange) : false;
+    });
   };
   
   // Vehicle Type Filtering Logic

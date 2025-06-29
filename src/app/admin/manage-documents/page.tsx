@@ -5,7 +5,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadDocuments, saveDocuments, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import { getDocuments, addDocument, deleteDocument, getFleetAssets } from '@/lib/firestoreService';
+import { loadUsers } from '@/lib/localStorageService';
 import type { ManagedDocument, User, FleetAsset } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,7 +41,9 @@ import { PlusCircle, Trash2, BookOpen, Loader2, Download, Eye, FileUp, Files, Us
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
-import { parseISO } from 'date-fns';
+import { uploadFile } from '@/lib/firebase';
+import { useAuth } from '@/contexts/AuthContext';
+
 
 const documentSchema = z.object({
   title: z.string().min(1, 'Document title is required.'),
@@ -48,9 +51,7 @@ const documentSchema = z.object({
   employeeId: z.string().optional(),
   documentType: z.enum(['general', 'tax', 'employment'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
-  documentDataUri: z.string().refine((val) => val.startsWith('data:'), {
-    message: 'A document file upload is required.',
-  }),
+  documentUrl: z.string().url({ message: 'A document file upload is required.' }),
 }).superRefine((data, ctx) => {
     if ((data.documentType === 'employment' || data.documentType === 'tax') && !data.employeeId) {
         ctx.addIssue({
@@ -72,10 +73,11 @@ export default function ManageDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isSummarizing, setIsSummarizing] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof documentSchema>>({
@@ -85,24 +87,28 @@ export default function ManageDocumentsPage() {
       category: '',
       documentType: 'general',
       description: '',
-      documentDataUri: '',
+      documentUrl: '',
     },
   });
 
   const watchedDocType = form.watch('documentType');
 
   useEffect(() => {
-    setIsMounted(true);
-    setDocuments(loadDocuments());
-    setUsers(loadUsers());
-    setFleetAssets(loadFleetAssets());
+    async function fetchData() {
+        setIsLoading(true);
+        const [docs, assets, users] = await Promise.all([
+            getDocuments(),
+            getFleetAssets(),
+            loadUsers(), // Users are still from localStorage for auth fallback
+        ]);
+        setDocuments(docs);
+        setFleetAssets(assets);
+        setUsers(users);
+        setIsLoading(false);
+    }
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      saveDocuments(documents);
-    }
-  }, [documents, isMounted]);
 
   const generalCategories = useMemo(() => {
     const assetNames = fleetAssets.map(asset => asset.name);
@@ -111,36 +117,44 @@ export default function ManageDocumentsPage() {
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      setIsSummarizing(true);
+    if (file && adminUser) {
+      setIsProcessingFile(true);
+      
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const dataUri = reader.result as string;
-        form.setValue('documentDataUri', dataUri);
-        form.clearErrors('documentDataUri');
-        
-        try {
-            const summary = await summarizeDocument({ documentDataUri: dataUri });
-            if (summary.title) form.setValue('title', summary.title);
-            if (summary.description) form.setValue('description', summary.description);
-            toast({ title: 'AI Assistant', description: 'Document title and description have been pre-filled.' });
-        } catch (error) {
-            console.error("AI summarization failed:", error);
-            toast({ variant: 'destructive', title: 'AI Error', description: 'Could not summarize the document.' });
-        } finally {
-            setIsSummarizing(false);
-        }
-      };
       reader.readAsDataURL(file);
+      const dataUriPromise = new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+      });
+
+      try {
+        const uploadPromise = uploadFile(file, `documents/${adminUser.uid}/${Date.now()}-${file.name}`);
+        const dataUri = await dataUriPromise;
+        const ocrPromise = summarizeDocument({ documentDataUri: dataUri });
+
+        const [downloadUrl, summary] = await Promise.all([uploadPromise, ocrPromise]);
+        
+        form.setValue('documentUrl', downloadUrl);
+        form.clearErrors('documentUrl');
+        if (summary.title) form.setValue('title', summary.title);
+        if (summary.description) form.setValue('description', summary.description);
+        
+        toast({ title: 'AI Assistant', description: 'Document title and description have been pre-filled.' });
+
+      } catch (error) {
+        console.error("File processing error:", error);
+        toast({ variant: 'destructive', title: "Processing Failed", description: "Could not upload or scan document."});
+      } finally {
+        setIsProcessingFile(false);
+      }
     }
   };
 
-  function onSubmit(values: z.infer<typeof documentSchema>) {
+  async function onSubmit(values: z.infer<typeof documentSchema>) {
     let docCategory = '';
     let employeeName: string | undefined = undefined;
 
     if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
-        const employee = users.find(u => u.id === values.employeeId);
+        const employee = users.find(u => u.uid === values.employeeId);
         if (employee) {
             docCategory = employee.name;
             employeeName = employee.name;
@@ -152,31 +166,29 @@ export default function ManageDocumentsPage() {
         docCategory = values.category!;
     }
     
-    const newDocument: ManagedDocument = {
-      id: `doc-${Date.now()}`,
+    const newDocumentData: Omit<ManagedDocument, 'id'> = {
       title: values.title,
       description: values.description,
       documentType: values.documentType,
-      documentDataUri: values.documentDataUri,
+      documentUrl: values.documentUrl,
       category: docCategory,
       employeeId: values.employeeId,
       employeeName: employeeName,
     };
 
-    setDocuments((prev) => [newDocument, ...prev]);
+    const newDocId = await addDocument(newDocumentData);
+    setDocuments((prev) => [{ id: newDocId, ...newDocumentData }, ...prev]);
     toast({ title: 'Document Added', description: `${values.title} has been added.` });
     setIsDialogOpen(false);
     form.reset({
-        title: '',
-        category: '',
-        documentType: 'general',
-        description: '',
-        documentDataUri: '',
+        title: '', category: '', documentType: 'general',
+        description: '', documentUrl: '',
     });
   }
 
-  function removeDocument(docId: string) {
+  async function removeDocument(docId: string) {
     const docToRemove = documents.find(d => d.id === docId);
+    await deleteDocument(docId);
     setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
     toast({
       title: 'Document Removed',
@@ -236,9 +248,9 @@ export default function ManageDocumentsPage() {
                                     </Button>
                                </CardHeader>
                                <CardContent className="flex-grow flex items-center justify-center pt-0">
-                                   <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
+                                   <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
                                       <Image
-                                        src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                        src={doc.documentUrl.includes('placehold.co') ? doc.documentUrl : 'https://placehold.co/850x1100.png'}
                                         alt={`Preview of ${doc.title}`}
                                         fill
                                         className="object-cover object-top transition-transform group-hover:scale-105"
@@ -259,7 +271,7 @@ export default function ManageDocumentsPage() {
     );
   };
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -322,7 +334,7 @@ export default function ManageDocumentsPage() {
                     />
                      <FormField
                         control={form.control}
-                        name="documentDataUri"
+                        name="documentUrl"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Document File</FormLabel>
@@ -334,17 +346,17 @@ export default function ManageDocumentsPage() {
                                         ref={fileInputRef}
                                         className="hidden"
                                         onChange={handleFileChange}
-                                        disabled={isSummarizing}
+                                        disabled={isProcessingFile}
                                     />
                                     <Button
                                         type="button"
                                         variant="outline"
                                         className="w-full"
                                         onClick={() => fileInputRef.current?.click()}
-                                        disabled={isSummarizing}
+                                        disabled={isProcessingFile}
                                     >
-                                        {isSummarizing ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
-                                        {isSummarizing ? 'Analyzing with AI...' : 'Upload File'}
+                                        {isProcessingFile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}
+                                        {isProcessingFile ? 'Processing...' : 'Upload File'}
                                     </Button>
                                     </div>
                                 </FormControl>
@@ -380,7 +392,7 @@ export default function ManageDocumentsPage() {
                                   </FormControl>
                                   <SelectContent>
                                   {users.filter(u => u.role === 'employee').map(user => (
-                                      <SelectItem key={user.id} value={user.id}>
+                                      <SelectItem key={user.uid} value={user.uid}>
                                           {user.name}
                                       </SelectItem>
                                   ))}
@@ -429,7 +441,7 @@ export default function ManageDocumentsPage() {
                     />
                     
                     <DialogFooter>
-                      <Button type="submit" disabled={isSummarizing}>Save Document</Button>
+                      <Button type="submit" disabled={isProcessingFile}>Save Document</Button>
                     </DialogFooter>
                   </form>
                 </Form>

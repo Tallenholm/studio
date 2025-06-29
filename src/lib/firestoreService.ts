@@ -1,101 +1,80 @@
 
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport } from './types';
+import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent } from './types';
 
-// === Job Functions ===
-const JOBS_COLLECTION = 'jobs';
-export const getJobs = async (): Promise<Job[]> => {
-  if (!db) return [];
-  const jobsCollection = collection(db, JOBS_COLLECTION);
-  const jobsSnapshot = await getDocs(jobsCollection);
-  return jobsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
-};
-
-export const getJobById = async (id: string): Promise<Job | null> => {
-    if (!db) return null;
-    const jobDocRef = doc(db, JOBS_COLLECTION, id);
-    const jobDoc = await getDoc(jobDocRef);
-    if (jobDoc.exists()) {
-        return { id: jobDoc.id, ...jobDoc.data() } as Job;
+// Generic CRUD factory
+const createCrudService = <T extends { id: string }>(collectionName: string) => {
+    if (!db) {
+        console.error(`Firestore not initialized. Cannot create service for ${collectionName}.`);
+        // Return dummy functions if Firestore is not available
+        return {
+            getAll: async (): Promise<T[]> => [],
+            getById: async (id: string): Promise<T | null> => null,
+            add: async (data: Omit<T, 'id'>): Promise<string> => { throw new Error("Firestore not initialized."); },
+            update: async (id: string, data: Partial<T>): Promise<void> => { throw new Error("Firestore not initialized."); },
+            delete: async (id: string): Promise<void> => { throw new Error("Firestore not initialized."); },
+            batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => { throw new Error("Firestore not initialized."); },
+        };
     }
-    return null;
-}
+    const serviceCollection = collection(db, collectionName);
 
-export const addJob = async (jobData: Omit<Job, 'id'>): Promise<string> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const jobsCollection = collection(db, JOBS_COLLECTION);
-    const docRef = await addDoc(jobsCollection, jobData);
-    return docRef.id;
+    return {
+        getAll: async (): Promise<T[]> => {
+            const snapshot = await getDocs(serviceCollection);
+            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+        },
+        getById: async (id: string): Promise<T | null> => {
+            const docRef = doc(db, collectionName, id);
+            const docSnap = await getDoc(docRef);
+            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
+        },
+        add: async (data: Omit<T, 'id'>): Promise<string> => {
+            const docRef = await addDoc(serviceCollection, data);
+            return docRef.id;
+        },
+        update: async (id: string, data: Partial<T>): Promise<void> => {
+            const docRef = doc(db, collectionName, id);
+            await updateDoc(docRef, data);
+        },
+        delete: async (id: string): Promise<void> => {
+            const docRef = doc(db, collectionName, id);
+            await deleteDoc(docRef);
+        },
+        batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
+            const batch = writeBatch(db!);
+            data.forEach(item => {
+                const docRef = doc(serviceCollection);
+                batch.set(docRef, item);
+            });
+            await batch.commit();
+        }
+    };
 };
 
-export const updateJob = async (id: string, jobData: Partial<Job>): Promise<void> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const jobDocRef = doc(db, JOBS_COLLECTION, id);
-    await updateDoc(jobDocRef, jobData);
-};
+// Create services for each collection
+export const { getAll: getJobs, getById: getJobById, add: addJob, update: updateJob, delete: deleteJob } = createCrudService<Job>('jobs');
+export const { getAll: getClients, add: addClient, update: updateClient, delete: deleteClient } = createCrudService<Client>('clients');
+export const { getAll: getExpenseReports, add: addExpenseReport, update: updateExpenseReport } = createCrudService<ExpenseReport>('expenseReports');
+export const { getAll: getFleetAssets, add: addFleetAsset, update: updateFleetAsset, delete: deleteFleetAsset } = createCrudService<FleetAsset>('fleetAssets');
+export const { getAll: getInspectionReports, getById: getInspectionReportById, add: addInspectionReport, update: updateInspectionReport } = createCrudService<InspectionReport>('inspectionReports');
+export const { getAll: getMaintenanceLogs, add: addMaintenanceLog, update: updateMaintenanceLog, delete: deleteMaintenanceLog, batchAdd: batchAddMaintenanceLogs } = createCrudService<MaintenanceLog>('maintenanceLogs');
+export const { getAll: getWorkOrders, add: addWorkOrder, update: updateWorkOrder, delete: deleteWorkOrder } = createCrudService<WorkOrder>('workOrders');
+export const { getAll: getTasks, add: addTask, update: updateTask, delete: deleteTask } = createCrudService<Task>('tasks');
+export const { getAll: getTimeOffRequests, add: addTimeOffRequest, update: updateTimeOffRequest } = createCrudService<TimeOffRequest>('timeOffRequests');
+export const { getAll: getViolations, add: addViolation, delete: deleteViolation } = createCrudService<Violation>('violations');
+export const { getAll: getDocuments, add: addDocument, delete: deleteDocument } = createCrudService<ManagedDocument>('documents');
+export const { getAll: getInventory, add: addInventoryItem, update: updateInventoryItem, delete: deleteInventoryItem } = createCrudService<InventoryItem>('inventory');
+export const { getAll: getSnowRoutes, add: addSnowRoute, update: updateSnowRoute, delete: deleteSnowRoute } = createCrudService<SnowRoute>('snowRoutes');
+export const { getAll: getRentals, add: addRental, update: updateRental, delete: deleteRental } = createCrudService<Rental>('rentals');
+export const { getAll: getCalendarEvents, add: addCalendarEvent, delete: deleteCalendarEvent } = createCrudService<CalendarEvent>('calendarEvents');
 
-export const deleteJob = async (id: string): Promise<void> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const jobDocRef = doc(db, JOBS_COLLECTION, id);
-    await deleteDoc(jobDocRef);
-};
 
+// Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][0]) => {
   if (!db) throw new Error('Firestore is not initialized.');
-  const jobDocRef = doc(db, JOBS_COLLECTION, jobId);
+  const jobDocRef = doc(db, 'jobs', jobId);
   await updateDoc(jobDocRef, {
     notes: arrayUnion(note)
   });
 };
-
-
-// === Client Functions ===
-const CLIENTS_COLLECTION = 'clients';
-export const getClients = async (): Promise<Client[]> => {
-    if (!db) return [];
-    const clientsCollection = collection(db, CLIENTS_COLLECTION);
-    const clientsSnapshot = await getDocs(clientsCollection);
-    return clientsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Client));
-};
-
-export const addClient = async (clientData: Omit<Client, 'id'>): Promise<string> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const clientsCollection = collection(db, CLIENTS_COLLECTION);
-    const docRef = await addDoc(clientsCollection, clientData);
-    return docRef.id;
-};
-
-export const updateClient = async (id: string, clientData: Partial<Client>): Promise<void> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const clientDocRef = doc(db, CLIENTS_COLLECTION, id);
-    await updateDoc(clientDocRef, clientData);
-};
-
-export const deleteClient = async (id: string): Promise<void> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const clientDocRef = doc(db, CLIENTS_COLLECTION, id);
-    await deleteDoc(clientDocRef);
-};
-
-// === Expense Report Functions ===
-const EXPENSE_REPORTS_COLLECTION = 'expenseReports';
-export const getExpenseReports = async (): Promise<ExpenseReport[]> => {
-    if (!db) return [];
-    const reportsCollection = collection(db, EXPENSE_REPORTS_COLLECTION);
-    const reportsSnapshot = await getDocs(reportsCollection);
-    return reportsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
-}
-
-export const addExpenseReport = async (reportData: Omit<ExpenseReport, 'id'>): Promise<string> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const reportsCollection = collection(db, EXPENSE_REPORTS_COLLECTION);
-    const docRef = await addDoc(reportsCollection, reportData);
-    return docRef.id;
-}
-
-export const updateExpenseReport = async (id: string, reportData: Partial<ExpenseReport>): Promise<void> => {
-    if (!db) throw new Error("Firestore is not initialized.");
-    const reportDocRef = doc(db, EXPENSE_REPORTS_COLLECTION, id);
-    await updateDoc(reportDocRef, reportData);
-}

@@ -1,12 +1,12 @@
+
 'use server';
 
-import { loadFleetAssets, loadInspectionReports, loadMaintenanceLogs } from '@/lib/localStorageService';
+import { getFleetAssets, getInspectionReports, getMaintenanceLogs } from '@/lib/firestoreService';
 import type { FleetAsset, InspectionReport, MaintenanceLog } from '@/lib/types';
 import { subMonths, isAfter, parseISO } from 'date-fns';
 
 /**
  * Calculates a health score for a single asset based on recent failed inspections and repairs.
- * This also corrects a bug where the asset ID was being used to match VINs.
  */
 const calculateHealthScore = (asset: FleetAsset, reports: InspectionReport[], logs: MaintenanceLog[]): number => {
     const last30Days = subMonths(new Date(), 1);
@@ -56,13 +56,15 @@ export interface FleetHealthData {
 }
 
 /**
- * A Server Action that fetches all fleet health data, including calculated
+ * A Server Action that fetches all fleet health data from Firestore, including calculated
  * health scores and recent maintenance costs. This offloads processing from the client.
  */
 export async function getFleetHealthData(): Promise<FleetHealthData[]> {
-    const assets = loadFleetAssets();
-    const reports = loadInspectionReports();
-    const logs = loadMaintenanceLogs();
+    const [assets, reports, logs] = await Promise.all([
+        getFleetAssets(),
+        getInspectionReports(),
+        getMaintenanceLogs(),
+    ]);
 
     const healthData = assets.map(asset => {
         const score = calculateHealthScore(asset, reports, logs);

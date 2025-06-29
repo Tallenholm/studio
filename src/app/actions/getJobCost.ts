@@ -1,16 +1,19 @@
+
 'use server';
 
-import { loadMaintenanceLogs, loadExpenseReports, loadFleetAssets } from '@/lib/localStorageService';
-import type { Job, FleetAsset } from '@/lib/types';
+import { getMaintenanceLogs, getExpenseReports, getFleetAssets } from '@/lib/firestoreService';
+import type { Job } from '@/lib/types';
 import { isWithinInterval, parseISO } from 'date-fns';
 
 export async function getJobCost(job: Job | null) {
     if (!job) return { maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 };
     
-    // This logic is now on the server
-    const maintenanceLogs = loadMaintenanceLogs();
-    const expenseReports = loadExpenseReports();
-    const assets = loadFleetAssets();
+    // This logic is now on the server, fetching from Firestore
+    const [maintenanceLogs, expenseReports, assets] = await Promise.all([
+        getMaintenanceLogs(),
+        getExpenseReports(),
+        getFleetAssets(),
+    ]);
 
     const jobInterval = {
       start: parseISO(job.startDate),

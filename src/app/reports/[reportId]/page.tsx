@@ -3,7 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { loadInspectionReportById, loadInspectionReports, saveInspectionReport, loadWorkOrders, saveWorkOrders, loadFleetAssets } from '@/lib/localStorageService';
+import { getInspectionReportById, getInspectionReports, updateInspectionReport, getWorkOrders, addWorkOrder, getFleetAssets } from '@/lib/firestoreService';
 import type { InspectionReport, WorkOrder } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
 import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
@@ -23,21 +23,27 @@ export default function ReportDetailsPage() {
   const [report, setReport] = useState<InspectionReport | null | undefined>(undefined); // undefined for loading, null for not found
   const [hasWorkOrder, setHasWorkOrder] = useState<boolean>(false);
   const [isAnalyzing, setIsAnalyzing] = useState(false);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
     if (reportId) {
-      const loadedReport = loadInspectionReportById(reportId);
-      setReport(loadedReport);
-      
-      const workOrders = loadWorkOrders();
-      setHasWorkOrder(workOrders.some(wo => wo.reportId === reportId));
+      const fetchReport = async () => {
+        setIsLoading(true);
+        const loadedReport = await getInspectionReportById(reportId);
+        setReport(loadedReport);
+        
+        if (loadedReport) {
+            const workOrders = await getWorkOrders();
+            setHasWorkOrder(workOrders.some(wo => wo.reportId === reportId));
 
-      // Check if AI analysis should be triggered on load
-      if (loadedReport && loadedReport.type === 'pre-trip' && !loadedReport.anomalyReport && searchParams.get('analyze') === 'true') {
-        handleAnalyzeReport(loadedReport);
+            // Check if AI analysis should be triggered on load
+            if (loadedReport.type === 'pre-trip' && !loadedReport.anomalyReport && searchParams.get('analyze') === 'true') {
+                handleAnalyzeReport(loadedReport);
+            }
+        }
+        setIsLoading(false);
       }
+      fetchReport();
     }
   }, [reportId, searchParams]);
 
@@ -50,7 +56,7 @@ export default function ReportDetailsPage() {
 
     setIsAnalyzing(true);
     try {
-      const allReports = loadInspectionReports();
+      const allReports = await getInspectionReports();
       const pastReportsForVin = allReports
         .filter(r => r.truckVin === reportToUse.truckVin && r.id !== reportToUse.id && r.type === 'pre-trip')
         .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
@@ -66,7 +72,7 @@ export default function ReportDetailsPage() {
       const analysisResult = await analyzeInspectionReports(aiInput);
 
       const updatedReport = { ...reportToUse, anomalyReport: analysisResult };
-      saveInspectionReport(updatedReport);
+      await updateInspectionReport(reportToUse.id, { anomalyReport: analysisResult });
       setReport(updatedReport);
 
       toast({
@@ -85,7 +91,7 @@ export default function ReportDetailsPage() {
     }
   };
 
-  const handleCreateWorkOrder = () => {
+  const handleCreateWorkOrder = async () => {
     if (!report) return;
 
     const failedItems = report.sections
@@ -99,30 +105,28 @@ export default function ReportDetailsPage() {
 
     const issueDescription = failedItems.map(item => `${item.name}: ${item.notes || 'No notes provided.'}`).join('\n');
     
-    const allAssets = loadFleetAssets();
+    const allAssets = await getFleetAssets();
     const assetVin = report.truckVin || report.trailerVin || report.heavyEquipmentVin || 'N/A';
     const asset = allAssets.find(a => a.vin === assetVin);
     const assetName = asset ? asset.name : 'Unknown Asset';
 
-    const newWorkOrder: WorkOrder = {
-      id: `wo-${Date.now()}`,
+    const newWorkOrder: Omit<WorkOrder, 'id'> = {
       reportId: report.id,
-      assetId: assetVin,
+      assetId: asset ? asset.id : 'unknown', // Use the asset ID from Firestore
       assetName: assetName,
       dateCreated: new Date().toISOString(),
       reportedBy: report.employeeName || 'Unknown',
       status: 'open',
       issueDescription: issueDescription,
     };
-
-    const workOrders = loadWorkOrders();
-    saveWorkOrders([...workOrders, newWorkOrder]);
+    
+    await addWorkOrder(newWorkOrder);
     setHasWorkOrder(true);
     toast({ title: 'Work Order Created', description: 'A new work order has been generated.' });
     router.push('/admin/manage-work-orders');
   };
   
-  if (!isMounted || report === undefined) {
+  if (isLoading || report === undefined) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

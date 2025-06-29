@@ -2,24 +2,29 @@
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Files, Download, FileText, FileBadge, Loader2 } from 'lucide-react';
+import { Download, FileText, FileBadge, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
-import { loadDocuments } from '@/lib/localStorageService';
+import { getDocuments } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 
 export default function PersonalDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
 
   useEffect(() => {
-    setIsMounted(true);
-    if(user) {
-        setDocuments(loadDocuments().filter(d => d.employeeId === user.id));
+    async function fetchData() {
+        if (user) {
+            setIsLoading(true);
+            const docs = await getDocuments();
+            setDocuments(docs.filter(d => d.employeeId === user.uid));
+            setIsLoading(false);
+        }
     }
+    fetchData();
   }, [user]);
 
   const { taxDocuments, employmentDocuments } = useMemo(() => {
@@ -51,9 +56,9 @@ export default function PersonalDocumentsPage() {
                     <CardDescription>{doc.description}</CardDescription>
                   </CardHeader>
                   <CardContent className="flex-grow">
-                    <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group aspect-[8.5/11] rounded-md overflow-hidden border">
+                    <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group aspect-[8.5/11] rounded-md overflow-hidden border">
                       <Image
-                        src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                        src={'https://placehold.co/850x1100.png'} // Use generic placeholder for privacy
                         alt={`Preview of ${doc.title}`}
                         fill
                         className="object-cover object-top transition-transform group-hover:scale-105"
@@ -72,7 +77,7 @@ export default function PersonalDocumentsPage() {
     );
   };
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

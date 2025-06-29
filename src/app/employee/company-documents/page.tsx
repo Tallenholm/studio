@@ -6,9 +6,8 @@ import { Files, Download, Truck, Box, BookOpen as DocumentIcon, Loader2, BookOpe
 import Link from 'next/link';
 import Image from 'next/image';
 import { useState, useEffect, useMemo } from 'react';
-import { loadDocuments } from '@/lib/localStorageService';
+import { getDocuments } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
 
 
 // Helper function to get an icon for a category
@@ -22,18 +21,20 @@ const getCategoryIcon = (categoryName: string) => {
 
 export default function CompanyDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
-  const { user } = useAuth();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    setIsMounted(true);
-    setDocuments(loadDocuments());
+    async function fetchData() {
+        setIsLoading(true);
+        const docs = await getDocuments();
+        setDocuments(docs.filter(d => d.documentType === 'general'));
+        setIsLoading(false);
+    }
+    fetchData();
   }, []);
 
   const generalDocuments = useMemo(() => {
-    return documents
-        .filter(d => d.documentType === 'general')
-        .reduce((acc, doc) => {
+    return documents.reduce((acc, doc) => {
             (acc[doc.category] = acc[doc.category] || []).push(doc);
             return acc;
         }, {} as Record<string, ManagedDocument[]>);
@@ -72,9 +73,9 @@ export default function CompanyDocumentsPage() {
                                 <CardDescription>{doc.description}</CardDescription>
                             </CardHeader>
                             <CardContent className="flex-grow">
-                                <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group aspect-[8.5/11] rounded-md overflow-hidden border">
+                                <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group aspect-[8.5/11] rounded-md overflow-hidden border">
                                 <Image
-                                    src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                    src={'https://placehold.co/850x1100.png'} // Use a generic placeholder
                                     alt={`Preview of ${doc.title}`}
                                     fill
                                     className="object-cover object-top transition-transform group-hover:scale-105"
@@ -96,7 +97,7 @@ export default function CompanyDocumentsPage() {
     );
   };
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

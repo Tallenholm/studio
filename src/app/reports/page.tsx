@@ -3,8 +3,8 @@
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { loadInspectionReports, loadFleetAssets } from '@/lib/localStorageService';
-import type { InspectionReport, FleetAsset, VehicleType } from '@/lib/types';
+import { getInspectionReports, getFleetAssets } from '@/lib/firestoreService';
+import type { InspectionReport, FleetAsset } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +18,7 @@ import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 export default function ReportsListPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { role, user } = useAuth();
 
   const [statusFilter, setStatusFilter] = useState('all');
@@ -26,16 +26,26 @@ export default function ReportsListPage() {
   const [vehicleFilter, setVehicleFilter] = useState('all');
 
   useEffect(() => {
-    setIsMounted(true);
-    let loadedReports = loadInspectionReports().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    
-    if (role === 'employee' && user) {
-      loadedReports = loadedReports.filter(report => report.employeeId === user.id);
+    async function fetchData() {
+        setIsLoading(true);
+        const [loadedReports, loadedAssets] = await Promise.all([
+            getInspectionReports(),
+            getFleetAssets()
+        ]);
+        
+        const sortedReports = loadedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+        
+        if (role === 'employee' && user) {
+            setReports(sortedReports.filter(report => report.employeeId === user.id));
+        } else {
+            setReports(sortedReports);
+        }
+        
+        setFleetAssets(loadedAssets);
+        setIsLoading(false);
     }
-    
-    setReports(loadedReports);
-    setFleetAssets(loadFleetAssets());
-  }, [isMounted, role, user]);
+    fetchData();
+  }, [role, user]);
   
   const filteredReports = useMemo(() => {
     return reports.filter(report => {
@@ -50,7 +60,7 @@ export default function ReportsListPage() {
   }, [reports, statusFilter, typeFilter, vehicleFilter]);
 
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

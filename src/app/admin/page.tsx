@@ -19,7 +19,6 @@ import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import WeatherForecast from '@/components/admin/WeatherForecast';
-import { loadCalendarEvents } from '@/lib/localStorageService';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -183,14 +182,12 @@ export default function FleetCheckDashboardPage() {
     const fetchData = async () => {
         setIsBriefingLoading(true);
         try {
-            // Calendar events are still client-side for now
-            setEvents(loadCalendarEvents());
-
             // Get server-side data from the action
             const data = await getAdminDashboardData();
             
             setBriefing(data.briefing);
             setJobs(data.jobs);
+            setEvents(data.events);
 
             if (!data.briefing) {
                 toast({

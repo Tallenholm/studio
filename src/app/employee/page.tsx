@@ -10,8 +10,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
-import { loadCalendarEvents, loadTasks, loadInspectionReports } from '@/lib/localStorageService';
-import { getJobs } from '@/lib/firestoreService';
+import { getJobs, getCalendarEvents, getTasks, getInspectionReports } from '@/lib/firestoreService';
 import { isSameDay, format, parseISO, isWithinInterval } from 'date-fns';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
@@ -56,14 +55,14 @@ export default function EmployeeHubPage() {
             setIsLoading(true);
             const [loadedJobs, loadedEvents, loadedTasks, loadedReports] = await Promise.all([
                 getJobs(),
-                loadCalendarEvents(),
-                loadTasks(),
-                loadInspectionReports(),
+                getCalendarEvents(),
+                getTasks(),
+                getInspectionReports(),
             ]);
 
             setJobs(loadedJobs);
             setEvents(loadedEvents);
-            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.id));
+            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.uid));
             setReports(loadedReports.filter(r => r.employeeId === user.id));
             setIsLoading(false);
         }
