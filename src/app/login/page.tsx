@@ -39,8 +39,12 @@ export default function LoginPage() {
     } catch (error: any) {
       console.error(error);
       let errorMessage = 'An unknown error occurred.';
-      if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
-        errorMessage = 'Invalid email or password. Please try again.';
+      if (error.code) { // Handle Firebase specific errors
+        if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
+          errorMessage = 'Invalid email or password. Please try again.';
+        }
+      } else if (error.message) { // Handle generic errors (like our config error)
+        errorMessage = error.message;
       }
       form.setError('root', { message: errorMessage });
     }
