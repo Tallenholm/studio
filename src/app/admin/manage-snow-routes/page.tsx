@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -13,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Loader2, Pencil, Route, Truck, Users as UsersIcon, Building2 } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Pencil, Route, Truck, Users as UsersIcon, Building2, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
@@ -144,10 +145,24 @@ export default function ManageSnowRoutesPage() {
               <Card key={route.id} className="bg-muted/30">
                 <CardHeader className="flex-row items-center justify-between pb-4">
                   <h3 className="text-lg font-semibold">{route.name}</h3>
-                  <div className="flex gap-2">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(route)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeRoute(route.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
-                  </div>
+                  <DropdownMenu>
+                      <DropdownMenuTrigger asChild>
+                          <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                          </Button>
+                      </DropdownMenuTrigger>
+                      <DropdownMenuContent align="end">
+                          <DropdownMenuItem onClick={() => handleEditClick(route)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                          </DropdownMenuItem>
+                          <DropdownMenuItem onClick={() => removeRoute(route.id)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                          </DropdownMenuItem>
+                      </DropdownMenuContent>
+                  </DropdownMenu>
                 </CardHeader>
                 <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
                     <div className="space-y-1">

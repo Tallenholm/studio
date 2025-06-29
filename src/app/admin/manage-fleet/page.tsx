@@ -43,13 +43,14 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain, MoreHorizontal } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
 import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const maintenanceIntervalSchema = z.object({
     intervalMonths: z.coerce.number().optional(),
@@ -283,12 +284,24 @@ export default function FleetManagementPage() {
                                     <DateCell dateString={asset.registrationDueDate} />
                                     <DateCell dateString={asset.insuranceDueDate} />
                                     <TableCell className="text-right">
-                                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(asset)} aria-label={`Edit ${asset.name}`}>
-                                        <Pencil className="h-4 w-4" />
-                                    </Button>
-                                    <Button variant="ghost" size="icon" onClick={() => removeAsset(asset.id)} aria-label={`Remove ${asset.name}`}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
+                                        <DropdownMenu>
+                                            <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Actions</span>
+                                                </Button>
+                                            </DropdownMenuTrigger>
+                                            <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleEditClick(asset)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => removeAsset(asset.id)} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                            </DropdownMenuContent>
+                                        </DropdownMenu>
                                     </TableCell>
                                 </TableRow>
                                 ))}

@@ -36,7 +36,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Loader2, Pencil } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Loader2, Pencil, MoreHorizontal } from 'lucide-react';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
@@ -257,12 +258,24 @@ export default function ManageClientsPage() {
                                         <TableCell className="text-muted-foreground">{client.contactPhone || 'N/A'}</TableCell>
                                         <TableCell className="text-muted-foreground">{jobs.filter(j => j.clientId === client.id).length}</TableCell>
                                         <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(client)} aria-label={`Edit ${client.name}`}>
-                                            <Pencil className="h-4 w-4" />
-                                        </Button>
-                                        <Button variant="ghost" size="icon" onClick={() => removeClient(client.id)} aria-label={`Remove ${client.name}`}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                <Button variant="ghost" size="icon">
+                                                    <MoreHorizontal className="h-4 w-4" />
+                                                    <span className="sr-only">Actions</span>
+                                                </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                <DropdownMenuItem onClick={() => handleEditClick(client)}>
+                                                    <Pencil className="mr-2 h-4 w-4" />
+                                                    Edit
+                                                </DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => removeClient(client.id)} className="text-destructive">
+                                                    <Trash2 className="mr-2 h-4 w-4" />
+                                                    Delete
+                                                </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                     ))}

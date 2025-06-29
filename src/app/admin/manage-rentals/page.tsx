@@ -25,6 +25,7 @@ import { Separator } from '@/components/ui/separator';
 import { getRentalStatus } from '@/lib/job-utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Textarea } from '@/components/ui/textarea';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const rentalSchema = z.object({
   assetId: z.string({ required_error: 'Please select an asset to rent.' }),
@@ -175,8 +176,24 @@ export default function ManageRentalsPage() {
                 <TableCell>{format(new Date(rental.startDate), 'PPP')} - {format(new Date(rental.endDate), 'PPP')}</TableCell>
                 <TableCell>${rental.rate.toFixed(2)} / {rental.rateType}</TableCell>
                 <TableCell className="text-right">
-                    <Button variant="ghost" size="icon" onClick={() => handleEditClick(rental)}><Pencil className="h-4 w-4" /></Button>
-                    <Button variant="ghost" size="icon" onClick={() => removeRental(rental.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                    <DropdownMenu>
+                        <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                                <MoreHorizontal className="h-4 w-4" />
+                                <span className="sr-only">Actions</span>
+                            </Button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleEditClick(rental)}>
+                                <Pencil className="mr-2 h-4 w-4" />
+                                Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onClick={() => removeRental(rental.id)} className="text-destructive">
+                                <Trash2 className="mr-2 h-4 w-4" />
+                                Delete
+                            </DropdownMenuItem>
+                        </DropdownMenuContent>
+                    </DropdownMenu>
                 </TableCell>
                 </TableRow>
             )) : (

@@ -23,11 +23,12 @@ import { Textarea } from '@/components/ui/textarea';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { ClipboardEdit, Loader2, Pencil, Eye } from 'lucide-react';
+import { ClipboardEdit, Loader2, Pencil, Eye, MoreHorizontal } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const workOrderSchema = z.object({
   status: z.enum(['open', 'in-progress', 'completed', 'on-hold']),
@@ -153,14 +154,26 @@ export default function ManageWorkOrdersPage() {
                     <TableCell>{format(new Date(order.dateCreated), 'PPP')}</TableCell>
                     <TableCell className="max-w-sm text-muted-foreground">{order.issueDescription}</TableCell>
                     <TableCell className="text-right">
-                       <Button variant="ghost" size="icon" asChild>
-                         <Link href={`/reports/${order.reportId}`} title="View Original Report">
-                            <Eye className="h-4 w-4" />
-                         </Link>
-                       </Button>
-                       <Button variant="ghost" size="icon" onClick={() => handleEditClick(order)} aria-label={`Edit work order for ${order.assetName}`}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
+                       <DropdownMenu>
+                            <DropdownMenuTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                    <MoreHorizontal className="h-4 w-4" />
+                                    <span className="sr-only">Actions</span>
+                                </Button>
+                            </DropdownMenuTrigger>
+                            <DropdownMenuContent align="end">
+                                <DropdownMenuItem asChild>
+                                    <Link href={`/reports/${order.reportId}`}>
+                                        <Eye className="mr-2 h-4 w-4" />
+                                        View Report
+                                    </Link>
+                                </DropdownMenuItem>
+                                <DropdownMenuItem onClick={() => handleEditClick(order)}>
+                                    <Pencil className="mr-2 h-4 w-4" />
+                                    Update Order
+                                </DropdownMenuItem>
+                            </DropdownMenuContent>
+                        </DropdownMenu>
                     </TableCell>
                   </TableRow>
                 ))}

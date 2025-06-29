@@ -43,9 +43,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Users, Loader2, Pencil } from 'lucide-react';
+import { PlusCircle, Trash2, Users, Loader2, Pencil, MoreHorizontal } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import { Badge } from '@/components/ui/badge';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const userSchema = z.object({
   name: z.string().min(1, 'Employee name is required.'),
@@ -293,12 +294,24 @@ export default function UserManagementPage() {
                                         <TableCell><Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge></TableCell>
                                         <TableCell>••••</TableCell>
                                         <TableCell className="text-right">
-                                          <Button variant="ghost" size="icon" onClick={() => handleEditClick(user)} aria-label={`Edit ${user.name}`}>
-                                            <Pencil className="h-4 w-4" />
-                                          </Button>
-                                          <Button variant="ghost" size="icon" onClick={() => removeUser(user.id)} aria-label={`Remove ${user.name}`} disabled={currentUser?.id === user.id}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                          </Button>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild>
+                                                    <Button variant="ghost" size="icon">
+                                                        <MoreHorizontal className="h-4 w-4" />
+                                                        <span className="sr-only">Actions</span>
+                                                    </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent align="end">
+                                                    <DropdownMenuItem onClick={() => handleEditClick(user)}>
+                                                        <Pencil className="mr-2 h-4 w-4" />
+                                                        Edit
+                                                    </DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => removeUser(user.id)} disabled={currentUser?.id === user.id} className="text-destructive">
+                                                        <Trash2 className="mr-2 h-4 w-4" />
+                                                        Delete
+                                                    </DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
                                         </TableCell>
                                     </TableRow>
                                     ))}
