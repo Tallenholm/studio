@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents } from '@/lib/firestoreService';
+import { getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
 import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import type { Job, CalendarEvent } from '@/lib/types';
 import { isWithinInterval, subDays, isToday, parseISO } from 'date-fns';
@@ -15,13 +15,14 @@ export interface AdminDashboardData {
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   // Step 1: Fetch all necessary data first, with fallbacks for individual failures.
-  const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents] = await Promise.all([
+  const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents, allAssets] = await Promise.all([
     getJobs().catch(() => []),
     getExpenseReports().catch(() => []),
     getInspectionReports().catch(() => []),
     getTimeOffRequests().catch(() => []),
     getTasks().catch(() => []),
     getCalendarEvents().catch(() => []),
+    getFleetAssets().catch(() => []),
   ]);
 
   let briefing: DailyBriefingOutput | null = null;
@@ -31,10 +32,19 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     const today = new Date();
 
     // Pre-filter data on the server before sending it to the AI.
-    const attentionReports = allReports.filter(r => 
+    const attentionReports = allReports
+      .filter(r => 
         r.overallStatus === 'fail' && 
         isWithinInterval(parseISO(r.date), { start: subDays(today, 2), end: today })
-    );
+      )
+      .map(report => {
+        const vin = report.truckVin || report.trailerVin || report.heavyEquipmentVin;
+        const asset = allAssets.find(a => a.vin === vin);
+        return {
+          ...report,
+          assetName: asset?.name || 'Unknown Asset', // Add assetName for the AI
+        };
+      });
 
     const activeJobs = allJobs.filter(j => getJobStatus(j) === 'active');
     
