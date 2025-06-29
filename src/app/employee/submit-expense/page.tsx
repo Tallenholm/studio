@@ -5,7 +5,8 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadExpenseReports, saveExpenseReports } from '@/lib/localStorageService';
+import { addExpenseReport, getExpenseReports } from '@/lib/firestoreService';
+import { uploadFile } from '@/lib/firebase';
 import type { ExpenseReport } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -24,15 +25,14 @@ import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
+import Link from 'next/link';
 
 const expenseSchema = z.object({
   date: z.date({ required_error: 'An expense date is required.' }),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than zero.'),
   category: z.enum(['fuel', 'food', 'lodging', 'supplies', 'other'], { required_error: 'Please select a category.' }),
   description: z.string().min(1, 'Description is required.'),
-  receiptDataUri: z.string().refine((val) => val.startsWith('data:'), {
-    message: 'A receipt photo is required.',
-  }),
+  receiptPhotoUrl: z.string().url({ message: 'A receipt photo upload is required.' }),
 });
 
 export default function SubmitExpensePage() {
@@ -48,69 +48,81 @@ export default function SubmitExpensePage() {
     defaultValues: {
       category: 'fuel',
       description: '',
-      receiptDataUri: '',
+      receiptPhotoUrl: '',
     },
   });
 
   useEffect(() => {
-    if (user) {
-      setIsMounted(true);
-      const allReports = loadExpenseReports();
-      setReports(allReports.filter(r => r.employeeId === user.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    async function fetchReports() {
+        if (user) {
+            setIsMounted(true);
+            const allReports = await getExpenseReports();
+            setReports(allReports.filter(r => r.employeeId === user.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        }
     }
+    fetchReports();
   }, [user]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsScanning(true);
+      
+      // First, get the data URI for AI processing
       const reader = new FileReader();
-      reader.onloadend = async () => {
-        const dataUri = reader.result as string;
-        form.setValue('receiptDataUri', dataUri);
-        form.clearErrors('receiptDataUri');
-
-        // Trigger AI OCR
-        try {
-          const extractedData = await extractReceiptData({ receiptDataUri: dataUri });
-          if (extractedData.amount) form.setValue('amount', extractedData.amount);
-          if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
-          if (extractedData.description) form.setValue('description', extractedData.description);
-          toast({ title: 'AI Assistant', description: 'Receipt details have been pre-filled.' });
-        } catch (error) {
-          console.error("AI OCR Error:", error);
-          toast({ variant: 'destructive', title: "AI Scan Failed", description: "Could not read receipt. Please enter details manually."});
-        } finally {
-          setIsScanning(false);
-        }
-      };
       reader.readAsDataURL(file);
+      const dataUriPromise = new Promise<string>((resolve) => {
+        reader.onloadend = () => resolve(reader.result as string);
+      });
+
+      try {
+        // Concurrently upload to storage and process with AI
+        const uploadPromise = uploadFile(file, `receipts/${user?.id || 'unknown'}/${Date.now()}-${file.name}`);
+        const dataUri = await dataUriPromise;
+        const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
+
+        const [downloadUrl, extractedData] = await Promise.all([uploadPromise, ocrPromise]);
+        
+        form.setValue('receiptPhotoUrl', downloadUrl);
+        form.clearErrors('receiptPhotoUrl');
+        
+        // Populate form with extracted data
+        if (extractedData.amount) form.setValue('amount', extractedData.amount);
+        if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
+        if (extractedData.description) form.setValue('description', extractedData.description);
+        
+        toast({ title: 'AI Assistant', description: 'Receipt details have been pre-filled.' });
+
+      } catch (error) {
+        console.error("File processing error:", error);
+        toast({ variant: 'destructive', title: "Processing Failed", description: "Could not upload or scan receipt. Please try again."});
+      } finally {
+        setIsScanning(false);
+      }
     }
   };
 
-  function onSubmit(values: z.infer<typeof expenseSchema>) {
+  async function onSubmit(values: z.infer<typeof expenseSchema>) {
     if (!user) {
         toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in to submit an expense.' });
         return;
     }
-    const newReport: ExpenseReport = {
-      id: `${Date.now()}`,
+    const newReportData: Omit<ExpenseReport, 'id'> = {
       employeeId: user.id,
       employeeName: user.name,
       date: values.date.toISOString().split('T')[0],
       amount: values.amount,
       category: values.category,
       description: values.description,
-      receiptDataUri: values.receiptDataUri,
+      receiptPhotoUrl: values.receiptPhotoUrl,
       status: 'pending',
     };
     
-    const allReports = loadExpenseReports();
-    saveExpenseReports([...allReports, newReport]);
-    setReports(prev => [newReport, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    const newReportId = await addExpenseReport(newReportData);
+    setReports(prev => [{ id: newReportId, ...newReportData }, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
 
     toast({ title: 'Expense Submitted', description: 'Your expense report has been submitted for review.' });
-    form.reset({ category: 'fuel', description: '', receiptDataUri: '', amount: undefined, date: undefined });
+    form.reset({ category: 'fuel', description: '', receiptPhotoUrl: '', amount: undefined, date: undefined });
   }
 
   const getStatusBadgeVariant = (status: ExpenseReport['status']) => {
@@ -150,7 +162,7 @@ export default function SubmitExpensePage() {
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
                     <FormField
                         control={form.control}
-                        name="receiptDataUri"
+                        name="receiptPhotoUrl"
                         render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Receipt Photo</FormLabel>
@@ -175,10 +187,10 @@ export default function SubmitExpensePage() {
                                           disabled={isScanning}
                                       />
                                       {field.value && (
-                                          <div className="text-sm flex items-center gap-2">
+                                          <Link href={field.value} target="_blank" rel="noopener noreferrer" className="text-sm flex items-center gap-2 hover:underline">
                                               <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md" />
                                               <span>Receipt selected.</span>
-                                          </div>
+                                          </Link>
                                       )}
                                     </div>
                                 </FormControl>
@@ -276,8 +288,12 @@ export default function SubmitExpensePage() {
                     />
                     
                     <div className="flex justify-end">
-                        <Button type="submit" disabled={isScanning}>
-                            <Send className="mr-2 h-5 w-5" />
+                        <Button type="submit" disabled={isScanning || form.formState.isSubmitting}>
+                            {form.formState.isSubmitting ? (
+                                <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                            ) : (
+                                <Send className="mr-2 h-5 w-5" />
+                            )}
                             Submit Expense
                         </Button>
                     </div>
@@ -313,7 +329,7 @@ export default function SubmitExpensePage() {
                                 <TableCell className="font-medium">{getCategoryLabel(req.category)}</TableCell>
                                 <TableCell className="text-muted-foreground">{req.description}</TableCell>
                                 <TableCell>
-                                    <Badge variant={getStatusBadgeVariant(req.status)} className={req.status === 'approved' ? 'bg-green-600' : ''}>
+                                    <Badge variant={getStatusBadgeVariant(req.status)} className={cn(req.status === 'approved' && 'bg-green-600')}>
                                         {req.status}
                                     </Badge>
                                 </TableCell>

@@ -172,7 +172,7 @@ export interface ExpenseReport {
   amount: number;
   category: ExpenseCategory;
   description: string;
-  receiptDataUri: string; // Required
+  receiptPhotoUrl: string; // Required
   status: 'pending' | 'approved' | 'denied';
 }
 
@@ -273,8 +273,6 @@ export interface SnowRoute {
   assignedVehicleIds?: string[];
   assignedEmployeeIds?: string[];
 }
-
-export type RentalRateType = 'daily' | 'weekly' | 'monthly';
 
 export interface Rental {
   id: string;

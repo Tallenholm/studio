@@ -3,8 +3,8 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
-import { getJobById, addNoteToJob } from '@/lib/firestoreService';
+import { loadFleetAssets, loadUsers } from '@/lib/localStorageService';
+import { getJobById, addNoteToJob, getClients } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, User, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -45,7 +45,7 @@ export default function JobDetailsPage() {
         setJob(jobData);
         
         if (jobData) {
-          const allClients = loadClients();
+          const allClients = await getClients();
           setClient(allClients.find(c => c.id === jobData.clientId));
         }
       };

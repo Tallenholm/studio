@@ -1,54 +1,52 @@
 
 'use server';
 
-import { getJobs } from '@/lib/firestoreService';
+import { getJobs, getExpenseReports } from '@/lib/firestoreService';
 import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
-import type { CalendarEvent, Job } from '@/lib/types';
+import type { Job } from '@/lib/types';
+import { loadInspectionReports, loadTimeOffRequests, loadTasks, loadCalendarEvents } from '@/lib/localStorageService';
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
-  events: CalendarEvent[];
   jobs: Job[];
 }
 
-export async function getAdminDashboardData(
-  stringifiedReports: string,
-  stringifiedTimeOffRequests: string,
-  stringifiedExpenseReports: string,
-  stringifiedTasks: string,
-  stringifiedEvents: string
-): Promise<AdminDashboardData> {
+// NOTE: This server action currently uses a mix of Firestore and localStorage.
+// As more features are migrated to Firestore, the localStorage calls will be replaced.
+export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   try {
     const jobs = await getJobs();
+    const expenseReports = await getExpenseReports();
     
-    // The events are needed for the calendar on the page, so we parse them here to return.
-    const events: CalendarEvent[] = JSON.parse(stringifiedEvents);
+    // Data still on client-side localStorage. This is a temporary pattern during migration.
+    const reports = loadInspectionReports();
+    const timeOffRequests = loadTimeOffRequests();
+    const tasks = loadTasks();
+    const events = loadCalendarEvents();
 
     const briefingInput = {
         date: new Date().toISOString(),
         jobs: JSON.stringify(jobs),
-        reports: stringifiedReports,
-        timeOffRequests: stringifiedTimeOffRequests,
-        expenseReports: stringifiedExpenseReports,
-        tasks: stringifiedTasks,
-        events: stringifiedEvents,
+        expenseReports: JSON.stringify(expenseReports),
+        // The following are still from localStorage and will be replaced
+        reports: JSON.stringify(reports),
+        timeOffRequests: JSON.stringify(timeOffRequests),
+        tasks: JSON.stringify(tasks),
+        events: JSON.stringify(events),
     };
 
     const briefing = await generateDailyBriefing(briefingInput);
 
     return {
         briefing,
-        events,
         jobs,
     };
   } catch (error) {
     console.error("Failed to get admin dashboard data:", error);
     // In case of AI failure, return the data needed for the page to render without the briefing.
     const jobs = await getJobs().catch(() => []);
-    const events: CalendarEvent[] = JSON.parse(stringifiedEvents);
     return {
       briefing: null,
-      events: events,
       jobs: jobs,
     };
   }

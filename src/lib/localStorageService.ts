@@ -12,14 +12,12 @@ const VIOLATIONS_KEY = 'fleetCheckViolations';
 const DOCUMENTS_KEY = 'fleetCheckDocuments';
 const MAINTENANCE_LOGS_KEY = 'fleetCheckMaintenanceLogs';
 const TASKS_KEY = 'fleetCheckTasks';
-const EXPENSE_REPORTS_KEY = 'fleetCheckExpenseReports';
-const CLIENTS_KEY = 'fleetCheckClients';
 const WORK_ORDERS_KEY = 'fleetCheckWorkOrders';
 const INVENTORY_KEY = 'fleetCheckInventory';
 const SNOW_ROUTES_KEY = 'fleetCheckSnowRoutes';
 const RENTALS_KEY = 'fleetCheckRentals';
 const SEED_DATA_VERSION_KEY = 'fleetCheckSeedDataVersion';
-const CURRENT_SEED_VERSION = '1.3.2'; // Increment this to force a re-seed on next load
+const CURRENT_SEED_VERSION = '1.4.0'; // Increment this to force a re-seed on next load
 
 
 const defaultFleetAssets: FleetAsset[] = [
@@ -447,66 +445,6 @@ export const loadTasks = (): Task[] => {
   return [];
 };
 
-// Expense Reports
-export const saveExpenseReports = (reports: ExpenseReport[]): void => {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(EXPENSE_REPORTS_KEY, JSON.stringify(reports));
-    } catch (error) {
-      console.error('Failed to save expense reports:', error);
-    }
-  }
-};
-
-export const loadExpenseReports = (): ExpenseReport[] => {
-  if (typeof window !== 'undefined') {
-    try {
-      const data = localStorage.getItem(EXPENSE_REPORTS_KEY);
-      return data ? JSON.parse(data) : [];
-    } catch (error) {
-      console.error('Failed to load expense reports:', error);
-      return [];
-    }
-  }
-  return [];
-};
-
-// Client Management
-const defaultClients: Client[] = [
-    { id: 'client-1', name: 'Main Street Properties', contactPerson: 'Bob Vance', contactEmail: 'bob.vance@vancerefrigeration.com', contactPhone: '555-123-4567' },
-    { id: 'client-2', name: 'City Development Group', contactPerson: 'Carol Smith', contactEmail: 'carol.s@cdg.com', contactPhone: '555-987-6543' },
-    { id: 'client-3', name: 'Suburban Homes LLC', contactPerson: 'Don Patterson', contactEmail: 'don@suburban.com', contactPhone: '555-555-5555' },
-];
-
-export const saveClients = (clients: Client[]): void => {
-  if (typeof window !== 'undefined') {
-    try {
-      localStorage.setItem(CLIENTS_KEY, JSON.stringify(clients));
-    } catch (error) {
-      console.error('Failed to save clients:', error);
-    }
-  }
-};
-
-export const loadClients = (): Client[] => {
-  if (typeof window !== 'undefined') {
-    try {
-      const data = localStorage.getItem(CLIENTS_KEY);
-      const version = localStorage.getItem(SEED_DATA_VERSION_KEY);
-      if (data && version === CURRENT_SEED_VERSION) {
-          return JSON.parse(data);
-      } else {
-          saveClients(defaultClients);
-          return defaultClients;
-      }
-    } catch (error) {
-      console.error('Failed to load clients:', error);
-      return defaultClients;
-    }
-  }
-  return [];
-};
-
 // Work Order Management
 export const saveWorkOrders = (workOrders: WorkOrder[]): void => {
   if (typeof window !== 'undefined') {
@@ -665,7 +603,6 @@ if (typeof window !== 'undefined') {
       localStorage.removeItem(CALENDAR_EVENTS_KEY);
       localStorage.removeItem(DOCUMENTS_KEY);
       localStorage.removeItem(MAINTENANCE_LOGS_KEY);
-      localStorage.removeItem(CLIENTS_KEY);
       localStorage.removeItem(INVENTORY_KEY);
       localStorage.removeItem(SNOW_ROUTES_KEY);
       localStorage.removeItem(RENTALS_KEY);

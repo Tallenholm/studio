@@ -5,8 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, saveClients } from '@/lib/localStorageService';
-import { getJobs } from '@/lib/firestoreService';
+import { getClients, addClient, updateClient, deleteClient, getJobs } from '@/lib/firestoreService';
 import type { Client, Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -50,7 +49,7 @@ const clientSchema = z.object({
 export default function ManageClientsPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
@@ -66,16 +65,24 @@ export default function ManageClientsPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setClients(loadClients());
-    getJobs().then(setJobs);
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveClients(clients);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [loadedClients, loadedJobs] = await Promise.all([
+                getClients(),
+                getJobs()
+            ]);
+            setClients(loadedClients.sort((a,b) => a.name.localeCompare(b.name)));
+            setJobs(loadedJobs);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load client data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [clients, isMounted]);
+    fetchData();
+  }, [toast]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -91,25 +98,25 @@ export default function ManageClientsPage() {
     setIsDialogOpen(true);
   };
 
-  function onSubmit(values: z.infer<typeof clientSchema>) {
+  async function onSubmit(values: z.infer<typeof clientSchema>) {
     if (editingClient) {
-      const updatedClients = clients.map(c => 
-        c.id === editingClient.id ? { ...c, ...values } : c
+      await updateClient(editingClient.id, values);
+      setClients(prevClients => 
+        prevClients.map(c => 
+          c.id === editingClient.id ? { ...c, ...values } : c
+        ).sort((a,b) => a.name.localeCompare(b.name))
       );
-      setClients(updatedClients.sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Client Updated', description: `Client "${values.name}" has been updated.` });
     } else {
-      const newClient: Client = {
-        id: `client-${Date.now()}`,
-        ...values,
-      };
-      setClients((prev) => [...prev, newClient].sort((a,b) => a.name.localeCompare(b.name)));
+      const newClientId = await addClient(values);
+      const newClient = { id: newClientId, ...values };
+      setClients(prev => [...prev, newClient].sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Client Added', description: `Client "${values.name}" has been added.` });
     }
     handleDialogOpenChange(false);
   }
 
-  function removeClient(clientId: string) {
+  async function removeClient(clientId: string) {
     const clientHasJobs = jobs.some(job => job.clientId === clientId);
     if (clientHasJobs) {
       toast({
@@ -121,6 +128,7 @@ export default function ManageClientsPage() {
     }
 
     const clientToRemove = clients.find(c => c.id === clientId);
+    await deleteClient(clientId);
     setClients((prev) => prev.filter((client) => client.id !== clientId));
     toast({
       title: 'Client Removed',
@@ -129,7 +137,7 @@ export default function ManageClientsPage() {
     });
   }
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

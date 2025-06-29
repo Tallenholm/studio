@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, HeartPulse, Calculator, Route, ArrowRightLeft, BookOpen, Wrench, FileText, ShieldAlert } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent, InspectionReport, FleetAsset, Job, TimeOffRequest, ExpenseReport, Task } from '@/lib/types';
+import type { CalendarEvent, Job } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import { getAdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
@@ -19,7 +19,7 @@ import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import WeatherForecast from '@/components/admin/WeatherForecast';
-import { loadCalendarEvents, loadInspectionReports, loadTimeOffRequests, loadExpenseReports, loadTasks } from '@/lib/localStorageService';
+import { loadCalendarEvents } from '@/lib/localStorageService';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -94,7 +94,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
           AI Daily Briefing for {format(new Date(), 'PPP')}
         </CardTitle>
         <CardDescription>
-          Your AI assistant has summarized the key items for your attention today.
+          Your AI assistant has summarized the key items for your attention today. Note: Some data sources are still being migrated to Firestore, so this briefing may be incomplete.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -183,24 +183,13 @@ export default function FleetCheckDashboardPage() {
     const fetchData = async () => {
         setIsBriefingLoading(true);
         try {
-            // Load data from localStorage on the client
-            const localReports = loadInspectionReports();
-            const localTimeOffRequests = loadTimeOffRequests();
-            const localExpenseReports = loadExpenseReports();
-            const localTasks = loadTasks();
-            const localEvents = loadCalendarEvents();
+            // Calendar events are still client-side for now
+            setEvents(loadCalendarEvents());
 
-            // Pass stringified data to the server action
-            const data = await getAdminDashboardData(
-              JSON.stringify(localReports),
-              JSON.stringify(localTimeOffRequests),
-              JSON.stringify(localExpenseReports),
-              JSON.stringify(localTasks),
-              JSON.stringify(localEvents)
-            );
+            // Get server-side data from the action
+            const data = await getAdminDashboardData();
             
             setBriefing(data.briefing);
-            setEvents(data.events);
             setJobs(data.jobs);
 
             if (!data.briefing) {

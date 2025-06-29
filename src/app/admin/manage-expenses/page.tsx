@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loadExpenseReports, saveExpenseReports } from '@/lib/localStorageService';
+import { getExpenseReports, updateExpenseReport } from '@/lib/firestoreService';
 import type { ExpenseReport } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,29 +22,43 @@ import Link from 'next/link';
 
 export default function ManageExpensesPage() {
   const [reports, setReports] = useState<ExpenseReport[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-    setReports(loadExpenseReports().sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
+    async function fetchReports() {
+        setIsLoading(true);
+        try {
+            const loadedReports = await getExpenseReports();
+            setReports(loadedReports.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } catch (error) {
+            console.error("Error fetching expense reports:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load expense reports.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchReports();
+  }, [toast]);
 
-  const updateReportStatus = (reportId: string, status: 'approved' | 'denied') => {
-    const updatedReports = reports.map(req => {
-      if (req.id === reportId) {
-        return { ...req, status };
-      }
-      return req;
-    });
-
+  const handleUpdateStatus = async (reportId: string, status: 'approved' | 'denied') => {
+    const originalReports = [...reports];
+    const updatedReports = reports.map(req => 
+      req.id === reportId ? { ...req, status } : req
+    );
     setReports(updatedReports);
-    saveExpenseReports(updatedReports);
-    
-    toast({
-        title: `Expense ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-        description: `The expense report has been ${status}.`,
-    });
+
+    try {
+        await updateExpenseReport(reportId, { status });
+        toast({
+            title: `Expense ${status.charAt(0).toUpperCase() + status.slice(1)}`,
+            description: `The expense report has been ${status}.`,
+        });
+    } catch (error) {
+        console.error("Error updating report status:", error);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update the report status.' });
+        setReports(originalReports); // Revert UI on failure
+    }
   };
 
   const getStatusBadgeVariant = (status: ExpenseReport['status']) => {
@@ -60,7 +74,7 @@ export default function ManageExpensesPage() {
       return category.charAt(0).toUpperCase() + category.slice(1);
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -108,16 +122,16 @@ export default function ManageExpensesPage() {
                                     <TableCell className="text-right">
                                         <div className="flex gap-2 justify-end">
                                             <Button variant="outline" size="icon" asChild>
-                                                <Link href={req.receiptDataUri} target="_blank" rel="noopener noreferrer">
+                                                <Link href={req.receiptPhotoUrl} target="_blank" rel="noopener noreferrer">
                                                     <Eye className="h-4 w-4" />
                                                 </Link>
                                             </Button>
                                             {req.status === 'pending' && (
                                                 <>
-                                                    <Button variant="outline" size="icon" onClick={() => updateReportStatus(req.id, 'approved')}>
+                                                    <Button variant="outline" size="icon" onClick={() => handleUpdateStatus(req.id, 'approved')}>
                                                         <Check className="h-4 w-4 text-green-500" />
                                                     </Button>
-                                                    <Button variant="outline" size="icon" onClick={() => updateReportStatus(req.id, 'denied')}>
+                                                    <Button variant="outline" size="icon" onClick={() => handleUpdateStatus(req.id, 'denied')}>
                                                         <X className="h-4 w-4 text-destructive" />
                                                     </Button>
                                                 </>

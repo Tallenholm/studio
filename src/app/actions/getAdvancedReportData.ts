@@ -1,6 +1,8 @@
+
 'use server';
 
-import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadExpenseReports, loadFleetAssets } from '@/lib/localStorageService';
+import { loadInspectionReports, loadMaintenanceLogs, loadTasks, loadViolations, loadFleetAssets } from '@/lib/localStorageService';
+import { getExpenseReports } from '@/lib/firestoreService';
 import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, FleetAsset, VehicleType, ExpenseCategory } from '@/lib/types';
 import { subDays, isWithinInterval, parseISO } from 'date-fns';
 
@@ -19,12 +21,12 @@ export async function getAdvancedReportData(
   dateRangeFilter: 'all_time' | 'last_30_days' | 'last_quarter', 
   vehicleTypeFilter: VehicleType | 'all'
 ): Promise<AdvancedReportData> {
-  // Load all data on the server
+  // Load data on the server
   const reports = loadInspectionReports();
   const logs = loadMaintenanceLogs();
   const tasks = loadTasks();
   const violations = loadViolations();
-  const expenses = loadExpenseReports();
+  const expenses = await getExpenseReports(); // Now from Firestore
   const fleetAssets = loadFleetAssets();
 
   if (reports.length === 0 && logs.length === 0 && tasks.length === 0 && violations.length === 0 && expenses.length === 0) {
