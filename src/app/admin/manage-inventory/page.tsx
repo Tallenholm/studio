@@ -14,11 +14,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Loader2, Pencil, Hammer, Filter, CheckCircle, PackagePlus } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Pencil, Hammer, Filter, MoreHorizontal } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
-import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 
 const itemSchema = z.object({
@@ -47,7 +47,7 @@ export default function ManageInventoryPage() {
   
   const { toast } = useToast();
 
-  const [activeTab, setActiveTab] = useState('all');
+  const [typeFilter, setTypeFilter] = useState('all');
   const [statusFilter, setStatusFilter] = useState('all');
 
   const addEditForm = useForm<z.infer<typeof itemSchema>>({
@@ -130,30 +130,37 @@ export default function ManageInventoryPage() {
     }
     assignedToName = assignedEntity?.name || 'Unknown';
     
-    const updatedItems = inventory.map(i => i.id === assigningItem.id ? { 
-        ...i, 
-        status: 'in_use',
-        assignedToType: values.assignedToType,
-        assignedToId: values.assignedToId,
-        assignedToName
-    } : i);
+    updateItemStatus(assigningItem.id, 'in_use', {
+      assignedToType: values.assignedToType,
+      assignedToId: values.assignedToId,
+      assignedToName
+    });
 
-    setInventory(updatedItems);
     toast({ title: 'Item Assigned', description: `"${assigningItem.name}" assigned to ${assignedToName}.` });
     handleAssignDialogChange(false);
   }
-  
-  const handleCheckIn = (item: InventoryItem) => {
-    const updatedItems = inventory.map(i => i.id === item.id ? { 
-        ...i, 
-        status: 'available',
-        assignedToType: undefined,
-        assignedToId: undefined,
-        assignedToName: undefined
-    } : i);
-    setInventory(updatedItems);
-    toast({ title: 'Item Checked In', description: `"${item.name}" is now available.` });
+
+  const updateItemStatus = (itemId: string, newStatus: InventoryItemStatus, assignmentInfo?: Partial<InventoryItem>) => {
+    const itemToUpdate = inventory.find(i => i.id === itemId);
+    if (!itemToUpdate) return;
+    
+    setInventory(inventory.map(i => {
+        if (i.id === itemId) {
+            const isNowInUse = newStatus === 'in_use';
+            return {
+                ...i,
+                status: newStatus,
+                assignedToType: isNowInUse ? (assignmentInfo?.assignedToType || i.assignedToType) : undefined,
+                assignedToId: isNowInUse ? (assignmentInfo?.assignedToId || i.assignedToId) : undefined,
+                assignedToName: isNowInUse ? (assignmentInfo?.assignedToName || i.assignedToName) : undefined,
+            };
+        }
+        return i;
+    }).sort((a,b) => a.name.localeCompare(b.name)));
+
+    toast({ title: "Status Updated", description: `"${itemToUpdate.name}" status set to ${newStatus.replace('_', ' ')}.` });
   };
+  
 
   function removeItem(itemId: string) {
     const itemToRemove = inventory.find(i => i.id === itemId);
@@ -165,17 +172,17 @@ export default function ManageInventoryPage() {
 
   const filteredInventory = useMemo(() => {
     return inventory.filter(item => {
-        const typeMatch = activeTab === 'all' || item.type === activeTab;
+        const typeMatch = typeFilter === 'all' || item.type === typeFilter;
         const statusMatch = statusFilter === 'all' || item.status === statusFilter;
         return typeMatch && statusMatch;
     });
-  }, [inventory, activeTab, statusFilter]);
+  }, [inventory, typeFilter, statusFilter]);
 
   const getStatusBadgeVariant = (status: InventoryItemStatus) => {
     switch (status) {
         case 'available': return 'default';
         case 'in_use': return 'secondary';
-        case 'maintenance': return 'destructive';
+        case 'maintenance': return 'destructive'; // Will be styled orange via cn
         case 'lost': return 'outline';
     }
   }
@@ -267,7 +274,16 @@ export default function ManageInventoryPage() {
                 <CardHeader className="pb-4">
                     <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
                 </CardHeader>
-                <CardContent>
+                <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                     <Select value={typeFilter} onValueChange={setTypeFilter}>
+                        <SelectTrigger><SelectValue placeholder="Filter by type..." /></SelectTrigger>
+                        <SelectContent>
+                            <SelectItem value="all">All Types</SelectItem>
+                            <SelectItem value="tool">Tools</SelectItem>
+                            <SelectItem value="material">Materials</SelectItem>
+                            <SelectItem value="consumable">Consumables</SelectItem>
+                        </SelectContent>
+                    </Select>
                     <Select value={statusFilter} onValueChange={setStatusFilter}>
                         <SelectTrigger><SelectValue placeholder="Filter by status..." /></SelectTrigger>
                         <SelectContent>
@@ -280,15 +296,6 @@ export default function ManageInventoryPage() {
                     </Select>
                 </CardContent>
             </Card>
-            
-            <Tabs defaultValue="all" onValueChange={setActiveTab} className="w-full">
-                <TabsList className="grid w-full grid-cols-4">
-                    <TabsTrigger value="all">All Items</TabsTrigger>
-                    <TabsTrigger value="tool">Tools</TabsTrigger>
-                    <TabsTrigger value="material">Materials</TabsTrigger>
-                    <TabsTrigger value="consumable">Consumables</TabsTrigger>
-                </TabsList>
-            </Tabs>
 
           <Card>
             <CardContent className="p-0">
@@ -313,23 +320,45 @@ export default function ManageInventoryPage() {
                         <TableCell className="capitalize">{item.type}</TableCell>
                         <TableCell>{item.quantity}</TableCell>
                         <TableCell>
-                            <Badge variant={getStatusBadgeVariant(item.status)} className={cn(item.status === 'available' && 'bg-primary')}>
+                            <Badge 
+                                variant={getStatusBadgeVariant(item.status)} 
+                                className={cn(
+                                    item.status === 'available' && 'bg-primary',
+                                    item.status === 'maintenance' && 'bg-accent border-accent text-accent-foreground'
+                                )}
+                            >
                                 {item.status.replace('_', ' ')}
                             </Badge>
                         </TableCell>
                         <TableCell className="text-muted-foreground">{item.assignedToName || '---'}</TableCell>
                         <TableCell className="text-right">
-                            {item.status === 'available' ? (
-                                <Button variant="outline" size="sm" onClick={() => handleAssignClick(item)}>
-                                    <PackagePlus className="mr-2 h-4 w-4" />Assign
-                                </Button>
-                            ) : (
-                                <Button variant="secondary" size="sm" onClick={() => handleCheckIn(item)}>
-                                    <CheckCircle className="mr-2 h-4 w-4" />Check In
-                                </Button>
-                            )}
-                            <Button variant="ghost" size="icon" onClick={() => handleEditClick(item)}><Pencil className="h-4 w-4" /></Button>
-                            <Button variant="ghost" size="icon" onClick={() => removeItem(item.id)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                           <DropdownMenu>
+                                <DropdownMenuTrigger asChild>
+                                    <Button variant="ghost" size="icon">
+                                        <MoreHorizontal className="h-4 w-4" />
+                                    </Button>
+                                </DropdownMenuTrigger>
+                                <DropdownMenuContent align="end">
+                                    {item.status === 'available' && (
+                                        <>
+                                            <DropdownMenuItem onSelect={() => handleAssignClick(item)}>Assign</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'maintenance')}>Mark for Maintenance</DropdownMenuItem>
+                                        </>
+                                    )}
+                                    {item.status === 'in_use' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'available')}>Check In</DropdownMenuItem>}
+                                    {item.status === 'maintenance' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'available')}>Mark as Available</DropdownMenuItem>}
+                                    
+                                    <DropdownMenuSeparator />
+                                    
+                                    <DropdownMenuItem onSelect={() => handleEditClick(item)}>Edit Item</DropdownMenuItem>
+                                    {item.status !== 'lost' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'lost')}>Mark as Lost</DropdownMenuItem>}
+                                    
+                                    <DropdownMenuSeparator />
+                                    <DropdownMenuItem onSelect={() => removeItem(item.id)} className="text-destructive focus:text-destructive">
+                                        Delete
+                                    </DropdownMenuItem>
+                                </DropdownMenuContent>
+                            </DropdownMenu>
                         </TableCell>
                       </TableRow>
                     )) : (
