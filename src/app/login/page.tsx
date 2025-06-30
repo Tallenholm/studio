@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Truck, LogIn, AlertCircle } from 'lucide-react';
+import { Truck, LogIn, AlertCircle, Chrome } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -19,7 +19,7 @@ const loginSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { login, isLoading, isFirebaseConfigured } = useAuth();
+  const { login, signInWithGoogle, isLoading, isFirebaseConfigured } = useAuth();
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof loginSchema>>({
@@ -41,6 +41,16 @@ export default function LoginPage() {
       form.setError('root', { message: error.message || 'An unknown login error occurred.' });
     }
   };
+
+  const handleGoogleSignIn = async () => {
+    if (!isFirebaseConfigured) return;
+    try {
+        await signInWithGoogle();
+        toast({ title: 'Login Successful', description: 'Welcome!' });
+    } catch (error: any) {
+        form.setError('root', { message: error.message || 'An unknown login error occurred.' });
+    }
+  };
   
   const isFormDisabled = !isFirebaseConfigured || form.formState.isSubmitting || isLoading;
 
@@ -54,7 +64,7 @@ export default function LoginPage() {
         </CardHeader>
         <CardContent>
           <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-6">
+            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
               <fieldset disabled={isFormDisabled} className="space-y-4">
                 <FormField
                   control={form.control}
@@ -98,12 +108,31 @@ export default function LoginPage() {
                   </div>
               )}
 
-              <Button type="submit" className="w-full text-lg py-6" disabled={isFormDisabled}>
+              <Button type="submit" className="w-full" disabled={isFormDisabled}>
                 <LogIn className="mr-2 h-5 w-5" />
                 Sign In
               </Button>
             </form>
           </Form>
+
+          <div className="relative my-6">
+              <div className="absolute inset-0 flex items-center">
+                  <span className="w-full border-t" />
+              </div>
+              <div className="relative flex justify-center text-xs uppercase">
+                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+              </div>
+          </div>
+
+          <Button
+              variant="outline"
+              className="w-full"
+              onClick={handleGoogleSignIn}
+              disabled={isFormDisabled}
+          >
+              <Chrome className="mr-2 h-5 w-5" />
+              Sign In with Google
+          </Button>
         </CardContent>
       </Card>
     </div>
