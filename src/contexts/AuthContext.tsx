@@ -32,19 +32,39 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    if (!isFirebaseConfigured) {
+    if (!isFirebaseConfigured || !auth || !db) {
         console.warn("Firebase not initialized, auth will not work.");
         setIsLoading(false);
         return;
     }
     
-    const unsubscribe = onAuthStateChanged(auth!, async (firebaseUser) => {
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db!, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
+        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        let userDoc = await getDoc(userDocRef);
 
-        if (userDoc.exists()) {
-          const userData = userDoc.data();
+        if (!userDoc.exists()) {
+          // If the user doc doesn't exist, create it. This is the source of truth.
+          const usersCollectionRef = collection(db, 'users');
+          const q = query(usersCollectionRef, limit(1));
+          const existingUsersSnapshot = await getDocs(q);
+          const isFirstUser = existingUsersSnapshot.empty;
+          const role: UserRole = isFirstUser ? 'owner' : 'employee';
+          const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
+          const nameCapitalized = name.charAt(0).toUpperCase() + name.slice(1);
+          
+          const newUserProfile = {
+              email: firebaseUser.email,
+              name: nameCapitalized,
+              role: role,
+          };
+
+          await setDoc(userDocRef, newUserProfile);
+          userDoc = await getDoc(userDocRef); // Re-fetch the doc after creating it
+        }
+
+        const userData = userDoc.data();
+        if (userData) {
           setUser({
             id: firebaseUser.uid,
             uid: firebaseUser.uid,
@@ -53,11 +73,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             role: userData.role,
           });
         } else {
-          // This case should be rare now with auto-creation, but good to have
-          console.error(`User with UID ${firebaseUser.uid} not found in Firestore 'users' collection.`);
-          await signOut(auth!);
-          setUser(null);
+            // This should ideally not be reached anymore.
+            console.error(`Could not retrieve user data for UID ${firebaseUser.uid} even after creation attempt.`);
+            await signOut(auth);
+            setUser(null);
         }
+
       } else {
         setUser(null);
       }
@@ -68,67 +89,26 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   }, []);
 
   const login = async (email: string, password: string) => {
-    if (!isFirebaseConfigured || !auth || !db) {
+    if (!isFirebaseConfigured || !auth) {
       throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
     }
-
-    let firebaseUser: FirebaseUser;
     try {
-        const userCredential = await signInWithEmailAndPassword(auth, email, password);
-        firebaseUser = userCredential.user;
+        await signInWithEmailAndPassword(auth, email, password);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             throw new Error('Invalid email or password. Please try again.');
         }
         throw error;
     }
-    
-    const userDocRef = doc(db, 'users', firebaseUser.uid);
-    const userDoc = await getDoc(userDocRef);
-
-    if (!userDoc.exists()) {
-        const usersCollectionRef = collection(db, 'users');
-        const q = query(usersCollectionRef, limit(1));
-        const existingUsersSnapshot = await getDocs(q);
-        const isFirstUser = existingUsersSnapshot.empty;
-        const role: UserRole = isFirstUser ? 'owner' : 'employee';
-        
-        const name = firebaseUser.email?.split('@')[0] || 'New User';
-        const nameCapitalized = name.charAt(0).toUpperCase() + name.slice(1);
-
-        await setDoc(userDocRef, {
-            email: firebaseUser.email,
-            name: nameCapitalized,
-            role: role,
-        });
-    }
   };
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured || !auth || !db) {
+    if (!isFirebaseConfigured || !auth) {
       throw new Error("Firebase is not configured.");
     }
     const provider = new GoogleAuthProvider();
     try {
-        const result = await signInWithPopup(auth, provider);
-        const firebaseUser = result.user;
-
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
-        const userDoc = await getDoc(userDocRef);
-
-        if (!userDoc.exists()) {
-            const usersCollectionRef = collection(db, 'users');
-            const q = query(usersCollectionRef, limit(1));
-            const existingUsersSnapshot = await getDocs(q);
-            const isFirstUser = existingUsersSnapshot.empty;
-            const role: UserRole = isFirstUser ? 'owner' : 'employee';
-
-            await setDoc(userDocRef, {
-                email: firebaseUser.email,
-                name: firebaseUser.displayName || 'New User',
-                role: role,
-            });
-        }
+        await signInWithPopup(auth, provider);
     } catch (error: any) {
         console.error("Google Sign-In Error: ", error);
         throw new Error("Could not sign in with Google. Please try again.");

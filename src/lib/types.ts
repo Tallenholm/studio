@@ -9,6 +9,7 @@ export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
 export type UserRole = 'owner' | 'manager' | 'employee' | 'guest';
 
 export interface User {
+  id: string;
   uid: string; // Firebase Authentication User ID
   email: string;
   name: string;
@@ -219,7 +220,7 @@ export interface Job {
   snowLog?: {
     plowing: SnowServiceLog[];
     salting: SnowServiceLog[];
-    sidewalks: SnowServiceLog[];
+    sidewalks: [];
   };
   // Concrete Job Details
   concreteYards?: number;
