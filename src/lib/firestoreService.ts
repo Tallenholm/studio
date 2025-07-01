@@ -1,4 +1,3 @@
-
 import { db } from './firebase';
 import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch, setDoc } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
@@ -56,7 +55,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
 
 // Create services for each collection
 export const { getAll: getJobs, getById: getJobById, add: addJob, update: updateJob, delete: deleteJob } = createCrudService<Job>('jobs');
-export const { getAll: getClients, add: addClient, update: updateClient, delete: deleteClient } = createCrudService<Client>('clients');
+export const { getAll: getClients, getById: getClientById, add: addClient, update: updateClient, delete: deleteClient } = createCrudService<Client>('clients');
 export const { getAll: getUsers, getById: getUserById, add: addUser, update: updateUser, delete: deleteUser } = createCrudService<User>('users');
 export const { getAll: getExpenseReports, add: addExpenseReport, update: updateExpenseReport } = createCrudService<ExpenseReport>('expenseReports');
 export const { getAll: getFleetAssets, add: addFleetAsset, update: updateFleetAsset, delete: deleteFleetAsset } = createCrudService<FleetAsset>('fleetAssets');
@@ -70,7 +69,7 @@ export const { getAll: getDocuments, add: addDocument, delete: deleteDocument } 
 export const { getAll: getInventory, add: addInventoryItem, update: updateInventoryItem, delete: deleteInventoryItem } = createCrudService<InventoryItem>('inventory');
 export const { getAll: getSnowRoutes, add: addSnowRoute, update: updateSnowRoute, delete: deleteSnowRoute } = createCrudService<SnowRoute>('snowRoutes');
 export const { getAll: getRentals, add: addRental, update: updateRental, delete: deleteRental } = createCrudService<Rental>('rentals');
-export const { getAll: getCalendarEvents, add: addCalendarEvent, delete: deleteCalendarEvent } = createCrudService<CalendarEvent>('calendarEvents');
+export const { getAll: getCalendarEvents, add: addCalendarEvent, update: updateCalendarEvent, delete: deleteCalendarEvent } = createCrudService<CalendarEvent>('calendarEvents');
 export const { getAll: getNotifications, add: addNotification, update: updateNotification } = createCrudService<NotificationMessage>('notifications');
 
 

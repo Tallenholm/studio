@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadCalendarEvents, saveCalendarEvents } from '@/lib/localStorageService';
+import { getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '@/lib/firestoreService';
 import type { CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -49,7 +49,7 @@ const eventSchema = z.object({
 
 export default function ManageCalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof eventSchema>>({
@@ -62,30 +62,37 @@ export default function ManageCalendarPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setEvents(loadCalendarEvents());
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveCalendarEvents(events);
+    async function fetchEvents() {
+        setIsLoading(true);
+        try {
+            const loadedEvents = await getCalendarEvents();
+            setEvents(loadedEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+        } catch (error) {
+            console.error("Error fetching calendar events:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load calendar events.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [events, isMounted]);
+    fetchEvents();
+  }, [toast]);
 
-  function onSubmit(values: z.infer<typeof eventSchema>) {
-    const newEvent: CalendarEvent = {
-      id: `${Date.now()}`,
+  async function onSubmit(values: z.infer<typeof eventSchema>) {
+    const newEventData: Omit<CalendarEvent, 'id'> = {
       date: values.date.toISOString().split('T')[0], // Store date as YYYY-MM-DD
       ...values,
       description: values.description || '',
     };
-    setEvents((prev) => [...prev, newEvent].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+    
+    const newId = await addCalendarEvent(newEventData);
+    setEvents((prev) => [...prev, {id: newId, ...newEventData}].sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
     toast({ title: 'Event Added', description: `${values.title} has been added to the calendar.` });
     form.reset({ title: '', type: 'company-event', description: '' });
   }
 
-  function removeEvent(eventId: string) {
+  async function removeEvent(eventId: string) {
     const eventToRemove = events.find(e => e.id === eventId);
+    await deleteCalendarEvent(eventId);
     setEvents((prev) => prev.filter((event) => event.id !== eventId));
     toast({
       title: 'Event Removed',
@@ -103,7 +110,7 @@ export default function ManageCalendarPage() {
     }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

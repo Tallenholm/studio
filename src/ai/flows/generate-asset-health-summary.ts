@@ -15,7 +15,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'genkit';
-import { loadInspectionReports, loadMaintenanceLogs, loadFleetAssets } from '@/lib/localStorageService';
+import { getInspectionReports, getMaintenanceLogs, getFleetAssets } from '@/lib/firestoreService';
 import { format } from 'date-fns';
 
 const GenerateAssetHealthSummaryInputSchema = z.object({
@@ -64,9 +64,9 @@ const generateAssetHealthSummaryFlow = ai.defineFlow(
   },
   async ({ assetId }) => {
     // Load all data
-    const allAssets = loadFleetAssets();
-    const allReports = loadInspectionReports();
-    const allLogs = loadMaintenanceLogs();
+    const allAssets = await getFleetAssets();
+    const allReports = await getInspectionReports();
+    const allLogs = await getMaintenanceLogs();
 
     // Find the specific asset to get its VIN
     const asset = allAssets.find(a => a.id === assetId);

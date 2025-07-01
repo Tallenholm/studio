@@ -33,10 +33,11 @@ import { useAuth } from '@/contexts/AuthContext';
 import { ClipboardList, Loader2, CheckCircle2, Camera, FileUp, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
+import { uploadFile } from '@/lib/firebase';
 
 const completeTaskSchema = z.object({
   completionNotes: z.string().optional(),
-  completionPhotoUri: z.string().optional(),
+  completionPhotoUrl: z.string().optional(),
 });
 
 export default function MyTasksPage() {
@@ -44,16 +45,11 @@ export default function MyTasksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [isProcessingFile, setIsProcessingFile] = useState(false);
   
   const { toast } = useToast();
   const { user } = useAuth();
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // New state and refs for camera functionality
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
-  const [stream, setStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const form = useForm<z.infer<typeof completeTaskSchema>>({
     resolver: zodResolver(completeTaskSchema),
@@ -71,123 +67,30 @@ export default function MyTasksPage() {
     fetchData();
   }, [user]);
 
-  // Effect to handle camera stream
-  useEffect(() => {
-    if (isCameraOpen && stream && videoRef.current) {
-        videoRef.current.srcObject = stream;
-    }
-    // Cleanup function to stop stream when camera is closed
-    return () => {
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-    };
-  }, [isCameraOpen, stream]);
-
-  const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
-      const reader = new FileReader();
-      reader.onloadend = () => {
-        form.setValue('completionPhotoUri', reader.result as string);
-        form.clearErrors('completionPhotoUri');
-      };
-      reader.readAsDataURL(file);
-    }
-  };
-
-  const handleOpenCamera = async () => {
-    // Stop any existing stream
-    if (stream) {
-        stream.getTracks().forEach(track => track.stop());
-    }
-    try {
-        const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        setStream(newStream);
-        setIsCameraOpen(true);
-    } catch (err) {
-        console.error("Camera access error:", err);
-        toast({
-            variant: 'destructive',
-            title: 'Camera Error',
-            description: 'Could not access the camera. Please check your browser permissions for this site.'
-        });
-    }
-  };
-
-  const handleCapturePhoto = () => {
-    if (!videoRef.current || !canvasRef.current) return;
-
-    const video = videoRef.current;
-    const canvas = canvasRef.current;
-    canvas.width = video.videoWidth;
-    canvas.height = video.videoHeight;
-    const ctx = canvas.getContext('2d');
-    if (!ctx) return;
-
-    // Draw the video frame to the canvas
-    ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
-
-    const timestamp = new Date().toLocaleString();
-
-    const drawOverlay = (geoString: string | null) => {
-        ctx.font = '24px "PT Sans", sans-serif';
-        ctx.fillStyle = 'white';
-        ctx.strokeStyle = 'black';
-        ctx.lineWidth = 5;
-        ctx.lineJoin = 'round'; // For better looking text borders
-
-        const timestampY = geoString ? canvas.height - 50 : canvas.height - 20;
-        const geoStringY = canvas.height - 20;
-        const textX = 20;
-
-        ctx.strokeText(timestamp, textX, timestampY);
-        ctx.fillText(timestamp, textX, timestampY);
-        
-        if (geoString) {
-            ctx.strokeText(geoString, textX, geoStringY);
-            ctx.fillText(geoString, textX, geoStringY);
+    if (file && user) {
+        setIsProcessingFile(true);
+        try {
+            const url = await uploadFile(file, `task_completions/${user.uid}/${Date.now()}-${file.name}`);
+            form.setValue('completionPhotoUrl', url);
+            form.clearErrors('completionPhotoUrl');
+            toast({ title: 'Photo Uploaded', description: 'Your photo has been attached.' });
+        } catch (error) {
+            console.error("Task photo upload error:", error);
+            toast({ variant: 'destructive', title: 'Upload Failed', description: 'Could not upload the photo.' });
+        } finally {
+            setIsProcessingFile(false);
         }
-
-        form.setValue('completionPhotoUri', canvas.toDataURL('image/jpeg'));
-        form.clearErrors('completionPhotoUri');
-        
-        // Stop the stream and close the camera dialog
-        if (stream) {
-            stream.getTracks().forEach(track => track.stop());
-        }
-        setStream(null);
-        setIsCameraOpen(false);
-    }
-
-    if (navigator.geolocation) {
-        navigator.geolocation.getCurrentPosition(
-            (position) => {
-                const { latitude, longitude } = position.coords;
-                const geoString = `Lat: ${latitude.toFixed(5)}, Lon: ${longitude.toFixed(5)}`;
-                drawOverlay(geoString);
-            },
-            (error) => {
-                toast({
-                    variant: 'destructive',
-                    title: 'Location Error',
-                    description: 'Could not get location. Photo will be saved without it.'
-                });
-                drawOverlay(null); // Proceed without location
-            },
-            { enableHighAccuracy: true, timeout: 5000, maximumAge: 0 }
-        );
-    } else {
-        toast({ variant: 'destructive', title: 'Location Error', description: 'Geolocation is not supported by this browser.' });
-        drawOverlay(null);
     }
   };
+
 
   async function onCompleteSubmit(values: z.infer<typeof completeTaskSchema>) {
     if (!selectedTask) return;
 
-    if (selectedTask.requiresPhoto && !values.completionPhotoUri) {
-        form.setError('completionPhotoUri', { message: 'A photo is required for this task.' });
+    if (selectedTask.requiresPhoto && !values.completionPhotoUrl) {
+        form.setError('completionPhotoUrl', { message: 'A photo is required for this task.' });
         return;
     }
 
@@ -195,7 +98,7 @@ export default function MyTasksPage() {
         status: 'completed',
         dateCompleted: new Date().toISOString(),
         completionNotes: values.completionNotes,
-        completionPhotoUri: values.completionPhotoUri,
+        completionPhotoUrl: values.completionPhotoUrl,
     };
 
     await updateTask(selectedTask.id, updatedTaskData);
@@ -211,7 +114,7 @@ export default function MyTasksPage() {
 
   const openCompleteDialog = (task: Task) => {
     setSelectedTask(task);
-    form.reset({ completionNotes: '', completionPhotoUri: '' }); // Clear form on open
+    form.reset({ completionNotes: '', completionPhotoUrl: '' }); // Clear form on open
     setIsDialogOpen(true);
   }
 
@@ -229,9 +132,6 @@ export default function MyTasksPage() {
 
   return (
     <div className="container mx-auto py-8 space-y-8">
-      {/* Hidden canvas for photo processing */}
-      <canvas ref={canvasRef} className="hidden" />
-
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
             <CardTitle className="text-3xl font-headline flex items-center gap-2">
@@ -281,10 +181,10 @@ export default function MyTasksPage() {
                         <Badge variant="default" className="bg-green-600">Completed</Badge>
                     </div>
                     {task.completionNotes && <p className="text-sm mt-2 bg-background/50 p-2 rounded-md"><strong>Your Notes:</strong> {task.completionNotes}</p>}
-                    {task.completionPhotoUri && (
+                    {task.completionPhotoUrl && (
                         <div className="mt-2">
                              <Image
-                                src={task.completionPhotoUri}
+                                src={task.completionPhotoUrl}
                                 alt={`Verification for ${task.title}`}
                                 width={128}
                                 height={128}
@@ -327,19 +227,17 @@ export default function MyTasksPage() {
                     {selectedTask?.requiresPhoto && (
                         <FormField
                             control={form.control}
-                            name="completionPhotoUri"
+                            name="completionPhotoUrl"
                             render={({ field }) => (
                                 <FormItem>
                                     <FormLabel>Verification Photo (Required)</FormLabel>
                                     <div className="space-y-2">
                                       <div className="flex items-center gap-2">
-                                          <Button type="button" variant="outline" onClick={handleOpenCamera}>
-                                              <Camera className="mr-2 h-4 w-4" /> Use Camera
+                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile}>
+                                              {isProcessingFile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}
+                                              {isProcessingFile ? 'Uploading...' : 'Upload File'}
                                           </Button>
-                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()}>
-                                              <FileUp className="mr-2 h-4 w-4" /> Upload File
-                                          </Button>
-                                          <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} />
+                                          <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} disabled={isProcessingFile}/>
                                       </div>
                                        {field.value ? (
                                             <div className="mt-2 text-sm flex items-center gap-2">
@@ -360,33 +258,12 @@ export default function MyTasksPage() {
                     )}
 
                 <DialogFooter>
-                    <Button type="submit">Submit Completion</Button>
+                    <Button type="submit" disabled={isProcessingFile}>Submit Completion</Button>
                 </DialogFooter>
                 </form>
             </Form>
             </DialogContent>
         </Dialog>
-
-        {/* Camera Modal */}
-        <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-            <DialogContent className="max-w-3xl p-0">
-                <DialogHeader className="p-6 pb-0">
-                    <DialogTitle>Take Verification Photo</DialogTitle>
-                    <DialogDescription>
-                        Position the subject in the frame and capture the image. The time and GPS coordinates will be stamped on the photo.
-                    </DialogDescription>
-                </DialogHeader>
-                <div className="relative p-6 pt-2">
-                    <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay muted playsInline />
-                </div>
-                <DialogFooter className="p-6 pt-0">
-                    <Button type="button" onClick={handleCapturePhoto} className="w-full">
-                        <Camera className="mr-2 h-4 w-4" /> Capture Photo
-                    </Button>
-                </DialogFooter>
-            </DialogContent>
-        </Dialog>
-
     </div>
   );
 }

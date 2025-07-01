@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
-import { loadDocuments, saveDocuments } from '@/lib/localStorageService';
+import { getDocuments, deleteDocument } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,23 +13,22 @@ import Link from 'next/link';
 
 export default function PersonalDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-    setDocuments(loadDocuments());
+    async function fetchData() {
+        setIsLoading(true);
+        const docs = await getDocuments();
+        setDocuments(docs.filter(d => d.documentType === 'tax' || d.documentType === 'employment'));
+        setIsLoading(false);
+    }
+    fetchData();
   }, []);
 
-  useEffect(() => {
-    if (isMounted) {
-      saveDocuments(documents);
-    }
-  }, [documents, isMounted]);
-
-
-  function removeDocument(docId: string) {
+  async function removeDocument(docId: string) {
     const docToRemove = documents.find(d => d.id === docId);
+    await deleteDocument(docId);
     setDocuments((prev) => prev.filter((doc) => doc.id !== docId));
     toast({
       title: 'Document Removed',
@@ -40,7 +39,6 @@ export default function PersonalDocumentsPage() {
 
   const personalDocuments = useMemo(() => {
     return documents
-        .filter(d => d.documentType === 'tax' || d.documentType === 'employment')
         .reduce((acc, doc) => {
             const employeeName = doc.employeeName || 'Unassigned';
             (acc[employeeName] = acc[employeeName] || []).push(doc);
@@ -59,7 +57,7 @@ export default function PersonalDocumentsPage() {
                     </CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No personal documents have been uploaded yet.</div>
+                    <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No personal documents have been uploaded for this category yet.</div>
                 </CardContent>
             </Card>
         );
@@ -93,12 +91,13 @@ export default function PersonalDocumentsPage() {
                                     </Button>
                                </CardHeader>
                                <CardContent className="flex-grow flex items-center justify-center pt-0">
-                                   <Link href={doc.documentDataUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
+                                   <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
                                       <Image
-                                        src={doc.documentDataUri.startsWith('data:image') ? doc.documentDataUri : 'https://placehold.co/850x1100.png'}
+                                        src={'https://placehold.co/850x1100.png'}
                                         alt={`Preview of ${doc.title}`}
                                         fill
                                         className="object-cover object-top transition-transform group-hover:scale-105"
+                                        data-ai-hint="official document"
                                       />
                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
                                             <Download className="h-8 w-8 text-white"/>
@@ -115,7 +114,7 @@ export default function PersonalDocumentsPage() {
     );
   };
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -147,5 +146,3 @@ export default function PersonalDocumentsPage() {
     </div>
   );
 }
-
-    

@@ -1,4 +1,3 @@
-
 import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
@@ -159,7 +158,7 @@ export interface Task {
   status: 'pending' | 'completed';
   requiresPhoto: boolean;
   completionNotes?: string;
-  completionPhotoUri?: string; // This can stay as data URI for simplicity or also be migrated.
+  completionPhotoUrl?: string;
 }
 
 export type ExpenseCategory = 'fuel' | 'food' | 'lodging' | 'supplies' | 'other';
