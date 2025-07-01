@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loadNotifications, saveNotifications } from '@/lib/localStorageService';
+import { getNotifications, updateNotification } from '@/lib/firestoreService';
 import type { NotificationMessage } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -10,45 +10,54 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Bell, Loader2, Circle, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
+import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   
   useEffect(() => {
-    if (user) {
-      const allNotifications = loadNotifications().sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-      const userNotifications = allNotifications.filter(
-        notif => notif.recipientId === 'all' || notif.recipientId === user.id
-      );
-      setNotifications(userNotifications);
+    if (!user || !db) {
+        setIsLoading(false);
+        return;
     }
-    setIsMounted(true);
-  }, [user]);
 
-  const handleMarkAsRead = (notificationId: string) => {
-    if (!user) return;
+    const notificationsRef = collection(db, "notifications");
+    const q = query(
+        notificationsRef, 
+        where('recipientId', 'in', ['all', user.id]),
+        orderBy('timestamp', 'desc')
+    );
 
-    const updatedNotifications = notifications.map(notif => {
-      if (notif.id === notificationId && !notif.readBy.includes(user.id)) {
-        return { ...notif, readBy: [...notif.readBy, user.id] };
-      }
-      return notif;
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const liveNotifications: NotificationMessage[] = [];
+        snapshot.forEach(doc => {
+            liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
+        });
+        setNotifications(liveNotifications);
+        setIsLoading(false);
+    }, (error) => {
+        console.error("Error fetching real-time notifications:", error);
+        setIsLoading(false);
     });
 
-    setNotifications(updatedNotifications); // Optimistically update UI
-    
-    // Update master list in local storage
-    const allNotifications = loadNotifications();
-    const masterIndex = allNotifications.findIndex(n => n.id === notificationId);
-    if (masterIndex > -1 && !allNotifications[masterIndex].readBy.includes(user.id)) {
-        allNotifications[masterIndex].readBy.push(user.id);
-        saveNotifications(allNotifications);
+    return () => unsubscribe();
+  }, [user]);
+
+  const handleMarkAsRead = async (notificationId: string) => {
+    if (!user) return;
+
+    const notification = notifications.find(n => n.id === notificationId);
+    if (notification && !notification.readBy.includes(user.id)) {
+        const updatedReadBy = [...notification.readBy, user.id];
+        await updateNotification(notificationId, { readBy: updatedReadBy });
+        // The real-time listener will handle the UI update automatically.
     }
   };
 
-  if (!isMounted || !user) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -73,7 +82,7 @@ export default function NotificationsPage() {
           {notifications.length > 0 ? (
             <Accordion type="single" collapsible className="w-full space-y-2">
               {notifications.map(notif => {
-                const isRead = notif.readBy.includes(user.id);
+                const isRead = notif.readBy.includes(user!.id);
                 return (
                   <AccordionItem 
                     value={notif.id} 

@@ -23,8 +23,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { loadNotifications, saveNotifications } from '@/lib/localStorageService';
-import { getFleetAssets } from '@/lib/firestoreService';
+import { getFleetAssets, getNotifications, addNotification } from '@/lib/firestoreService';
 import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
@@ -32,6 +31,8 @@ import { useCommandPalette } from '@/hooks/use-command-palette';
 import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
+import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -50,15 +51,24 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const { open: openTools } = useGlobalTools();
 
     useEffect(() => {
-        if (user) {
-            const notifications = loadNotifications();
-            const userNotifications = notifications.filter(
-                notif => notif.recipientId === 'all' || notif.recipientId === user.id
-            );
-            const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
+        if (!user || !db) return;
+        
+        const notificationsRef = collection(db, "notifications");
+        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.id]));
+
+        const unsubscribe = onSnapshot(q, (snapshot) => {
+            let count = 0;
+            snapshot.forEach(doc => {
+                const notif = doc.data() as NotificationMessage;
+                if (!notif.readBy.includes(user.id)) {
+                    count++;
+                }
+            });
             setUnreadCount(count);
-        }
-    }, [user, pathname]);
+        });
+
+        return () => unsubscribe();
+    }, [user]);
     
     useEffect(() => {
       const down = (e: KeyboardEvent) => {
@@ -79,12 +89,14 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
             const checkAndCreateNotifications = async () => {
                 const assets = await getFleetAssets();
-                const notifications = loadNotifications();
+                const notifications = await getNotifications();
                 let notificationsChanged = false;
 
                 const today = new Date();
-                today.setHours(0, 0, 0, 0); // Normalize today to the start of the day
+                today.setHours(0, 0, 0, 0); 
                 const thirtyDaysFromNow = addDays(today, 30);
+                
+                const notificationPromises: Promise<any>[] = [];
 
                 assets.forEach(asset => {
                     // Check registration
@@ -93,11 +105,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         const notifId = `expiry-reg-${asset.id}`;
                         if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
                             const isExpired = isBefore(dueDate, today);
-                            notifications.push({
+                            const newNotif: Omit<NotificationMessage, 'id'> = {
                                 id: notifId, recipientId: 'all', title: `Vehicle Registration ${isExpired ? 'Expired' : 'Expiring Soon'}`,
                                 content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                            });
+                            };
+                            notificationPromises.push(addNotification(newNotif, notifId));
                             notificationsChanged = true;
                         }
                     }
@@ -108,11 +121,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         const notifId = `expiry-ins-${asset.id}`;
                          if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
                             const isExpired = isBefore(dueDate, today);
-                            notifications.push({
+                             const newNotif: Omit<NotificationMessage, 'id'> = {
                                 id: notifId, recipientId: 'all', title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
                                 content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                            });
+                            };
+                            notificationPromises.push(addNotification(newNotif, notifId));
                             notificationsChanged = true;
                         }
                     }
@@ -127,11 +141,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
                                 if (isBefore(nextDueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
                                     const isOverdue = isBefore(nextDueDate, today);
-                                    notifications.push({
+                                    const newNotif: Omit<NotificationMessage, 'id'> = {
                                         id: notifId, recipientId: 'all', title: `Maintenance ${isOverdue ? 'Overdue' : 'Due Soon'}: ${serviceName}`,
                                         content: `The ${serviceName} for ${asset.name} (${asset.vin}) is ${isOverdue ? 'overdue' : 'due'} on ${format(nextDueDate, 'PPP')}. Please log the service once completed.`,
                                         senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                                    });
+                                    };
+                                    notificationPromises.push(addNotification(newNotif, notifId));
                                     notificationsChanged = true;
                                 }
                             }
@@ -140,11 +155,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 });
 
                 if (notificationsChanged) {
-                    saveNotifications(notifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()));
-                    // Force a re-render to update unread count
-                    const userNotifications = notifications.filter(notif => notif.recipientId === 'all' || notif.recipientId === user.id);
-                    const count = userNotifications.filter(notif => !notif.readBy.includes(user.id)).length;
-                    setUnreadCount(count);
+                    Promise.all(notificationPromises);
                 }
             };
             checkAndCreateNotifications();
@@ -662,5 +673,3 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return <FullScreenLoader />;
 }
-
-    

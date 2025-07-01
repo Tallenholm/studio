@@ -5,9 +5,8 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadSnowRoutes, saveSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
-import { getJobs } from '@/lib/firestoreService';
-import type { SnowRoute, Job, User, FleetAsset } from '@/lib/types';
+import { getJobs, getUsers, getFleetAssets, getSnowRoutes, addSnowRoute, updateSnowRoute, deleteSnowRoute, addNotification } from '@/lib/firestoreService';
+import type { SnowRoute, Job, User, FleetAsset, NotificationMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -19,6 +18,7 @@ import { PlusCircle, Trash2, Loader2, Pencil, Route, Truck, Users as UsersIcon, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { useAuth } from '@/contexts/AuthContext';
 
 const routeSchema = z.object({
   name: z.string().min(1, 'Route name is required.'),
@@ -69,10 +69,11 @@ export default function ManageSnowRoutesPage() {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<SnowRoute | null>(null);
   const { toast } = useToast();
+  const { user: adminUser } = useAuth();
 
   const form = useForm<z.infer<typeof routeSchema>>({
     resolver: zodResolver(routeSchema),
@@ -84,22 +85,28 @@ export default function ManageSnowRoutesPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
     const fetchData = async () => {
-        setRoutes(loadSnowRoutes());
-        const allJobs = await getJobs();
-        setJobs(allJobs.filter(j => j.jobType === 'snow_removal'));
-        setUsers(loadUsers());
-        setFleetAssets(loadFleetAssets().filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));
+        setIsLoading(true);
+        try {
+            const [loadedRoutes, allJobs, loadedUsers, loadedAssets] = await Promise.all([
+                getSnowRoutes(),
+                getJobs(),
+                getUsers(),
+                getFleetAssets()
+            ]);
+            setRoutes(loadedRoutes);
+            setJobs(allJobs.filter(j => j.jobType === 'snow_removal'));
+            setUsers(loadedUsers);
+            setFleetAssets(loadedAssets.filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            toast({ variant: "destructive", title: "Error", description: "Could not load route data." });
+        } finally {
+            setIsLoading(false);
+        }
     }
     fetchData();
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveSnowRoutes(routes);
-    }
-  }, [routes, isMounted]);
+  }, [toast]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -115,24 +122,57 @@ export default function ManageSnowRoutesPage() {
     setIsDialogOpen(true);
   };
 
-  function onSubmit(values: z.infer<typeof routeSchema>) {
+  const arraysHaveSameElements = (arr1?: string[], arr2?: string[]) => {
+      const set1 = new Set(arr1 || []);
+      const set2 = new Set(arr2 || []);
+      if (set1.size !== set2.size) return false;
+      for (const item of set1) {
+          if (!set2.has(item)) return false;
+      }
+      return true;
+  }
+
+  async function onSubmit(values: z.infer<typeof routeSchema>) {
+    if (!adminUser) {
+        toast({ variant: "destructive", title: "Authentication Error", description: "Admin user not found." });
+        return;
+    }
+
+    const jobIdsChanged = !arraysHaveSameElements(editingRoute?.assignedJobIds, values.assignedJobIds);
+
     if (editingRoute) {
-      const updatedRoutes = routes.map(r => (r.id === editingRoute.id ? { ...r, ...values } : r));
+      await updateSnowRoute(editingRoute.id, values);
+      const updatedRoutes = routes.map(r => (r.id === editingRoute.id ? { ...editingRoute, ...values } : r));
       setRoutes(updatedRoutes.sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Route Updated', description: `Route "${values.name}" has been updated.` });
+
+      if (jobIdsChanged && values.assignedEmployeeIds && values.assignedEmployeeIds.length > 0) {
+        const notificationPromises = values.assignedEmployeeIds.map(employeeId => {
+            const notification: Omit<NotificationMessage, 'id'> = {
+                timestamp: new Date().toISOString(),
+                title: 'Snow Route Updated',
+                content: `Your route "${values.name}" has been updated with new jobs. Please check the Snow Routes page for details.`,
+                recipientId: employeeId,
+                senderName: 'System Alert',
+                readBy: [],
+            };
+            return addNotification(notification);
+        });
+        await Promise.all(notificationPromises);
+        toast({ title: 'Crew Notified', description: `All employees on route "${values.name}" have been notified of the changes.` });
+      }
+
     } else {
-      const newRoute: SnowRoute = {
-        id: `route-${Date.now()}`,
-        ...values,
-      };
-      setRoutes(prev => [...prev, newRoute].sort((a,b) => a.name.localeCompare(b.name)));
+      const newId = await addSnowRoute({ ...values });
+      setRoutes(prev => [...prev, {id: newId, ...values}].sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Route Added', description: `Route "${values.name}" has been added.` });
     }
     handleDialogOpenChange(false);
   }
 
-  function removeRoute(routeId: string) {
+  async function removeRoute(routeId: string) {
     const routeToRemove = routes.find(r => r.id === routeId);
+    await deleteSnowRoute(routeId);
     setRoutes(prev => prev.filter(r => r.id !== routeId));
     toast({ title: 'Route Removed', description: `Route "${routeToRemove?.name}" has been deleted.`, variant: 'destructive' });
   }
@@ -199,7 +239,7 @@ export default function ManageSnowRoutesPage() {
     );
   };
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

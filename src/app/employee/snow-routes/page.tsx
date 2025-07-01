@@ -6,8 +6,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
-import { getJobs, updateJob } from '@/lib/firestoreService';
-import { loadSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import { getJobs, updateJob, getSnowRoutes, getUsers, getFleetAssets } from '@/lib/firestoreService';
 import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,7 +19,8 @@ import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
 import { optimizeRoute } from '@/ai/flows/optimize-route-flow';
-import { arrayUnion } from 'firebase/firestore';
+import { arrayUnion, onSnapshot, collection, query, where } from 'firebase/firestore';
+import { db } from '@/lib/firebase';
 
 const logSchema = z.object({
   photoDataUri: z.string().optional(),
@@ -33,7 +33,7 @@ export default function SnowRoutesPage() {
   const [routes, setRoutes] = useState<SnowRoute[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { user } = useAuth();
   const { toast } = useToast();
 
@@ -54,22 +54,37 @@ export default function SnowRoutesPage() {
   });
 
   useEffect(() => {
-    if (user) {
-      setIsMounted(true);
-      const fetchData = async () => {
-          const [loadedJobs, loadedUsers, loadedAssets] = await Promise.all([
-              getJobs(),
-              loadUsers(),
-              loadFleetAssets()
-          ]);
-          setJobs(loadedJobs.filter(j => j.jobType === 'snow_removal'));
-          setUsers(loadedUsers);
-          setFleetAssets(loadedAssets);
-          setRoutes(loadSnowRoutes());
-      };
-      fetchData();
-    }
-  }, [user]);
+    if (!user || !db) return;
+    setIsLoading(true);
+
+    const fetchData = async () => {
+        const [loadedJobs, loadedUsers, loadedAssets] = await Promise.all([
+            getJobs(),
+            getUsers(),
+            getFleetAssets()
+        ]);
+        setJobs(loadedJobs.filter(j => j.jobType === 'snow_removal'));
+        setUsers(loadedUsers);
+        setFleetAssets(loadedAssets);
+    };
+
+    fetchData().then(() => setIsLoading(false));
+
+    const q = query(collection(db, 'snowRoutes'), where('assignedEmployeeIds', 'array-contains', user.id));
+    
+    const unsubscribe = onSnapshot(q, (snapshot) => {
+        const liveRoutes: SnowRoute[] = [];
+        snapshot.forEach((doc) => {
+            liveRoutes.push({ id: doc.id, ...doc.data() } as SnowRoute);
+        });
+        setRoutes(liveRoutes.sort((a,b) => a.name.localeCompare(b.name)));
+    }, (error) => {
+        console.error("Error fetching real-time routes:", error);
+        toast({ variant: "destructive", title: "Real-time Error", description: "Could not fetch live route updates." });
+    });
+
+    return () => unsubscribe();
+  }, [user, toast]);
 
   // Camera stream cleanup
   useEffect(() => {
@@ -79,13 +94,6 @@ export default function SnowRoutesPage() {
         }
     };
   }, [stream]);
-
-  const assignedRoutes = useMemo(() => {
-    if (!user) return [];
-    return routes
-      .filter(route => route.assignedEmployeeIds?.includes(user.id))
-      .sort((a, b) => a.name.localeCompare(b.name));
-  }, [routes, user]);
 
   const handleFileChange = (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -140,14 +148,12 @@ export default function SnowRoutesPage() {
       photoDataUri: values.photoDataUri,
     };
     
-    // Path to the specific log array in Firestore
     const logPath = `snowLog.${logServiceInfo.service}`;
 
     await updateJob(logServiceInfo.job.id, {
         [logPath]: arrayUnion(newLog)
     });
     
-    // Update local state to reflect the change immediately
     const updatedJobs = jobs.map(j => {
       if (j.id === logServiceInfo.job.id) {
         const updatedJob = { ...j };
@@ -212,7 +218,7 @@ export default function SnowRoutesPage() {
     }
   };
 
-  if (!isMounted || !user) {
+  if (isLoading || !user) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -236,7 +242,7 @@ export default function SnowRoutesPage() {
           <Snowflake className="h-16 w-16 text-primary mx-auto md:mx-0 mb-4" />
           <h1 className="text-4xl font-headline font-bold">My Snow Routes</h1>
           <p className="text-lg text-muted-foreground mt-2">
-            Your assigned routes and contracts for the current snow event.
+            Your assigned routes and contracts for the current snow event. Updates in real-time.
           </p>
         </div>
         <Button onClick={() => window.print()} size="lg">
@@ -245,9 +251,9 @@ export default function SnowRoutesPage() {
         </Button>
       </div>
 
-      {assignedRoutes.length > 0 ? (
+      {routes.length > 0 ? (
         <div className="space-y-8">
-          {assignedRoutes.map(route => {
+          {routes.map(route => {
              const routeCrew = users.filter(u => route.assignedEmployeeIds?.includes(u.id));
              const routeFleet = fleetAssets.filter(a => route.assignedVehicleIds?.includes(a.id));
              const routeJobs = (route.assignedJobIds || []).map(id => jobs.find(j => j.id === id)).filter((j): j is Job => !!j);

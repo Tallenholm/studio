@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadUsers, saveNotifications, loadNotifications } from '@/lib/localStorageService';
+import { getUsers, addNotification } from '@/lib/firestoreService';
 import type { User, NotificationMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -38,7 +38,7 @@ const notificationSchema = z.object({
 
 export default function SendNotificationPage() {
   const [users, setUsers] = useState<User[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
 
@@ -52,17 +52,26 @@ export default function SendNotificationPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setUsers(loadUsers());
-  }, []);
+    const fetchUsers = async () => {
+        setIsLoading(true);
+        try {
+            setUsers(await getUsers());
+        } catch (error) {
+            console.error("Failed to fetch users:", error);
+            toast({ variant: 'destructive', title: "Error", description: "Could not load user list." });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchUsers();
+  }, [toast]);
 
-  function onSubmit(values: z.infer<typeof notificationSchema>) {
+  async function onSubmit(values: z.infer<typeof notificationSchema>) {
     if (!adminUser) {
       toast({ variant: 'destructive', title: 'Error', description: 'You must be logged in.' });
       return;
     }
-    const newNotification: NotificationMessage = {
-      id: `notif-${Date.now()}`,
+    const newNotification: Omit<NotificationMessage, 'id'> = {
       timestamp: new Date().toISOString(),
       senderName: adminUser.name,
       recipientId: values.recipient,
@@ -71,14 +80,17 @@ export default function SendNotificationPage() {
       readBy: [],
     };
     
-    const allNotifications = loadNotifications();
-    saveNotifications([...allNotifications, newNotification]);
-
-    toast({ title: 'Notification Sent', description: 'Your message has been sent successfully.' });
-    form.reset();
+    try {
+        await addNotification(newNotification);
+        toast({ title: 'Notification Sent', description: 'Your message has been sent successfully.' });
+        form.reset({ recipient: 'all', title: '', content: '' });
+    } catch (error) {
+        console.error("Failed to send notification:", error);
+        toast({ variant: 'destructive', title: 'Send Error', description: 'Could not send the notification.' });
+    }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

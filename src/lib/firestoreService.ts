@@ -1,7 +1,7 @@
 
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User } from './types';
+import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch, setDoc } from 'firebase/firestore';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
@@ -23,7 +23,13 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const docSnap = await getDoc(docRef);
             return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
         },
-        add: async (data: Omit<T, 'id'>): Promise<string> => {
+        add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
+            if (id) {
+                // If an ID is provided, use it to create the document
+                const docRef = doc(getCollection(), id);
+                await setDoc(docRef, data);
+                return id;
+            }
             const docRef = await addDoc(getCollection(), data);
             return docRef.id;
         },
@@ -65,6 +71,7 @@ export const { getAll: getInventory, add: addInventoryItem, update: updateInvent
 export const { getAll: getSnowRoutes, add: addSnowRoute, update: updateSnowRoute, delete: deleteSnowRoute } = createCrudService<SnowRoute>('snowRoutes');
 export const { getAll: getRentals, add: addRental, update: updateRental, delete: deleteRental } = createCrudService<Rental>('rentals');
 export const { getAll: getCalendarEvents, add: addCalendarEvent, delete: deleteCalendarEvent } = createCrudService<CalendarEvent>('calendarEvents');
+export const { getAll: getNotifications, add: addNotification, update: updateNotification } = createCrudService<NotificationMessage>('notifications');
 
 
 // Special case functions
