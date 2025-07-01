@@ -5,8 +5,7 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getDocuments, addDocument, deleteDocument, getFleetAssets } from '@/lib/firestoreService';
-import { loadUsers } from '@/lib/localStorageService';
+import { getDocuments, addDocument, deleteDocument, getFleetAssets, getUsers } from '@/lib/firestoreService';
 import type { ManagedDocument, User, FleetAsset } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -99,7 +98,7 @@ export default function ManageDocumentsPage() {
         const [docs, assets, users] = await Promise.all([
             getDocuments(),
             getFleetAssets(),
-            loadUsers(), // Users are still from localStorage for auth fallback
+            getUsers(),
         ]);
         setDocuments(docs);
         setFleetAssets(assets);
@@ -154,7 +153,7 @@ export default function ManageDocumentsPage() {
     let employeeName: string | undefined = undefined;
 
     if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
-        const employee = users.find(u => u.uid === values.employeeId);
+        const employee = users.find(u => u.id === values.employeeId);
         if (employee) {
             docCategory = employee.name;
             employeeName = employee.name;
@@ -392,7 +391,7 @@ export default function ManageDocumentsPage() {
                                   </FormControl>
                                   <SelectContent>
                                   {users.filter(u => u.role === 'employee').map(user => (
-                                      <SelectItem key={user.uid} value={user.uid}>
+                                      <SelectItem key={user.id} value={user.id}>
                                           {user.name}
                                       </SelectItem>
                                   ))}
