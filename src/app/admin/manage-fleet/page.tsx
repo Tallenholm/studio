@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { FleetAsset, VehicleType, MaintenanceSchedule } from '@/lib/types';
+import type { FleetAsset, VehicleType, MaintenanceSchedule, NotificationMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -50,8 +50,7 @@ import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
 import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset } from '@/lib/firestoreService';
-import { loadNotifications, saveNotifications } from '@/lib/localStorageService';
+import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
 
 const maintenanceIntervalSchema = z.object({
     intervalMonths: z.coerce.number().optional(),
@@ -181,8 +180,8 @@ export default function FleetManagementPage() {
     }
     
     // Clean up any resolved notifications
-    const notifications = loadNotifications();
-    let notificationsChanged = false;
+    const notifications = await getNotifications();
+    const notificationPromises: Promise<void>[] = [];
 
     const today = new Date();
     const thirtyDaysFromNow = addDays(today, 30);
@@ -190,25 +189,21 @@ export default function FleetManagementPage() {
     // Check registration date
     const regNotifId = `expiry-reg-${savedAsset.id}`;
     if (!savedAsset.registrationDueDate || !isBefore(parseISO(savedAsset.registrationDueDate), thirtyDaysFromNow)) {
-      const index = notifications.findIndex(n => n.id === regNotifId);
-      if (index > -1) {
-        notifications.splice(index, 1);
-        notificationsChanged = true;
+      if (notifications.some(n => n.id === regNotifId)) {
+        notificationPromises.push(deleteNotification(regNotifId));
       }
     }
 
     // Check insurance date
     const insNotifId = `expiry-ins-${savedAsset.id}`;
      if (!savedAsset.insuranceDueDate || !isBefore(parseISO(savedAsset.insuranceDueDate), thirtyDaysFromNow)) {
-      const index = notifications.findIndex(n => n.id === insNotifId);
-      if (index > -1) {
-        notifications.splice(index, 1);
-        notificationsChanged = true;
+      if (notifications.some(n => n.id === insNotifId)) {
+        notificationPromises.push(deleteNotification(insNotifId));
       }
     }
 
-    if (notificationsChanged) {
-      saveNotifications(notifications);
+    if (notificationPromises.length > 0) {
+      await Promise.all(notificationPromises);
     }
 
     handleDialogOpenChange(false);
@@ -225,14 +220,14 @@ export default function FleetManagementPage() {
     });
     
     // Also remove related notifications
-    const notifications = loadNotifications();
-    const updatedNotifications = notifications.filter(n => {
-        const parts = n.id.split('-');
-        return parts[parts.length - 1] !== assetId;
-    });
+    const notifications = await getNotifications();
+    const relatedNotificationIds = notifications
+        .filter(n => n.id.endsWith(`-${assetId}`))
+        .map(n => n.id);
 
-    if (notifications.length !== updatedNotifications.length) {
-      saveNotifications(updatedNotifications);
+    if (relatedNotificationIds.length > 0) {
+        const deletePromises = relatedNotificationIds.map(id => deleteNotification(id));
+        await Promise.all(deletePromises);
     }
   }
 

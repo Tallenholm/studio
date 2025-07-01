@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { loadTimeOffRequests, saveTimeOffRequests, loadCalendarEvents, saveCalendarEvents } from '@/lib/localStorageService';
+import { getTimeOffRequests, updateTimeOffRequest, addCalendarEvent } from '@/lib/firestoreService';
 import type { TimeOffRequest, CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -22,73 +22,61 @@ import { cn } from '@/lib/utils';
 
 export default function ManageRequestsPage() {
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   useEffect(() => {
-    setIsMounted(true);
-    setRequests(loadTimeOffRequests().sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
-  }, []);
-
-  const updateRequestStatus = (requestId: string, status: 'approved' | 'denied') => {
-    let approvedRequest: TimeOffRequest | undefined;
-    const updatedRequests = requests.map(req => {
-      if (req.id === requestId) {
-        const updatedReq = { ...req, status };
-        if (status === 'approved') {
-            approvedRequest = updatedReq;
-        }
-        return updatedReq;
-      }
-      return req;
-    });
-
-    setRequests(updatedRequests);
-    saveTimeOffRequests(updatedRequests);
-    
-    if (status === 'approved' && approvedRequest) {
-        const requestToProcess = approvedRequest;
+    async function fetchRequests() {
+        setIsLoading(true);
         try {
-            const calendarEvents = loadCalendarEvents();
-            
-            const interval = {
-                start: parseISO(requestToProcess.startDate),
-                end: parseISO(requestToProcess.endDate)
-            };
+            const loadedRequests = await getTimeOffRequests();
+            setRequests(loadedRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+        } catch (error) {
+            console.error("Error fetching requests:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load time off requests.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchRequests();
+  }, [toast]);
 
-            if (interval.start > interval.end) {
-                throw new Error("Start date cannot be after end date.");
-            }
+  const handleUpdateStatus = async (requestId: string, status: 'approved' | 'denied') => {
+    const originalRequests = [...requests];
+    const requestToUpdate = originalRequests.find(req => req.id === requestId);
+    if (!requestToUpdate) return;
+    
+    const updatedRequest = { ...requestToUpdate, status };
+    const updatedRequests = requests.map(req => (req.id === requestId ? updatedRequest : req));
+    setRequests(updatedRequests);
+
+    try {
+        await updateTimeOffRequest(requestId, { status });
+        
+        if (status === 'approved') {
+            const interval = { start: parseISO(updatedRequest.startDate), end: parseISO(updatedRequest.endDate) };
+            if (interval.start > interval.end) throw new Error("Start date cannot be after end date.");
 
             const datesInRange = eachDayOfInterval(interval);
 
-            const newEvents: CalendarEvent[] = datesInRange.map((date, index) => ({
-                id: `time-off-${requestToProcess.id}-${index}`,
-                date: format(date, 'yyyy-MM-dd'), 
-                title: `Time Off: ${requestToProcess.employeeName}`,
-                type: 'time-off',
-                description: requestToProcess.reason,
-            }));
-            
-            saveCalendarEvents([...calendarEvents, ...newEvents]);
-
-            toast({
-                title: `Request Approved`,
-                description: `The request has been approved and added to the calendar.`,
+            const eventPromises = datesInRange.map((date, index) => {
+                const newEvent: Omit<CalendarEvent, 'id'> = {
+                    date: format(date, 'yyyy-MM-dd'), 
+                    title: `Time Off: ${updatedRequest.employeeName}`,
+                    type: 'time-off',
+                    description: updatedRequest.reason,
+                };
+                return addCalendarEvent(newEvent, `time-off-${updatedRequest.id}-${index}`);
             });
-        } catch (error) {
-            console.error("Failed to update calendar:", error);
-            toast({
-                variant: 'destructive',
-                title: 'Calendar Update Failed',
-                description: 'The request was approved, but an error occurred adding it to the calendar.',
-            });
+            await Promise.all(eventPromises);
+            toast({ title: `Request Approved`, description: `The request has been approved and added to the calendar.` });
+        } else {
+             toast({ title: `Request Denied`, description: `The time off request has been denied.` });
         }
-    } else {
-        toast({
-          title: `Request ${status.charAt(0).toUpperCase() + status.slice(1)}`,
-          description: `The time off request has been ${status}.`,
-        });
+    } catch (error) {
+        console.error("Error updating request status:", error);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update the request.' });
+        setRequests(originalRequests); // Revert UI on failure
     }
   };
 
@@ -101,7 +89,7 @@ export default function ManageRequestsPage() {
       }
   }
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -145,10 +133,10 @@ export default function ManageRequestsPage() {
                                     <TableCell className="text-right">
                                         {req.status === 'pending' && (
                                             <div className="flex gap-2 justify-end">
-                                                <Button variant="outline" size="icon" onClick={() => updateRequestStatus(req.id, 'approved')}>
+                                                <Button variant="outline" size="icon" onClick={() => handleUpdateStatus(req.id, 'approved')}>
                                                     <Check className="h-4 w-4 text-primary" />
                                                 </Button>
-                                                <Button variant="outline" size="icon" onClick={() => updateRequestStatus(req.id, 'denied')}>
+                                                <Button variant="outline" size="icon" onClick={() => handleUpdateStatus(req.id, 'denied')}>
                                                     <X className="h-4 w-4 text-destructive" />
                                                 </Button>
                                             </div>

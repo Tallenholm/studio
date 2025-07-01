@@ -5,8 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadClients, loadFleetAssets, loadUsers } from '@/lib/localStorageService';
-import { addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
+import { getClients, getFleetAssets, getUsers, addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
 import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -112,9 +111,9 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
         try {
             const [loadedJobs, loadedClients, loadedAssets, loadedUsers] = await Promise.all([
                 getJobs(),
-                loadClients(),
-                loadFleetAssets(),
-                loadUsers(),
+                getClients(),
+                getFleetAssets(),
+                getUsers(),
             ]);
             setJobs(loadedJobs);
             setClients(loadedClients);

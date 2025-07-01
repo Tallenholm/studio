@@ -3,8 +3,7 @@
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { loadFleetAssets, loadUsers } from '@/lib/localStorageService';
-import { getJobById, addNoteToJob, getClients } from '@/lib/firestoreService';
+import { getJobById, addNoteToJob, getClients, getFleetAssets, getUsers } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, User, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -41,20 +40,29 @@ export default function JobDetailsPage() {
   useEffect(() => {
     if (jobId) {
       const fetchJobData = async () => {
-        const jobData = await getJobById(jobId);
-        setJob(jobData);
-        
-        if (jobData) {
-          const allClients = await getClients();
-          setClient(allClients.find(c => c.id === jobData.clientId));
+        try {
+            const [jobData, assetsData, usersData, allClients] = await Promise.all([
+                getJobById(jobId),
+                getFleetAssets(),
+                getUsers(),
+                getClients(),
+            ]);
+
+            setJob(jobData);
+            setAssets(assetsData);
+            setAllUsers(usersData);
+            
+            if (jobData) {
+                setClient(allClients.find(c => c.id === jobData.clientId));
+            }
+        } catch (error) {
+            console.error("Error fetching job details:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load job data.' });
         }
       };
-      
       fetchJobData();
-      setAssets(loadFleetAssets());
-      setAllUsers(loadUsers());
     }
-  }, [jobId]);
+  }, [jobId, toast]);
 
   // New useEffect to fetch costs from server action
   useEffect(() => {

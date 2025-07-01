@@ -5,8 +5,8 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, loadMaintenanceLogs, saveMaintenanceLogs, saveFleetAssets, loadNotifications, saveNotifications } from '@/lib/localStorageService';
-import type { FleetAsset, MaintenanceLog, VehicleType } from '@/lib/types';
+import { getFleetAssets, getMaintenanceLogs, addMaintenanceLog, deleteMaintenanceLog, updateFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
+import type { FleetAsset, MaintenanceLog, VehicleType, NotificationMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -48,7 +48,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Wrench, Calendar as CalendarIcon, Loader2, Truck, Box, Shovel } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
 const logSchema = z.object({
   assetId: z.string({ required_error: 'Please select an asset.' }),
@@ -71,7 +71,7 @@ const logSchema = z.object({
 export default function MaintenanceLogsPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [logs, setLogs] = useState<MaintenanceLog[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
 
@@ -87,35 +87,45 @@ export default function MaintenanceLogsPage() {
   const watchedServiceType = form.watch('serviceType');
 
   useEffect(() => {
-    setIsMounted(true);
-    setAssets(loadFleetAssets());
-    setLogs(loadMaintenanceLogs().sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveMaintenanceLogs(logs);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [assetsData, logsData] = await Promise.all([
+                getFleetAssets(),
+                getMaintenanceLogs(),
+            ]);
+            setAssets(assetsData);
+            setLogs(logsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load maintenance data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [logs, isMounted]);
+    fetchData();
+  }, [toast]);
 
-  function onSubmit(values: z.infer<typeof logSchema>) {
+  async function onSubmit(values: z.infer<typeof logSchema>) {
     const asset = assets.find(a => a.id === values.assetId);
     if (!asset) {
         toast({ variant: 'destructive', title: 'Error', description: 'Selected asset not found.' });
         return;
     }
 
-    const newLog: MaintenanceLog = {
-      id: `log-${Date.now()}`,
+    const newLogData: Omit<MaintenanceLog, 'id'> = {
       assetId: asset.id,
       assetName: asset.name,
       date: values.date.toISOString().split('T')[0],
       cost: values.cost,
       mechanic: values.mechanic,
       routineService: values.routineService,
-      ...values,
+      serviceType: values.serviceType,
+      description: values.description,
     };
     
+    const newLogId = await addMaintenanceLog(newLogData);
+    const newLog = {id: newLogId, ...newLogData};
     setLogs(prev => [newLog, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     
     let scheduleWasUpdated = false;
@@ -124,21 +134,18 @@ export default function MaintenanceLogsPage() {
         const key = newLog.routineService as keyof FleetAsset['maintenanceSchedule'];
         if (asset.maintenanceSchedule?.[key]) {
             scheduleWasUpdated = true;
-            const updatedAssets = assets.map(a => {
-                if (a.id === asset.id && a.maintenanceSchedule?.[key]) {
-                    a.maintenanceSchedule[key]!.lastServiceDate = newLog.date;
-                }
-                return a;
-            });
-            setAssets(updatedAssets);
-            saveFleetAssets(updatedAssets);
+            const updatedSchedule = { ...asset.maintenanceSchedule };
+            updatedSchedule[key]!.lastServiceDate = newLog.date;
+
+            await updateFleetAsset(asset.id, { maintenanceSchedule: updatedSchedule });
+            
+            setAssets(assets.map(a => a.id === asset.id ? { ...a, maintenanceSchedule: updatedSchedule } : a));
 
              // Remove the corresponding maintenance notification
             const notifId = `maint-${key}-${asset.id}`;
-            const notifications = loadNotifications();
-            const updatedNotifications = notifications.filter(n => n.id !== notifId);
-            if (notifications.length !== updatedNotifications.length) {
-                saveNotifications(updatedNotifications);
+            const notifications = await getNotifications();
+            if (notifications.some(n => n.id === notifId)) {
+                await deleteNotification(notifId);
             }
         }
     }
@@ -152,8 +159,9 @@ export default function MaintenanceLogsPage() {
     form.reset({ serviceType: 'routine', description: '', mechanic: 'In-house', cost: undefined, assetId: undefined });
   }
 
-  function removeLog(logId: string) {
+  async function removeLog(logId: string) {
     const logToRemove = logs.find(v => v.id === logId);
+    await deleteMaintenanceLog(logId);
     setLogs(prev => prev.filter(v => v.id !== logId));
     toast({
       title: 'Log Removed',
@@ -232,7 +240,7 @@ export default function MaintenanceLogsPage() {
     );
   };
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

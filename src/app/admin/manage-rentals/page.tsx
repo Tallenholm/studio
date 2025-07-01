@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadFleetAssets, loadRentals, saveRentals } from '@/lib/localStorageService';
+import { getFleetAssets, getRentals, addRental, updateRental, deleteRental } from '@/lib/firestoreService';
 import type { FleetAsset, Rental } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -46,7 +46,7 @@ const rentalSchema = z.object({
 export default function ManageRentalsPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [rentals, setRentals] = useState<Rental[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRental, setEditingRental] = useState<Rental | null>(null);
   const { toast } = useToast();
@@ -59,16 +59,24 @@ export default function ManageRentalsPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setAssets(loadFleetAssets());
-    setRentals(loadRentals());
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveRentals(rentals);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [assetsData, rentalsData] = await Promise.all([
+                getFleetAssets(),
+                getRentals()
+            ]);
+            setAssets(assetsData);
+            setRentals(rentalsData);
+        } catch (error) {
+            console.error("Error fetching rental data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load rental data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [rentals, isMounted]);
+    fetchData();
+  }, [toast]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -90,7 +98,7 @@ export default function ManageRentalsPage() {
     setIsDialogOpen(true);
   };
 
-  function onSubmit(values: z.infer<typeof rentalSchema>) {
+  async function onSubmit(values: z.infer<typeof rentalSchema>) {
     const asset = assets.find(a => a.id === values.assetId);
     if (!asset) {
       toast({ variant: 'destructive', title: 'Error', description: 'Selected asset not found.' });
@@ -106,22 +114,23 @@ export default function ManageRentalsPage() {
     
     if (editingRental) {
         const updatedRental: Rental = { ...editingRental, ...rentalData };
+        await updateRental(editingRental.id, rentalData);
         setRentals(prev => prev.map(r => r.id === editingRental.id ? updatedRental : r));
         toast({ title: 'Rental Updated', description: `Rental for ${asset.name} has been updated.` });
     } else {
-        const newRental: Rental = {
-            id: `rental-${Date.now()}`,
-            ...rentalData,
-        };
-      setRentals(prev => [...prev, newRental]);
-      toast({ title: 'Rental Created', description: `Rental for ${asset.name} has been created.` });
+        const newRentalData: Omit<Rental, 'id'> = rentalData;
+        const newId = await addRental(newRentalData);
+        const newRental = { id: newId, ...newRentalData };
+        setRentals(prev => [...prev, newRental]);
+        toast({ title: 'Rental Created', description: `Rental for ${asset.name} has been created.` });
     }
     
     handleDialogOpenChange(false);
   }
 
-  function removeRental(rentalId: string) {
+  async function removeRental(rentalId: string) {
     const rentalToRemove = rentals.find(r => r.id === rentalId);
+    await deleteRental(rentalId);
     setRentals(prev => prev.filter(r => r.id !== rentalId));
     toast({
       title: 'Rental Removed',
@@ -206,7 +215,7 @@ export default function ManageRentalsPage() {
     </div>
   );
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

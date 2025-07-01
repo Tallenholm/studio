@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadUsers, loadTasks, saveTasks } from '@/lib/localStorageService';
+import { getUsers, getTasks, addTask, deleteTask } from '@/lib/firestoreService';
 import type { User, Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,7 +56,7 @@ const taskSchema = z.object({
 export default function ManageTasksPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [tasks, setTasks] = useState<Task[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
   const { user: adminUser } = useAuth();
@@ -71,18 +71,27 @@ export default function ManageTasksPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setUsers(loadUsers());
-    setTasks(loadTasks().sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
-  }, []);
-
-  useEffect(() => {
-    if (isMounted) {
-      saveTasks(tasks);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [usersData, tasksData] = await Promise.all([
+                getUsers(),
+                getTasks(),
+            ]);
+            setUsers(usersData);
+            setTasks(tasksData.sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+        } catch (error) {
+            console.error("Failed to fetch data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load task data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
-  }, [tasks, isMounted]);
+    fetchData();
+  }, [toast]);
 
-  function onSubmit(values: z.infer<typeof taskSchema>) {
+
+  async function onSubmit(values: z.infer<typeof taskSchema>) {
     if (!adminUser) {
         toast({ variant: 'destructive', title: 'Error', description: 'Admin not logged in.'});
         return;
@@ -93,24 +102,28 @@ export default function ManageTasksPage() {
         return;
     }
 
-    const newTask: Task = {
-      id: `task-${Date.now()}`,
+    const newTaskData: Omit<Task, 'id'> = {
       assignedToEmployeeId: employee.id,
       assignedToEmployeeName: employee.name,
       createdByAdminName: adminUser.name,
       dateAssigned: new Date().toISOString(),
       dateCompleted: null,
       status: 'pending',
-      ...values,
+      title: values.title,
+      description: values.description,
+      requiresPhoto: values.requiresPhoto,
     };
-    setTasks(prev => [newTask, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+    
+    const newId = await addTask(newTaskData);
+    setTasks(prev => [{id: newId, ...newTaskData}, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
     toast({ title: 'Task Assigned', description: `Task "${values.title}" has been assigned to ${employee.name}.` });
     setIsDialogOpen(false);
     form.reset({ title: '', description: '', requiresPhoto: false, assignedToEmployeeId: undefined });
   }
 
-  function removeTask(taskId: string) {
+  async function removeTask(taskId: string) {
     const taskToRemove = tasks.find(v => v.id === taskId);
+    await deleteTask(taskId);
     setTasks(prev => prev.filter(v => v.id !== taskId));
     toast({
       title: 'Task Removed',
@@ -127,7 +140,7 @@ export default function ManageTasksPage() {
     }
 }
   
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -164,11 +177,11 @@ export default function ManageTasksPage() {
                   <div className="mt-4 border-t pt-3">
                       <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
                       {task.completionNotes && <p className="text-sm mt-1 bg-background/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
-                      {task.completionPhotoUri && (
+                      {task.completionPhotoUrl && (
                           <div className="mt-2">
-                               <Link href={task.completionPhotoUri} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-32 rounded-md overflow-hidden border">
+                               <Link href={task.completionPhotoUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-32 rounded-md overflow-hidden border">
                                   <Image
-                                      src={task.completionPhotoUri}
+                                      src={task.completionPhotoUrl}
                                       alt={`Verification for ${task.title}`}
                                       fill
                                       className="object-cover object-top transition-transform group-hover:scale-105"

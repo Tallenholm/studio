@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { loadWorkOrders, saveWorkOrders, loadMaintenanceLogs, saveMaintenanceLogs } from '@/lib/localStorageService';
+import { getWorkOrders, updateWorkOrder, addMaintenanceLog } from '@/lib/firestoreService';
 import type { WorkOrder, MaintenanceLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -39,7 +39,7 @@ const workOrderSchema = z.object({
 
 export default function ManageWorkOrdersPage() {
   const [workOrders, setWorkOrders] = useState<WorkOrder[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+  const [isLoading, setIsLoading] = useState(true);
   const [editingOrder, setEditingOrder] = useState<WorkOrder | null>(null);
   const { toast } = useToast();
 
@@ -48,9 +48,20 @@ export default function ManageWorkOrdersPage() {
   });
 
   useEffect(() => {
-    setIsMounted(true);
-    setWorkOrders(loadWorkOrders().sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
-  }, []);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const loadedOrders = await getWorkOrders();
+            setWorkOrders(loadedOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
+        } catch (error) {
+            console.error("Failed to fetch work orders:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load work orders.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [toast]);
 
   const handleEditClick = (order: WorkOrder) => {
     setEditingOrder(order);
@@ -67,7 +78,7 @@ export default function ManageWorkOrdersPage() {
     form.reset();
   };
 
-  function onSubmit(values: z.infer<typeof workOrderSchema>) {
+  async function onSubmit(values: z.infer<typeof workOrderSchema>) {
     if (!editingOrder) return;
 
     const wasJustCompleted = values.status === 'completed' && editingOrder.status !== 'completed';
@@ -78,32 +89,25 @@ export default function ManageWorkOrdersPage() {
       dateCompleted: wasJustCompleted ? new Date().toISOString() : editingOrder.dateCompleted,
     };
     
-    const updatedOrders = workOrders.map(wo => wo.id === updatedOrder.id ? updatedOrder : wo);
-    setWorkOrders(updatedOrders);
-    saveWorkOrders(updatedOrders);
+    await updateWorkOrder(editingOrder.id, updatedOrder);
+    setWorkOrders(workOrders.map(wo => wo.id === updatedOrder.id ? updatedOrder : wo));
     
     let toastDescription = `Status for ${updatedOrder.assetName} has been updated.`;
 
     // Automatically create a maintenance log when the order is first completed
     if (wasJustCompleted) {
-        const maintenanceLogs = loadMaintenanceLogs();
-        const logAlreadyExists = maintenanceLogs.some(log => log.workOrderId === updatedOrder.id);
-        
-        if (!logAlreadyExists) {
-            const newLog: MaintenanceLog = {
-                id: `mlog-${Date.now()}`,
-                workOrderId: updatedOrder.id,
-                assetId: updatedOrder.assetId,
-                assetName: updatedOrder.assetName,
-                date: new Date().toISOString().split('T')[0],
-                serviceType: 'repair',
-                description: `Work order repair: ${updatedOrder.issueDescription}\nNotes: ${values.mechanicNotes || 'N/A'}`,
-                cost: values.cost,
-                mechanic: values.mechanic,
-            };
-            saveMaintenanceLogs([...maintenanceLogs, newLog]);
-            toastDescription += ' A maintenance log was also created.';
-        }
+        const newLog: Omit<MaintenanceLog, 'id'> = {
+            workOrderId: updatedOrder.id,
+            assetId: updatedOrder.assetId,
+            assetName: updatedOrder.assetName,
+            date: new Date().toISOString().split('T')[0],
+            serviceType: 'repair',
+            description: `Work order repair: ${updatedOrder.issueDescription}\nNotes: ${values.mechanicNotes || 'N/A'}`,
+            cost: values.cost,
+            mechanic: values.mechanic,
+        };
+        await addMaintenanceLog(newLog);
+        toastDescription += ' A maintenance log was also created.';
     }
     
     toast({ title: 'Work Order Updated', description: toastDescription });
@@ -187,7 +191,7 @@ export default function ManageWorkOrdersPage() {
     </Card>
   );
 
-  if (!isMounted) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
