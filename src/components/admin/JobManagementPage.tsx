@@ -48,6 +48,9 @@ const jobSchema = z.object({
   assignedTrailerIds: z.array(z.string()).optional(),
   assignedHeavyEquipmentIds: z.array(z.string()).optional(),
   // Snow Removal Specific
+  openingTime: z.string().optional(),
+  closingTime: z.string().optional(),
+  equipmentNeeds: z.string().optional(),
   snowServices: z.object({
     plowing: z.boolean().default(false),
     salting: z.boolean().default(false),
@@ -169,6 +172,9 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
         from: new Date(job.startDate),
         to: new Date(job.endDate),
       },
+      openingTime: job.openingTime,
+      closingTime: job.closingTime,
+      equipmentNeeds: job.equipmentNeeds,
       assignedEmployeeIds: job.assignedEmployeeIds || [],
       assignedTruckIds: job.assignedTruckIds || [],
       assignedTrailerIds: job.assignedTrailerIds || [],
@@ -539,13 +545,20 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                 ) : (
                                     <>
                                         <Separator />
-                                        <h3 className="text-lg font-medium">Services & Assignments</h3>
+                                        <h3 className="text-lg font-medium">Services, Hours, & Assignments</h3>
                                          <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
                                             <h4 className="font-semibold">Services Provided</h4>
                                             <div className="flex items-center space-x-6">
                                                 <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
                                                 <FormField control={form.control} name="snowServices.salting" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Salting</FormLabel></FormItem>)}/>
                                                 <FormField control={form.control} name="snowServices.sidewalks" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Sidewalks</FormLabel></FormItem>)}/>
+                                            </div>
+                                            <Separator />
+                                            <h4 className="font-semibold">Business Hours & Special Equipment</h4>
+                                            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                <FormField control={form.control} name="openingTime" render={({ field }) => ( <FormItem> <FormLabel>Opening Time</FormLabel> <FormControl><Input type="time" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                                                <FormField control={form.control} name="closingTime" render={({ field }) => ( <FormItem> <FormLabel>Closing Time</FormLabel> <FormControl><Input type="time" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                                                <FormField control={form.control} name="equipmentNeeds" render={({ field }) => ( <FormItem> <FormLabel>Specific Equipment</FormLabel> <FormControl><Input placeholder="e.g., Skid steer" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                                             </div>
                                             <Separator />
                                             <h4 className="font-semibold">Assign Plowing Crew & Fleet</h4>

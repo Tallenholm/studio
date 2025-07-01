@@ -11,5 +11,4 @@ import '@/ai/flows/extract-receipt-data.ts';
 import '@/ai/flows/summarize-document.ts';
 import '@/ai/flows/generate-asset-health-summary.ts';
 import '@/ai/flows/get-maintenance-schedule.ts';
-import '@/ai/flows/optimize-route-flow.ts';
-
+import '@/ai/flows/optimize-snow-route-flow.ts';

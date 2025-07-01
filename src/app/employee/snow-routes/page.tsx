@@ -11,14 +11,15 @@ import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/typ
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon, Printer, History, PlusCircle, Camera, FileUp, Eye } from 'lucide-react';
+import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon, Printer, History, PlusCircle, Camera, FileUp, Eye, Brain } from 'lucide-react';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { optimizeRoute } from '@/ai/flows/optimize-route-flow';
+import { optimizeSnowRoute } from '@/ai/flows/optimize-snow-route-flow';
+import type { OptimizeSnowRouteOutput } from '@/ai/flows/optimize-snow-route-flow';
 import { arrayUnion, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 
@@ -43,6 +44,7 @@ export default function SnowRoutesPage() {
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
   const [optimizingRouteId, setOptimizingRouteId] = useState<string | null>(null);
+  const [optimizedRoutePlan, setOptimizedRoutePlan] = useState<OptimizeSnowRouteOutput | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -178,38 +180,32 @@ export default function SnowRoutesPage() {
     return logs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
   }
   
-  const handleViewOptimizedRoute = async (route: SnowRoute) => {
+  const handleOptimizeRoute = async (route: SnowRoute) => {
     setOptimizingRouteId(route.id);
     const routeJobs = (route.assignedJobIds || [])
       .map(id => jobs.find(j => j.id === id))
       .filter((j): j is Job => !!j);
       
-    if (routeJobs.length === 0) {
-        toast({variant: 'destructive', title: 'No Jobs', description: 'This route has no jobs assigned to it.'});
+    if (routeJobs.length < 2) {
+        toast({variant: 'destructive', title: 'Not Enough Jobs', description: 'At least two jobs are required to optimize a route.'});
         setOptimizingRouteId(null);
         return;
     }
-
-    const addresses = routeJobs.map(j => j.address);
+    
+    const flowInput = {
+        jobs: routeJobs.map(j => ({
+            id: j.id,
+            name: j.name,
+            address: j.address,
+            openingTime: j.openingTime,
+            closingTime: j.closingTime,
+            equipmentNeeds: j.equipmentNeeds
+        }))
+    };
 
     try {
-        const { optimizedAddresses } = await optimizeRoute({ addresses });
-        
-        const encodedAddresses = optimizedAddresses.map(addr => encodeURIComponent(addr));
-
-        if (encodedAddresses.length === 1) {
-            window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddresses[0]}`, '_blank');
-            setOptimizingRouteId(null);
-            return;
-        }
-        
-        const origin = encodedAddresses[0];
-        const destination = encodedAddresses[encodedAddresses.length - 1];
-        const waypoints = encodedAddresses.slice(1, -1).join('|');
-
-        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
-        window.open(url, '_blank');
-
+        const plan = await optimizeSnowRoute(flowInput);
+        setOptimizedRoutePlan(plan);
     } catch (error) {
         console.error("Route optimization error:", error);
         toast({ variant: 'destructive', title: 'Optimization Failed', description: 'Could not generate an optimized route at this time.' });
@@ -217,6 +213,23 @@ export default function SnowRoutesPage() {
         setOptimizingRouteId(null);
     }
   };
+
+  const openRouteInMaps = () => {
+    if (!optimizedRoutePlan || optimizedRoutePlan.optimizedJobs.length === 0) return;
+
+    const addresses = optimizedRoutePlan.optimizedJobs.map(j => encodeURIComponent(j.address));
+    
+    if (addresses.length === 1) {
+        window.open(`https://www.google.com/maps/dir/?api=1&destination=${addresses[0]}`, '_blank');
+        return;
+    }
+    
+    const origin = addresses[0];
+    const destination = addresses[addresses.length - 1];
+    const waypoints = addresses.slice(1, -1).join('|');
+    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+    window.open(url, '_blank');
+  }
 
   if (isLoading || !user) {
     return (
@@ -266,11 +279,11 @@ export default function SnowRoutesPage() {
                             <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
                             <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
                         </div>
-                         <Button onClick={() => handleViewOptimizedRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
+                         <Button onClick={() => handleOptimizeRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
                             {optimizingRouteId === route.id ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
-                                <MapPin className="mr-2 h-4 w-4" />
+                                <Brain className="mr-2 h-4 w-4" />
                             )}
                             {optimizingRouteId === route.id ? 'Optimizing...' : 'Optimize Route'}
                         </Button>
@@ -434,6 +447,37 @@ export default function SnowRoutesPage() {
                     </div>
                 ))}
             </div>
+        </DialogContent>
+    </Dialog>
+
+    {/* Optimized Route Plan Dialog */}
+    <Dialog open={!!optimizedRoutePlan} onOpenChange={() => setOptimizedRoutePlan(null)}>
+        <DialogContent className="max-w-xl">
+            <DialogHeader>
+                <DialogTitle className="flex items-center gap-2">
+                    <Brain className="h-6 w-6 text-primary" />
+                    AI-Optimized Route Plan
+                </DialogTitle>
+                <DialogDescription className="pt-2 text-base">
+                    <strong>AI Rationale:</strong> {optimizedRoutePlan?.rationale}
+                </DialogDescription>
+            </DialogHeader>
+            <div className="max-h-[50vh] overflow-y-auto space-y-2 pr-2">
+                {optimizedRoutePlan?.optimizedJobs.map((job, index) => (
+                    <div key={job.id} className="p-3 border rounded-md flex items-center gap-4 bg-muted/50">
+                        <span className="text-xl font-bold text-primary w-6 text-center">{index + 1}</span>
+                        <div>
+                            <p className="font-semibold">{job.name}</p>
+                            <p className="text-sm text-muted-foreground">{job.address}</p>
+                        </div>
+                    </div>
+                ))}
+            </div>
+            <DialogFooter>
+                <Button onClick={openRouteInMaps} className="w-full">
+                    <MapPin className="mr-2 h-4 w-4" /> Open in Google Maps
+                </Button>
+            </DialogFooter>
         </DialogContent>
     </Dialog>
     </>

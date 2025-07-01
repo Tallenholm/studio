@@ -210,6 +210,9 @@ export interface Job {
   assignedTrailerIds?: string[];
   assignedHeavyEquipmentIds?: string[];
   // Snow Service Details
+  openingTime?: string; // e.g., "08:00"
+  closingTime?: string; // e.g., "17:00"
+  equipmentNeeds?: string; // e.g., "Skid Steer with pusher box"
   assignedSidewalkCrewIds?: string[];
   snowServices?: {
     plowing?: boolean;
