@@ -6,7 +6,8 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
-import { loadJobs, saveJobs, loadSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
+import { getJobs, updateJob } from '@/lib/firestoreService';
+import { loadSnowRoutes, loadUsers, loadFleetAssets } from '@/lib/localStorageService';
 import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -18,6 +19,8 @@ import { Input } from '@/components/ui/input';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
+import { optimizeRoute } from '@/ai/flows/optimize-route-flow';
+import { arrayUnion } from 'firebase/firestore';
 
 const logSchema = z.object({
   photoDataUri: z.string().optional(),
@@ -39,6 +42,7 @@ export default function SnowRoutesPage() {
   const [historyInfo, setHistoryInfo] = useState<{ job: Job; service: ServiceType } | null>(null);
   const [isCameraOpen, setIsCameraOpen] = useState(false);
   const [stream, setStream] = useState<MediaStream | null>(null);
+  const [optimizingRouteId, setOptimizingRouteId] = useState<string | null>(null);
   
   const videoRef = useRef<HTMLVideoElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
@@ -52,10 +56,18 @@ export default function SnowRoutesPage() {
   useEffect(() => {
     if (user) {
       setIsMounted(true);
-      setJobs(loadJobs());
-      setRoutes(loadSnowRoutes());
-      setUsers(loadUsers());
-      setFleetAssets(loadFleetAssets());
+      const fetchData = async () => {
+          const [loadedJobs, loadedUsers, loadedAssets] = await Promise.all([
+              getJobs(),
+              loadUsers(),
+              loadFleetAssets()
+          ]);
+          setJobs(loadedJobs.filter(j => j.jobType === 'snow_removal'));
+          setUsers(loadedUsers);
+          setFleetAssets(loadedAssets);
+          setRoutes(loadSnowRoutes());
+      };
+      fetchData();
     }
   }, [user]);
 
@@ -118,7 +130,7 @@ export default function SnowRoutesPage() {
   };
 
 
-  const onLogSubmit = (values: z.infer<typeof logSchema>) => {
+  const onLogSubmit = async (values: z.infer<typeof logSchema>) => {
     if (!user || !logServiceInfo) return;
 
     const newLog: SnowServiceLog = {
@@ -128,6 +140,14 @@ export default function SnowRoutesPage() {
       photoDataUri: values.photoDataUri,
     };
     
+    // Path to the specific log array in Firestore
+    const logPath = `snowLog.${logServiceInfo.service}`;
+
+    await updateJob(logServiceInfo.job.id, {
+        [logPath]: arrayUnion(newLog)
+    });
+    
+    // Update local state to reflect the change immediately
     const updatedJobs = jobs.map(j => {
       if (j.id === logServiceInfo.job.id) {
         const updatedJob = { ...j };
@@ -139,9 +159,8 @@ export default function SnowRoutesPage() {
       }
       return j;
     });
-
     setJobs(updatedJobs);
-    saveJobs(updatedJobs);
+
     toast({ title: 'Service Logged', description: `${logServiceInfo.service} at ${logServiceInfo.job.clientName} has been recorded.` });
     setLogServiceInfo(null);
     form.reset();
@@ -153,28 +172,44 @@ export default function SnowRoutesPage() {
     return logs.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
   }
   
-  const generateOptimizedRouteUrl = (route: SnowRoute) => {
+  const handleViewOptimizedRoute = async (route: SnowRoute) => {
+    setOptimizingRouteId(route.id);
     const routeJobs = (route.assignedJobIds || [])
       .map(id => jobs.find(j => j.id === id))
       .filter((j): j is Job => !!j);
       
     if (routeJobs.length === 0) {
         toast({variant: 'destructive', title: 'No Jobs', description: 'This route has no jobs assigned to it.'});
+        setOptimizingRouteId(null);
         return;
     }
 
-    const addresses = routeJobs.map(j => encodeURIComponent(j.address));
-    if (addresses.length === 1) {
-        window.open(`https://www.google.com/maps/dir/?api=1&destination=${addresses[0]}`, '_blank');
-        return;
-    }
-    
-    const origin = addresses[0];
-    const destination = addresses[addresses.length - 1];
-    const waypoints = addresses.slice(1, -1).join('|');
+    const addresses = routeJobs.map(j => j.address);
 
-    const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
-    window.open(url, '_blank');
+    try {
+        const { optimizedAddresses } = await optimizeRoute({ addresses });
+        
+        const encodedAddresses = optimizedAddresses.map(addr => encodeURIComponent(addr));
+
+        if (encodedAddresses.length === 1) {
+            window.open(`https://www.google.com/maps/dir/?api=1&destination=${encodedAddresses[0]}`, '_blank');
+            setOptimizingRouteId(null);
+            return;
+        }
+        
+        const origin = encodedAddresses[0];
+        const destination = encodedAddresses[encodedAddresses.length - 1];
+        const waypoints = encodedAddresses.slice(1, -1).join('|');
+
+        const url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}&waypoints=${waypoints}&travelmode=driving`;
+        window.open(url, '_blank');
+
+    } catch (error) {
+        console.error("Route optimization error:", error);
+        toast({ variant: 'destructive', title: 'Optimization Failed', description: 'Could not generate an optimized route at this time.' });
+    } finally {
+        setOptimizingRouteId(null);
+    }
   };
 
   if (!isMounted || !user) {
@@ -225,8 +260,13 @@ export default function SnowRoutesPage() {
                             <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
                             <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
                         </div>
-                        <Button onClick={() => generateOptimizedRouteUrl(route)} className="print-hidden">
-                           <MapPin className="mr-2 h-4 w-4" /> Optimize Route
+                         <Button onClick={() => handleViewOptimizedRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
+                            {optimizingRouteId === route.id ? (
+                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                            ) : (
+                                <MapPin className="mr-2 h-4 w-4" />
+                            )}
+                            {optimizingRouteId === route.id ? 'Optimizing...' : 'Optimize Route'}
                         </Button>
                     </div>
                 </CardHeader>
