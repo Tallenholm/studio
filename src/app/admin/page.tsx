@@ -212,8 +212,8 @@ export default function FleetCheckDashboardPage() {
   }, [toast, searchParams]);
 
   const { eventDates, jobRanges } = useMemo(() => {
-    const eventDates = events.map(event => parseISO(event.date));
-    const jobRanges = jobs.map(job => ({
+    const eventDates = events.filter(event => event.date).map(event => parseISO(event.date));
+    const jobRanges = jobs.filter(job => job.startDate && job.endDate).map(job => ({
       from: parseISO(job.startDate),
       to: parseISO(job.endDate),
     }));
@@ -224,11 +224,11 @@ export default function FleetCheckDashboardPage() {
     if (!date) return [];
     
     const dayEvents = events
-      .filter(event => isSameDay(parseISO(event.date), date))
+      .filter(event => event.date && isSameDay(parseISO(event.date), date))
       .map(e => ({ ...e, itemType: 'event' as const }));
 
     const dayJobs = jobs
-      .filter(job => isWithinInterval(date, { start: parseISO(job.startDate), end: parseISO(job.endDate) }))
+      .filter(job => job.startDate && job.endDate && isWithinInterval(date, { start: parseISO(job.startDate), end: parseISO(job.endDate) }))
       .map(j => ({ ...j, itemType: 'job' as const }));
     
     const combined = [...dayJobs, ...dayEvents];

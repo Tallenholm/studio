@@ -93,12 +93,12 @@ export default function EmployeeHubPage() {
   }, [jobs, user]);
 
   const eventDates = useMemo(() => {
-    return events.map(event => parseISO(event.date));
+    return events.filter(event => event.date).map(event => parseISO(event.date));
   }, [events]);
 
   const selectedDayEvents = useMemo(() => {
     if (!date) return [];
-    return events.filter(event => isSameDay(parseISO(event.date), date));
+    return events.filter(event => event.date && isSameDay(parseISO(event.date), date));
   }, [date, events]);
   
   const getEventTypeLabel = (type: CalendarEvent['type']) => {
