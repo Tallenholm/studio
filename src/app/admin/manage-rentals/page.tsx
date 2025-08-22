@@ -6,7 +6,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getFleetAssets, getRentals, addRental, updateRental, deleteRental } from '@/lib/firestoreService';
-import type { FleetAsset, Rental } from '@/lib/types';
+import type { FleetAsset, Rental, JobStatus } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
@@ -150,7 +150,7 @@ export default function ManageRentalsPage() {
   const activeRentals = rentalsWithStatus.filter(r => r.status === 'active');
   const completedRentals = rentalsWithStatus.filter(r => r.status === 'completed');
   
-  const getStatusBadgeVariant = (status: 'upcoming' | 'active' | 'completed') => {
+  const getStatusBadgeVariant = (status: JobStatus) => {
     switch (status) {
       case 'active': return 'default';
       case 'completed': return 'secondary';
@@ -159,7 +159,7 @@ export default function ManageRentalsPage() {
     }
   };
 
-  const renderRentalsTable = (rentalList: (Rental & { status: 'upcoming' | 'active' | 'completed'})[]) => (
+  const renderRentalsTable = (rentalList: (Rental & { status: JobStatus})[]) => (
     <div className="border rounded-md">
         <Table>
             <TableHeader>

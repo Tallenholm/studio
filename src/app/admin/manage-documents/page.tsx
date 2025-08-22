@@ -95,14 +95,14 @@ export default function ManageDocumentsPage() {
   useEffect(() => {
     async function fetchData() {
         setIsLoading(true);
-        const [docs, assets, users] = await Promise.all([
+        const [docs, assets, usersData] = await Promise.all([
             getDocuments(),
             getFleetAssets(),
             getUsers(),
         ]);
         setDocuments(docs);
         setFleetAssets(assets);
-        setUsers(users);
+        setUsers(usersData);
         setIsLoading(false);
     }
     fetchData();
