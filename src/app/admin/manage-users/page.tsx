@@ -86,7 +86,7 @@ export default function UserManagementPage() {
                                 </TableHeader>
                                 <TableBody>
                                     {users.map(user => (
-                                    <TableRow key={user.uid}>
+                                    <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                                         <TableCell><Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge></TableCell>
