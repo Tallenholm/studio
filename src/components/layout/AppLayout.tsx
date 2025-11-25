@@ -175,7 +175,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-                        <Image src="/logo.png" alt="Logan's Excavating Logo" width={180} height={40} className="w-48 h-auto" />
+                        <span className="font-headline text-2xl font-bold text-primary">Logan's Excavating</span>
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>
@@ -673,3 +673,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     return <FullScreenLoader />;
 }
+
+    

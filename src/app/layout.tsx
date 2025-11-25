@@ -8,11 +8,6 @@ import { AuthProvider } from '@/contexts/AuthContext';
 export const metadata: Metadata = {
   title: "Logan's Excavating",
   description: "Operational management for Logan's Excavating and Snow Removal.",
-  icons: {
-    icon: '/favicon.ico',
-    shortcut: '/favicon-16x16.png',
-    apple: '/apple-touch-icon.png',
-  }
 };
 
 export default function RootLayout({
@@ -38,3 +33,5 @@ export default function RootLayout({
     </html>
   );
 }
+
+    

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -59,8 +60,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
         <CardHeader className="text-center">
-          <Image src="/logo.png" alt="Logan's Excavating Logo" width={200} height={50} className="w-auto h-12 mx-auto mb-4" />
-          <CardTitle className="text-3xl font-headline">Operations Hub</CardTitle>
+          <h1 className="text-3xl font-headline font-bold text-primary">Logan's Excavating</h1>
           <CardDescription>Please sign in to access the portal</CardDescription>
         </CardHeader>
         <CardContent>
@@ -139,3 +139,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

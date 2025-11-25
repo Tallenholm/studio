@@ -274,7 +274,6 @@ export default function FleetCheckDashboardPage() {
     />
     <div className="container mx-auto py-8">
       <div id="tour-step-admin-welcome" className="mb-12 text-center">
-        <Image src="/logo.png" alt="Logan's Excavating Logo" width={200} height={50} className="w-auto h-12 mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Welcome, {user?.name}. Oversee operations, assets, and personnel.
@@ -439,3 +438,5 @@ export default function FleetCheckDashboardPage() {
     </>
   );
 }
+
+    
