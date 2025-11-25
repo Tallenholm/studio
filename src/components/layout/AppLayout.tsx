@@ -4,6 +4,7 @@
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
+import Image from 'next/image';
 import {
   SidebarProvider,
   Sidebar,
@@ -174,8 +175,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-                        <Truck className="h-8 w-8 text-primary" />
-                        <h1 className="text-2xl font-headline font-bold leading-tight">Logan's Excavating</h1>
+                        <Image src="/logo.png" alt="Logan's Excavating Logo" width={180} height={40} className="w-48 h-auto" />
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>

@@ -19,6 +19,7 @@ import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import WeatherForecast from '@/components/admin/WeatherForecast';
+import Image from 'next/image';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -273,7 +274,7 @@ export default function FleetCheckDashboardPage() {
     />
     <div className="container mx-auto py-8">
       <div id="tour-step-admin-welcome" className="mb-12 text-center">
-        <Truck className="h-16 w-16 text-primary mx-auto mb-4" />
+        <Image src="/logo.png" alt="Logan's Excavating Logo" width={200} height={50} className="w-auto h-12 mx-auto mb-4" />
         <h1 className="text-4xl font-headline font-bold">Admin Dashboard</h1>
         <p className="text-lg text-muted-foreground mt-2">
           Welcome, {user?.name}. Oversee operations, assets, and personnel.
