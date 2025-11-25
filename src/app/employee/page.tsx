@@ -189,7 +189,7 @@ export default function EmployeeHubPage() {
 
       <WeatherForecast tourId="tour-step-weather-forecast-employee" />
 
-       <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-6 mb-12">
+       <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-12">
             <Link href="/employee/fleet-check" passHref>
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <Truck className="h-12 w-12 text-primary mx-auto mb-2" />
@@ -234,7 +234,15 @@ export default function EmployeeHubPage() {
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
                   <BookOpen className="h-12 w-12 text-primary mx-auto mb-2" />
                   <CardTitle className="text-xl font-headline">
-                    Policies & Documents
+                    Company Docs
+                  </CardTitle>
+                </Card>
+            </Link>
+            <Link href="/employee/personal-documents" passHref>
+                <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300 h-full flex flex-col items-center justify-center text-center p-6 cursor-pointer">
+                  <FileBadge className="h-12 w-12 text-primary mx-auto mb-2" />
+                  <CardTitle className="text-xl font-headline">
+                    Personal Docs
                   </CardTitle>
                 </Card>
             </Link>
