@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,6 +6,7 @@ import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDri
 import { format, parseISO, isSameDay } from 'date-fns';
 import { loadSystemSettings } from '@/lib/settingsService';
 
+// Interfaces for the new ECMWF API data structure
 interface DailyData {
     time: string[];
     weather_code: number[];
@@ -17,10 +17,19 @@ interface DailyData {
     precipitation_probability_max: (number | null)[];
 }
 
+interface HourlyData {
+    time: string[];
+    temperature_2m: number[];
+    precipitation_probability: number[];
+    weather_code: number[];
+    wind_speed_10m: number[];
+}
+
 interface WeatherData {
     latitude: number;
     longitude: number;
     daily: DailyData;
+    hourly: HourlyData;
 }
 
 interface ForecastDay {
@@ -33,19 +42,28 @@ interface ForecastDay {
     precipitation: number | null;
 }
 
-const getWeatherIcon = (code: number) => {
+interface HourlyForecast {
+    time: string;
+    temp: number;
+    precipitation: number;
+    weatherCode: number;
+    windSpeed: number;
+}
+
+const getWeatherIcon = (code: number, size: 'large' | 'small' = 'large') => {
+    const className = size === 'large' ? "h-10 w-10" : "h-6 w-6";
     switch (code) {
-        case 0: return <Sun className="h-10 w-10 text-yellow-400" />;
-        case 1: case 2: return <Cloud className="h-10 w-10 text-gray-400" />;
-        case 3: return <Cloud className="h-10 w-10 text-gray-500" />;
-        case 45: case 48: return <Cloud className="h-10 w-10 text-gray-500" />;
-        case 51: case 53: case 55: return <CloudDrizzle className="h-10 w-10 text-blue-400" />;
-        case 61: case 63: case 65: return <CloudRain className="h-10 w-10 text-blue-500" />;
-        case 71: case 73: case 75: return <Snowflake className="h-10 w-10 text-blue-300" />;
-        case 80: case 81: case 82: return <CloudRain className="h-10 w-10 text-blue-500" />;
-        case 85: case 86: return <Snowflake className="h-10 w-10 text-blue-300" />;
-        case 95: case 96: case 99: return <CloudLightning className="h-10 w-10 text-yellow-500" />;
-        default: return <Thermometer className="h-10 w-10 text-gray-400" />;
+        case 0: return <Sun className={`${className} text-yellow-400`} />;
+        case 1: case 2: return <Cloud className={`${className} text-gray-400`} />;
+        case 3: return <Cloud className={`${className} text-gray-500`} />;
+        case 45: case 48: return <Cloud className={`${className} text-gray-500`} />;
+        case 51: case 53: case 55: return <CloudDrizzle className={`${className} text-blue-400`} />;
+        case 61: case 63: case 65: return <CloudRain className={`${className} text-blue-500`} />;
+        case 71: case 73: case 75: return <Snowflake className={`${className} text-blue-300`} />;
+        case 80: case 81: case 82: return <CloudRain className={`${className} text-blue-500`} />;
+        case 85: case 86: return <Snowflake className={`${className} text-blue-300`} />;
+        case 95: case 96: case 99: return <CloudLightning className={`${className} text-yellow-500`} />;
+        default: return <Thermometer className={`${className} text-gray-400`} />;
     }
 };
 
@@ -62,7 +80,8 @@ const weatherDescriptions: { [key: number]: string } = {
 
 
 export default function WeatherPage() {
-    const [forecast, setForecast] = useState<ForecastDay[] | null>(null);
+    const [dailyForecast, setDailyForecast] = useState<ForecastDay[] | null>(null);
+    const [hourlyForecast, setHourlyForecast] = useState<HourlyForecast[] | null>(null);
     const [location, setLocation] = useState({ lat: 41.12, lon: -87.86 });
     const [locationName, setLocationName] = useState('your location');
     const [loading, setLoading] = useState(true);
@@ -76,14 +95,23 @@ export default function WeatherPage() {
     useEffect(() => {
         const fetchWeather = async () => {
             setLoading(true);
+            setError(null);
+            
+            const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
+            if (!apiKey) {
+                setError("ECMWF API key is not configured in the .env file.");
+                setLoading(false);
+                return;
+            }
+
             try {
-                const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
+                const url = `https://api.open-meteo.com/v1/ecmwf?latitude=${location.lat}&longitude=${location.lon}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&apikey=${apiKey}`;
                 const response = await fetch(url);
                 if (!response.ok) throw new Error(`Failed to fetch weather data (status: ${response.status})`);
                 
                 const data: WeatherData = await response.json();
                 
-                const processedForecast = data.daily.time.map((t, i) => ({
+                const processedDailyForecast = data.daily.time.map((t, i) => ({
                     time: t,
                     weatherCode: data.daily.weather_code[i],
                     tempMax: data.daily.temperature_2m_max[i],
@@ -93,7 +121,17 @@ export default function WeatherPage() {
                     precipitation: data.daily.precipitation_probability_max[i],
                 }));
                 
-                setForecast(processedForecast);
+                const now = new Date();
+                const processedHourlyForecast = data.hourly.time.map((t, i) => ({
+                    time: t,
+                    temp: data.hourly.temperature_2m[i],
+                    precipitation: data.hourly.precipitation_probability[i],
+                    weatherCode: data.hourly.weather_code[i],
+                    windSpeed: data.hourly.wind_speed_10m[i],
+                })).filter(h => parseISO(h.time) >= now).slice(0, 24); // Get next 24 hours
+
+                setDailyForecast(processedDailyForecast);
+                setHourlyForecast(processedHourlyForecast);
                 setLocationName(`Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}`);
                 setError(null);
             } catch (err: any) {
@@ -107,58 +145,18 @@ export default function WeatherPage() {
     }, [location]);
 
     const radarLayer = useMemo(() => {
-        if (!forecast || forecast.length === 0) {
-            return 'snow'; // Default if no data
+        if (!dailyForecast || dailyForecast.length === 0) {
+            return 'snow';
         }
-        const todaysWeatherCode = forecast[0].weatherCode;
-        // Prioritize snow layers
+        const todaysWeatherCode = dailyForecast[0].weatherCode;
         if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
             return 'snow';
         }
-        // Then rain/storm layers
         if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
             return 'radar';
         }
-        // Default to wind if nothing else
         return 'wind';
-    }, [forecast]);
-
-
-    const renderForecast = () => {
-        if (loading) {
-            return (
-                <div className="flex items-center justify-center col-span-full h-64">
-                    <Loader2 className="h-12 w-12 animate-spin text-primary" />
-                </div>
-            );
-        }
-        if (error) {
-            return (
-                <div className="flex items-center justify-center col-span-full h-64 text-destructive gap-4">
-                    <AlertTriangle className="h-12 w-12" />
-                    <span>{error}</span>
-                </div>
-            );
-        }
-        if (!forecast) return null;
-
-        return forecast.map(day => (
-            <Card key={day.time} className="flex flex-col items-center justify-between p-4 text-center bg-muted/30">
-                <p className="font-bold text-lg">{isSameDay(parseISO(day.time), new Date()) ? 'Today' : format(parseISO(day.time), 'EEE')}</p>
-                <p className="text-sm text-muted-foreground">{format(parseISO(day.time), 'MMM d')}</p>
-                <div className="my-3">{getWeatherIcon(day.weatherCode)}</div>
-                <p className="font-bold text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
-                <p className="text-sm text-muted-foreground capitalize h-10 flex items-center">{weatherDescriptions[day.weatherCode]}</p>
-                <div className="text-xs text-muted-foreground mt-2 space-y-1 border-t pt-2 w-full">
-                    {day.precipitation !== null && (
-                        <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}%</p>
-                    )}
-                    <p className="flex items-center justify-center gap-1.5"><Sunrise className="h-4 w-4 text-yellow-400" /> {format(parseISO(day.sunrise), 'p')}</p>
-                    <p className="flex items-center justify-center gap-1.5"><Sunset className="h-4 w-4 text-orange-400" /> {format(parseISO(day.sunset), 'p')}</p>
-                </div>
-            </Card>
-        ));
-    };
+    }, [dailyForecast]);
 
     return (
         <div className="container mx-auto py-8">
@@ -186,15 +184,84 @@ export default function WeatherPage() {
                     </div>
                 </CardContent>
             </Card>
+
+            <Card className="mb-8">
+                 <CardHeader>
+                    <CardTitle>Hourly Forecast (Next 24 Hours)</CardTitle>
+                </CardHeader>
+                <CardContent>
+                   {loading && (
+                        <div className="flex items-center justify-center h-40">
+                            <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                        </div>
+                   )}
+                   {error && !loading && (
+                       <div className="flex items-center justify-center h-40 text-destructive gap-4">
+                            <AlertTriangle className="h-8 w-8" />
+                            <span>{error}</span>
+                        </div>
+                   )}
+                   {hourlyForecast && (
+                       <div className="w-full overflow-x-auto">
+                           <div className="flex gap-4 pb-4">
+                                {hourlyForecast.map(hour => (
+                                    <div key={hour.time} className="flex flex-col items-center justify-between p-3 text-center bg-muted/30 rounded-lg shrink-0 w-28">
+                                        <p className="font-bold">{format(parseISO(hour.time), 'ha')}</p>
+                                        <div className="my-2">{getWeatherIcon(hour.weatherCode, 'small')}</div>
+                                        <p className="font-bold text-lg">{Math.round(hour.temp)}°</p>
+                                        <p className="text-xs text-muted-foreground capitalize flex-grow">{weatherDescriptions[hour.weatherCode]}</p>
+                                        <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border-t pt-1 w-full">
+                                            <p className="flex items-center justify-center gap-1"><Droplets className="h-3 w-3 text-blue-400" /> {hour.precipitation}%</p>
+                                            <p className="flex items-center justify-center gap-1"><Wind className="h-3 w-3" /> {Math.round(hour.windSpeed)} mph</p>
+                                        </div>
+                                    </div>
+                                ))}
+                           </div>
+                       </div>
+                   )}
+                </CardContent>
+            </Card>
             
             <Card>
                  <CardHeader>
                     <CardTitle>7-Day Forecast</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
-                        {renderForecast()}
-                    </div>
+                    {loading && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                            {[...Array(7)].map((_, i) => (
+                                <Card key={i} className="flex flex-col items-center justify-center p-4 text-center bg-muted/30 h-64">
+                                     <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                                </Card>
+                            ))}
+                        </div>
+                    )}
+                    {error && !loading && (
+                         <div className="flex items-center justify-center h-64 text-destructive gap-4">
+                            <AlertTriangle className="h-12 w-12" />
+                            <span>{error}</span>
+                        </div>
+                    )}
+                    {dailyForecast && (
+                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                            {dailyForecast.map(day => (
+                                <Card key={day.time} className="flex flex-col items-center justify-between p-4 text-center bg-muted/30">
+                                    <p className="font-bold text-lg">{isSameDay(parseISO(day.time), new Date()) ? 'Today' : format(parseISO(day.time), 'EEE')}</p>
+                                    <p className="text-sm text-muted-foreground">{format(parseISO(day.time), 'MMM d')}</p>
+                                    <div className="my-3">{getWeatherIcon(day.weatherCode, 'large')}</div>
+                                    <p className="font-bold text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
+                                    <p className="text-sm text-muted-foreground capitalize h-10 flex items-center">{weatherDescriptions[day.weatherCode]}</p>
+                                    <div className="text-xs text-muted-foreground mt-2 space-y-1 border-t pt-2 w-full">
+                                        {day.precipitation !== null && (
+                                            <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}%</p>
+                                        )}
+                                        <p className="flex items-center justify-center gap-1.5"><Sunrise className="h-4 w-4 text-yellow-400" /> {format(parseISO(day.sunrise), 'p')}</p>
+                                        <p className="flex items-center justify-center gap-1.5"><Sunset className="h-4 w-4 text-orange-400" /> {format(parseISO(day.sunset), 'p')}</p>
+                                    </div>
+                                </Card>
+                            ))}
+                        </div>
+                    )}
                 </CardContent>
             </Card>
         </div>

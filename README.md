@@ -27,6 +27,9 @@ The platform is divided into two main portals: an **Admin Portal** for managemen
 - **UI:** ShadCN UI, Tailwind CSS
 - **Backend & Database:** Firebase (Firestore, Authentication, Storage)
 - **Generative AI:** Google's AI Platform via Genkit
+- **Weather API:** ECMWF
+
+---
 
 ## 3. User Roles & Permissions
 
@@ -48,7 +51,9 @@ The central hub for managing all business operations.
 #### **Dashboard & Core Tools**
 - **AI Daily Briefing:** An intelligent summary of the day's most critical items, including failed inspections, pending requests, and scheduled jobs.
 - **Operations Calendar:** An interactive calendar showing all scheduled jobs, company events, and approved time off.
-- **Weather Forecast:** An hourly and 7-day weather forecast for the primary operational area, configurable in System Settings.
+
+#### **Weather Center**
+- A dedicated page featuring a live, multi-layer weather radar (rain, snow, wind) and detailed hourly and 7-day forecasts powered by the ECMWF API.
 
 #### **People & Communications**
 - **Manage Employees:** (Owner only) View all registered users and securely send password reset emails.
@@ -117,4 +122,3 @@ The application leverages Google's Generative AI (via Genkit) to provide intelli
 - **AI-Optimized Snow Routes:** (Employee) Intelligently sequences a list of snow removal jobs based on geographic proximity, business hours, and special equipment needs, providing an optimized route plan.
 - **Preventative Maintenance Scheduling:** (Admin) Suggests a standard maintenance schedule (e.g., oil changes, tire rotations) based on a vehicle's year, make, and model.
 - **AI Help Assistant:** A conversational agent trained on the application's FAQ data to provide instant, context-aware support to any user.
-
