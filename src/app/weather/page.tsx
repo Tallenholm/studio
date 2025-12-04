@@ -106,6 +106,24 @@ export default function WeatherPage() {
         fetchWeather();
     }, [location]);
 
+    const radarLayer = useMemo(() => {
+        if (!forecast || forecast.length === 0) {
+            return 'snow'; // Default if no data
+        }
+        const todaysWeatherCode = forecast[0].weatherCode;
+        // Prioritize snow layers
+        if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
+            return 'snow';
+        }
+        // Then rain/storm layers
+        if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
+            return 'radar';
+        }
+        // Default to wind if nothing else
+        return 'wind';
+    }, [forecast]);
+
+
     const renderForecast = () => {
         if (loading) {
             return (
@@ -161,7 +179,7 @@ export default function WeatherPage() {
                          <iframe
                             width="100%"
                             height="100%"
-                            src={`https://embed.windy.com/embed.html?type=map&location=coordinates&metricWind=mph&metricTemp=°F&radarRange=-1&lat=${location.lat}&lon=${location.lon}&zoom=7&layer=snow`}
+                            src={`https://embed.windy.com/embed.html?type=map&location=coordinates&metricWind=mph&metricTemp=°F&radarRange=-1&lat=${location.lat}&lon=${location.lon}&zoom=7&layer=${radarLayer}`}
                             frameBorder="0"
                             title="Live Weather Radar by Windy.com"
                         ></iframe>
