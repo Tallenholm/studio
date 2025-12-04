@@ -1,7 +1,7 @@
 
 'use server';
 
-import { loadSystemSettings } from './settingsService';
+import type { SystemSettings } from './settingsService';
 import { addNotification, getNotifications } from './firestoreService';
 import { parseISO, isWithinInterval, addHours, format } from 'date-fns';
 import type { NotificationMessage } from './types';
@@ -23,9 +23,7 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
     return response.json();
 };
 
-export const checkWeatherAndNotify = async () => {
-    const settings = loadSystemSettings();
-    
+export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'locationLat' | 'locationLon'>) => {
     try {
         const [existingNotifications, weatherData] = await Promise.all([
             getNotifications(),
@@ -74,4 +72,3 @@ export const checkWeatherAndNotify = async () => {
         console.error("Failed to check weather and send notifications:", error);
     }
 };
-

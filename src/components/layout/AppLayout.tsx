@@ -35,6 +35,7 @@ import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
 import { db } from '@/lib/firebase';
 import { checkWeatherAndNotify } from '@/lib/weatherService';
+import { loadSystemSettings } from '@/lib/settingsService';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -162,14 +163,17 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             };
             checkAndCreateNotifications();
             
+            const settings = loadSystemSettings();
+            const locationSettings = { locationLat: settings.locationLat, locationLon: settings.locationLon };
+
             // Set up recurring weather check
             const weatherInterval = setInterval(() => {
                 console.log('Checking weather for notifications...');
-                checkWeatherAndNotify();
+                checkWeatherAndNotify(locationSettings);
             }, 1000 * 60 * 30); // Check every 30 minutes
 
             // Initial check on load
-            checkWeatherAndNotify();
+            checkWeatherAndNotify(locationSettings);
             
             return () => clearInterval(weatherInterval);
         }
