@@ -75,12 +75,6 @@ export default function WeatherPage() {
 
     useEffect(() => {
         const fetchWeather = async () => {
-            const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
-            if (!apiKey) {
-                setError("Weather API key is not configured.");
-                setLoading(false);
-                return;
-            }
             setLoading(true);
             try {
                 const url = `https://api.open-meteo.com/v1/forecast?latitude=${location.lat}&longitude=${location.lon}&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
@@ -167,7 +161,7 @@ export default function WeatherPage() {
                          <iframe
                             width="100%"
                             height="100%"
-                            src={`https://embed.windy.com/embed.html?type=map&location=coordinates&metricWind=mph&metricTemp=°F&radarRange=-1&lat=${location.lat}&lon=${location.lon}&zoom=7`}
+                            src={`https://embed.windy.com/embed.html?type=map&location=coordinates&metricWind=mph&metricTemp=°F&radarRange=-1&lat=${location.lat}&lon=${location.lon}&zoom=7&layer=snow`}
                             frameBorder="0"
                             title="Live Weather Radar by Windy.com"
                         ></iframe>
