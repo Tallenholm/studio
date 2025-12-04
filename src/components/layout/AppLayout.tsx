@@ -211,13 +211,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                    <Link href="/weather">
-                                        <SidebarMenuButton tooltip="Full Forecast" isActive={pathname.startsWith('/weather')}>
-                                            <Cloud /><span>Weather</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/employee/time-off">
                                         <SidebarMenuButton tooltip="Request Time Off" isActive={pathname.startsWith('/employee/time-off')}>
@@ -390,13 +383,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             <SidebarSeparator className="my-1" />
                             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Ops & Analytics</SidebarGroupLabel>
                             <SidebarMenu>
-                                <SidebarMenuItem>
-                                    <Link href="/weather">
-                                        <SidebarMenuButton tooltip="Full Forecast" isActive={pathname.startsWith('/weather')}>
-                                            <Cloud /><span>Weather Forecast</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
                                 {user.role === 'owner' && <>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-clients">
@@ -574,7 +560,6 @@ const SHARED_AUTH_PATHS = [
     '/help',
     '/notifications',
     '/reports',
-    '/weather'
 ];
 // Paths for employees (and by extension, managers and owners).
 const EMPLOYEE_PATHS = [
