@@ -30,7 +30,8 @@ export async function getAdvancedReportData(
     getFleetAssets()
   ]);
   
-  if (reports.length === 0 && logs.length === 0 && tasks.length === 0 && violations.length === 0 && expenses.length === 0) {
+  const hasAnyData = reports.length > 0 || logs.length > 0 || tasks.length > 0 || violations.length > 0 || expenses.length > 0;
+  if (!hasAnyData) {
     return {
       inspectionOutcomes: [],
       maintenanceServicesByType: [],
@@ -60,27 +61,27 @@ export async function getAdvancedReportData(
   // Vehicle Type Filtering Logic
   const filterByVehicleType = <T extends { assetId?: string; truckVin?: string; trailerVin?: string; heavyEquipmentVin?: string }>(items: T[]) => {
     if (vehicleTypeFilter === 'all') return items;
-    const assetVinsOfType = fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.vin);
+    const assetVinsOfType = new Set(fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.vin));
+    const assetIdsOfType = new Set(fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.id));
+
     return items.filter(item => {
-      const itemAssetId = item.assetId;
-      const itemVin = item.truckVin || item.trailerVin || item.heavyEquipmentVin;
-      if (itemAssetId) { // For maintenance logs
-        const asset = fleetAssets.find(a => a.id === itemAssetId);
-        return asset?.type === vehicleTypeFilter;
+      if (item.assetId) { // For maintenance logs
+        return assetIdsOfType.has(item.assetId);
       }
+      const itemVin = item.truckVin || item.trailerVin || item.heavyEquipmentVin;
       if (itemVin) { // for inspection reports
-        return assetVinsOfType.includes(itemVin);
+        return assetVinsOfType.has(itemVin);
       }
       return false;
     });
   };
 
   // Apply filters
-  const filteredReports = filterByVehicleType(filterByDate(reports) as InspectionReport[]);
-  const filteredLogs = filterByVehicleType(filterByDate(logs) as MaintenanceLog[]);
-  const filteredTasks = filterByDate(tasks) as Task[];
-  const filteredViolations = filterByDate(violations) as Violation[];
-  const filteredExpenses = filterByDate(expenses) as ExpenseReport[];
+  const filteredReports = filterByVehicleType(filterByDate(reports));
+  const filteredLogs = filterByVehicleType(filterByDate(logs));
+  const filteredTasks = filterByDate(tasks);
+  const filteredViolations = filterByDate(violations);
+  const filteredExpenses = filterByDate(expenses);
 
   // Perform aggregations
   const inspectionOutcomes = [
@@ -116,9 +117,10 @@ export async function getAdvancedReportData(
 
   const costMap: { [key: string]: number } = {};
   filteredLogs.forEach(log => {
-    if (log.cost) {
-      costMap[log.assetName] = (costMap[log.assetName] || 0) + log.cost;
-    }
+      const asset = fleetAssets.find(a => a.id === log.assetId);
+      if (asset && log.cost) {
+          costMap[asset.name] = (costMap[asset.name] || 0) + log.cost;
+      }
   });
   const maintenanceCosts = Object.entries(costMap).map(([name, totalCost]) => ({
     name,

@@ -94,7 +94,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
           AI Daily Briefing for {format(new Date(), 'PPP')}
         </CardTitle>
         <CardDescription>
-          Your AI assistant has summarized the key items for your attention today. Note: Some data sources are still being migrated to Firestore, so this briefing may be incomplete.
+          Your AI assistant has summarized the key items for your attention today.
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-6">
@@ -190,13 +190,6 @@ export default function FleetCheckDashboardPage() {
             setJobs(data.jobs);
             setEvents(data.events);
 
-            if (!data.briefing) {
-                toast({
-                    variant: 'destructive',
-                    title: 'AI Briefing Failed',
-                    description: 'Could not generate the daily briefing.'
-                });
-            }
         } catch (error) {
             console.error("Failed to fetch dashboard data:", error);
             toast({

@@ -53,7 +53,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
 
 const maintenanceIntervalSchema = z.object({
-    intervalMonths: z.coerce.number().optional(),
+    intervalMonths: z.coerce.number().positive('Interval must be positive.').optional(),
     lastServiceDate: z.string().optional(),
 });
 
@@ -340,7 +340,7 @@ export default function FleetManagementPage() {
                         <FormLabel>{label} Interval</FormLabel>
                         <FormControl>
                              <div className="flex items-center">
-                                <Input type="number" placeholder="e.g., 6" {...field} />
+                                <Input type="number" placeholder="e.g., 6" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.value)} />
                                 <span className="ml-2 text-sm text-muted-foreground">months</span>
                             </div>
                         </FormControl>

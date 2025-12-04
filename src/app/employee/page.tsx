@@ -62,7 +62,7 @@ export default function EmployeeHubPage() {
 
             setJobs(loadedJobs);
             setEvents(loadedEvents);
-            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.uid));
+            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.id));
             setReports(loadedReports.filter(r => r.employeeId === user.id));
             setIsLoading(false);
         }
@@ -257,7 +257,7 @@ export default function EmployeeHubPage() {
                 <Tabs defaultValue="excavation" className="w-full">
                     <TabsList className="grid w-full grid-cols-4">
                         <TabsTrigger value="excavation">Excavation ({assignedExcavationJobs.length})</TabsTrigger>
-                        <TabsTrigger value="snow">Snow Removal ({assignedSnowContracts.length})</TabsTrigger>
+                        <TabsTrigger value="snow">Snow ({assignedSnowContracts.length})</TabsTrigger>
                         <TabsTrigger value="concrete">Concrete ({assignedConcreteJobs.length})</TabsTrigger>
                         <TabsTrigger value="misc">Misc. ({assignedMiscJobs.length})</TabsTrigger>
                     </TabsList>
@@ -334,5 +334,3 @@ export default function EmployeeHubPage() {
     </>
   );
 }
-
-    
