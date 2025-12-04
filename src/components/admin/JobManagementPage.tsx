@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Checkbox } from '@/components/ui/checkbox';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import AddressAutocomplete from './AddressAutocomplete';
 
 
 const jobSchema = z.object({
@@ -521,7 +522,25 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                                     <div className="space-y-4">
                                     <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Name</FormLabel> <FormControl><Input placeholder={jobType === 'snow_removal' ? 'e.g., Downtown Plaza Plowing' : 'e.g., Lot 5 Excavation'} {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                                    <FormField control={form.control} name="address" render={({ field }) => ( <FormItem> <FormLabel>Address</FormLabel> <FormControl><Input placeholder="e.g., 123 Main St, Anytown" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                                    
+                                    <FormField
+                                        control={form.control}
+                                        name="address"
+                                        render={({ field }) => (
+                                            <FormItem>
+                                            <FormLabel>Address</FormLabel>
+                                            <FormControl>
+                                                <AddressAutocomplete
+                                                value={field.value}
+                                                onChange={field.onChange}
+                                                placeholder="e.g., 123 Main St, Anytown"
+                                                />
+                                            </FormControl>
+                                            <FormMessage />
+                                            </FormItem>
+                                        )}
+                                    />
+
                                     <FormField control={form.control} name="clientId" render={({ field }) => ( <FormItem> <FormLabel>Client</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select a client" /></SelectTrigger></FormControl> <SelectContent>{clients.map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent> </Select> <FormMessage /> </FormItem> )}/>
                                     </div>
                                     <div className="space-y-4">
