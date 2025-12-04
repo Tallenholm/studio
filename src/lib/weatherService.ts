@@ -25,10 +25,13 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
 
 export const checkWeatherAndNotify = async () => {
     const settings = loadSystemSettings();
-    const existingNotifications = await getNotifications();
     
     try {
-        const weatherData = await fetchWeather(settings.locationLat, settings.locationLon);
+        const [existingNotifications, weatherData] = await Promise.all([
+            getNotifications(),
+            fetchWeather(settings.locationLat, settings.locationLon)
+        ]);
+
         const now = new Date();
         const next24Hours = addHours(now, 24);
 
@@ -71,3 +74,4 @@ export const checkWeatherAndNotify = async () => {
         console.error("Failed to check weather and send notifications:", error);
     }
 };
+
