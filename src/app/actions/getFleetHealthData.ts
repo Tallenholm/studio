@@ -11,21 +11,15 @@ import { subMonths, isAfter, parseISO } from 'date-fns';
 const calculateHealthScore = (asset: FleetAsset, reports: InspectionReport[], logs: MaintenanceLog[]): number => {
     const last30Days = subMonths(new Date(), 1);
     
-    // Filter reports by VIN
-    const assetReports = reports.filter(r => 
-        (r.truckVin === asset.vin || r.trailerVin === asset.vin || r.heavyEquipmentVin === asset.vin) && 
-        isAfter(parseISO(r.date), last30Days)
-    );
+    // Reports are pre-filtered by VIN
+    const assetReports = reports.filter(r => isAfter(parseISO(r.date), last30Days));
     const failedReports = assetReports.filter(r => r.overallStatus === 'fail').length;
 
     let score = 100;
     score -= failedReports * 25; // Each failure in the last month costs 25 points
 
-    // Filter logs by the asset's unique ID
-    const assetLogs = logs.filter(l => 
-        l.assetId === asset.id && 
-        isAfter(parseISO(l.date), last30Days)
-    );
+    // Logs are pre-filtered by asset ID
+    const assetLogs = logs.filter(l => isAfter(parseISO(l.date), last30Days));
     const repairs = assetLogs.filter(l => l.serviceType === 'repair').length;
     score -= repairs * 15; // Each repair costs 15 points
 
@@ -35,9 +29,9 @@ const calculateHealthScore = (asset: FleetAsset, reports: InspectionReport[], lo
 /**
  * Calculates maintenance cost data for a single asset over the last 6 months.
  */
-const getMaintenanceCostData = (assetId: string, logs: MaintenanceLog[]): { name: string; totalCost: number }[] => {
+const getMaintenanceCostData = (logs: MaintenanceLog[]): { name: string; totalCost: number }[] => {
     const sixMonthsAgo = subMonths(new Date(), 6);
-    const assetLogs = logs.filter(l => l.assetId === assetId && isAfter(parseISO(l.date), sixMonthsAgo));
+    const assetLogs = logs.filter(l => isAfter(parseISO(l.date), sixMonthsAgo));
     
     const costByMonth: Record<string, number> = {};
 
@@ -60,15 +54,38 @@ export interface FleetHealthData {
  * health scores and recent maintenance costs. This offloads processing from the client.
  */
 export async function getFleetHealthData(): Promise<FleetHealthData[]> {
-    const [assets, reports, logs] = await Promise.all([
+    const [assets, allReports, allLogs] = await Promise.all([
         getFleetAssets(),
         getInspectionReports(),
         getMaintenanceLogs(),
     ]);
 
+    // Pre-group reports and logs by asset for efficiency
+    const reportsByVin: Record<string, InspectionReport[]> = {};
+    for (const report of allReports) {
+        const vin = report.truckVin || report.trailerVin || report.heavyEquipmentVin;
+        if (vin) {
+            if (!reportsByVin[vin]) {
+                reportsByVin[vin] = [];
+            }
+            reportsByVin[vin].push(report);
+        }
+    }
+
+    const logsByAssetId: Record<string, MaintenanceLog[]> = {};
+    for (const log of allLogs) {
+        if (!logsByAssetId[log.assetId]) {
+            logsByAssetId[log.assetId] = [];
+        }
+        logsByAssetId[log.assetId].push(log);
+    }
+
     const healthData = assets.map(asset => {
-        const score = calculateHealthScore(asset, reports, logs);
-        const costData = getMaintenanceCostData(asset.id, logs);
+        const assetReports = reportsByVin[asset.vin] || [];
+        const assetLogs = logsByAssetId[asset.id] || [];
+
+        const score = calculateHealthScore(asset, assetReports, assetLogs);
+        const costData = getMaintenanceCostData(assetLogs);
         
         return {
             asset,

@@ -18,11 +18,18 @@ export default function MyViolationsPage() {
     async function fetchData() {
         if (user) {
             setIsLoading(true);
-            const allViolations = await getViolations();
-            const userViolations = allViolations
-                .filter(v => v.employeeId === user.uid)
-                .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setViolations(userViolations);
+            try {
+                const allViolations = await getViolations();
+                const userViolations = allViolations
+                    .filter(v => v.employeeId === user.uid)
+                    .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+                setViolations(userViolations);
+            } catch (error) {
+                console.error("Failed to fetch violations", error);
+            } finally {
+                setIsLoading(false);
+            }
+        } else {
             setIsLoading(false);
         }
     }
@@ -38,7 +45,7 @@ export default function MyViolationsPage() {
     }
   }
 
-  if (isLoading || !user) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -79,8 +86,9 @@ export default function MyViolationsPage() {
             </div>
         ) : (
              <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                <ShieldAlert className="h-12 w-12 mx-auto mb-4"/>
-                <p className="text-lg">You have no violation records.</p>
+                <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-primary/70"/>
+                <h3 className="text-xl font-semibold text-foreground">No Violations Found</h3>
+                <p className="mt-2">You have a clean record.</p>
              </div>
         )}
       </section>

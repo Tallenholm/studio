@@ -95,18 +95,24 @@ export default function ManageDocumentsPage() {
   useEffect(() => {
     async function fetchData() {
         setIsLoading(true);
-        const [docs, assets, usersData] = await Promise.all([
-            getDocuments(),
-            getFleetAssets(),
-            getUsers(),
-        ]);
-        setDocuments(docs);
-        setFleetAssets(assets);
-        setUsers(usersData);
-        setIsLoading(false);
+        try {
+            const [docs, assets, usersData] = await Promise.all([
+                getDocuments(),
+                getFleetAssets(),
+                getUsers(),
+            ]);
+            setDocuments(docs);
+            setFleetAssets(assets);
+            setUsers(usersData);
+        } catch (error) {
+            console.error("Error fetching data:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load document data.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
     fetchData();
-  }, []);
+  }, [toast]);
 
 
   const generalCategories = useMemo(() => {
@@ -216,7 +222,11 @@ export default function ManageDocumentsPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent>
-                <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No general documents have been uploaded yet.</div>
+                <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                    <Files className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                    <h3 className="text-xl font-semibold text-foreground">No General Documents</h3>
+                    <p className="mt-2">No documents have been uploaded for this category yet.</p>
+                </div>
             </CardContent>
         </Card>
       );
