@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -5,50 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { loadSystemSettings } from '@/lib/settingsService';
-
-// Interfaces for the new ECMWF API data structure
-interface DailyData {
-    time: string[];
-    weather_code: number[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
-    sunrise: string[];
-    sunset: string[];
-    precipitation_probability_max: (number | null)[];
-}
-
-interface HourlyData {
-    time: string[];
-    temperature_2m: number[];
-    precipitation_probability: number[];
-    weather_code: number[];
-    wind_speed_10m: number[];
-}
-
-interface WeatherData {
-    latitude: number;
-    longitude: number;
-    daily: DailyData;
-    hourly: HourlyData;
-}
-
-interface ForecastDay {
-    time: string;
-    weatherCode: number;
-    tempMax: number;
-    tempMin: number;
-    sunrise: string;
-    sunset: string;
-    precipitation: number | null;
-}
-
-interface HourlyForecast {
-    time: string;
-    temp: number;
-    precipitation: number;
-    weatherCode: number;
-    windSpeed: number;
-}
+import { fetchWeather } from '@/lib/weatherService';
+import type { WeatherData, ForecastDay, HourlyForecast } from '@/lib/weather-utils';
+import { weatherDescriptions } from '@/lib/weather-utils';
 
 const getWeatherIcon = (code: number, size: 'large' | 'small' = 'large') => {
     const className = size === 'large' ? "h-10 w-10" : "h-6 w-6";
@@ -67,18 +27,6 @@ const getWeatherIcon = (code: number, size: 'large' | 'small' = 'large') => {
     }
 };
 
-const weatherDescriptions: { [key: number]: string } = {
-    0: 'Clear sky', 1: 'Mainly clear', 2: 'Partly cloudy', 3: 'Overcast',
-    45: 'Fog', 48: 'Rime fog',
-    51: 'Light drizzle', 53: 'Drizzle', 55: 'Dense drizzle',
-    61: 'Slight rain', 63: 'Rain', 65: 'Heavy rain',
-    71: 'Slight snow', 73: 'Snow', 75: 'Heavy snow',
-    80: 'Slight showers', 81: 'Showers', 82: 'Violent showers',
-    85: 'Slight snow showers', 86: 'Heavy snow showers',
-    95: 'Thunderstorm', 96: 'Thunderstorm, hail', 99: 'Thunderstorm, heavy hail',
-};
-
-
 export default function WeatherPage() {
     const [dailyForecast, setDailyForecast] = useState<ForecastDay[] | null>(null);
     const [hourlyForecast, setHourlyForecast] = useState<HourlyForecast[] | null>(null);
@@ -93,23 +41,11 @@ export default function WeatherPage() {
     }, []);
 
     useEffect(() => {
-        const fetchWeather = async () => {
+        const loadWeather = async () => {
             setLoading(true);
             setError(null);
-            
-            const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
-            if (!apiKey) {
-                setError("ECMWF API key is not configured in the .env file.");
-                setLoading(false);
-                return;
-            }
-
             try {
-                const url = `https://api.open-meteo.com/v1/ecmwf?latitude=${location.lat}&longitude=${location.lon}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&apikey=${apiKey}`;
-                const response = await fetch(url);
-                if (!response.ok) throw new Error(`Failed to fetch weather data (status: ${response.status})`);
-                
-                const data: WeatherData = await response.json();
+                const data = await fetchWeather(location.lat, location.lon);
                 
                 const processedDailyForecast = data.daily.time.map((t, i) => ({
                     time: t,
@@ -128,7 +64,7 @@ export default function WeatherPage() {
                     precipitation: data.hourly.precipitation_probability[i],
                     weatherCode: data.hourly.weather_code[i],
                     windSpeed: data.hourly.wind_speed_10m[i],
-                })).filter(h => parseISO(h.time) >= now).slice(0, 24); // Get next 24 hours
+                })).filter(h => parseISO(h.time) >= now).slice(0, 24);
 
                 setDailyForecast(processedDailyForecast);
                 setHourlyForecast(processedHourlyForecast);
@@ -141,7 +77,7 @@ export default function WeatherPage() {
                 setLoading(false);
             }
         };
-        fetchWeather();
+        loadWeather();
     }, [location]);
 
     const radarLayer = useMemo(() => {
