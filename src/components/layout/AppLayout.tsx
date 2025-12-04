@@ -284,6 +284,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <Link href="/weather">
+                                        <SidebarMenuButton tooltip="Weather Center" isActive={pathname.startsWith('/weather')}>
+                                            <Cloud /><span>Weather Center</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
                             </SidebarMenu>
                             
                             <SidebarSeparator className="my-1" />
@@ -560,6 +567,7 @@ const SHARED_AUTH_PATHS = [
     '/help',
     '/notifications',
     '/reports',
+    '/weather',
 ];
 // Paths for employees (and by extension, managers and owners).
 const EMPLOYEE_PATHS = [
