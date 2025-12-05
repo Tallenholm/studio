@@ -10,7 +10,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, Job } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
-import { getAdminDashboardData } from '@/app/actions/getAdminDashboardData';
+import { getAdminDashboardData, type AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
@@ -20,6 +20,7 @@ import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
 import WeatherForecast from '@/components/admin/WeatherForecast';
 import Image from 'next/image';
+import AnimatedCounter from '@/components/common/AnimatedCounter';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -160,14 +161,41 @@ const managerTourSteps: TourStep[] = [
     { element: '#tour-step-sidebar-help', title: "Advanced Tools & Help", content: "For deep insights, visit 'Advanced Reports'. For application-wide settings, go to 'System Settings'. You can find everything in the sidebar too. If you need a reminder, visit the 'Help & Support' page. Enjoy exploring!", side: 'right' },
 ];
 
+const StatCard = ({ title, value, icon: Icon, link }: { title: string, value: number, icon: React.ElementType, link?: string }) => {
+    const CardContentWrapper = ({children}: {children: React.ReactNode}) => (
+        <CardContent className="flex items-center justify-between">
+            {children}
+        </CardContent>
+    );
+
+    const cardContent = (
+         <div className="flex items-center justify-between w-full">
+            <div>
+                <CardDescription>{title}</CardDescription>
+                <CardTitle className="text-4xl font-bold">
+                    <AnimatedCounter value={value} />
+                </CardTitle>
+            </div>
+            <Icon className="h-10 w-10 text-muted-foreground" />
+        </div>
+    );
+    
+    return (
+        <Card className="hover:border-primary/50 hover:-translate-y-1 transition-all">
+            {link ? <Link href={link} className="block h-full">{cardContent}</Link> : cardContent}
+        </Card>
+    );
+};
+
+
 export default function FleetCheckDashboardPage() {
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [briefing, setBriefing] = useState<DailyBriefingOutput | null>(null);
-  const [isBriefingLoading, setIsBriefingLoading] = useState(true);
+  
+  const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { toast } = useToast();
   const { user } = useAuth();
@@ -181,15 +209,10 @@ export default function FleetCheckDashboardPage() {
     }
 
     const fetchData = async () => {
-        setIsBriefingLoading(true);
+        setIsLoading(true);
         try {
-            // Get server-side data from the action
             const data = await getAdminDashboardData();
-            
-            setBriefing(data.briefing);
-            setJobs(data.jobs);
-            setEvents(data.events);
-
+            setDashboardData(data);
         } catch (error) {
             console.error("Failed to fetch dashboard data:", error);
             toast({
@@ -198,7 +221,7 @@ export default function FleetCheckDashboardPage() {
                 description: 'Could not load all dashboard data.'
             });
         } finally {
-            setIsBriefingLoading(false);
+            setIsLoading(false);
         }
     };
 
@@ -206,29 +229,30 @@ export default function FleetCheckDashboardPage() {
   }, [toast, searchParams]);
 
   const { eventDates, jobRanges } = useMemo(() => {
-    const eventDates = events.filter(event => event.date).map(event => parseISO(event.date));
-    const jobRanges = jobs.filter(job => job.startDate && job.endDate).map(job => ({
+    if (!dashboardData) return { eventDates: [], jobRanges: [] };
+    const eventDates = dashboardData.events.filter(event => event.date).map(event => parseISO(event.date));
+    const jobRanges = dashboardData.jobs.filter(job => job.startDate && job.endDate).map(job => ({
       from: parseISO(job.startDate),
       to: parseISO(job.endDate),
     }));
     return { eventDates, jobRanges };
-  }, [events, jobs]);
+  }, [dashboardData]);
 
   const selectedDayItems = useMemo(() => {
-    if (!date) return [];
+    if (!date || !dashboardData) return [];
     
-    const dayEvents = events
+    const dayEvents = dashboardData.events
       .filter(event => event.date && isSameDay(parseISO(event.date), date))
       .map(e => ({ ...e, itemType: 'event' as const }));
 
-    const dayJobs = jobs
+    const dayJobs = dashboardData.jobs
       .filter(job => job.startDate && job.endDate && isWithinInterval(date, { start: parseISO(job.startDate), end: parseISO(job.endDate) }))
       .map(j => ({ ...j, itemType: 'job' as const }));
     
     const combined = [...dayJobs, ...dayEvents];
     return combined;
 
-  }, [date, events, jobs]);
+  }, [date, dashboardData]);
   
   const getEventTypeLabel = (type: CalendarEvent['type']) => {
     switch (type) {
@@ -248,7 +272,7 @@ export default function FleetCheckDashboardPage() {
     }
   }
 
-  if (!isMounted) {
+  if (!isMounted || isLoading) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -272,11 +296,18 @@ export default function FleetCheckDashboardPage() {
           Welcome, {user?.name}. Oversee operations, assets, and personnel.
         </p>
       </div>
+
+       <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
+            <StatCard title="Active Jobs" value={dashboardData?.stats.activeJobs || 0} icon={Briefcase} link="/admin/manage-jobs" />
+            <StatCard title="Fleet Assets" value={dashboardData?.stats.totalAssets || 0} icon={Truck} link="/admin/manage-fleet" />
+            <StatCard title="Pending Requests" value={dashboardData?.stats.pendingRequests || 0} icon={ClipboardCheck} link="/admin/manage-requests" />
+            <StatCard title="Failed Reports" value={dashboardData?.stats.failedReports || 0} icon={AlertTriangle} link="/reports" />
+      </div>
       
       <WeatherForecast tourId="tour-step-weather-forecast" />
       
       <div id="tour-step-ai-briefing">
-        <DailyBriefingCard briefing={briefing} isLoading={isBriefingLoading} />
+        <DailyBriefingCard briefing={dashboardData?.briefing || null} isLoading={isLoading} />
       </div>
 
        <Card id="tour-step-calendar" className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">

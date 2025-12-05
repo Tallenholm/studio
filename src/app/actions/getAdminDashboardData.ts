@@ -11,6 +11,12 @@ export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
   jobs: Job[];
   events: CalendarEvent[];
+  stats: {
+    activeJobs: number;
+    totalAssets: number;
+    pendingRequests: number;
+    failedReports: number;
+  };
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -26,11 +32,10 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   ]);
 
   let briefing: DailyBriefingOutput | null = null;
+  const today = new Date();
   
   // Step 2: Try to generate the briefing in a separate try/catch block.
   try {
-    const today = new Date();
-
     // Pre-filter data on the server before sending it to the AI.
     const attentionReports = allReports
       .filter(r => 
@@ -74,10 +79,19 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     // The 'briefing' variable will remain null, which is the intended behavior on failure.
   }
   
-  // Step 3: Always return the fetched data, with or without a successful briefing.
+  // Step 3: Calculate stats
+  const stats = {
+    activeJobs: allJobs.filter(j => getJobStatus(j) === 'active').length,
+    totalAssets: allAssets.length,
+    pendingRequests: allTimeOffRequests.filter(r => r.status === 'pending').length,
+    failedReports: allReports.filter(r => r.overallStatus === 'fail').length,
+  };
+
+  // Step 4: Always return the fetched data, with or without a successful briefing.
   return {
       briefing,
       jobs: allJobs,
       events: allEvents,
+      stats,
   };
 }
