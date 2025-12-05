@@ -4,6 +4,7 @@ import "./globals.css";
 import { AuthProvider } from "@/contexts/AuthContext";
 import AppLayout from "@/components/layout/AppLayout";
 import { Toaster } from "@/components/ui/toaster";
+import { FirebaseClientProvider } from "@/firebase";
 
 const poppins = Poppins({ 
   subsets: ["latin"],
@@ -29,11 +30,13 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body className={`${poppins.variable} ${ptSans.variable}`}>
-        <AuthProvider>
-            <AppLayout>
-                {children}
-            </AppLayout>
-        </AuthProvider>
+        <FirebaseClientProvider>
+          <AuthProvider>
+              <AppLayout>
+                  {children}
+              </AppLayout>
+          </AuthProvider>
+        </FirebaseClientProvider>
         <Toaster />
       </body>
     </html>
