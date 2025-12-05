@@ -88,7 +88,7 @@ export default function GuidedTour({ isOpen, onClose, steps, tourKey }: GuidedTo
 
   return (
     <>
-      <div className="fixed inset-0 z-40 bg-black/50" onClick={handleClose} />
+      <div className="fixed inset-0 z-40 bg-black/50 print-hidden" onClick={handleClose} />
       <Popover open={isOpen && !!targetElement}>
         <PopoverAnchor asChild>
           <div

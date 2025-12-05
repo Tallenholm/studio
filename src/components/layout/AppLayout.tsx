@@ -53,6 +53,16 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const showAiAssistantWelcome = searchParams.get('tour') === 'true';
     const { open: openCommandPalette } = useCommandPalette();
     const { open: openTools } = useGlobalTools();
+    const [isSidebarDefaultOpen, setIsSidebarDefaultOpen] = useState(true);
+
+    useEffect(() => {
+        if (typeof window !== 'undefined') {
+            const savedState = document.cookie.split('; ').find(row => row.startsWith('sidebar_state='));
+            if (savedState) {
+                setIsSidebarDefaultOpen(savedState.split('=')[1] === 'true');
+            }
+        }
+    }, []);
 
     useEffect(() => {
         if (!user || !db) return;
@@ -188,7 +198,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const isAdmin = user.role === 'owner' || user.role === 'manager';
     
     return (
-        <SidebarProvider defaultOpen={false}>
+        <SidebarProvider defaultOpen={isSidebarDefaultOpen}>
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
