@@ -2,10 +2,6 @@
 @tailwind components;
 @tailwind utilities;
 
-body {
-  font-family: 'PT Sans', sans-serif;
-}
-
 @layer base {
   :root {
     --background: 240 10% 3.9%;
@@ -105,7 +101,7 @@ body {
     @apply border-border;
   }
   body {
-    @apply bg-background text-foreground;
+    @apply bg-background text-foreground font-body;
   }
   .dark body {
     background-color: hsl(var(--background));
@@ -115,10 +111,6 @@ body {
   body {
      -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
-  }
-
-  .font-headline {
-    font-family: 'Poppins', sans-serif;
   }
 }
 
