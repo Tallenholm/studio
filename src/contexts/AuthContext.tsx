@@ -53,6 +53,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           const nameCapitalized = name.charAt(0).toUpperCase() + name.slice(1);
           
           const newUserProfile = {
+              uid: firebaseUser.uid,
               email: firebaseUser.email,
               name: nameCapitalized,
               role: role,
@@ -65,14 +66,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         const userData = userDoc.data();
         if (userData) {
           setUser({
-            id: firebaseUser.uid,
-            uid: firebaseUser.uid,
-            email: firebaseUser.email || '',
+            id: userDoc.id,
+            uid: userDoc.id,
+            email: userData.email || '',
             name: userData.name,
             role: userData.role,
           });
         } else {
-            // This should ideally not be reached anymore.
             console.error(`Could not retrieve user data for UID ${firebaseUser.uid} even after creation attempt.`);
             await signOut(auth);
             setUser(null);
