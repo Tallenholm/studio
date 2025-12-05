@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import Link from 'next/link';
@@ -20,6 +21,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
 import WeatherForecast from '@/components/admin/WeatherForecast';
+import Image from 'next/image';
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
@@ -181,6 +183,7 @@ export default function EmployeeHubPage() {
     />
     <div className="container mx-auto py-8">
       <div id="tour-step-employee-welcome" className="text-center mb-12">
+        <Image src="/logo.png" alt="Logan's Excavating Logo" width={200} height={200} className="mx-auto mb-4" />
         <h1 className="text-5xl font-headline font-bold mb-4">Welcome, {user?.name || 'Employee'}!</h1>
         <p className="text-2xl text-muted-foreground">
           Your central hub for work tools.
