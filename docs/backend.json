@@ -146,76 +146,29 @@
     ]
   },
   "firestore": {
-    "structure": [
-      {
-        "path": "/vehicles/{vehicleId}",
-        "definition": {
-          "entityName": "Vehicle",
-          "schema": {
-            "$ref": "#/backend/entities/Vehicle"
-          },
-          "description": "Stores vehicle information.",
-          "params": [
-            {
-              "name": "vehicleId",
-              "description": "The unique ID of the vehicle."
-            }
-          ]
-        }
+    "/vehicles/{vehicleId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Vehicle"
       },
-      {
-        "path": "/checklist_items/{checklistItemId}",
-        "definition": {
-          "entityName": "ChecklistItem",
-          "schema": {
-            "$ref": "#/backend/entities/ChecklistItem"
-          },
-          "description": "Stores individual checklist items.",
-          "params": [
-            {
-              "name": "checklistItemId",
-              "description": "The unique ID of the checklist item."
-            }
-          ]
-        }
+      "description": "Stores all information about a single vehicle, including its specifications and maintenance schedule. This collection is the source of truth for all fleet assets."
+    },
+    "/checklist_items/{checklistItemId}": {
+      "schema": {
+        "$ref": "#/backend/entities/ChecklistItem"
       },
-      {
-        "path": "/inspection_reports/{inspectionReportId}",
-        "definition": {
-          "entityName": "InspectionReport",
-          "schema": {
-            "$ref": "#/backend/entities/InspectionReport"
-          },
-          "description": "Stores inspection reports.",
-          "params": [
-            {
-              "name": "inspectionReportId",
-              "description": "The unique ID of the inspection report."
-            }
-          ]
-        }
+      "description": "This is a static collection containing the master list of all possible inspection items for all vehicle types. It is used to generate the checklists dynamically on the client."
+    },
+    "/inspection_reports/{inspectionReportId}": {
+      "schema": {
+        "$ref": "#/backend/entities/InspectionReport"
       },
-      {
-        "path": "/inspection_reports/{inspectionReportId}/inspection_results/{inspectionResultId}",
-        "definition": {
-          "entityName": "InspectionResult",
-          "schema": {
-            "$ref": "#/backend/entities/InspectionResult"
-          },
-          "description": "Stores the results of individual checklist items within an inspection report.",
-          "params": [
-            {
-              "name": "inspectionReportId",
-              "description": "The unique ID of the inspection report."
-            },
-            {
-              "name": "inspectionResultId",
-              "description": "The unique ID of the inspection result."
-            }
-          ]
-        }
-      }
-    ],
-    "reasoning": "The Firestore data structure is designed to support the Fleet Check application, focusing on pre-trip and post-trip inspections for vehicles. The structure prioritizes authorization independence and supports the necessary QAPs (Queries that Perform) required by the application. This is achieved through structural segregation and denormalization of data where necessary.\n\n1.  **Vehicles:** Vehicles are stored at the root level in a `/vehicles` collection.  No ownership is explicitly defined in the database. This is appropriate as the app doesn't prescribe ownership functionality.\n\n2.  **Checklist Items:** Checklist items, representing individual inspection steps, are stored in the `/checklist_items` collection.  These are also global and not user-specific.  The `vehicleType` field allows for filtering checklist items based on the type of vehicle being inspected.\n\n3.  **Inspection Reports:** Inspection reports are stored under `/inspection_reports`. Each report includes the `vehicleId`. This also includes the `date` and `type` (pre-trip or post-trip).  The AI anomaly detection feature can query this collection to analyze past reports.\n\n4.  **Inspection Results:**  Inspection results are stored in a subcollection `/inspection_reports/{inspectionReportId}/inspection_results`. This structure relates each result to a specific report. This structure supports efficient querying for all results associated with a particular inspection report.\n\n**Authorization Independence:**  Since no role-based authorization or fine-grained access control is defined in the app requirements, there is no explicit denormalization needed. If such requirements were added (e.g., only certain users can view certain reports), then fields like `ownerId` or `members` map would be denormalized to subcollections.\n\n**QAPs Support:**\n*   The structure supports listing all vehicles (`/vehicles`).\n*   The structure supports listing checklist items by vehicle type using a collection group query (though this may not scale well for large data).  An alternative is a subcollection on `/vehicles/{vehicleId}/checklist_items`.\n*   The structure supports listing inspection reports and the associated results via `/inspection_reports` and `/inspection_reports/{inspectionReportId}/inspection_results`."
+      "description": "Contains the main document for each inspection report. It links to the vehicles and user who performed the inspection and holds the overall status."
+    },
+    "/inspection_reports/{inspectionReportId}/inspection_results/{inspectionResultId}": {
+      "schema": {
+        "$ref": "#/backend/entities/InspectionResult"
+      },
+      "description": "A subcollection storing the pass/fail result for each individual item within a specific inspection report. This allows for detailed reporting and analysis."
+    }
   }
 }
