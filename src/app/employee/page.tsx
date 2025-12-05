@@ -1,4 +1,3 @@
-
 'use client';
 
 import Link from 'next/link';
@@ -268,7 +267,6 @@ export default function EmployeeHubPage() {
                 </Tabs>
             </CardContent>
         </Card>
-        
 
         <div className="grid grid-cols-1 lg:grid-cols-5 gap-8 mb-12">
             <div id="tour-step-company-calendar" className="lg:col-span-3">

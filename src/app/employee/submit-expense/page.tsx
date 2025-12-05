@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -57,7 +56,7 @@ export default function SubmitExpensePage() {
         if (user) {
             setIsMounted(true);
             const allReports = await getExpenseReports();
-            setReports(allReports.filter(r => r.employeeId === user.id).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+            setReports(allReports.filter(r => r.employeeId === user.uid).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         }
     }
     fetchReports();
@@ -108,7 +107,7 @@ export default function SubmitExpensePage() {
         return;
     }
     const newReportData: Omit<ExpenseReport, 'id'> = {
-      employeeId: user.id,
+      employeeId: user.uid,
       employeeName: user.name,
       date: values.date.toISOString().split('T')[0],
       amount: values.amount,
