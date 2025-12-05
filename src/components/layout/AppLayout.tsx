@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import Image from 'next/image';
 import {
   SidebarProvider,
@@ -15,7 +15,6 @@ import {
   SidebarMenu,
   SidebarMenuItem,
   SidebarMenuButton,
-  SidebarInset,
   SidebarFooter,
   SidebarGroup,
   SidebarGroupLabel,
@@ -25,8 +24,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import { getFleetAssets, getNotifications, addNotification } from '@/lib/firestoreService';
-import type { NotificationMessage, UserRole, FleetAsset } from '@/lib/types';
+import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -37,6 +35,7 @@ import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestor
 import { db } from '@/lib/firebase';
 import { checkWeatherAndNotify } from '@/lib/weatherService';
 import { loadSystemSettings } from '@/lib/settingsService';
+import { addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">

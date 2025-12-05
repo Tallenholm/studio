@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getNotifications, updateNotification } from '@/lib/firestoreService';
+import { updateNotification } from '@/lib/firestoreService';
 import type { NotificationMessage } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
