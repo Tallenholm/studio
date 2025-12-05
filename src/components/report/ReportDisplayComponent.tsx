@@ -53,7 +53,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
              <CardDescription className="flex items-center gap-2 mt-2 text-sm flex-wrap">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                {format(new Date(report.date), 'PPPp')}
+                {format(new Date(report.date), 'PPpp')}
               </span>
               {report.employeeName && (
                 <>
