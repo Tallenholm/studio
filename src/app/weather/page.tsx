@@ -97,8 +97,8 @@ export default function WeatherPage() {
     return (
         <div className="container mx-auto py-8">
             <div className="mb-8 text-center">
-                <h1 className="text-4xl font-headline font-bold flex items-center justify-center gap-3"><Cloud className="h-10 w-10 text-primary"/>Weather Center</h1>
-                <p className="text-lg text-muted-foreground mt-2 flex items-center justify-center gap-2">
+                <h1 className="text-3xl md:text-4xl font-headline font-bold flex items-center justify-center gap-3"><Cloud className="h-10 w-10 text-primary"/>Weather Center</h1>
+                <p className="text-md md:text-lg text-muted-foreground mt-2 flex items-center justify-center gap-2">
                     <MapPin className="h-5 w-5"/>
                     Showing weather for {locationName}
                 </p>
@@ -139,13 +139,13 @@ export default function WeatherPage() {
                    )}
                    {hourlyForecast && (
                        <div className="w-full overflow-x-auto">
-                           <div className="flex gap-4 pb-4">
+                           <div className="flex flex-nowrap gap-4 pb-4">
                                 {hourlyForecast.map(hour => (
                                     <div key={hour.time} className="flex flex-col items-center justify-between p-3 text-center bg-muted/30 rounded-lg shrink-0 w-28">
                                         <p className="font-bold">{format(parseISO(hour.time), 'ha')}</p>
                                         <div className="my-2">{getWeatherIcon(hour.weatherCode, 'small')}</div>
                                         <p className="font-bold text-lg">{Math.round(hour.temp)}°</p>
-                                        <p className="text-xs text-muted-foreground capitalize flex-grow">{weatherDescriptions[hour.weatherCode]}</p>
+                                        <p className="text-xs text-muted-foreground capitalize h-10 flex-grow flex items-center">{weatherDescriptions[hour.weatherCode]}</p>
                                         <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border-t pt-1 w-full">
                                             <p className="flex items-center justify-center gap-1"><Droplets className="h-3 w-3 text-blue-400" /> {hour.precipitation}%</p>
                                             <p className="flex items-center justify-center gap-1"><Wind className="h-3 w-3" /> {Math.round(hour.windSpeed)} mph</p>
@@ -164,7 +164,7 @@ export default function WeatherPage() {
                 </CardHeader>
                 <CardContent>
                     {loading && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-4 lg:grid-cols-7 gap-4">
                             {[...Array(7)].map((_, i) => (
                                 <Card key={i} className="flex flex-col items-center justify-center p-4 text-center bg-muted/30 h-64">
                                      <Loader2 className="h-8 w-8 animate-spin text-primary" />
@@ -179,14 +179,14 @@ export default function WeatherPage() {
                         </div>
                     )}
                     {dailyForecast && (
-                        <div className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-4">
+                        <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
                             {dailyForecast.map(day => (
-                                <Card key={day.time} className="flex flex-col items-center justify-between p-4 text-center bg-muted/30">
-                                    <p className="font-bold text-lg">{isSameDay(parseISO(day.time), new Date()) ? 'Today' : format(parseISO(day.time), 'EEE')}</p>
-                                    <p className="text-sm text-muted-foreground">{format(parseISO(day.time), 'MMM d')}</p>
+                                <Card key={day.time} className="flex flex-col items-center justify-between p-3 md:p-4 text-center bg-muted/30">
+                                    <p className="font-bold text-md md:text-lg">{isSameDay(parseISO(day.time), new Date()) ? 'Today' : format(parseISO(day.time), 'EEE')}</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground">{format(parseISO(day.time), 'MMM d')}</p>
                                     <div className="my-3">{getWeatherIcon(day.weatherCode, 'large')}</div>
-                                    <p className="font-bold text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
-                                    <p className="text-sm text-muted-foreground capitalize h-10 flex items-center">{weatherDescriptions[day.weatherCode]}</p>
+                                    <p className="font-bold text-xl md:text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
+                                    <p className="text-xs md:text-sm text-muted-foreground capitalize h-10 flex items-center text-center">{weatherDescriptions[day.weatherCode]}</p>
                                     <div className="text-xs text-muted-foreground mt-2 space-y-1 border-t pt-2 w-full">
                                         {day.precipitation !== null && (
                                             <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}%</p>
@@ -202,4 +202,5 @@ export default function WeatherPage() {
             </Card>
         </div>
     );
-}
+
+    
