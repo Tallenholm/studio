@@ -154,16 +154,25 @@ export const useFirebaseApp = (): FirebaseApp => {
   return firebaseApp;
 };
 
-type MemoFirebase <T> = T & {__memo?: boolean};
-
-export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T | (MemoFirebase<T>) {
+/**
+ * A hook to memoize Firebase queries or references, preventing re-renders.
+ * It also tags the object with a `__memo` flag for runtime checks.
+ * @param factory A function that returns the Firebase query or reference.
+ * @param deps A dependency array, just like `useMemo`.
+ * @returns The memoized Firebase object.
+ */
+type MemoFirebase<T> = T & {__memo?: boolean};
+export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
   
-  if(typeof memoized !== 'object' || memoized === null) return memoized;
-  (memoized as MemoFirebase<T>).__memo = true;
+  if (memoized && typeof memoized === 'object') {
+    // Add the __memo flag to the object without changing its type signature for the consumer.
+    (memoized as MemoFirebase<T>).__memo = true;
+  }
   
   return memoized;
 }
+
 
 /**
  * Hook specifically for accessing the authenticated user's state.
