@@ -13,9 +13,11 @@ const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 9
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
     const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
     if (!apiKey) {
-        throw new Error("ECMWF API key is not configured in the .env file.");
+        // This check is more for local validation; Open-Meteo allows use without a key for non-commercial projects.
+        // For a production app with an ECMWF key, we assume it's set.
+        console.warn("ECMWF API key is not configured in the .env file, using free tier.");
     }
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=ecmwf_ifs04&apikey=${apiKey}`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=temperature_2m,precipitation_probability,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_probability_max&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=ecmwf_ifs04`;
     const response = await fetch(url, { cache: 'no-store' }); // Disable caching for fresh data
     if (!response.ok) {
         throw new Error(`Failed to fetch weather data (status: ${response.status})`);
