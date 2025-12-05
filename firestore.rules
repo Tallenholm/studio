@@ -1,0 +1,109 @@
+/**
+ * @title Firebase Security Rules for Fleet Check App
+ * @mode Prototyping
+ *
+ * @description
+ * This ruleset governs access to the Firestore database for the Fleet Check
+ * application. It is designed for rapid prototyping and iteration.
+ *
+ * @philosophy
+ * The core security philosophy is based on authenticated access. Any user who
+ * has successfully signed in (including via anonymous authentication) is granted
+ * full read and write permissions to all data collections. This model is suitable
+ * for an internal or trusted-user environment where there is no concept of
+ * individual data ownership or role-based access control.
+ *
+ * @structure
+ * The data is organized into three primary top-level collections:
+ * - /vehicles: Stores information about each vehicle in the fleet.
+ * - /checklist_items: A global repository of inspection questions.
+ * - /inspection_reports: Contains all submitted inspection reports.
+ *   - /inspection_results: A subcollection within each report detailing the
+ *     status of each checklist item for that specific inspection.
+ *
+ * @decisions
+ * - Authenticated-Only Access: All operations (read and write) across the
+ *   entire database require the user to be signed in. Unauthenticated access
+ *   is completely denied.
+ * - No Data Ownership: In line with the application requirements, no user
+ *   "owns" any specific data. Any authenticated user can create, modify, or
+ *   delete any document.
+ * - Flexible Data Schema: To facilitate rapid development, these rules do not
+ *   enforce strict data types or the presence of specific fields, except for
+ *   those critical for maintaining relational integrity (e.g., ensuring an
+ *   inspection result is linked to the correct parent report).
+ */
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper Functions
+
+    /**
+     * Checks if a user is authenticated.
+     */
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    /**
+     * @description Rules for the 'vehicles' collection.
+     * @path /vehicles/{vehicleId}
+     * @allow An authenticated user can create a new vehicle document. (create)
+     * @deny An unauthenticated user attempts to read a vehicle document. (get)
+     * @principle Enforces that only authenticated users can read or modify vehicle data.
+     */
+    match /vehicles/{vehicleId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Rules for the 'checklist_items' collection.
+     * @path /checklist_items/{checklistItemId}
+     * @allow An authenticated user can list all checklist items. (list)
+     * @deny An unauthenticated user attempts to create a new checklist item. (create)
+     * @principle Enforces that only authenticated users can read or manage global checklist items.
+     */
+    match /checklist_items/{checklistItemId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+    }
+
+    /**
+     * @description Rules for the 'inspection_reports' collection.
+     * @path /inspection_reports/{inspectionReportId}
+     * @allow An authenticated user can create a new inspection report. (create)
+     * @deny An unauthenticated user attempts to delete an inspection report. (delete)
+     * @principle Enforces that only authenticated users can read or manage inspection reports.
+     */
+    match /inspection_reports/{inspectionReportId} {
+      allow get: if isSignedIn();
+      allow list: if isSignedIn();
+      allow create: if isSignedIn();
+      allow update: if isSignedIn() && resource != null;
+      allow delete: if isSignedIn() && resource != null;
+
+      /**
+       * @description Rules for the 'inspection_results' subcollection.
+       * @path /inspection_reports/{inspectionReportId}/inspection_results/{inspectionResultId}
+       * @allow An authenticated user creates a result, correctly linking it to the parent reportId in the document body. (create)
+       * @deny An authenticated user tries to create a result with a mismatched reportId in the document body. (create)
+       * @principle Enforces authenticated access and validates the relational link to the parent report document.
+       */
+      match /inspection_results/{inspectionResultId} {
+        allow get: if isSignedIn();
+        allow list: if isSignedIn();
+        allow create: if isSignedIn() && request.resource.data.reportId == inspectionReportId;
+        allow update: if isSignedIn() && resource != null && request.resource.data.reportId == resource.data.reportId;
+        allow delete: if isSignedIn() && resource != null;
+      }
+    }
+  }
+}

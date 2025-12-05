@@ -1,0 +1,221 @@
+{
+  "entities": {
+    "Vehicle": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Vehicle",
+      "type": "object",
+      "description": "Represents a vehicle in the fleet, such as a truck, trailer, or skid steer.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the vehicle."
+        },
+        "vin": {
+          "type": "string",
+          "description": "Vehicle Identification Number (VIN) of the vehicle."
+        },
+        "year": {
+          "type": "number",
+          "description": "The manufacturing year of the vehicle."
+        },
+        "make": {
+          "type": "string",
+          "description": "The make of the vehicle (e.g., Chevy)."
+        },
+        "model": {
+          "type": "string",
+          "description": "The model of the vehicle (e.g., 6500)."
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of vehicle (e.g., truck, trailer, skid steer)."
+        },
+        "bedType": {
+          "type": "string",
+          "description": "The bed type of the vehicle (e.g., dump bed, tilt deck)."
+        }
+      },
+      "required": [
+        "id",
+        "vin",
+        "year",
+        "make",
+        "model",
+        "type"
+      ]
+    },
+    "ChecklistItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "ChecklistItem",
+      "type": "object",
+      "description": "Represents a single item on a pre-trip or post-trip inspection checklist.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the checklist item."
+        },
+        "description": {
+          "type": "string",
+          "description": "Description of the inspection item."
+        },
+        "instructions": {
+          "type": "string",
+          "description": "Detailed instructions for performing the inspection."
+        },
+        "vehicleType": {
+          "type": "string",
+          "description": "The Vehicle Type the inspection applies to."
+        }
+      },
+      "required": [
+        "id",
+        "description",
+        "instructions"
+      ]
+    },
+    "InspectionReport": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InspectionReport",
+      "type": "object",
+      "description": "Represents a pre-trip or post-trip inspection report for a vehicle.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inspection report."
+        },
+        "vehicleId": {
+          "type": "string",
+          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N InspectionReport)"
+        },
+        "date": {
+          "type": "string",
+          "description": "Date and time the inspection was performed.",
+          "format": "date-time"
+        },
+        "type": {
+          "type": "string",
+          "description": "The type of inspection (pre-trip or post-trip)."
+        },
+        "notes": {
+          "type": "string",
+          "description": "Additional notes or comments about the inspection."
+        }
+      },
+      "required": [
+        "id",
+        "vehicleId",
+        "date",
+        "type"
+      ]
+    },
+    "InspectionResult": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InspectionResult",
+      "type": "object",
+      "description": "Represents the result of a single checklist item in an inspection report.",
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique identifier for the inspection result."
+        },
+        "reportId": {
+          "type": "string",
+          "description": "Reference to InspectionReport. (Relationship: InspectionReport 1:N InspectionResult)"
+        },
+        "checklistItemId": {
+          "type": "string",
+          "description": "Reference to ChecklistItem. (Relationship: ChecklistItem 1:N InspectionResult)"
+        },
+        "status": {
+          "type": "string",
+          "description": "The status of the checklist item (pass or fail)."
+        }
+      },
+      "required": [
+        "id",
+        "reportId",
+        "checklistItemId",
+        "status"
+      ]
+    }
+  },
+  "auth": {
+    "providers": [
+      "password",
+      "anonymous"
+    ]
+  },
+  "firestore": {
+    "structure": [
+      {
+        "path": "/vehicles/{vehicleId}",
+        "definition": {
+          "entityName": "Vehicle",
+          "schema": {
+            "$ref": "#/backend/entities/Vehicle"
+          },
+          "description": "Stores vehicle information.",
+          "params": [
+            {
+              "name": "vehicleId",
+              "description": "The unique ID of the vehicle."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/checklist_items/{checklistItemId}",
+        "definition": {
+          "entityName": "ChecklistItem",
+          "schema": {
+            "$ref": "#/backend/entities/ChecklistItem"
+          },
+          "description": "Stores individual checklist items.",
+          "params": [
+            {
+              "name": "checklistItemId",
+              "description": "The unique ID of the checklist item."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/inspection_reports/{inspectionReportId}",
+        "definition": {
+          "entityName": "InspectionReport",
+          "schema": {
+            "$ref": "#/backend/entities/InspectionReport"
+          },
+          "description": "Stores inspection reports.",
+          "params": [
+            {
+              "name": "inspectionReportId",
+              "description": "The unique ID of the inspection report."
+            }
+          ]
+        }
+      },
+      {
+        "path": "/inspection_reports/{inspectionReportId}/inspection_results/{inspectionResultId}",
+        "definition": {
+          "entityName": "InspectionResult",
+          "schema": {
+            "$ref": "#/backend/entities/InspectionResult"
+          },
+          "description": "Stores the results of individual checklist items within an inspection report.",
+          "params": [
+            {
+              "name": "inspectionReportId",
+              "description": "The unique ID of the inspection report."
+            },
+            {
+              "name": "inspectionResultId",
+              "description": "The unique ID of the inspection result."
+            }
+          ]
+        }
+      }
+    ],
+    "reasoning": "The Firestore data structure is designed to support the Fleet Check application, focusing on pre-trip and post-trip inspections for vehicles. The structure prioritizes authorization independence and supports the necessary QAPs (Queries that Perform) required by the application. This is achieved through structural segregation and denormalization of data where necessary.\n\n1.  **Vehicles:** Vehicles are stored at the root level in a `/vehicles` collection.  No ownership is explicitly defined in the database. This is appropriate as the app doesn't prescribe ownership functionality.\n\n2.  **Checklist Items:** Checklist items, representing individual inspection steps, are stored in the `/checklist_items` collection.  These are also global and not user-specific.  The `vehicleType` field allows for filtering checklist items based on the type of vehicle being inspected.\n\n3.  **Inspection Reports:** Inspection reports are stored under `/inspection_reports`. Each report includes the `vehicleId`. This also includes the `date` and `type` (pre-trip or post-trip).  The AI anomaly detection feature can query this collection to analyze past reports.\n\n4.  **Inspection Results:**  Inspection results are stored in a subcollection `/inspection_reports/{inspectionReportId}/inspection_results`. This structure relates each result to a specific report. This structure supports efficient querying for all results associated with a particular inspection report.\n\n**Authorization Independence:**  Since no role-based authorization or fine-grained access control is defined in the app requirements, there is no explicit denormalization needed. If such requirements were added (e.g., only certain users can view certain reports), then fields like `ownerId` or `members` map would be denormalized to subcollections.\n\n**QAPs Support:**\n*   The structure supports listing all vehicles (`/vehicles`).\n*   The structure supports listing checklist items by vehicle type using a collection group query (though this may not scale well for large data).  An alternative is a subcollection on `/vehicles/{vehicleId}/checklist_items`.\n*   The structure supports listing inspection reports and the associated results via `/inspection_reports` and `/inspection_reports/{inspectionReportId}/inspection_results`."
+  }
+}
