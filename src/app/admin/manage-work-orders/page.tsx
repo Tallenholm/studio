@@ -29,6 +29,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 
 const workOrderSchema = z.object({
   status: z.enum(['open', 'in-progress', 'completed', 'on-hold']),
@@ -128,12 +129,9 @@ export default function ManageWorkOrdersPage() {
       return status.replace('-', ' ').replace(/\b\w/g, l => l.toUpperCase());
   }
 
-  const renderWorkOrdersTable = (orders: WorkOrder[], title: string) => (
+  const renderWorkOrdersTable = (orders: WorkOrder[]) => (
     <Card>
-      <CardHeader>
-        <CardTitle>{title} ({orders.length})</CardTitle>
-      </CardHeader>
-      <CardContent>
+      <CardContent className="p-0">
         {orders.length > 0 ? (
           <div className="border rounded-md">
             <Table>
@@ -185,7 +183,7 @@ export default function ManageWorkOrdersPage() {
             </Table>
           </div>
         ) : (
-          <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No {title.toLowerCase()} found.</div>
+          <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No work orders found in this category.</div>
         )}
       </CardContent>
     </Card>
@@ -217,8 +215,18 @@ export default function ManageWorkOrdersPage() {
         </CardHeader>
       </Card>
 
-      {renderWorkOrdersTable(openWorkOrders, 'Open Work Orders')}
-      {renderWorkOrdersTable(completedWorkOrders, 'Completed Work Orders')}
+        <Tabs defaultValue="open" className="w-full">
+            <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="open">Open ({openWorkOrders.length})</TabsTrigger>
+                <TabsTrigger value="completed">Completed ({completedWorkOrders.length})</TabsTrigger>
+            </TabsList>
+            <TabsContent value="open" className="mt-4">
+                {renderWorkOrdersTable(openWorkOrders)}
+            </TabsContent>
+            <TabsContent value="completed" className="mt-4">
+                {renderWorkOrdersTable(completedWorkOrders)}
+            </TabsContent>
+        </Tabs>
 
        <Dialog open={!!editingOrder} onOpenChange={(open) => !open && handleDialogClose()}>
           <DialogContent className="sm:max-w-xl">
