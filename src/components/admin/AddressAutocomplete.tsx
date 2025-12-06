@@ -44,11 +44,12 @@ export default function AddressAutocomplete({
   };
 
   if (loadError) {
-    return <div>Error loading maps</div>;
+    console.error("Google Maps script load error:", loadError);
+    return <Input type="text" placeholder={placeholder} value={value} onChange={e => onChange(e.target.value)} />;
   }
 
   if (!isLoaded) {
-    return <div className="flex items-center gap-2"><Loader2 className="h-4 w-4 animate-spin"/> <span>Loading Maps...</span></div>;
+    return <div className="flex h-10 w-full items-center rounded-md border border-input bg-background px-3 py-2 text-sm text-muted-foreground"><Loader2 className="mr-2 h-4 w-4 animate-spin"/> Loading...</div>;
   }
 
   return (
@@ -69,4 +70,3 @@ export default function AddressAutocomplete({
     </Autocomplete>
   );
 }
-
