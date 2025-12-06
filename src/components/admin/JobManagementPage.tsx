@@ -564,8 +564,7 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                 ) : (
                                     <>
                                         <Separator />
-                                        <h3 className="text-lg font-medium">Services, Hours, & Assignments</h3>
-                                         <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
+                                        <div className="p-4 border rounded-lg bg-muted/20 space-y-4">
                                             <h4 className="font-semibold">Services Provided</h4>
                                             <div className="flex items-center space-x-6">
                                                 <FormField control={form.control} name="snowServices.plowing" render={({ field }) => (<FormItem className="flex items-center space-x-2 space-y-0"><FormControl><Checkbox checked={field.value} onCheckedChange={field.onChange} /></FormControl><FormLabel>Plowing</FormLabel></FormItem>)}/>
