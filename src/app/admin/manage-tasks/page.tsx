@@ -40,7 +40,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
 import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -161,7 +161,7 @@ export default function ManageTasksPage() {
                   <div>
                       <p className="font-bold text-lg">{task.title}</p>
                       <p className="text-sm text-muted-foreground">Assigned to: {task.assignedToEmployeeName}</p>
-                      <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPP')}</p>
+                      <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPp')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                       <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
@@ -329,3 +329,5 @@ export default function ManageTasksPage() {
     </div>
   );
 }
+
+    
