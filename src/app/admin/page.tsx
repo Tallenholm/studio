@@ -13,7 +13,7 @@ import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import { getAdminDashboardData, type AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
@@ -169,7 +169,7 @@ const StatCard = ({ title, value, icon: Icon, link }: { title: string, value: nu
     );
 
     const cardContent = (
-         <div className="flex items-center justify-between w-full">
+         <div className="flex items-center justify-between w-full p-6">
             <div>
                 <CardDescription>{title}</CardDescription>
                 <CardTitle className="text-4xl font-bold">
@@ -462,3 +462,5 @@ export default function FleetCheckDashboardPage() {
     </>
   );
 }
+
+    
