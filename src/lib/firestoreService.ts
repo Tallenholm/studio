@@ -1,8 +1,8 @@
+
 import { db } from './firebase';
-import { collection, getDocs, addDoc, doc, getDoc, updateDoc, deleteDoc, arrayUnion, writeBatch, setDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
-import { errorEmitter } from '@/firebase/error-emitter';
-import { FirestorePermissionError } from '@/firebase/errors';
+import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
 
 // Generic CRUD factory
@@ -28,44 +28,19 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
         add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
             if (id) {
                 const docRef = doc(getCollection(), id);
-                setDoc(docRef, data).catch(error => {
-                    errorEmitter.emit('permission-error', new FirestorePermissionError({
-                        path: docRef.path,
-                        operation: 'create',
-                        requestResourceData: data,
-                    }));
-                });
+                setDocumentNonBlocking(docRef, data, {});
                 return id;
             }
-            const docRef = await addDoc(getCollection(), data).catch(error => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: getCollection().path,
-                    operation: 'create',
-                    requestResourceData: data,
-                }));
-                // Re-throw or handle null case
-                throw error;
-            });
+            const docRef = await addDocumentNonBlocking(getCollection(), data);
             return docRef.id;
         },
         update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
             const docRef = doc(getCollection(), id);
-            updateDoc(docRef, data).catch(error => {
-                 errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: data,
-                }));
-            });
+            updateDocumentNonBlocking(docRef, data);
         },
         delete: async (id: string): Promise<void> => {
             const docRef = doc(getCollection(), id);
-            deleteDoc(docRef).catch(error => {
-                errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                }));
-            });
+            deleteDocumentNonBlocking(docRef);
         },
         batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
             if (!db) throw new Error("Firestore not initialized.");
@@ -75,12 +50,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 const docRef = doc(col);
                 batch.set(docRef, item);
             });
-            batch.commit().catch(error => {
-                 errorEmitter.emit('permission-error', new FirestorePermissionError({
-                    path: col.path,
-                    operation: 'write',
-                }));
-            });
+            await batch.commit();
         }
     };
 };
@@ -109,13 +79,7 @@ export const { getAll: getNotifications, getById: getNotificationById, add: addN
 export const addNoteToJob = async (jobId: string, note: Job['notes'][0]) => {
   if (!db) throw new Error('Firestore is not initialized.');
   const jobDocRef = doc(db, 'jobs', jobId);
-  updateDoc(jobDocRef, {
+  updateDocumentNonBlocking(jobDocRef, {
     notes: arrayUnion(note)
-  }).catch(error => {
-      errorEmitter.emit('permission-error', new FirestorePermissionError({
-          path: jobDocRef.path,
-          operation: 'update',
-          requestResourceData: { notes: arrayUnion(note) },
-      }));
   });
 };
