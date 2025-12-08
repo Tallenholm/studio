@@ -109,7 +109,7 @@ export default function WeatherPage() {
                     <CardTitle>Live Radar</CardTitle>
                 </CardHeader>
                 <CardContent>
-                    <div className="aspect-video w-full bg-muted rounded-lg overflow-hidden border">
+                    <div className="h-96 md:h-auto md:aspect-video w-full bg-muted rounded-lg overflow-hidden border">
                          <iframe
                             width="100%"
                             height="100%"
