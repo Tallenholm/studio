@@ -13,7 +13,6 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import Image from 'next/image';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -60,8 +59,7 @@ export default function LoginPage() {
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
         <CardHeader className="text-center items-center">
-          <Image src="/logo.png" alt="Logan's Excavating Logo" width={200} height={200} className="mb-4" />
-          <CardTitle className="sr-only">Logan's Excavating</CardTitle>
+          <CardTitle className="text-3xl font-headline">Logan's Excavating</CardTitle>
           <CardDescription>Please sign in to access the portal</CardDescription>
         </CardHeader>
         <CardContent>

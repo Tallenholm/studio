@@ -1,3 +1,4 @@
+
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
@@ -43,35 +44,31 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         let userDoc = await getDoc(userDocRef);
 
         if (!userDoc.exists()) {
-          // If the user doc doesn't exist, create it. This is the source of truth.
           const usersCollectionRef = collection(db, 'users');
           const q = query(usersCollectionRef, limit(1));
           const existingUsersSnapshot = await getDocs(q);
           const isFirstUser = existingUsersSnapshot.empty;
           const role: UserRole = isFirstUser ? 'owner' : 'employee';
-          const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
-          const nameCapitalized = name.charAt(0).toUpperCase() + name.slice(1);
           
-          const newUserProfile = {
+          const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
+          
+          const newUserProfile: Omit<User, 'id'> = {
               uid: firebaseUser.uid,
-              email: firebaseUser.email,
-              name: nameCapitalized,
+              email: firebaseUser.email || '',
+              name: name,
               role: role,
           };
 
           await setDoc(userDocRef, newUserProfile);
-          userDoc = await getDoc(userDocRef); // Re-fetch the doc after creating it
+          userDoc = await getDoc(userDocRef);
         }
 
         const userData = userDoc.data();
         if (userData) {
           setUser({
             id: userDoc.id,
-            uid: userDoc.id,
-            email: userData.email || '',
-            name: userData.name,
-            role: userData.role,
-          });
+            ...userData
+          } as User);
         } else {
             console.error(`Could not retrieve user data for UID ${firebaseUser.uid} even after creation attempt.`);
             await signOut(auth);

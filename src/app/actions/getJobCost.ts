@@ -8,7 +8,6 @@ import { isWithinInterval, parseISO } from 'date-fns';
 export async function getJobCost(job: Job | null) {
     if (!job) return { maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 };
     
-    // This logic is now on the server, fetching from Firestore
     const [maintenanceLogs, expenseReports, assets] = await Promise.all([
         getMaintenanceLogs(),
         getExpenseReports(),
@@ -27,10 +26,9 @@ export async function getJobCost(job: Job | null) {
     ]);
 
     const maintenanceCost = maintenanceLogs
-      .filter(log => {
-        const asset = assets.find(a => a.id === log.assetId);
-        return asset && assignedAssetIds.has(asset.id) && isWithinInterval(parseISO(log.date), jobInterval);
-      })
+      .filter(log => 
+        assignedAssetIds.has(log.assetId) && isWithinInterval(parseISO(log.date), jobInterval)
+      )
       .reduce((acc, log) => acc + (log.cost || 0), 0);
       
     const expenseCost = expenseReports
