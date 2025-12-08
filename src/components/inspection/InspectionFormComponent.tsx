@@ -1,3 +1,4 @@
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -19,9 +20,10 @@ import type { InspectionReport, InspectionStatus, FleetAsset, VehicleType } from
 import ChecklistItemComponent from './ChecklistItemComponent';
 import { addInspectionReport, getFleetAssets } from '@/lib/firestoreService';
 import { useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
-import { Loader2, Send, Truck, Box, Shovel, ClipboardList } from 'lucide-react';
+import { useEffect, useState, useMemo, useRef } from 'react';
+import { Loader2, Send, Truck, Box, Shovel, ClipboardList, AlertTriangle } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const completedItemSchema = z.object({
   itemId: z.string(),
@@ -91,10 +93,27 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
+  const [hasCameraPermission, setHasCameraPermission] = useState<boolean | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
 
   useEffect(() => {
     setIsMounted(true);
     getFleetAssets().then(setFleetAssets);
+     const getCameraPermission = async () => {
+      try {
+        if (navigator.mediaDevices && navigator.mediaDevices.getUserMedia) {
+            const stream = await navigator.mediaDevices.getUserMedia({ video: true });
+            setHasCameraPermission(true);
+            stream.getTracks().forEach(track => track.stop()); // Stop stream immediately, we just need permission
+        } else {
+             setHasCameraPermission(false);
+        }
+      } catch (error) {
+        console.error('Error accessing camera:', error);
+        setHasCameraPermission(false);
+      }
+    };
+    getCameraPermission();
   }, []);
   
   const { trucks, trailers, heavyEquipments } = useMemo(() => {
@@ -226,6 +245,15 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
         </CardDescription>
       </CardHeader>
       <CardContent>
+        {hasCameraPermission === false && (
+            <Alert variant="destructive" className="mb-6">
+                <AlertTriangle className="h-4 w-4" />
+                <AlertTitle>Camera Access Recommended</AlertTitle>
+                <AlertDescription>
+                    Camera access was denied. To add photos directly from your camera during an inspection, please enable camera permissions in your browser settings.
+                </AlertDescription>
+            </Alert>
+        )}
         <Form {...form}>
           <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-8">
 
