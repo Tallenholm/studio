@@ -2,10 +2,12 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { auth, db, isFirebaseConfigured } from '@/lib/firebase';
+import { initializeFirebase } from '@/lib/firebase-initialize';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import type { User, UserRole } from '@/lib/types';
+
+const { auth, db, isFirebaseConfigured } = initializeFirebase();
 
 interface AuthContextType {
   user: User | null;

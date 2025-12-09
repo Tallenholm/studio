@@ -1,10 +1,11 @@
 
 
-import { db } from './firebase';
+import { initializeFirebase } from './firebase-initialize';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
+const { db } = initializeFirebase();
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {

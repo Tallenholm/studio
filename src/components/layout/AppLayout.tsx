@@ -33,10 +33,12 @@ import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { initializeFirebase } from '@/lib/firebase-initialize';
 import { checkWeatherAndNotify } from '@/lib/weatherService';
 import { loadSystemSettings } from '@/lib/settingsService';
 import { addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
+
+const { db } = initializeFirebase();
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">

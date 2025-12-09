@@ -20,7 +20,9 @@ import { Separator } from '@/components/ui/separator';
 import { optimizeSnowRoute } from '@/ai/flows/optimize-snow-route-flow';
 import type { OptimizeSnowRouteOutput } from '@/ai/flows/optimize-snow-route-flow';
 import { arrayUnion, onSnapshot, collection, query, where } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { initializeFirebase } from '@/lib/firebase-initialize';
+
+const { db } = initializeFirebase();
 
 const logSchema = z.object({
   photoDataUri: z.string().optional(),

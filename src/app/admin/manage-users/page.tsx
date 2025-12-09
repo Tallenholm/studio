@@ -20,7 +20,7 @@ import { useAuth } from '@/contexts/AuthContext';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { auth } from '@/lib/firebase';
+import { initializeFirebase } from '@/lib/firebase-initialize';
 import {
   Dialog,
   DialogContent,
@@ -36,6 +36,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select';
+
+const { auth } = initializeFirebase();
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
