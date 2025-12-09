@@ -52,7 +52,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           
           const name = firebaseUser.displayName || firebaseUser.email?.split('@')[0] || 'New User';
           
-          const newUserProfile: Omit<User, 'id'> = {
+          const newUserProfile: User = {
+              id: firebaseUser.uid,
               uid: firebaseUser.uid,
               email: firebaseUser.email || '',
               name: name,
@@ -60,19 +61,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           await setDoc(userDocRef, newUserProfile);
-          userDoc = await getDoc(userDocRef);
-        }
-
-        const userData = userDoc.data();
-        if (userData) {
-          setUser({
-            id: userDoc.id,
-            ...userData
-          } as User);
+          setUser(newUserProfile);
         } else {
-            console.error(`Could not retrieve user data for UID ${firebaseUser.uid} even after creation attempt.`);
-            await signOut(auth);
-            setUser(null);
+            setUser({ id: userDoc.id, ...userDoc.data() } as User);
         }
 
       } else {

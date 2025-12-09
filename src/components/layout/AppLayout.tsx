@@ -4,7 +4,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import Image from 'next/image';
 import {
   SidebarProvider,
@@ -102,9 +102,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
             const checkAndCreateNotifications = async () => {
-                const assets = await getFleetAssets();
-                const notifications = await getNotifications();
-                let notificationsChanged = false;
+                const [assets, notifications] = await Promise.all([
+                    getFleetAssets(),
+                    getNotifications()
+                ]);
 
                 const today = new Date();
                 today.setHours(0, 0, 0, 0); 
@@ -125,7 +126,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
                             notificationPromises.push(addNotification(newNotif, notifId));
-                            notificationsChanged = true;
                         }
                     }
 
@@ -141,7 +141,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
                             notificationPromises.push(addNotification(newNotif, notifId));
-                            notificationsChanged = true;
                         }
                     }
 
@@ -161,29 +160,27 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                                     };
                                     notificationPromises.push(addNotification(newNotif, notifId));
-                                    notificationsChanged = true;
                                 }
                             }
                         }
                     }
                 });
 
-                if (notificationsChanged) {
+                if (notificationPromises.length > 0) {
                     Promise.all(notificationPromises);
                 }
             };
+            
             checkAndCreateNotifications();
             
             const settings = loadSystemSettings();
             const locationSettings = { locationLat: settings.locationLat, locationLon: settings.locationLon };
 
-            // Set up recurring weather check
             const weatherInterval = setInterval(() => {
                 console.log('Checking weather for notifications...');
                 checkWeatherAndNotify(locationSettings);
-            }, 1000 * 60 * 30); // Check every 30 minutes
+            }, 1000 * 60 * 30);
 
-            // Initial check on load
             checkWeatherAndNotify(locationSettings);
             
             return () => clearInterval(weatherInterval);
@@ -202,7 +199,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
                 <SidebarHeader className="p-4 flex flex-col items-center">
                     <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-                        <Image src="/logo.png" alt="Logan's Excavating Logo" width={150} height={150} />
+                        <span className="font-headline text-2xl font-bold text-primary">Logan's Excavating</span>
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>

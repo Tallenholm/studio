@@ -1,4 +1,5 @@
 
+
 import { db } from './firebase';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
@@ -76,7 +77,7 @@ export const { getAll: getNotifications, getById: getNotificationById, add: addN
 
 
 // Special case functions
-export const addNoteToJob = async (jobId: string, note: Job['notes'][0]) => {
+export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
   if (!db) throw new Error('Firestore is not initialized.');
   const jobDocRef = doc(db, 'jobs', jobId);
   updateDocumentNonBlocking(jobDocRef, {
