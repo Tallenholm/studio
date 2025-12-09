@@ -167,7 +167,11 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   
   if (memoized && typeof memoized === 'object') {
     // Add the __memo flag to the object without changing its type signature for the consumer.
-    (memoized as MemoFirebase<T>).__memo = true;
+    Object.defineProperty(memoized, '__memo', {
+      value: true,
+      writable: false,
+      enumerable: false,
+    });
   }
   
   return memoized;

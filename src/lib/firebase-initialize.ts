@@ -61,6 +61,3 @@ export function initializeFirebase() {
     
     return { app, auth, db, storage, messaging };
 }
-
-// Initialize on load
-initializeFirebase();
