@@ -32,8 +32,6 @@ export default function LoginPage() {
   });
 
   const onSubmit = async (values: z.infer<typeof loginSchema>) => {
-    if (!isFirebaseConfigured) return;
-
     try {
       await login(values.email, values.password);
       toast({ title: 'Login Successful', description: 'Welcome back!' });
@@ -44,7 +42,6 @@ export default function LoginPage() {
   };
 
   const handleGoogleSignIn = async () => {
-    if (!isFirebaseConfigured) return;
     try {
         await signInWithGoogle();
         toast({ title: 'Login Successful', description: 'Welcome!' });
@@ -54,7 +51,8 @@ export default function LoginPage() {
   };
   
   const isFormDisabled = !isFirebaseConfigured || form.formState.isSubmitting || isLoading;
-
+  const loginError = form.formState.errors.root?.message;
+  
   return (
     <div className="flex items-center justify-center min-h-screen bg-background p-4">
       <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
@@ -63,76 +61,79 @@ export default function LoginPage() {
           <CardDescription>Please sign in to access the portal</CardDescription>
         </CardHeader>
         <CardContent>
-          <Form {...form}>
-            <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
-              <fieldset disabled={isFormDisabled} className="space-y-4">
-                <FormField
-                  control={form.control}
-                  name="email"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Email</FormLabel>
-                      <FormControl>
-                        <Input placeholder="name@company.com" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-                <FormField
-                  control={form.control}
-                  name="password"
-                  render={({ field }) => (
-                    <FormItem>
-                      <FormLabel>Password</FormLabel>
-                      <FormControl>
-                        <Input type="password" placeholder="••••••••" {...field} />
-                      </FormControl>
-                      <FormMessage />
-                    </FormItem>
-                  )}
-                />
-              </fieldset>
-              
-              {form.formState.errors.root && (
-                <div className="flex items-center gap-2 text-sm text-destructive">
-                  <AlertCircle className="h-4 w-4" />
-                  <p>{form.formState.errors.root.message}</p>
-                </div>
-              )}
-
-              {!isFirebaseConfigured && (
-                  <div className="flex items-center gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
+          {!isFirebaseConfigured ? (
+              <div className="flex flex-col items-center justify-center gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
+                <AlertCircle className="h-8 w-8" />
+                <p className="font-bold text-center">Firebase Not Configured</p>
+                <p className="text-center text-xs">Please add your project credentials to the .env file to enable login.</p>
+              </div>
+          ) : (
+            <>
+            <Form {...form}>
+              <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4">
+                <fieldset disabled={isFormDisabled} className="space-y-4">
+                  <FormField
+                    control={form.control}
+                    name="email"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl>
+                          <Input placeholder="name@company.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <FormField
+                    control={form.control}
+                    name="password"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Password</FormLabel>
+                        <FormControl>
+                          <Input type="password" placeholder="••••••••" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                </fieldset>
+                
+                {loginError && (
+                  <div className="flex items-center gap-2 text-sm text-destructive">
                     <AlertCircle className="h-4 w-4" />
-                    <p>Firebase is not configured. Please add project credentials to the .env file to enable login.</p>
+                    <p>{loginError}</p>
                   </div>
-              )}
+                )}
 
-              <Button type="submit" className="w-full" disabled={isFormDisabled}>
-                <LogIn className="mr-2 h-5 w-5" />
-                Sign In
-              </Button>
-            </form>
-          </Form>
+                <Button type="submit" className="w-full" disabled={isFormDisabled}>
+                  <LogIn className="mr-2 h-5 w-5" />
+                  Sign In
+                </Button>
+              </form>
+            </Form>
 
-          <div className="relative my-6">
-              <div className="absolute inset-0 flex items-center">
-                  <span className="w-full border-t" />
-              </div>
-              <div className="relative flex justify-center text-xs uppercase">
-                  <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
-              </div>
-          </div>
+            <div className="relative my-6">
+                <div className="absolute inset-0 flex items-center">
+                    <span className="w-full border-t" />
+                </div>
+                <div className="relative flex justify-center text-xs uppercase">
+                    <span className="bg-card px-2 text-muted-foreground">Or continue with</span>
+                </div>
+            </div>
 
-          <Button
-              variant="outline"
-              className="w-full"
-              onClick={handleGoogleSignIn}
-              disabled={isFormDisabled}
-          >
-              <Chrome className="mr-2 h-5 w-5" />
-              Sign In with Google
-          </Button>
+            <Button
+                variant="outline"
+                className="w-full"
+                onClick={handleGoogleSignIn}
+                disabled={isFormDisabled}
+            >
+                <Chrome className="mr-2 h-5 w-5" />
+                Sign In with Google
+            </Button>
+            </>
+          )}
         </CardContent>
       </Card>
     </div>
