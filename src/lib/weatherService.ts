@@ -32,9 +32,17 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
     const response = await fetch(url, { cache: 'no-store' }); // Disable caching for fresh data
 
     if (!response.ok) {
-        const errorBody = await response.json();
-        console.error("Weather API Error Body:", errorBody);
-        throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorBody.reason || ''}`);
+        const contentType = response.headers.get('content-type');
+        let errorBody: any;
+        if (contentType && contentType.includes('application/json')) {
+            errorBody = await response.json();
+            console.error("Weather API JSON Error Body:", errorBody);
+            throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorBody.reason || ''}`);
+        } else {
+            errorBody = await response.text();
+            console.error("Weather API Text Error Body:", errorBody);
+            throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorBody}`);
+        }
     }
     
     const data = await response.json();
