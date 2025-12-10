@@ -36,17 +36,17 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const firebaseContext = useContext(FirebaseContext);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth || !firebaseContext.db) {
+    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth || !firebaseContext.firestore) {
         console.warn("Firebase not initialized, auth will not work.");
         setIsLoading(false);
         return;
     }
     
-    const { auth, db } = firebaseContext;
+    const { auth, firestore } = firebaseContext;
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
-        const userDocRef = doc(db, 'users', firebaseUser.uid);
+        const userDocRef = doc(firestore, 'users', firebaseUser.uid);
         const userDoc = await getDoc(userDocRef);
 
         if (userDoc.exists()) {
@@ -54,7 +54,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         } else {
           // User is authenticated with Firebase, but no profile exists in Firestore.
           // This is a new user, so we create their profile.
-          const usersCollectionRef = collection(db, 'users');
+          const usersCollectionRef = collection(firestore, 'users');
           const q = query(usersCollectionRef, limit(1));
           const existingUsersSnapshot = await getDocs(q);
           const isFirstUser = existingUsersSnapshot.empty;

@@ -6,13 +6,16 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
-import { LogIn, AlertCircle, Chrome, UserPlus } from 'lucide-react';
+import { LogIn, AlertCircle, Chrome, UserPlus, KeyRound } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { sendPasswordResetEmail } from 'firebase/auth';
+import { initializeFirebase } from '@/lib/firebase-initialize';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -24,10 +27,13 @@ const signupSchema = z.object({
     password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
+const { auth } = initializeFirebase();
+
 export default function LoginPage() {
   const { login, signUp, signInWithGoogle, isLoading, isFirebaseConfigured } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('signin');
+  const [resetEmail, setResetEmail] = useState('');
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
     resolver: zodResolver(loginSchema),
@@ -53,7 +59,11 @@ export default function LoginPage() {
       await signUp(values.email, values.password);
       toast({ title: 'Account Created', description: 'Welcome! You have been signed in.' });
     } catch (error: any) {
-      signupForm.setError('root', { message: error.message || 'An unknown sign-up error occurred.' });
+      if (error.code === 'auth/email-already-in-use') {
+          signupForm.setError('root', { message: 'This email is already in use. Please sign in or reset your password.' });
+      } else {
+        signupForm.setError('root', { message: error.message || 'An unknown sign-up error occurred.' });
+      }
     }
   };
 
@@ -63,6 +73,24 @@ export default function LoginPage() {
         toast({ title: 'Login Successful', description: 'Welcome!' });
     } catch (error: any) {
         loginForm.setError('root', { message: error.message || 'An unknown login error occurred.' });
+    }
+  };
+
+  const handlePasswordReset = async () => {
+    if (!resetEmail) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Please enter your email address.' });
+        return;
+    }
+    if (!auth) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
+        return;
+    }
+    try {
+        await sendPasswordResetEmail(auth, resetEmail);
+        toast({ title: 'Password Reset Email Sent', description: `An email has been sent to ${resetEmail} with reset instructions.` });
+    } catch (error) {
+        console.error('Password reset error:', error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to send password reset email. Please ensure the email is correct.' });
     }
   };
   
@@ -97,9 +125,40 @@ export default function LoginPage() {
                         <FormField control={loginForm.control} name="email" render={({ field }) => (
                             <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="name@company.com" {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
-                        <FormField control={loginForm.control} name="password" render={({ field }) => (
-                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
+                         <div>
+                            <FormField control={loginForm.control} name="password" render={({ field }) => (
+                                <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
+                            )}/>
+                            <div className="text-right mt-2">
+                               <AlertDialog>
+                                  <AlertDialogTrigger asChild>
+                                    <Button variant="link" type="button" className="text-xs p-0 h-auto">Forgot Password?</Button>
+                                  </AlertDialogTrigger>
+                                  <AlertDialogContent>
+                                    <AlertDialogHeader>
+                                      <AlertDialogTitle>Reset Your Password</AlertDialogTitle>
+                                      <AlertDialogDescription>
+                                        Enter your email address below to receive a password reset link.
+                                      </AlertDialogDescription>
+                                    </AlertDialogHeader>
+                                    <div className="py-2">
+                                        <Label htmlFor="reset-email" className="sr-only">Email</Label>
+                                        <Input
+                                            id="reset-email"
+                                            type="email"
+                                            placeholder="name@company.com"
+                                            value={resetEmail}
+                                            onChange={(e) => setResetEmail(e.target.value)}
+                                        />
+                                    </div>
+                                    <AlertDialogFooter>
+                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                      <AlertDialogAction onClick={handlePasswordReset}>Send Reset Link</AlertDialogAction>
+                                    </AlertDialogFooter>
+                                  </AlertDialogContent>
+                                </AlertDialog>
+                            </div>
+                         </div>
                         </fieldset>
                         {loginError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" /><p>{loginError}</p></div>}
                         <Button type="submit" className="w-full" disabled={isFormDisabled}><LogIn className="mr-2 h-5 w-5" /> Sign In</Button>
