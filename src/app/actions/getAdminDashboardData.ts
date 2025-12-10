@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
+import { getFirestoreInstance, getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
 import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import type { Job, CalendarEvent } from '@/lib/types';
 import { isWithinInterval, subDays, isToday, parseISO } from 'date-fns';
@@ -20,15 +20,16 @@ export interface AdminDashboardData {
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
+  const db = getFirestoreInstance();
   // Step 1: Fetch all necessary data first, with fallbacks for individual failures.
   const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents, allAssets] = await Promise.all([
-    getJobs().catch(() => []),
-    getExpenseReports().catch(() => []),
-    getInspectionReports().catch(() => []),
-    getTimeOffRequests().catch(() => []),
-    getTasks().catch(() => []),
-    getCalendarEvents().catch(() => []),
-    getFleetAssets().catch(() => []),
+    getJobs(db).catch(() => []),
+    getExpenseReports(db).catch(() => []),
+    getInspectionReports(db).catch(() => []),
+    getTimeOffRequests(db).catch(() => []),
+    getTasks(db).catch(() => []),
+    getCalendarEvents(db).catch(() => []),
+    getFleetAssets(db).catch(() => []),
   ]);
 
   let briefing: DailyBriefingOutput | null = null;

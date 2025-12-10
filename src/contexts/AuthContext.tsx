@@ -2,12 +2,11 @@
 'use client';
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
-import { initializeFirebase, isFirebaseConfigured } from '@/lib/firebase-initialize';
+import { isFirebaseConfigured, initializeFirebase } from '@/lib/firebase-initialize';
 import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import type { User, UserRole } from '@/lib/types';
-
-const { auth, db } = initializeFirebase();
+import { FirebaseContext, useFirebase } from '@/firebase/provider';
 
 interface AuthContextType {
   user: User | null;
@@ -32,13 +31,16 @@ const AuthContext = createContext<AuthContextType>({
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [isLoading, setIsLoading] = useState(true);
+  const firebaseContext = useContext(FirebaseContext);
 
   useEffect(() => {
-    if (!isFirebaseConfigured || !auth || !db) {
+    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth || !firebaseContext.db) {
         console.warn("Firebase not initialized, auth will not work.");
         setIsLoading(false);
         return;
     }
+    
+    const { auth, db } = firebaseContext;
     
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
@@ -75,14 +77,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     });
 
     return () => unsubscribe();
-  }, []);
+  }, [firebaseContext]);
 
   const login = async (email: string, password: string) => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth) {
       throw new Error("Firebase is not configured. Please add your project credentials to the .env file.");
     }
     try {
-        await signInWithEmailAndPassword(auth, email, password);
+        await signInWithEmailAndPassword(firebaseContext.auth, email, password);
     } catch (error: any) {
         if (error.code === 'auth/user-not-found' || error.code === 'auth/wrong-password' || error.code === 'auth/invalid-credential') {
             throw new Error('Invalid email or password. Please try again.');
@@ -92,12 +94,12 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const signInWithGoogle = async () => {
-    if (!isFirebaseConfigured || !auth) {
+    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth) {
       throw new Error("Firebase is not configured.");
     }
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(auth, provider);
+        await signInWithPopup(firebaseContext.auth, provider);
     } catch (error: any) {
         console.error("Google Sign-In Error: ", error);
         throw new Error("Could not sign in with Google. Please try again.");
@@ -105,8 +107,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   const logout = async () => {
-    if (!auth) throw new Error("Firebase Auth not initialized.");
-    await signOut(auth);
+    if (!firebaseContext || !firebaseContext.auth) throw new Error("Firebase Auth not initialized.");
+    await signOut(firebaseContext.auth);
   };
 
   const value = {

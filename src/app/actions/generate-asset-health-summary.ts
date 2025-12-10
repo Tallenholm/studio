@@ -2,7 +2,7 @@
 'use server';
 
 import { generateAssetHealthSummary as generateSummaryFlow } from '@/ai/flows/generate-asset-health-summary';
-import { getInspectionReports, getMaintenanceLogs, getFleetAssetById } from '@/lib/firestoreService';
+import { getFirestoreInstance, getInspectionReports, getMaintenanceLogs, getFleetAssetById } from '@/lib/firestoreService';
 
 interface GenerateAssetHealthSummaryParams {
   assetId: string;
@@ -15,11 +15,12 @@ interface GenerateAssetHealthSummaryParams {
 export async function generateAssetHealthSummary(
   { assetId }: GenerateAssetHealthSummaryParams
 ): Promise<string> {
+  const db = getFirestoreInstance();
   // 1. Load all necessary data from Firestore
   const [asset, allReports, allLogs] = await Promise.all([
-    getFleetAssetById(assetId),
-    getInspectionReports(),
-    getMaintenanceLogs()
+    getFleetAssetById(db, assetId),
+    getInspectionReports(db),
+    getMaintenanceLogs(db)
   ]);
   
   if (!asset) {

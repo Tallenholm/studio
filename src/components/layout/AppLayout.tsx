@@ -4,8 +4,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
-import Image from 'next/image';
+import { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -32,13 +31,10 @@ import { useCommandPalette } from '@/hooks/use-command-palette';
 import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
-import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase-initialize';
+import { onSnapshot, collection, query, where, orderBy, Firestore } from 'firebase/firestore';
+import { getFirestoreInstance, addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
 import { checkWeatherAndNotify } from '@/lib/weatherService';
 import { loadSystemSettings } from '@/lib/settingsService';
-import { addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
-
-const { db } = initializeFirebase();
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -67,7 +63,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!user || !db) return;
+        if (!user) return;
+        const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
         const q = query(notificationsRef, where('recipientId', 'in', ['all', user.id]));
@@ -103,10 +100,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
-            const checkAndCreateNotifications = async () => {
+            const db = getFirestoreInstance();
+            const checkAndCreateNotifications = async (db: Firestore) => {
                 const [assets, notifications] = await Promise.all([
-                    getFleetAssets(),
-                    getNotifications()
+                    getFleetAssets(db),
+                    getNotifications(db)
                 ]);
 
                 const today = new Date();
@@ -127,7 +125,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
-                            notificationPromises.push(addNotification(newNotif, notifId));
+                            notificationPromises.push(addNotification(db, newNotif, notifId));
                         }
                     }
 
@@ -142,7 +140,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
-                            notificationPromises.push(addNotification(newNotif, notifId));
+                            notificationPromises.push(addNotification(db, newNotif, notifId));
                         }
                     }
 
@@ -161,7 +159,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         content: `The ${serviceName} for ${asset.name} (${asset.vin}) is ${isOverdue ? 'overdue' : 'due'} on ${format(nextDueDate, 'PPP')}. Please log the service once completed.`,
                                         senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                                     };
-                                    notificationPromises.push(addNotification(newNotif, notifId));
+                                    notificationPromises.push(addNotification(db, newNotif, notifId));
                                 }
                             }
                         }
@@ -173,7 +171,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 }
             };
             
-            checkAndCreateNotifications();
+            checkAndCreateNotifications(db);
             
             const settings = loadSystemSettings();
             const locationSettings = { locationLat: settings.locationLat, locationLon: settings.locationLon };

@@ -1,17 +1,17 @@
 
 'use server';
 
-import { getMaintenanceLogs, getExpenseReports, getFleetAssets } from '@/lib/firestoreService';
+import { getFirestoreInstance, getMaintenanceLogs, getExpenseReports } from '@/lib/firestoreService';
 import type { Job } from '@/lib/types';
 import { isWithinInterval, parseISO } from 'date-fns';
 
 export async function getJobCost(job: Job | null) {
     if (!job) return { maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 };
     
-    const [maintenanceLogs, expenseReports, assets] = await Promise.all([
-        getMaintenanceLogs(),
-        getExpenseReports(),
-        getFleetAssets(),
+    const db = getFirestoreInstance();
+    const [maintenanceLogs, expenseReports] = await Promise.all([
+        getMaintenanceLogs(db),
+        getExpenseReports(db),
     ]);
 
     const jobInterval = {
