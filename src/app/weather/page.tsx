@@ -10,8 +10,9 @@ import { fetchWeather } from '@/lib/weatherService';
 import type { WeatherData, ForecastDay, HourlyForecast } from '@/lib/weather-utils';
 import { weatherDescriptions } from '@/lib/weather-utils';
 
-const getWeatherIcon = (code: number, size: 'large' | 'small' = 'large') => {
+const getWeatherIcon = (code: number | null, size: 'large' | 'small' = 'large') => {
     const className = size === 'large' ? "h-10 w-10" : "h-6 w-6";
+    if (code === null) return <Thermometer className={`${className} text-gray-400`} />;
     switch (code) {
         case 0: return <Sun className={`${className} text-yellow-400`} />;
         case 1: case 2: return <Cloud className={`${className} text-gray-400`} />;
@@ -59,7 +60,7 @@ export default function WeatherPage() {
     }, [location]);
 
     const radarLayer = useMemo(() => {
-        if (!weatherData) return 'snow';
+        if (!weatherData) return 'radar';
         const todaysWeatherCode = weatherData.daily.weather_code[0];
         if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
             return 'snow';
@@ -72,14 +73,14 @@ export default function WeatherPage() {
 
     const { dailyForecast, hourlyForecast } = useMemo(() => {
         if (!weatherData) {
-            return { dailyForecast: null, hourlyForecast: null };
+            return { dailyForecast: [], hourlyForecast: [] };
         }
 
         const daily: ForecastDay[] = weatherData.daily.time.map((t, i) => ({
             time: t,
             weatherCode: weatherData.daily.weather_code[i],
-            tempMax: weatherData.daily.temperature_2m_max[i],
-            tempMin: weatherData.daily.temperature_2m_min[i],
+            tempMax: weatherData.daily.temperature_2m_max[i] ?? 0,
+            tempMin: weatherData.daily.temperature_2m_min[i] ?? 0,
             sunrise: weatherData.daily.sunrise[i],
             sunset: weatherData.daily.sunset[i],
             precipitation: weatherData.daily.precipitation_probability_max[i],
@@ -91,12 +92,12 @@ export default function WeatherPage() {
         const hourly: HourlyForecast[] = weatherData.hourly.time
             .map((t, i) => ({
                 time: t,
-                temp: weatherData.hourly.temperature_2m[i],
-                precipitation: weatherData.hourly.precipitation_probability[i],
-                weatherCode: weatherData.hourly.weather_code[i],
-                windSpeed: weatherData.hourly.wind_speed_10m[i],
-                humidity: weatherData.hourly.relative_humidity_2m[i],
-                windDirection: weatherData.hourly.wind_direction_10m[i],
+                temp: weatherData.hourly.temperature_2m[i] ?? 0,
+                precipitation: weatherData.hourly.precipitation_probability[i] ?? 0,
+                weatherCode: weatherData.hourly.weather_code[i] ?? 0,
+                windSpeed: weatherData.hourly.wind_speed_10m[i] ?? 0,
+                humidity: weatherData.hourly.relative_humidity_2m[i] ?? 0,
+                windDirection: weatherData.hourly.wind_direction_10m[i] ?? 0,
             }))
             .filter(h => parseISO(h.time) >= now)
             .slice(0, 24);
@@ -147,7 +148,7 @@ export default function WeatherPage() {
                             <span>{error}</span>
                         </div>
                    )}
-                   {hourlyForecast && (
+                   {hourlyForecast.length > 0 && (
                        <div className="w-full overflow-x-auto">
                            <div className="flex flex-nowrap gap-4 pb-4">
                                 {hourlyForecast.map(hour => (
@@ -189,7 +190,7 @@ export default function WeatherPage() {
                             <span>{error}</span>
                         </div>
                     )}
-                    {dailyForecast && (
+                    {dailyForecast.length > 0 && (
                         <div className="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-7 gap-4">
                             {dailyForecast.map(day => (
                                 <Card key={day.time} className="flex flex-col items-center justify-between p-3 md:p-4 text-center bg-muted/30">

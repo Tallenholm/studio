@@ -1,10 +1,11 @@
 
+
 // Interfaces for ECMWF API data structure
 interface DailyData {
     time: string[];
     weather_code: number[];
-    temperature_2m_max: number[];
-    temperature_2m_min: number[];
+    temperature_2m_max: (number | null)[];
+    temperature_2m_min: (number | null)[];
     sunrise: string[];
     sunset: string[];
     precipitation_probability_max: (number | null)[];
@@ -14,12 +15,12 @@ interface DailyData {
 
 interface HourlyData {
     time: string[];
-    temperature_2m: number[];
-    relative_humidity_2m: number[];
-    precipitation_probability: number[];
-    weather_code: number[];
-    wind_speed_10m: number[];
-    wind_direction_10m: number[];
+    temperature_2m: (number | null)[];
+    relative_humidity_2m: (number | null)[];
+    precipitation_probability: (number | null)[];
+    weather_code: (number | null)[];
+    wind_speed_10m: (number | null)[];
+    wind_direction_10m: (number | null)[];
 }
 
 export interface WeatherData {
