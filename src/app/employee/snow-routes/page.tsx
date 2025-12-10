@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -5,7 +6,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
-import { getJobs, updateJob, getUsers, getFleetAssets } from '@/lib/firestoreService';
+import { getJobs, updateJob, getUsers, getFleetAssets, getSnowRoutes } from '@/lib/firestoreService';
 import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
 import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -20,9 +21,7 @@ import { Separator } from '@/components/ui/separator';
 import { optimizeSnowRoute } from '@/ai/flows/optimize-snow-route-flow';
 import type { OptimizeSnowRouteOutput } from '@/ai/flows/optimize-snow-route-flow';
 import { arrayUnion, onSnapshot, collection, query, where } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase-initialize';
-
-const { db } = initializeFirebase();
+import { getFirestoreInstance } from '@/lib/firestoreService';
 
 const logSchema = z.object({
   photoDataUri: z.string().optional(),
@@ -57,8 +56,9 @@ export default function SnowRoutesPage() {
   });
 
   useEffect(() => {
-    if (!user || !db) return;
+    if (!user) return;
     setIsLoading(true);
+    const db = getFirestoreInstance();
 
     const fetchData = async () => {
         const [loadedJobs, loadedUsers, loadedAssets] = await Promise.all([

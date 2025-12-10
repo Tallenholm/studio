@@ -11,7 +11,7 @@ import { Bell, Loader2, Circle, Mail } from 'lucide-react';
 import { formatDistanceToNow } from 'date-fns';
 import { cn } from '@/lib/utils';
 import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
-import { db } from '@/lib/firebase';
+import { getFirestoreInstance } from '@/lib/firestoreService';
 
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
@@ -19,10 +19,11 @@ export default function NotificationsPage() {
   const { user } = useAuth();
   
   useEffect(() => {
-    if (!user || !db) {
+    if (!user) {
         setIsLoading(false);
         return;
     }
+    const db = getFirestoreInstance();
 
     const notificationsRef = collection(db, "notifications");
     const q = query(
@@ -130,5 +131,3 @@ export default function NotificationsPage() {
     </div>
   );
 }
-
-    

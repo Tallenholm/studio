@@ -100,11 +100,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (user && (user.role === 'owner' || user.role === 'manager')) {
-            const db = getFirestoreInstance();
-            const checkAndCreateNotifications = async (db: Firestore) => {
+            
+            const checkAndCreateNotifications = async () => {
                 const [assets, notifications] = await Promise.all([
-                    getFleetAssets(db),
-                    getNotifications(db)
+                    getFleetAssets(),
+                    getNotifications()
                 ]);
 
                 const today = new Date();
@@ -125,7 +125,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
-                            notificationPromises.push(addNotification(db, newNotif, notifId));
+                            notificationPromises.push(addNotification(newNotif, notifId));
                         }
                     }
 
@@ -140,7 +140,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
                                 senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                             };
-                            notificationPromises.push(addNotification(db, newNotif, notifId));
+                            notificationPromises.push(addNotification(newNotif, notifId));
                         }
                     }
 
@@ -159,7 +159,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         content: `The ${serviceName} for ${asset.name} (${asset.vin}) is ${isOverdue ? 'overdue' : 'due'} on ${format(nextDueDate, 'PPP')}. Please log the service once completed.`,
                                         senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
                                     };
-                                    notificationPromises.push(addNotification(db, newNotif, notifId));
+                                    notificationPromises.push(addNotification(newNotif, notifId));
                                 }
                             }
                         }
@@ -171,7 +171,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 }
             };
             
-            checkAndCreateNotifications(db);
+            checkAndCreateNotifications();
             
             const settings = loadSystemSettings();
             const locationSettings = { locationLat: settings.locationLat, locationLon: settings.locationLon };

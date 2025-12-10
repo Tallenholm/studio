@@ -9,7 +9,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase';
+import { useAuth } from '@/contexts/AuthContext';
 import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown, Eye, Camera, History } from 'lucide-react';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
@@ -413,5 +413,3 @@ export default function JobDetailsPage() {
     </div>
   );
 }
-
-    

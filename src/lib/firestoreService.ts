@@ -1,10 +1,11 @@
 
-
 import { initializeFirebase } from './firebase-initialize';
-import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
 
+
+let dbInstance: Firestore | null = null;
 /**
  * Retrieves the global Firestore instance.
  * This is safe to call from both server and client components because
@@ -12,50 +13,66 @@ import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocki
  * @returns {Firestore} The Firestore database instance.
  */
 export function getFirestoreInstance(): Firestore {
-    const { db } = initializeFirebase();
-    if (!db) {
-        throw new Error("Firestore is not initialized. Ensure Firebase config is set up correctly.");
+    if (!dbInstance) {
+        const { db } = initializeFirebase();
+        if (!db) {
+            throw new Error("Firestore is not initialized. Ensure Firebase config is set up correctly.");
+        }
+        dbInstance = db;
     }
-    return db;
+    return dbInstance;
 }
 
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
     
-    const getCollection = (db: Firestore) => collection(db, collectionName);
+    const getCollection = () => {
+        const db = getFirestoreInstance();
+        return collection(db, collectionName);
+    }
 
     return {
-        getAll: async (db: Firestore): Promise<T[]> => {
-            const snapshot = await getDocs(getCollection(db));
+        getAll: async (): Promise<T[]> => {
+            const snapshot = await getDocs(getCollection());
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
         },
-        getById: async (db: Firestore, id: string): Promise<T | null> => {
-            const docRef = doc(getCollection(db), id);
+        getById: async (id: string): Promise<T | null> => {
+            const db = getFirestoreInstance();
+            const docRef = doc(db, collectionName, id);
             const docSnap = await getDoc(docRef);
             return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
         },
-        add: async (db: Firestore, data: Omit<T, 'id'>, id?: string): Promise<string> => {
-            const colRef = getCollection(db);
+        add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
+            const db = getFirestoreInstance();
+            const colRef = collection(db, collectionName);
             if (id) {
                 const docRef = doc(colRef, id);
                 setDocumentNonBlocking(docRef, data, {});
                 return id;
             }
+            // Use server-side addDoc for Server Actions for reliability
+            if (typeof window === 'undefined') {
+                const docRef = await addDoc(colRef, data);
+                return docRef.id;
+            }
             const docRef = await addDocumentNonBlocking(colRef, data);
             return docRef.id;
         },
-        update: async (db: Firestore, id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
-            const docRef = doc(getCollection(db), id);
+        update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
+            const db = getFirestoreInstance();
+            const docRef = doc(db, collectionName, id);
             updateDocumentNonBlocking(docRef, data);
         },
-        delete: async (db: Firestore, id: string): Promise<void> => {
-            const docRef = doc(getCollection(db), id);
+        delete: async (id: string): Promise<void> => {
+            const db = getFirestoreInstance();
+            const docRef = doc(db, collectionName, id);
             deleteDocumentNonBlocking(docRef);
         },
-        batchAdd: async (db: Firestore, data: Omit<T, 'id'>[]): Promise<void> => {
+        batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
+            const db = getFirestoreInstance();
             const batch = writeBatch(db);
-            const col = getCollection(db);
+            const col = collection(db, collectionName);
             data.forEach(item => {
                 const docRef = doc(col);
                 batch.set(docRef, item);
@@ -86,7 +103,8 @@ export const { getAll: getNotifications, getById: getNotificationById, add: addN
 
 
 // Special case functions
-export const addNoteToJob = async (db: Firestore, jobId: string, note: Job['notes'][number]) => {
+export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
+  const db = getFirestoreInstance();
   const jobDocRef = doc(db, 'jobs', jobId);
   updateDocumentNonBlocking(jobDocRef, {
     notes: arrayUnion(note)

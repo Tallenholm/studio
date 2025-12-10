@@ -2,7 +2,7 @@
 'use server';
 
 import type { SystemSettings } from './settingsService';
-import { addNotification, getNotifications } from './firestoreService';
+import { addNotification, getNotifications, getFirestoreInstance } from './firestoreService';
 import { parseISO, isWithinInterval, addHours, format } from 'date-fns';
 import type { NotificationMessage } from './types';
 import type { WeatherData } from './weather-utils';

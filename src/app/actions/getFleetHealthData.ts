@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getFirestoreInstance, getFleetAssets, getInspectionReports, getMaintenanceLogs } from '@/lib/firestoreService';
+import { getFleetAssets, getInspectionReports, getMaintenanceLogs } from '@/lib/firestoreService';
 import type { FleetAsset, InspectionReport, MaintenanceLog } from '@/lib/types';
 import { subMonths, isAfter, parseISO } from 'date-fns';
 
@@ -54,11 +54,10 @@ export interface FleetHealthData {
  * health scores and recent maintenance costs. This offloads processing from the client.
  */
 export async function getFleetHealthData(): Promise<FleetHealthData[]> {
-    const db = getFirestoreInstance();
     const [assets, allReports, allLogs] = await Promise.all([
-        getFleetAssets(db),
-        getInspectionReports(db),
-        getMaintenanceLogs(db),
+        getFleetAssets(),
+        getInspectionReports(),
+        getMaintenanceLogs(),
     ]);
 
     // Pre-group reports and logs by asset for efficiency
