@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
 import { Brain, Loader2, Sparkles, Send } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import type { UserRole } from '@/lib/types';
 
 interface AiAssistantWidgetProps {
@@ -39,7 +39,7 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
   const [aiAnswer, setAiAnswer] = useState('');
   const [isAsking, setIsAsking] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   
   const userRole = user?.role || 'guest';
   const welcomeMessage = getWelcomeMessage(userRole);

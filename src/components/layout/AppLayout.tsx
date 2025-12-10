@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -23,7 +22,7 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser, useAuth as useFirebaseAuth } from '@/firebase/provider';
 import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
@@ -37,6 +36,27 @@ import { checkWeatherAndNotify } from '@/lib/weatherService';
 import { loadSystemSettings } from '@/lib/settingsService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
+// --- Authorization Configuration ---
+const PATH_CONFIG = {
+  PUBLIC: ['/login'],
+  SHARED_AUTH: ['/help', '/notifications', '/reports', '/weather', '/reports/'], // Note the trailing slash for dynamic routes
+  EMPLOYEE_BASE: '/employee',
+  ADMIN_BASE: '/admin',
+  OWNER_ONLY: [
+    '/admin/manage-users',
+    '/admin/manage-expenses',
+    '/admin/manage-clients',
+    '/admin/manage-jobs',
+    '/admin/manage-snow',
+    '/admin/manage-snow-routes',
+    '/admin/manage-concrete',
+    '/admin/manage-misc',
+    '/admin/manage-rentals',
+    '/admin/advanced-reports',
+    '/admin/system-settings',
+  ],
+};
+
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
@@ -46,13 +66,18 @@ const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { user, logout } = useAuth();
+    const { user } = useUser();
+    const auth = useFirebaseAuth();
     const [unreadCount, setUnreadCount] = useState(0);
     const searchParams = useSearchParams();
     const showAiAssistantWelcome = searchParams.get('tour') === 'true';
     const { open: openCommandPalette } = useCommandPalette();
     const { open: openTools } = useGlobalTools();
     const [isSidebarDefaultOpen, setIsSidebarDefaultOpen] = useState(true);
+
+    const logout = () => {
+      auth.signOut();
+    }
 
     useEffect(() => {
         if (typeof window !== 'undefined') {
@@ -68,13 +93,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.id]));
+        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let count = 0;
             snapshot.forEach(doc => {
                 const notif = doc.data() as NotificationMessage;
-                if (!notif.readBy.includes(user.id)) {
+                if (!notif.readBy.includes(user.uid)) {
                     count++;
                 }
             });
@@ -134,7 +159,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     if (asset.insuranceDueDate) {
                         const dueDate = parseISO(asset.insuranceDueDate);
                         const notifId = `expiry-ins-${asset.id}`;
-                         if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
+                         if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === insNotifId)) {
                             const isExpired = isBefore(dueDate, today);
                              const newNotif: Omit<NotificationMessage, 'id'> = {
                                 id: notifId, recipientId: 'all', title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
@@ -186,7 +211,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             
             return () => clearInterval(weatherInterval);
         }
-    }, [user, pathname]);
+    }, [user]);
 
 
     if (!user) {
@@ -306,6 +331,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/admin">
                                         <SidebarMenuButton tooltip="Dashboard" isActive={pathname === '/admin'}>
                                             <LayoutDashboard /><span>Dashboard</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                <SidebarMenuItem>
+                                    <Link href="/my-profile">
+                                        <SidebarMenuButton tooltip="My Profile" isActive={pathname.startsWith('/my-profile')}>
+                                            <UserIcon /><span>My Profile</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -573,69 +605,33 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     );
 }
 
-const PUBLIC_PATHS = ['/login'];
-// Paths exclusively for Owners.
-const OWNER_ONLY_PATHS = [
-    '/admin/manage-users',
-    '/admin/manage-expenses',
-    '/admin/manage-clients',
-    '/admin/manage-jobs',
-    '/admin/manage-snow',
-    '/admin/manage-snow-routes',
-    '/admin/manage-concrete',
-    '/admin/manage-misc',
-    '/admin/manage-rentals',
-    '/admin/advanced-reports',
-    '/admin/system-settings',
-];
-// Paths for ANY authenticated user.
-const SHARED_AUTH_PATHS = [
-    '/help',
-    '/notifications',
-    '/reports',
-    '/weather',
-];
-// Paths for employees (and by extension, managers and owners).
-const EMPLOYEE_PATHS = [
-    '/employee',
-    '/pre-trip',
-    '/post-trip'
-];
-
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     if (role === 'guest') {
-        // Guest can only see public paths.
-        return PUBLIC_PATHS.some(p => pathname.startsWith(p));
+        return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
     }
-    
     if (role === 'owner') {
-        // Owner can see everything.
         return true; 
     }
     
-    // Check if path is in one of the allowed lists for all users
-    if (SHARED_AUTH_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/reports/')) {
+    // Check against shared authenticated paths
+    if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p))) {
         return true;
     }
     
+    const isEmployeePath = pathname.startsWith(PATH_CONFIG.EMPLOYEE_BASE);
+    const isAdminPath = pathname.startsWith(PATH_CONFIG.ADMIN_BASE);
+
     if (role === 'employee') {
-        // Employees can only see their designated paths.
-        return EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/');
+        return isEmployeePath;
     }
 
     if (role === 'manager') {
-        // A manager CANNOT see owner-only paths.
-        if (OWNER_ONLY_PATHS.some(p => pathname.startsWith(p))) {
+        // Manager can't access owner-only paths.
+        if (PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p))) {
             return false;
         }
-        // A manager CAN see any admin path that isn't owner-only.
-        if (pathname.startsWith('/admin')) {
-            return true;
-        }
-        // A manager CAN see all employee paths.
-        if (EMPLOYEE_PATHS.some(p => pathname.startsWith(p)) || pathname.startsWith('/employee/')) {
-            return true;
-        }
+        // Manager can access all other admin paths and all employee paths.
+        return isAdminPath || isEmployeePath;
     }
 
     // Deny by default
@@ -643,29 +639,27 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
 }
 
 export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isLoading } = useAuth();
+    const { user, isUserLoading } = useUser();
     const pathname = usePathname();
     const router = useRouter();
     const [isRouteChecked, setIsRouteChecked] = useState(false);
 
     useEffect(() => {
-        if (isLoading) return;
+        if (isUserLoading) return;
 
         const role = user?.role || 'guest';
-        
         let destination: string | null = null;
 
         if (user) {
-            // User is logged in
-            if (PUBLIC_PATHS.includes(pathname) || pathname === '/') {
-                destination = role === 'employee' ? '/employee' : '/admin';
+            // Logged-in user logic
+            if (PATH_CONFIG.PUBLIC.includes(pathname) || pathname === '/') {
+                destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
             } else if (!isPathAllowed(pathname, role)) {
-                // Logged in user on a forbidden path, send to their hub
-                destination = role === 'employee' ? '/employee' : '/admin';
+                destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
             }
         } else {
-            // User is not logged in
-            if (!PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+            // Guest user logic
+            if (!isPathAllowed(pathname, 'guest')) {
                 destination = '/login';
             }
         }
@@ -675,20 +669,22 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         } else {
             setIsRouteChecked(true); // Path is allowed, stop loading
         }
-    }, [isLoading, user, pathname, router]);
+    }, [isUserLoading, user, pathname, router]);
 
 
-    if (isLoading || !isRouteChecked) {
+    if (isUserLoading || !isRouteChecked) {
         return <FullScreenLoader />;
     }
 
-    if (!user && PUBLIC_PATHS.some(p => pathname.startsWith(p))) {
+    if (!user && isPathAllowed(pathname, 'guest')) {
         return <>{children}</>;
     }
     
-    if (user) {
+    if (user && isPathAllowed(pathname, user.role)) {
         return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
     }
 
+    // This case handles the brief moment before a redirect happens,
+    // or if a route check fails for an unknown reason.
     return <FullScreenLoader />;
 }

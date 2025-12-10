@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { getJobs, addNoteToJob } from '@/lib/firestoreService';
 import type { Job } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Save } from 'lucide-react';
 import { getJobStatus } from '@/lib/job-utils';
 import { startOfDay } from 'date-fns';
@@ -20,7 +20,7 @@ interface SaveToJobProps {
 export default function SaveToJob({ calculatorName, resultString }: SaveToJobProps) {
   const [jobs, setJobs] = useState<Job[]>([]);
   const [selectedJobId, setSelectedJobId] = useState('');
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
 
   useEffect(() => {

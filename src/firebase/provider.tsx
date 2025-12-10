@@ -139,20 +139,38 @@ export const useFirebase = (): FirebaseServicesAndUser => {
 
 /** Hook to access Firebase Auth instance. */
 export const useAuth = (): Auth => {
-  const { auth } = useFirebase();
-  return auth;
+  const context = useContext(FirebaseContext);
+   if (context === undefined) {
+    throw new Error("useAuth must be used within a FirebaseProvider");
+  }
+  if (!context.auth) {
+    throw new Error("Auth service is not available. Check FirebaseProvider setup.");
+  }
+  return context.auth;
 };
 
 /** Hook to access Firestore instance. */
 export const useFirestore = (): Firestore => {
-  const { firestore } = useFirebase();
-  return firestore;
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error("useFirestore must be used within a FirebaseProvider");
+  }
+  if (!context.firestore) {
+    throw new Error("Firestore service is not available. Check FirebaseProvider setup.");
+  }
+  return context.firestore;
 };
 
 /** Hook to access Firebase App instance. */
 export const useFirebaseApp = (): FirebaseApp => {
-  const { firebaseApp } = useFirebase();
-  return firebaseApp;
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error("useFirebaseApp must be used within a FirebaseProvider");
+  }
+  if (!context.firebaseApp) {
+    throw new Error("FirebaseApp is not available. Check FirebaseProvider setup.");
+  }
+  return context.firebaseApp;
 };
 
 /**

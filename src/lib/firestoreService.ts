@@ -46,9 +46,10 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
         add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
             const db = getFirestoreInstance();
             const colRef = collection(db, collectionName);
+            
             if (id) {
                 const docRef = doc(colRef, id);
-                setDoc(docRef, data, {}).catch(error => {
+                setDoc(docRef, data).catch(error => {
                     errorEmitter.emit(
                         'permission-error',
                         new FirestorePermissionError({
@@ -60,13 +61,8 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 });
                 return id;
             }
-            // Use server-side addDoc for Server Actions for reliability
-            if (typeof window === 'undefined') {
-                const docRef = await addDoc(colRef, data);
-                return docRef.id;
-            }
-            const docRef = addDoc(colRef, data)
-              .catch(error => {
+            
+            const docRefPromise = addDoc(colRef, data).catch(error => {
                 errorEmitter.emit(
                   'permission-error',
                   new FirestorePermissionError({
@@ -75,10 +71,10 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                     requestResourceData: data,
                   })
                 );
-                // Return a rejected promise to propagate the error if needed
                 return Promise.reject(error);
-              });
-            return (await docRef).id;
+            });
+
+            return (await docRefPromise).id;
         },
         update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
             const db = getFirestoreInstance();

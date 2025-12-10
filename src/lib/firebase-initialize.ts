@@ -5,7 +5,7 @@ import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
 import { getFirestore, type Firestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
-import { getMessaging, type Messaging } from 'firebase/messaging';
+import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
 
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
@@ -60,4 +60,47 @@ export function initializeFirebase() {
     }
     
     return { app, auth, db, storage, messaging };
+}
+
+export async function requestNotificationPermission() {
+  if (typeof window !== 'undefined' && 'Notification' in window && messaging) {
+    const currentPermission = Notification.permission;
+    
+    if (currentPermission === 'granted') {
+        const token = await getToken(messaging, { vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY });
+        if (token) {
+          console.log('Firebase Cloud Messaging token already available: ', token);
+          return token;
+        }
+    }
+      
+    if (currentPermission === 'denied') {
+        console.warn('Notification permission was previously denied.');
+        return null;
+    }
+
+    try {
+      const permission = await Notification.requestPermission();
+      if (permission === 'granted') {
+        const token = await getToken(messaging, {
+          vapidKey: process.env.NEXT_PUBLIC_FIREBASE_VAPID_KEY,
+        });
+        if (token) {
+          console.log('Firebase Cloud Messaging token obtained: ', token);
+          // Here you would typically send the token to your server to store it.
+          return token;
+        } else {
+          console.log('No registration token available. Request permission to generate one.');
+          return null;
+        }
+      } else {
+        console.warn('Notification permission denied.');
+        return null;
+      }
+    } catch (error) {
+      console.error('An error occurred while getting the token. ', error);
+      return null;
+    }
+  }
+  return null;
 }
