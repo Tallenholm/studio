@@ -3,7 +3,7 @@
 
 import { getFleetAssets, getInspectionReports, getMaintenanceLogs } from '@/lib/firestoreService';
 import type { FleetAsset, InspectionReport, MaintenanceLog } from '@/lib/types';
-import { subMonths, isAfter, parseISO } from 'date-fns';
+import { subMonths, isAfter, parseISO, format } from 'date-fns';
 
 /**
  * Calculates a health score for a single asset based on recent failed inspections and repairs.
@@ -74,10 +74,12 @@ export async function getFleetHealthData(): Promise<FleetHealthData[]> {
 
     const logsByAssetId: Record<string, MaintenanceLog[]> = {};
     for (const log of allLogs) {
-        if (!logsByAssetId[log.assetId]) {
-            logsByAssetId[log.assetId] = [];
+        if (log.assetId) {
+            if (!logsByAssetId[log.assetId]) {
+                logsByAssetId[log.assetId] = [];
+            }
+            logsByAssetId[log.assetId].push(log);
         }
-        logsByAssetId[log.assetId].push(log);
     }
 
     const healthData = assets.map(asset => {

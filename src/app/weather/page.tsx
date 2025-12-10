@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin, Navigation } from 'lucide-react';
+import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { loadSystemSettings } from '@/lib/settingsService';
 import { fetchWeather } from '@/lib/weatherService';
@@ -12,20 +12,17 @@ import { weatherDescriptions } from '@/lib/weather-utils';
 
 const getWeatherIcon = (code: number | null, size: 'large' | 'small' = 'large') => {
     const className = size === 'large' ? "h-10 w-10" : "h-6 w-6";
-    if (code === null) return <Thermometer className={`${className} text-gray-400`} />;
-    switch (code) {
-        case 0: return <Sun className={`${className} text-yellow-400`} />;
-        case 1: case 2: return <Cloud className={`${className} text-gray-400`} />;
-        case 3: return <Cloud className={`${className} text-gray-500`} />;
-        case 45: case 48: return <Cloud className={`${className} text-gray-500`} />;
-        case 51: case 53: case 55: return <CloudDrizzle className={`${className} text-blue-400`} />;
-        case 61: case 63: case 65: return <CloudRain className={`${className} text-blue-500`} />;
-        case 71: case 73: case 75: return <Snowflake className={`${className} text-blue-300`} />;
-        case 80: case 81: case 82: return <CloudRain className={`${className} text-blue-500`} />;
-        case 85: case 86: return <Snowflake className={`${className} text-blue-300`} />;
-        case 95: case 96: case 99: return <CloudLightning className={`${className} text-yellow-500`} />;
-        default: return <Thermometer className={`${className} text-gray-400`} />;
-    }
+    if (code === null || !weatherDescriptions[code]) return <Thermometer className={`${className} text-gray-400`} />;
+    const desc = weatherDescriptions[code].toLowerCase();
+    
+    if (desc.includes('clear')) return <Sun className={`${className} text-yellow-400`} />;
+    if (desc.includes('snow')) return <Snowflake className={`${className} text-blue-300`} />;
+    if (desc.includes('rain') || desc.includes('drizzle') || desc.includes('shower')) return <CloudRain className={`${className} text-blue-500`} />;
+    if (desc.includes('thunderstorm')) return <CloudLightning className={`${className} text-yellow-500`} />;
+    if (desc.includes('cloud') || desc.includes('overcast')) return <Cloud className={`${className} text-gray-400`} />;
+    if (desc.includes('fog')) return <Cloud className={`${className} text-gray-500`} />;
+
+    return <Thermometer className={`${className} text-gray-400`} />;
 };
 
 export default function WeatherPage() {
@@ -59,37 +56,25 @@ export default function WeatherPage() {
         loadWeather();
     }, [location]);
 
-    const radarLayer = useMemo(() => {
-        if (!weatherData) return 'radar';
-        const todaysWeatherCode = weatherData.daily.weather_code[0];
-        if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
-            return 'snow';
-        }
-        if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
-            return 'radar';
-        }
-        return 'wind';
-    }, [weatherData]);
-
-    const { dailyForecast, hourlyForecast } = useMemo(() => {
+    const { dailyForecast, hourlyForecast, radarLayer } = useMemo(() => {
         if (!weatherData) {
-            return { dailyForecast: [], hourlyForecast: [] };
+            return { dailyForecast: [], hourlyForecast: [], radarLayer: 'radar' };
         }
 
-        const daily: ForecastDay[] = weatherData.daily.time.map((t, i) => ({
+        const daily: ForecastDay[] = (weatherData.daily.time || []).map((t, i) => ({
             time: t,
             weatherCode: weatherData.daily.weather_code[i] ?? 0,
             tempMax: weatherData.daily.temperature_2m_max[i] ?? 0,
             tempMin: weatherData.daily.temperature_2m_min[i] ?? 0,
             sunrise: weatherData.daily.sunrise[i],
             sunset: weatherData.daily.sunset[i],
-            precipitation: weatherData.daily.precipitation_probability_max[i],
-            precipitationSum: weatherData.daily.precipitation_sum[i],
-            uvIndex: weatherData.daily.uv_index_max[i],
+            precipitation: weatherData.daily.precipitation_probability_max[i] ?? 0,
+            precipitationSum: weatherData.daily.precipitation_sum[i] ?? 0,
+            uvIndex: weatherData.daily.uv_index_max[i] ?? 0,
         }));
 
         const now = new Date();
-        const hourly: HourlyForecast[] = weatherData.hourly.time
+        const hourly: HourlyForecast[] = (weatherData.hourly.time || [])
             .map((t, i) => ({
                 time: t,
                 temp: weatherData.hourly.temperature_2m[i] ?? 0,
@@ -101,8 +86,18 @@ export default function WeatherPage() {
             }))
             .filter(h => parseISO(h.time) >= now)
             .slice(0, 24);
+            
+        const todaysWeatherCode = daily[0]?.weatherCode ?? 0;
+        let layer = 'radar';
+        if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
+            layer = 'snow';
+        } else if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
+            layer = 'radar';
+        } else {
+             layer = 'wind';
+        }
 
-        return { dailyForecast: daily, hourlyForecast: hourly };
+        return { dailyForecast: daily, hourlyForecast: hourly, radarLayer: layer };
     }, [weatherData]);
 
     return (
@@ -156,7 +151,7 @@ export default function WeatherPage() {
                                         <p className="font-bold">{format(parseISO(hour.time), 'ha')}</p>
                                         <div className="my-2">{getWeatherIcon(hour.weatherCode, 'small')}</div>
                                         <p className="font-bold text-lg">{Math.round(hour.temp)}°</p>
-                                        <p className="text-xs text-muted-foreground capitalize h-10 flex-grow flex items-center">{weatherDescriptions[hour.weatherCode]}</p>
+                                        <p className="text-xs text-muted-foreground capitalize h-10 flex-grow flex items-center">{weatherDescriptions[hour.weatherCode] || 'N/A'}</p>
                                         <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border-t pt-1 w-full">
                                             <p className="flex items-center justify-center gap-1"><CloudDrizzle className="h-3 w-3 text-blue-400" /> {hour.precipitation}%</p>
                                             <p className="flex items-center justify-center gap-1"><Wind className="h-3 w-3" /> {Math.round(hour.windSpeed)} mph</p>
@@ -198,12 +193,12 @@ export default function WeatherPage() {
                                     <p className="text-xs md:text-sm text-muted-foreground">{format(parseISO(day.time), 'MMM d')}</p>
                                     <div className="my-3">{getWeatherIcon(day.weatherCode, 'large')}</div>
                                     <p className="font-bold text-xl md:text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
-                                    <p className="text-xs md:text-sm text-muted-foreground capitalize h-10 flex items-center text-center">{weatherDescriptions[day.weatherCode]}</p>
+                                    <p className="text-xs md:text-sm text-muted-foreground capitalize h-10 flex items-center text-center">{weatherDescriptions[day.weatherCode] || 'N/A'}</p>
                                     <div className="text-xs text-muted-foreground mt-2 space-y-1 border-t pt-2 w-full">
                                         <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}% ({day.precipitationSum?.toFixed(2)}"")</p>
                                         <p className="flex items-center justify-center gap-1.5"><Sun className="h-4 w-4 text-yellow-500" /> UV: {day.uvIndex?.toFixed(1) || 'N/A'}</p>
-                                        <p className="flex items-center justify-center gap-1.5"><Sunrise className="h-4 w-4 text-yellow-400" /> {format(parseISO(day.sunrise), 'p')}</p>
-                                        <p className="flex items-center justify-center gap-1.5"><Sunset className="h-4 w-4 text-orange-400" /> {format(parseISO(day.sunset), 'p')}</p>
+                                        <p className="flex items-center justify-center gap-1.5"><Sunrise className="h-4 w-4 text-yellow-400" /> {day.sunrise ? format(parseISO(day.sunrise), 'p') : 'N/A'}</p>
+                                        <p className="flex items-center justify-center gap-1.5"><Sunset className="h-4 w-4 text-orange-400" /> {day.sunset ? format(parseISO(day.sunset), 'p') : 'N/A'}</p>
                                     </div>
                                 </Card>
                             ))}

@@ -11,8 +11,8 @@ import { weatherDescriptions } from './weather-utils';
 const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 95, 96, 99];
 
 async function fetchFromOpenMeteo(lat: number, lon: number, hourlyParams: string, dailyParams: string): Promise<WeatherData> {
-    const fallbackUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
-    const response = await fetch(fallbackUrl, { next: { revalidate: 3600 } });
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
+    const response = await fetch(url, { next: { revalidate: 3600 } });
     if (!response.ok) {
         throw new Error(`Failed to fetch weather data from fallback service (status: ${response.status}).`);
     }
@@ -41,24 +41,22 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
             let errorMessage = 'An unknown API error occurred.';
             let errorJson: any = null;
             
-            if (contentType && contentType.includes("application/json")) {
-                try {
+            try {
+                if (contentType && contentType.includes("application/json")) {
                     errorJson = await response.json();
                     errorMessage = errorJson.reason || errorJson.error_description || JSON.stringify(errorJson);
-                } catch {
+                } else {
                     errorMessage = await response.text();
                 }
-            } else {
-                errorMessage = await response.text();
+            } catch {
+                 errorMessage = await response.text();
             }
-            
-            // If the key is invalid, fall back to the free service.
+
             if (response.status === 403 || (errorJson && (errorJson.reason?.includes("Invalid API key") || errorJson.reason?.includes("Missing access token")))) {
-                console.warn(`ECMWF API key is invalid or missing. Falling back to free Open-Meteo API.`);
+                console.warn(`ECMWF API key is invalid or unauthorized. Falling back to free Open-Meteo API.`);
                 return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
             }
             
-            // For other errors, throw an exception to be caught by the caller.
             throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorMessage}`);
         }
         
@@ -66,7 +64,6 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
 
     } catch (error) {
         console.error("Error during weather fetch, attempting fallback:", error);
-        // If any error occurs during the primary fetch (e.g., network error), fall back.
         return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
     }
 };
@@ -77,6 +74,11 @@ export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'loca
             getNotifications(),
             fetchWeather(settings.locationLat, settings.locationLon)
         ]);
+
+        if (!weatherData?.hourly?.time) {
+            console.warn('Weather data for notifications is incomplete.');
+            return;
+        }
 
         const now = new Date();
         const next24Hours = addHours(now, 24);
@@ -90,7 +92,7 @@ export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'loca
 
         for (const hour of upcomingHourly) {
             if (hour.code !== null && SIGNIFICANT_WEATHER_CODES.includes(hour.code)) {
-                const weatherType = weatherDescriptions[hour.code];
+                const weatherType = weatherDescriptions[hour.code] || 'Significant Weather';
                 const notifDate = format(hour.time, 'yyyy-MM-dd-HH');
                 const notifId = `weather-alert-${weatherType.replace(/\s+/g, '-')}-${notifDate}`;
 

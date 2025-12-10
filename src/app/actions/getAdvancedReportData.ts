@@ -5,13 +5,19 @@ import { getInspectionReports, getMaintenanceLogs, getTasks, getViolations, getF
 import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, FleetAsset, VehicleType, ExpenseCategory } from '@/lib/types';
 import { subDays, isWithinInterval, parseISO } from 'date-fns';
 
+interface ChartDataPoint {
+    name: string;
+    value: number;
+    fill: string;
+}
+
 interface AdvancedReportData {
-  inspectionOutcomes: { name: string; value: number; fill: string }[];
-  maintenanceServicesByType: { name: string; value: number; fill: string }[];
+  inspectionOutcomes: ChartDataPoint[];
+  maintenanceServicesByType: ChartDataPoint[];
   frequentFailures: { name: string; total: number }[];
   maintenanceCosts: { name: string; totalCost: number }[];
-  taskStatusData: { name: string; value: number; fill: string }[];
-  violationsByTypeData: { name: string; value: number; fill: string }[];
+  taskStatusData: ChartDataPoint[];
+  violationsByTypeData: ChartDataPoint[];
   expensesByCategoryData: { name: string; totalAmount: number }[];
   hasData: boolean;
 }
@@ -50,11 +56,17 @@ export async function getAdvancedReportData(
                         : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
                         : null;
 
-  const filterByDate = <T extends { date?: string, dateAssigned?: string }>(items: T[]) => {
+  const filterByDate = <T extends { date?: string | null, dateAssigned?: string }>(items: T[]) => {
     if (!dateFilterRange) return items;
     return items.filter(item => {
-        const itemDate = item.date || item.dateAssigned;
-        return itemDate ? isWithinInterval(parseISO(itemDate), dateFilterRange) : false;
+        const itemDateStr = item.date || item.dateAssigned;
+        if (!itemDateStr) return false;
+        try {
+            const itemDate = parseISO(itemDateStr);
+            return isWithinInterval(itemDate, dateFilterRange);
+        } catch (e) {
+            return false;
+        }
     });
   };
   
@@ -65,12 +77,12 @@ export async function getAdvancedReportData(
     const assetIdsOfType = new Set(fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.id));
 
     return items.filter(item => {
-      if (item.assetId) { // For maintenance logs
-        return assetIdsOfType.has(item.assetId);
+      if (item.assetId && assetIdsOfType.has(item.assetId)) {
+        return true;
       }
       const itemVin = item.truckVin || item.trailerVin || item.heavyEquipmentVin;
-      if (itemVin) { // for inspection reports
-        return assetVinsOfType.has(itemVin);
+      if (itemVin && assetVinsOfType.has(itemVin)) {
+        return true;
       }
       return false;
     });
@@ -134,7 +146,9 @@ export async function getAdvancedReportData(
 
   const expenseMap: { [key in ExpenseCategory]?: number } = {};
   filteredExpenses.forEach(expense => {
-    expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
+    if (expense.category) {
+        expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
+    }
   });
   const expensesByCategoryData = Object.entries(expenseMap)
     .map(([name, totalAmount]) => ({
@@ -145,7 +159,9 @@ export async function getAdvancedReportData(
     
   const violationCounts: Record<string, number> = {};
   filteredViolations.forEach(v => {
-      violationCounts[v.type] = (violationCounts[v.type] || 0) + 1;
+      if(v.type) {
+        violationCounts[v.type] = (violationCounts[v.type] || 0) + 1;
+      }
   });
   const violationsByTypeData = [
     { name: 'Safety', value: violationCounts.safety || 0, fill: 'hsl(var(--chart-2))'},
