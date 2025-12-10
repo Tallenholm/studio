@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -19,7 +20,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye, DollarSign, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -39,7 +40,7 @@ export default function SubmitExpensePage() {
   const [isMounted, setIsMounted] = useState(false);
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof expenseSchema>>({

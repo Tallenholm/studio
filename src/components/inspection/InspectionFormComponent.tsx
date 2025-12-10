@@ -22,7 +22,7 @@ import { addInspectionReport, getFleetAssets } from '@/lib/firestoreService';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Loader2, Send, Truck, Box, Shovel, ClipboardList, AlertTriangle } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const completedItemSchema = z.object({
@@ -89,7 +89,7 @@ interface InspectionFormProps {
 export default function InspectionFormComponent({ inspectionType }: InspectionFormProps) {
   const { toast } = useToast();
   const router = useRouter();
-  const { user } = useAuth();
+  const { user } = useUser();
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isMounted, setIsMounted] = useState(false);
@@ -187,7 +187,7 @@ export default function InspectionFormComponent({ inspectionType }: InspectionFo
     const reportData: Omit<InspectionReport, 'id'> = {
       type: inspectionType,
       date: new Date().toISOString(),
-      employeeId: user?.id,
+      employeeId: user?.uid,
       employeeName: user?.name,
       truckVin: values.truckVin,
       trailerVin: values.trailerVin,

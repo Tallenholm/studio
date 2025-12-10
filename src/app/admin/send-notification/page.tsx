@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { MailPlus, Send, Loader2 } from 'lucide-react';
 
 const notificationSchema = z.object({
@@ -40,7 +40,7 @@ export default function SendNotificationPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user: adminUser } = useAuth();
+  const { user: adminUser } = useUser();
 
   const form = useForm<z.infer<typeof notificationSchema>>({
     resolver: zodResolver(notificationSchema),

@@ -10,7 +10,7 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, Eye, Brain, CalendarDays, ListChecks, AlertTriangle, CheckCircle2, Loader2, User, Filter } from 'lucide-react';
 import { format } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { cn } from '@/lib/utils';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Tabs, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -19,7 +19,8 @@ export default function ReportsListPage() {
   const [reports, setReports] = useState<InspectionReport[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { role, user } = useAuth();
+  const { user } = useUser();
+  const role = user?.role;
 
   const [statusFilter, setStatusFilter] = useState('all');
   const [typeFilter, setTypeFilter] = useState('all');
@@ -36,7 +37,7 @@ export default function ReportsListPage() {
         const sortedReports = loadedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
         if (role === 'employee' && user) {
-            setReports(sortedReports.filter(report => report.employeeId === user.id));
+            setReports(sortedReports.filter(report => report.employeeId === user.uid));
         } else {
             setReports(sortedReports);
         }

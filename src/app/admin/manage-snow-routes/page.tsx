@@ -18,7 +18,7 @@ import { PlusCircle, Trash2, Loader2, Pencil, Route, Truck, Users as UsersIcon, 
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuCheckboxItem, DropdownMenuLabel, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 
 const routeSchema = z.object({
   name: z.string().min(1, 'Route name is required.'),
@@ -73,7 +73,7 @@ export default function ManageSnowRoutesPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<SnowRoute | null>(null);
   const { toast } = useToast();
-  const { user: adminUser } = useAuth();
+  const { user: adminUser } = useUser();
 
   const form = useForm<z.infer<typeof routeSchema>>({
     resolver: zodResolver(routeSchema),

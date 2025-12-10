@@ -16,7 +16,7 @@ import { Users, Loader2, MoreHorizontal, KeyRound, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getUsers, updateUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -28,7 +28,7 @@ export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user: currentUser } = useAuth();
+  const { user: currentUser } = useUser();
   const [isSaving, setIsSaving] = useState<string | null>(null); // Store user ID being saved
 
   useEffect(() => {

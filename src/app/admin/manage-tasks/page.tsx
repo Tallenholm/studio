@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
@@ -59,7 +59,7 @@ export default function ManageTasksPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
-  const { user: adminUser } = useAuth();
+  const { user: adminUser } = useUser();
 
   const form = useForm<z.infer<typeof taskSchema>>({
     resolver: zodResolver(taskSchema),

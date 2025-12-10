@@ -2,16 +2,16 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser, useAuth } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';
 import { User as UserIcon, Lock, Loader2, Send } from 'lucide-react';
-import { auth } from '@/lib/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
 
 export default function MyProfilePage() {
-    const { user } = useAuth();
+    const { user } = useUser();
+    const auth = useAuth();
     const { toast } = useToast();
     const [isMounted, setIsMounted] = useState(false);
     const [isSubmitting, setIsSubmitting] = useState(false);

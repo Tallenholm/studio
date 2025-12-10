@@ -1,8 +1,9 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import type { Violation } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
@@ -11,7 +12,7 @@ import { getViolations } from '@/lib/firestoreService';
 export default function MyViolationsPage() {
   const [violations, setViolations] = useState<Violation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useUser();
   
   useEffect(() => {
     async function fetchData() {

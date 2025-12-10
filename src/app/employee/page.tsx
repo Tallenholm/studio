@@ -7,7 +7,7 @@ import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route, BookOpen } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
 import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
@@ -33,7 +33,7 @@ const employeeTourSteps: TourStep[] = [
 ];
 
 export default function EmployeeHubPage() {
-  const { user } = useAuth();
+  const { user } = useUser();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [date, setDate] = useState<Date | undefined>(new Date());
@@ -63,8 +63,8 @@ export default function EmployeeHubPage() {
 
             setJobs(loadedJobs);
             setEvents(loadedEvents);
-            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.id));
-            setReports(loadedReports.filter(r => r.employeeId === user.id));
+            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.uid));
+            setReports(loadedReports.filter(r => r.employeeId === user.uid));
             setIsLoading(false);
         }
     }
@@ -77,9 +77,9 @@ export default function EmployeeHubPage() {
     
     const assignedJobs = jobs
       .filter(job => 
-        job.assignedEmployeeIds?.includes(user.id) ||
-        job.assignedTruckIds?.includes(user.id) || // For older data model compatibility
-        job.assignedSidewalkCrewIds?.includes(user.id)
+        job.assignedEmployeeIds?.includes(user.uid) ||
+        job.assignedTruckIds?.includes(user.uid) || // For older data model compatibility
+        job.assignedSidewalkCrewIds?.includes(user.uid)
       )
       .map(job => ({ ...job, status: getJobStatus(job) }))
       .filter(job => job.status === 'active' || job.status === 'upcoming')
@@ -130,13 +130,13 @@ export default function EmployeeHubPage() {
                                 <p className="font-bold">{job.name}</p>
                                 <p className="text-sm text-muted-foreground">{job.clientName}</p>
                                 <p className="text-xs text-muted-foreground">{job.address}</p>
-                                {job.jobType === 'snow_removal' && job.assignedSidewalkCrewIds?.includes(user!.id) && (
+                                {job.jobType === 'snow_removal' && job.assignedSidewalkCrewIds?.includes(user!.uid) && (
                                     <Badge variant="outline" className="mt-2 text-primary border-primary">
                                         <UsersIcon className="mr-1.5 h-3 w-3" />
                                         Sidewalk Crew
                                     </Badge>
                                 )}
-                                {job.jobType === 'snow_removal' && job.assignedTruckIds?.includes(user!.id) && (
+                                {job.jobType === 'snow_removal' && job.assignedTruckIds?.includes(user!.uid) && (
                                      <Badge variant="outline" className="mt-2 text-primary border-primary ml-2">
                                         <Truck className="mr-1.5 h-3 w-3" />
                                         Plow Crew

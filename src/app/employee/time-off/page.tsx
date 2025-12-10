@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Loader2, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, addDays } from 'date-fns';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
@@ -33,7 +34,7 @@ export default function TimeOffPage() {
   const [requests, setRequests] = useState<TimeOffRequest[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
   const form = useForm<z.infer<typeof requestSchema>>({
     resolver: zodResolver(requestSchema),
