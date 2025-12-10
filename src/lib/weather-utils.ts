@@ -8,14 +8,18 @@ interface DailyData {
     sunrise: string[];
     sunset: string[];
     precipitation_probability_max: (number | null)[];
+    precipitation_sum: (number | null)[];
+    uv_index_max: (number | null)[];
 }
 
 interface HourlyData {
     time: string[];
     temperature_2m: number[];
+    relative_humidity_2m: number[];
     precipitation_probability: number[];
     weather_code: number[];
     wind_speed_10m: number[];
+    wind_direction_10m: number[];
 }
 
 export interface WeatherData {
@@ -33,6 +37,8 @@ export interface ForecastDay {
     sunrise: string;
     sunset: string;
     precipitation: number | null;
+    precipitationSum: number | null;
+    uvIndex: number | null;
 }
 
 export interface HourlyForecast {
@@ -41,6 +47,8 @@ export interface HourlyForecast {
     precipitation: number;
     weatherCode: number;
     windSpeed: number;
+    humidity: number;
+    windDirection: number;
 }
 
 export const weatherDescriptions: { [key: number]: string } = {

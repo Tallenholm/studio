@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin } from 'lucide-react';
+import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin, Navigation } from 'lucide-react';
 import { format, parseISO, isSameDay } from 'date-fns';
 import { loadSystemSettings } from '@/lib/settingsService';
 import { fetchWeather } from '@/lib/weatherService';
@@ -55,6 +55,8 @@ export default function WeatherPage() {
                     sunrise: data.daily.sunrise[i],
                     sunset: data.daily.sunset[i],
                     precipitation: data.daily.precipitation_probability_max[i],
+                    precipitationSum: data.daily.precipitation_sum[i],
+                    uvIndex: data.daily.uv_index_max[i],
                 }));
                 
                 const now = new Date();
@@ -64,6 +66,8 @@ export default function WeatherPage() {
                     precipitation: data.hourly.precipitation_probability[i],
                     weatherCode: data.hourly.weather_code[i],
                     windSpeed: data.hourly.wind_speed_10m[i],
+                    humidity: data.hourly.relative_humidity_2m[i],
+                    windDirection: data.hourly.wind_direction_10m[i],
                 })).filter(h => parseISO(h.time) >= now).slice(0, 24);
 
                 setDailyForecast(processedDailyForecast);
@@ -147,8 +151,9 @@ export default function WeatherPage() {
                                         <p className="font-bold text-lg">{Math.round(hour.temp)}°</p>
                                         <p className="text-xs text-muted-foreground capitalize h-10 flex-grow flex items-center">{weatherDescriptions[hour.weatherCode]}</p>
                                         <div className="text-xs text-muted-foreground mt-1 space-y-0.5 border-t pt-1 w-full">
-                                            <p className="flex items-center justify-center gap-1"><Droplets className="h-3 w-3 text-blue-400" /> {hour.precipitation}%</p>
+                                            <p className="flex items-center justify-center gap-1"><CloudDrizzle className="h-3 w-3 text-blue-400" /> {hour.precipitation}%</p>
                                             <p className="flex items-center justify-center gap-1"><Wind className="h-3 w-3" /> {Math.round(hour.windSpeed)} mph</p>
+                                            <p className="flex items-center justify-center gap-1"><Droplets className="h-3 w-3 text-blue-300" /> {Math.round(hour.humidity)}%</p>
                                         </div>
                                     </div>
                                 ))}
@@ -188,9 +193,8 @@ export default function WeatherPage() {
                                     <p className="font-bold text-xl md:text-2xl">{Math.round(day.tempMax)}°<span className="text-muted-foreground">/{Math.round(day.tempMin)}°</span></p>
                                     <p className="text-xs md:text-sm text-muted-foreground capitalize h-10 flex items-center text-center">{weatherDescriptions[day.weatherCode]}</p>
                                     <div className="text-xs text-muted-foreground mt-2 space-y-1 border-t pt-2 w-full">
-                                        {day.precipitation !== null && (
-                                            <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}%</p>
-                                        )}
+                                        <p className="flex items-center justify-center gap-1.5"><CloudDrizzle className="h-4 w-4 text-blue-400" /> {day.precipitation}% ({day.precipitationSum?.toFixed(2)}"")</p>
+                                        <p className="flex items-center justify-center gap-1.5"><Sun className="h-4 w-4 text-yellow-500" /> UV: {day.uvIndex?.toFixed(1) || 'N/A'}</p>
                                         <p className="flex items-center justify-center gap-1.5"><Sunrise className="h-4 w-4 text-yellow-400" /> {format(parseISO(day.sunrise), 'p')}</p>
                                         <p className="flex items-center justify-center gap-1.5"><Sunset className="h-4 w-4 text-orange-400" /> {format(parseISO(day.sunset), 'p')}</p>
                                     </div>
