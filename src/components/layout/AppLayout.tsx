@@ -35,6 +35,7 @@ import { onSnapshot, collection, query, where, orderBy, Firestore } from 'fireba
 import { getFirestoreInstance, addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
 import { checkWeatherAndNotify } from '@/lib/weatherService';
 import { loadSystemSettings } from '@/lib/settingsService';
+import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -561,6 +562,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                 </header>
                 <main className="flex-1 p-6 overflow-auto app-layout-main">
+                    <FirebaseErrorListener />
                     {children}
                 </main>
             </SidebarInset>
