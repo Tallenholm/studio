@@ -1,8 +1,9 @@
 
 import { initializeFirebase } from './firebase-initialize';
-import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
-import { addDocumentNonBlocking, deleteDocumentNonBlocking, setDocumentNonBlocking, updateDocumentNonBlocking } from '@/firebase/non-blocking-updates';
+import { errorEmitter } from '@/firebase/error-emitter';
+import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 
 
 let dbInstance: Firestore | null = null;
@@ -22,7 +23,6 @@ export function getFirestoreInstance(): Firestore {
     }
     return dbInstance;
 }
-
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
@@ -48,7 +48,16 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const colRef = collection(db, collectionName);
             if (id) {
                 const docRef = doc(colRef, id);
-                setDocumentNonBlocking(docRef, data, {});
+                setDoc(docRef, data, {}).catch(error => {
+                    errorEmitter.emit(
+                        'permission-error',
+                        new FirestorePermissionError({
+                            path: docRef.path,
+                            operation: 'create',
+                            requestResourceData: data,
+                        })
+                    );
+                });
                 return id;
             }
             // Use server-side addDoc for Server Actions for reliability
@@ -56,18 +65,47 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 const docRef = await addDoc(colRef, data);
                 return docRef.id;
             }
-            const docRef = await addDocumentNonBlocking(colRef, data);
-            return docRef.id;
+            const docRef = addDoc(colRef, data)
+              .catch(error => {
+                errorEmitter.emit(
+                  'permission-error',
+                  new FirestorePermissionError({
+                    path: colRef.path,
+                    operation: 'create',
+                    requestResourceData: data,
+                  })
+                );
+                // Return a rejected promise to propagate the error if needed
+                return Promise.reject(error);
+              });
+            return (await docRef).id;
         },
         update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
-            updateDocumentNonBlocking(docRef, data);
+            updateDoc(docRef, data).catch(error => {
+                errorEmitter.emit(
+                  'permission-error',
+                  new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'update',
+                    requestResourceData: data,
+                  })
+                );
+            });
         },
         delete: async (id: string): Promise<void> => {
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
-            deleteDocumentNonBlocking(docRef);
+            deleteDoc(docRef).catch(error => {
+                errorEmitter.emit(
+                  'permission-error',
+                  new FirestorePermissionError({
+                    path: docRef.path,
+                    operation: 'delete',
+                  })
+                );
+            });
         },
         batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
             const db = getFirestoreInstance();
@@ -77,7 +115,16 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 const docRef = doc(col);
                 batch.set(docRef, item);
             });
-            await batch.commit();
+            batch.commit().catch(error => {
+                 errorEmitter.emit(
+                  'permission-error',
+                  new FirestorePermissionError({
+                    path: col.path,
+                    operation: 'write',
+                    requestResourceData: data,
+                  })
+                );
+            })
         }
     };
 };
@@ -106,7 +153,16 @@ export const { getAll: getNotifications, getById: getNotificationById, add: addN
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
   const db = getFirestoreInstance();
   const jobDocRef = doc(db, 'jobs', jobId);
-  updateDocumentNonBlocking(jobDocRef, {
+  updateDoc(jobDocRef, {
     notes: arrayUnion(note)
+  }).catch(error => {
+      errorEmitter.emit(
+        'permission-error',
+        new FirestorePermissionError({
+          path: jobDocRef.path,
+          operation: 'update',
+          requestResourceData: { notes: arrayUnion(note) },
+        })
+      );
   });
 };
