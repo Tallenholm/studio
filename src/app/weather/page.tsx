@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -74,7 +75,7 @@ export default function WeatherPage() {
             return { dailyForecast: null, hourlyForecast: null };
         }
 
-        const daily = weatherData.daily.time.map((t, i) => ({
+        const daily: ForecastDay[] = weatherData.daily.time.map((t, i) => ({
             time: t,
             weatherCode: weatherData.daily.weather_code[i],
             tempMax: weatherData.daily.temperature_2m_max[i],
@@ -87,7 +88,7 @@ export default function WeatherPage() {
         }));
 
         const now = new Date();
-        const hourly = weatherData.hourly.time
+        const hourly: HourlyForecast[] = weatherData.hourly.time
             .map((t, i) => ({
                 time: t,
                 temp: weatherData.hourly.temperature_2m[i],
