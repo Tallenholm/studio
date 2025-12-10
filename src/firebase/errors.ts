@@ -75,18 +75,9 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  * @returns A structured request object.
  */
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
-  let authObject: FirebaseAuthObject | null = null;
-  try {
-    // Safely attempt to get the current user.
-    const firebaseAuth = getAuth();
-    const currentUser = firebaseAuth.currentUser;
-    if (currentUser) {
-      authObject = buildAuthObject(currentUser);
-    }
-  } catch {
-    // This will catch errors if the Firebase app is not yet initialized.
-    // In this case, we'll proceed without auth information.
-  }
+  // To improve reliability, we will not include the auth object in the error report for now.
+  // This avoids potential race conditions with Firebase initialization.
+  const authObject: FirebaseAuthObject | null = null;
 
   return {
     auth: authObject,
@@ -95,6 +86,7 @@ function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
     resource: context.requestResourceData ? { data: context.requestResourceData } : undefined,
   };
 }
+
 
 /**
  * Builds the final, formatted error message for the LLM.

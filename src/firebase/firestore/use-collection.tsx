@@ -108,7 +108,9 @@ export function useCollection<T = any>(
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
   
   if(memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
-    throw new Error('The query/reference passed to useCollection was not created with useMemoFirebase. This will cause infinite re-renders.');
+    // This is a developer error, not a user-facing one.
+    // Throwing an error would crash the app, so we warn instead.
+    console.warn('The query/reference passed to useCollection was not created with useMemoFirebase. This will cause infinite re-renders.');
   }
 
   return { data, isLoading, error };

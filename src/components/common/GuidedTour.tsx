@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -77,7 +76,7 @@ export default function GuidedTour({ isOpen, onClose, steps, tourKey }: GuidedTo
     try {
       localStorage.setItem(tourKey, 'true');
     } catch (error) {
-      console.error("Failed to access localStorage:", error);
+      console.error("Failed to access localStorage. Tour completion state will not be saved.", error);
     }
     onClose();
   };
