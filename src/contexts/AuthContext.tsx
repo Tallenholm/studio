@@ -45,9 +45,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
       if (firebaseUser) {
         const userDocRef = doc(db, 'users', firebaseUser.uid);
-        let userDoc = await getDoc(userDocRef);
+        const userDoc = await getDoc(userDocRef);
 
-        if (!userDoc.exists()) {
+        if (userDoc.exists()) {
+          setUser({ id: userDoc.id, ...userDoc.data() } as User);
+        } else {
+          // User is authenticated with Firebase, but no profile exists in Firestore.
+          // This is a new user, so we create their profile.
           const usersCollectionRef = collection(db, 'users');
           const q = query(usersCollectionRef, limit(1));
           const existingUsersSnapshot = await getDocs(q);
@@ -65,9 +69,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           };
 
           await setDoc(userDocRef, newUserProfile);
+          // CRITICAL: Immediately set the user in the context with the new profile.
+          // This prevents the redirect loop.
           setUser(newUserProfile);
-        } else {
-            setUser({ id: userDoc.id, ...userDoc.data() } as User);
         }
 
       } else {
