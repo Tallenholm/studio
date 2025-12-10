@@ -17,25 +17,10 @@ import { Badge } from '@/components/ui/badge';
 import { getUsers, updateUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
 import { initializeFirebase } from '@/lib/firebase-initialize';
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
-} from '@/components/ui/dialog';
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from '@/components/ui/select';
 
 const { auth } = initializeFirebase();
 
@@ -44,8 +29,7 @@ export default function UserManagementPage() {
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user: currentUser } = useAuth();
-  const [editingUser, setEditingUser] = useState<User | null>(null);
-  const [isSaving, setIsSaving] = useState(false);
+  const [isSaving, setIsSaving] = useState<string | null>(null); // Store user ID being saved
 
   useEffect(() => {
     const fetchUsers = async () => {
@@ -68,34 +52,37 @@ export default function UserManagementPage() {
     return role.charAt(0).toUpperCase() + role.slice(1);
   }
 
-  const handlePasswordReset = async (email: string) => {
+  const handlePasswordReset = async (email: string, userId: string) => {
     if (!auth) {
         toast({ variant: 'destructive', title: 'Error', description: 'Authentication service is not available.' });
         return;
     }
+    setIsSaving(userId);
     try {
         await sendPasswordResetEmail(auth, email);
         toast({ title: 'Password Reset Email Sent', description: `An email has been sent to ${email} with reset instructions.` });
     } catch (error) {
         console.error('Password reset error:', error);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to send password reset email.' });
+    } finally {
+        setIsSaving(null);
     }
   };
 
-  const handleRoleChange = async (newRole: UserRole) => {
-    if (!editingUser) return;
+  const handleRoleChange = async (userId: string, newRole: UserRole) => {
+    const userToUpdate = users.find(u => u.id === userId);
+    if (!userToUpdate) return;
     
-    setIsSaving(true);
+    setIsSaving(userId);
     try {
-        await updateUser(editingUser.id, { role: newRole });
-        setUsers(users.map(u => u.id === editingUser.id ? { ...u, role: newRole } : u));
-        toast({ title: 'Role Updated', description: `${editingUser.name}'s role has been changed to ${newRole}.` });
-        setEditingUser(null);
+        await updateUser(userId, { role: newRole });
+        setUsers(users.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        toast({ title: 'Role Updated', description: `${userToUpdate.name}'s role has been changed to ${getRoleLabel(newRole)}.` });
     } catch (error) {
         console.error('Role change error:', error);
         toast({ variant: 'destructive', title: 'Error', description: 'Failed to update user role.' });
     } finally {
-        setIsSaving(false);
+        setIsSaving(null);
     }
   };
   
@@ -147,9 +134,25 @@ export default function UserManagementPage() {
                                     <TableRow key={user.id}>
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
-                                        <TableCell><Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge></TableCell>
+                                        <TableCell>
+                                            <DropdownMenu>
+                                                <DropdownMenuTrigger asChild disabled={currentUser?.role !== 'owner' || isSaving === user.id}>
+                                                     <Button variant="ghost" className="h-auto p-1">
+                                                        <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge>
+                                                     </Button>
+                                                </DropdownMenuTrigger>
+                                                <DropdownMenuContent>
+                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'owner')} disabled={user.role === 'owner'}>Owner</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'manager')} disabled={user.role === 'manager'}>Manager</DropdownMenuItem>
+                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'employee')} disabled={user.role === 'employee'}>Employee</DropdownMenuItem>
+                                                </DropdownMenuContent>
+                                            </DropdownMenu>
+                                        </TableCell>
                                         <TableCell className="text-right">
-                                            {currentUser?.role === 'owner' && (
+                                            {isSaving === user.id ? (
+                                                <Loader2 className="h-5 w-5 animate-spin mx-auto" />
+                                            ) : (
+                                            currentUser?.role === 'owner' && (
                                             <DropdownMenu>
                                                 <DropdownMenuTrigger asChild>
                                                     <Button variant="ghost" size="icon">
@@ -158,17 +161,27 @@ export default function UserManagementPage() {
                                                     </Button>
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
-                                                    <DropdownMenuItem onClick={() => setEditingUser(user)}>
-                                                        <Pencil className="mr-2 h-4 w-4" />
-                                                        Change Role
-                                                    </DropdownMenuItem>
+                                                    <DropdownMenuSub>
+                                                        <DropdownMenuSubTrigger>
+                                                            <Pencil className="mr-2 h-4 w-4" />
+                                                            <span>Change Role</span>
+                                                        </DropdownMenuSubTrigger>
+                                                        <DropdownMenuPortal>
+                                                            <DropdownMenuSubContent>
+                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'owner')} disabled={user.role === 'owner'}>Owner</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'manager')} disabled={user.role === 'manager'}>Manager</DropdownMenuItem>
+                                                                <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'employee')} disabled={user.role === 'employee'}>Employee</DropdownMenuItem>
+                                                            </DropdownMenuSubContent>
+                                                        </DropdownMenuPortal>
+                                                    </DropdownMenuSub>
                                                     <DropdownMenuSeparator />
-                                                    <DropdownMenuItem onClick={() => handlePasswordReset(user.email)}>
+                                                    <DropdownMenuItem onClick={() => handlePasswordReset(user.email, user.id)}>
                                                         <KeyRound className="mr-2 h-4 w-4" />
                                                         Send Password Reset
                                                     </DropdownMenuItem>
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
+                                            )
                                             )}
                                         </TableCell>
                                     </TableRow>
@@ -177,39 +190,17 @@ export default function UserManagementPage() {
                             </Table>
                         </div>
                     ) : (
-                        <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No employees added yet.</div>
+                        <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                          <Users className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                          <h3 className="text-xl font-semibold text-foreground">No Other Employees</h3>
+                          <p className="mt-2">As new users sign up, they will appear here with the 'Employee' role.</p>
+                        </div>
                     )}
                 </CardContent>
             </Card>
         </CardContent>
       </Card>
     </div>
-    
-    <Dialog open={!!editingUser} onOpenChange={(open) => !open && setEditingUser(null)}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Change Role for {editingUser?.name}</DialogTitle>
-                <DialogDescription>
-                    Select a new role for this user. This will change their permissions across the application.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="py-4">
-                <Select defaultValue={editingUser?.role} onValueChange={(value) => handleRoleChange(value as UserRole)}>
-                    <SelectTrigger>
-                        <SelectValue placeholder="Select a role" />
-                    </SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="owner">Owner</SelectItem>
-                        <SelectItem value="manager">Manager</SelectItem>
-                        <SelectItem value="employee">Employee</SelectItem>
-                    </SelectContent>
-                </Select>
-            </div>
-             <DialogFooter>
-                <Button variant="ghost" onClick={() => setEditingUser(null)}>Cancel</Button>
-            </DialogFooter>
-        </DialogContent>
-    </Dialog>
     </>
   );
 }
