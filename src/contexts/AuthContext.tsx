@@ -3,16 +3,17 @@
 
 import React, { createContext, useContext, useEffect, useState } from 'react';
 import { isFirebaseConfigured, initializeFirebase } from '@/lib/firebase-initialize';
-import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup } from 'firebase/auth';
+import { onAuthStateChanged, signInWithEmailAndPassword, signOut, type User as FirebaseUser, GoogleAuthProvider, signInWithPopup, createUserWithEmailAndPassword } from 'firebase/auth';
 import { doc, getDoc, setDoc, collection, query, limit, getDocs } from 'firebase/firestore';
 import type { User, UserRole } from '@/lib/types';
-import { FirebaseContext, useFirebase } from '@/firebase/provider';
+import { FirebaseContext } from '@/firebase/provider';
 
 interface AuthContextType {
   user: User | null;
   isLoading: boolean;
   isFirebaseConfigured: boolean;
   login: (email: string, password: string) => Promise<void>;
+  signUp: (email: string, password: string) => Promise<void>;
   signInWithGoogle: () => Promise<void>;
   logout: () => Promise<void>;
   role: UserRole | 'guest';
@@ -23,6 +24,7 @@ const AuthContext = createContext<AuthContextType>({
   isLoading: true,
   isFirebaseConfigured: false,
   login: async () => {},
+  signUp: async () => {},
   signInWithGoogle: async () => {},
   logout: async () => {},
   role: 'guest',
@@ -97,6 +99,23 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     }
   };
 
+  const signUp = async (email: string, password: string) => {
+    if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth) {
+      throw new Error("Firebase is not configured.");
+    }
+    try {
+        await createUserWithEmailAndPassword(firebaseContext.auth, email, password);
+    } catch (error: any) {
+        if (error.code === 'auth/email-already-in-use') {
+            throw new Error('This email is already in use. Please sign in or use a different email.');
+        }
+        if (error.code === 'auth/weak-password') {
+            throw new Error('Password should be at least 6 characters.');
+        }
+        throw error;
+    }
+  };
+
   const signInWithGoogle = async () => {
     if (!isFirebaseConfigured || !firebaseContext || !firebaseContext.auth) {
       throw new Error("Firebase is not configured.");
@@ -120,6 +139,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     isLoading,
     isFirebaseConfigured,
     login,
+    signUp,
     signInWithGoogle,
     logout,
     role: user?.role || 'guest',
