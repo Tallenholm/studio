@@ -78,7 +78,7 @@ export default function WeatherPage() {
 
         const daily: ForecastDay[] = weatherData.daily.time.map((t, i) => ({
             time: t,
-            weatherCode: weatherData.daily.weather_code[i],
+            weatherCode: weatherData.daily.weather_code[i] ?? 0,
             tempMax: weatherData.daily.temperature_2m_max[i] ?? 0,
             tempMin: weatherData.daily.temperature_2m_min[i] ?? 0,
             sunrise: weatherData.daily.sunrise[i],
@@ -213,6 +213,4 @@ export default function WeatherPage() {
             </Card>
         </div>
     );
-
-    
 }

@@ -1,9 +1,8 @@
 
-
 // Interfaces for ECMWF API data structure
 interface DailyData {
     time: string[];
-    weather_code: number[];
+    weather_code: (number | null)[];
     temperature_2m_max: (number | null)[];
     temperature_2m_min: (number | null)[];
     sunrise: string[];

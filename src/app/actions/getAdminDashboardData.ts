@@ -20,7 +20,9 @@ export interface AdminDashboardData {
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  // Step 1: Fetch all necessary data first, with fallbacks for individual failures.
+  let briefing: DailyBriefingOutput | null = null;
+  
+  // Fetch all necessary data first, with fallbacks for individual failures.
   const [allJobs, allExpenseReports, allReports, allTimeOffRequests, allTasks, allEvents, allAssets] = await Promise.all([
     getJobs().catch(() => []),
     getExpenseReports().catch(() => []),
@@ -29,12 +31,15 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     getTasks().catch(() => []),
     getCalendarEvents().catch(() => []),
     getFleetAssets().catch(() => []),
-  ]);
+  ]).catch(err => {
+    console.error("Critical error fetching dashboard data:", err);
+    return [[], [], [], [], [], [], []]; // Return empty arrays on major failure
+  });
 
-  let briefing: DailyBriefingOutput | null = null;
   const today = new Date();
   
-  // Step 2: Try to generate the briefing in a separate try/catch block.
+  // Try to generate the briefing in a separate try/catch block.
+  // This ensures that even if the AI fails, the rest of the dashboard data is still returned.
   try {
     // Pre-filter data on the server before sending it to the AI.
     const attentionReports = allReports
@@ -79,7 +84,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     // The 'briefing' variable will remain null, which is the intended behavior on failure.
   }
   
-  // Step 3: Calculate stats
+  // Calculate stats
   const stats = {
     activeJobs: allJobs.filter(j => getJobStatus(j) === 'active').length,
     totalAssets: allAssets.length,
@@ -87,7 +92,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     failedReports: allReports.filter(r => r.overallStatus === 'fail').length,
   };
 
-  // Step 4: Always return the fetched data, with or without a successful briefing.
+  // Always return the fetched data, with or without a successful briefing.
   return {
       briefing,
       jobs: allJobs,

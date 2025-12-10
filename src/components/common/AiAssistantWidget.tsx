@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +14,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
-import { Brain, Loader2, Sparkles } from 'lucide-react';
+import { Brain, Loader2, Sparkles, Send } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { UserRole } from '@/lib/types';
 
@@ -79,9 +78,9 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
       toast({
         variant: 'destructive',
         title: 'AI Assistant Error',
-        description: 'Could not get an answer. Please try again.'
+        description: 'Could not get an answer. The AI service may be temporarily unavailable.'
       });
-      setAiAnswer('Sorry, I encountered an error. Please try asking your question again.');
+      setAiAnswer('Sorry, I encountered an error. Please try asking your question again later.');
     } finally {
       setIsAsking(false);
       setAiQuestion('');
@@ -132,7 +131,8 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
                             onKeyDown={(e) => e.key === 'Enter' && handleAskAi()}
                         />
                         <Button onClick={handleAskAi} disabled={isAsking}>
-                            {isAsking ? <Loader2 className="h-5 w-5 animate-spin" /> : 'Ask'}
+                            {isAsking ? <Loader2 className="h-5 w-5 animate-spin" /> : <Send />}
+                            <span className="sr-only">Ask</span>
                         </Button>
                     </div>
                 </div>

@@ -10,6 +10,15 @@ import { weatherDescriptions } from './weather-utils';
 
 const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 95, 96, 99];
 
+async function fetchFromOpenMeteo(lat: number, lon: number, hourlyParams: string, dailyParams: string): Promise<WeatherData> {
+    const fallbackUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
+    const response = await fetch(fallbackUrl, { next: { revalidate: 3600 } });
+    if (!response.ok) {
+        throw new Error(`Failed to fetch weather data from fallback service (status: ${response.status}).`);
+    }
+    return await response.json();
+}
+
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
     const hourlyParams = "temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m";
     const dailyParams = "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,uv_index_max";
@@ -17,50 +26,49 @@ export const fetchWeather = async (lat: number, lon: number): Promise<WeatherDat
 
     if (!apiKey) {
         console.warn("ECMWF API key not found. Using free Open-Meteo API as fallback.");
-        const fallbackUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
-        const response = await fetch(fallbackUrl, { next: { revalidate: 3600 } });
-        if (!response.ok) {
-            throw new Error(`Failed to fetch weather data from fallback service (status: ${response.status}).`);
-        }
-        return await response.json();
+        return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
     }
     
-    console.log("Using premium ECMWF Weather API.");
     const url = `https://api.ecmwf.int/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
-    const response = await fetch(url, {
-        headers: { 'Authorization': `ApiKey ${apiKey}` },
-        next: { revalidate: 3600 }
-    });
+    try {
+        const response = await fetch(url, {
+            headers: { 'Authorization': `ApiKey ${apiKey}` },
+            next: { revalidate: 3600 }
+        });
 
-    if (!response.ok) {
-        const contentType = response.headers.get("content-type");
-        let errorMessage = 'An unknown API error occurred.';
-        
-        if (contentType && contentType.indexOf("application/json") !== -1) {
-            const errorJson = await response.json();
-            errorMessage = errorJson.reason || errorJson.error_description || errorMessage;
-        } else {
-            errorMessage = await response.text();
-        }
-
-        console.error(`ECMWF API Error (status: ${response.status}):`, errorMessage);
-        
-        // Specific fallback for invalid key
-        if (errorMessage.includes("Invalid API key") || errorMessage.includes("Missing access token")) {
-            console.warn(`ECMWF API key is invalid. Falling back to free Open-Meteo API.`);
-            const fallbackUrl = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
-            const fallbackResponse = await fetch(fallbackUrl, { next: { revalidate: 3600 } });
-            if (!fallbackResponse.ok) {
-                throw new Error(`Failed to fetch weather data from fallback service (status: ${fallbackResponse.status}).`);
+        if (!response.ok) {
+            const contentType = response.headers.get("content-type");
+            let errorMessage = 'An unknown API error occurred.';
+            let errorJson: any = null;
+            
+            if (contentType && contentType.includes("application/json")) {
+                try {
+                    errorJson = await response.json();
+                    errorMessage = errorJson.reason || errorJson.error_description || JSON.stringify(errorJson);
+                } catch {
+                    errorMessage = await response.text();
+                }
+            } else {
+                errorMessage = await response.text();
             }
-            return await fallbackResponse.json();
+            
+            // If the key is invalid, fall back to the free service.
+            if (response.status === 403 || (errorJson && (errorJson.reason?.includes("Invalid API key") || errorJson.reason?.includes("Missing access token")))) {
+                console.warn(`ECMWF API key is invalid or missing. Falling back to free Open-Meteo API.`);
+                return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
+            }
+            
+            // For other errors, throw an exception to be caught by the caller.
+            throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorMessage}`);
         }
+        
+        return await response.json();
 
-        // For all other errors, throw an exception.
-        throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorMessage}`);
+    } catch (error) {
+        console.error("Error during weather fetch, attempting fallback:", error);
+        // If any error occurs during the primary fetch (e.g., network error), fall back.
+        return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
     }
-    
-    return await response.json();
 };
 
 export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'locationLat' | 'locationLon'>) => {

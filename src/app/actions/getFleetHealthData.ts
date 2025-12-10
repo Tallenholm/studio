@@ -36,7 +36,7 @@ const getMaintenanceCostData = (logs: MaintenanceLog[]): { name: string; totalCo
     const costByMonth: Record<string, number> = {};
 
     assetLogs.forEach(log => {
-      const month = parseISO(log.date).toLocaleString('default', { month: 'short' });
+      const month = format(parseISO(log.date), 'MMM');
       costByMonth[month] = (costByMonth[month] || 0) + (log.cost || 0);
     });
 
