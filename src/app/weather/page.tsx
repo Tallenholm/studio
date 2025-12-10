@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -28,8 +27,7 @@ const getWeatherIcon = (code: number, size: 'large' | 'small' = 'large') => {
 };
 
 export default function WeatherPage() {
-    const [dailyForecast, setDailyForecast] = useState<ForecastDay[] | null>(null);
-    const [hourlyForecast, setHourlyForecast] = useState<HourlyForecast[] | null>(null);
+    const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [location, setLocation] = useState({ lat: 41.12, lon: -87.86 });
     const [locationName, setLocationName] = useState('your location');
     const [loading, setLoading] = useState(true);
@@ -46,32 +44,7 @@ export default function WeatherPage() {
             setError(null);
             try {
                 const data = await fetchWeather(location.lat, location.lon);
-                
-                const processedDailyForecast = data.daily.time.map((t, i) => ({
-                    time: t,
-                    weatherCode: data.daily.weather_code[i],
-                    tempMax: data.daily.temperature_2m_max[i],
-                    tempMin: data.daily.temperature_2m_min[i],
-                    sunrise: data.daily.sunrise[i],
-                    sunset: data.daily.sunset[i],
-                    precipitation: data.daily.precipitation_probability_max[i],
-                    precipitationSum: data.daily.precipitation_sum[i],
-                    uvIndex: data.daily.uv_index_max[i],
-                }));
-                
-                const now = new Date();
-                const processedHourlyForecast = data.hourly.time.map((t, i) => ({
-                    time: t,
-                    temp: data.hourly.temperature_2m[i],
-                    precipitation: data.hourly.precipitation_probability[i],
-                    weatherCode: data.hourly.weather_code[i],
-                    windSpeed: data.hourly.wind_speed_10m[i],
-                    humidity: data.hourly.relative_humidity_2m[i],
-                    windDirection: data.hourly.wind_direction_10m[i],
-                })).filter(h => parseISO(h.time) >= now).slice(0, 24);
-
-                setDailyForecast(processedDailyForecast);
-                setHourlyForecast(processedHourlyForecast);
+                setWeatherData(data);
                 setLocationName(`Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}`);
                 setError(null);
             } catch (err: any) {
@@ -85,10 +58,8 @@ export default function WeatherPage() {
     }, [location]);
 
     const radarLayer = useMemo(() => {
-        if (!dailyForecast || dailyForecast.length === 0) {
-            return 'snow';
-        }
-        const todaysWeatherCode = dailyForecast[0].weatherCode;
+        if (!weatherData) return 'snow';
+        const todaysWeatherCode = weatherData.daily.weather_code[0];
         if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
             return 'snow';
         }
@@ -96,7 +67,41 @@ export default function WeatherPage() {
             return 'radar';
         }
         return 'wind';
-    }, [dailyForecast]);
+    }, [weatherData]);
+
+    const { dailyForecast, hourlyForecast } = useMemo(() => {
+        if (!weatherData) {
+            return { dailyForecast: null, hourlyForecast: null };
+        }
+
+        const daily = weatherData.daily.time.map((t, i) => ({
+            time: t,
+            weatherCode: weatherData.daily.weather_code[i],
+            tempMax: weatherData.daily.temperature_2m_max[i],
+            tempMin: weatherData.daily.temperature_2m_min[i],
+            sunrise: weatherData.daily.sunrise[i],
+            sunset: weatherData.daily.sunset[i],
+            precipitation: weatherData.daily.precipitation_probability_max[i],
+            precipitationSum: weatherData.daily.precipitation_sum[i],
+            uvIndex: weatherData.daily.uv_index_max[i],
+        }));
+
+        const now = new Date();
+        const hourly = weatherData.hourly.time
+            .map((t, i) => ({
+                time: t,
+                temp: weatherData.hourly.temperature_2m[i],
+                precipitation: weatherData.hourly.precipitation_probability[i],
+                weatherCode: weatherData.hourly.weather_code[i],
+                windSpeed: weatherData.hourly.wind_speed_10m[i],
+                humidity: weatherData.hourly.relative_humidity_2m[i],
+                windDirection: weatherData.hourly.wind_direction_10m[i],
+            }))
+            .filter(h => parseISO(h.time) >= now)
+            .slice(0, 24);
+
+        return { dailyForecast: daily, hourlyForecast: hourly };
+    }, [weatherData]);
 
     return (
         <div className="container mx-auto py-8">
