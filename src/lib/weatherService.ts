@@ -11,32 +11,18 @@ import { weatherDescriptions } from './weather-utils';
 const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 95, 96, 99];
 
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
-    const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
+    // Always use the free Open-Meteo API to ensure functionality without a premium key.
+    const baseUrl = 'https://api.open-meteo.com/v1/forecast';
+    const model = 'best_match'; 
     
-    // Default to the free Open-Meteo API
-    let baseUrl = 'https://api.open-meteo.com/v1/forecast';
-    let model = 'best_match'; 
-    let useApiKey = false;
-
-    // If a valid API key is present, switch to the premium ECMWF endpoint
-    if (apiKey && apiKey.trim() !== '') {
-        baseUrl = 'https://api.ecmwf.int/v1/forecast';
-        model = 'ecmwf_ifs';
-        useApiKey = true;
-        console.log("Using ECMWF API Key.");
-    } else {
-        console.warn("ECMWF API key is not configured, using free tier Open-Meteo API.");
-    }
+    console.log("Using Open-Meteo API for weather data.");
 
     const hourlyParams = "temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m";
     const dailyParams = "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,uv_index_max";
     
     let url = `${baseUrl}?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=${model}`;
-    if (useApiKey) {
-      url += `&apikey=${apiKey}`;
-    }
     
-    const response = await fetch(url, { cache: 'no-store' });
+    const response = await fetch(url, { next: { revalidate: 3600 } }); // Cache for 1 hour
 
     if (!response.ok) {
         const contentType = response.headers.get('content-type');
