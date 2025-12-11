@@ -90,7 +90,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]));
+        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]), orderBy('timestamp', 'desc'));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
             let count = 0;
@@ -542,55 +542,56 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     return false;
 }
 
-function RedirectHandler() {
-    const router = useRouter();
-    const { user } = useUser();
-    const pathname = usePathname();
-    const role = user?.role || 'guest';
-    
-    useEffect(() => {
-        let destination: string;
-        if (user) {
-            // Logged-in user on a forbidden or root path
-            destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
-        } else {
-            // Guest on a protected path
-            destination = '/login';
-        }
-        router.replace(destination);
-    }, [pathname, user, role, router]);
-
-    // This component renders a loader while the redirect is in progress.
-    return <FullScreenLoader text="Redirecting..." />;
-}
-
-
 export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const router = useRouter();
     const pathname = usePathname();
-    const role = user?.role || 'guest';
-    const isAllowed = isPathAllowed(pathname, role);
-    
-    if (isUserLoading) {
+    const [isInitialRender, setIsInitialRender] = useState(true);
+
+    useEffect(() => {
+        if (isUserLoading) {
+            return; // Wait until the user's auth state is resolved
+        }
+        
+        setIsInitialRender(false);
+        const role = user?.role || 'guest';
+        const isAllowed = isPathAllowed(pathname, role);
+
+        if (!isAllowed) {
+            let destination: string;
+            if (user) {
+                // Logged-in user on a forbidden path, redirect to their dashboard
+                destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
+            } else {
+                // Guest on a protected path, redirect to login
+                destination = '/login';
+            }
+            router.replace(destination);
+        } else if (user && pathname === '/login') {
+            // Logged-in user is on the login page, redirect them away
+            const destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
+            router.replace(destination);
+        }
+    }, [user, isUserLoading, pathname, router]);
+
+    if (isInitialRender || isUserLoading) {
         return <FullScreenLoader />;
     }
 
-    // Unauthenticated user on a public path (e.g., /login)
-    if (!user && isAllowed) {
-        return <>{children}</>;
+    const role = user?.role || 'guest';
+    const isAllowed = isPathAllowed(pathname, role);
+
+    if (!isAllowed) {
+        // While redirecting, show a loader
+        return <FullScreenLoader text="Redirecting..." />;
     }
-    
-    // Authenticated user on an allowed path
-    if (user && isAllowed) {
-        // If user is on the root page, they should be redirected, but let RedirectHandler do it.
-        if (pathname === '/') {
-            return <RedirectHandler />;
-        }
+
+    if (user) {
         return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
     }
-    
-    // If we're here, a redirect is needed
-    // (e.g., guest on protected route, logged-in user on /login, or user on a forbidden route)
-    return <RedirectHandler />;
+
+    // This handles the case for guests on public routes (e.g. /login)
+    return <>{children}</>;
 }
+
+    
