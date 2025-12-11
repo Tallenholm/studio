@@ -2,8 +2,8 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { usePathname } from 'next/navigation';
+import { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -21,9 +21,9 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Loader2, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
-import { useUser, useAuth as useFirebaseAuth } from '@/firebase/provider';
-import type { NotificationMessage, UserRole } from '@/lib/types';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
+import type { NotificationMessage } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -33,83 +33,18 @@ import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestor
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
-// --- Authorization Configuration ---
-const PATH_CONFIG = {
-  PUBLIC: ['/login'],
-  SHARED_AUTH: ['/help', '/notifications', '/weather', '/my-profile'], // Note: dynamic routes need to check with startsWith
-  EMPLOYEE_ONLY: [
-    '/employee',
-    '/pre-trip',
-    '/post-trip',
-  ],
-  ADMIN_BASE: '/admin',
-  OWNER_ONLY: [
-    '/admin/manage-users',
-    '/admin/manage-expenses',
-    '/admin/manage-clients',
-    '/admin/manage-jobs',
-    '/admin/manage-snow',
-    '/admin/manage-snow-routes',
-    '/admin/manage-concrete',
-    '/admin/manage-misc',
-    '/admin/manage-rentals',
-    '/admin/advanced-reports',
-    '/admin/system-settings',
-  ],
-};
-
-function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    if (role === 'owner') return true;
-    if (role === 'guest') return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    
-    // Check shared authenticated routes
-    if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
-        return true;
-    }
-    
-    // Check employee-only base routes
-     if (PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p))) {
-        return true;
-    }
-
-    const isEmployeePath = pathname.startsWith('/employee');
-    const isAdminPath = pathname.startsWith(PATH_CONFIG.ADMIN_BASE);
-
-    if (role === 'employee') {
-        return isEmployeePath;
-    }
-
-    if (role === 'manager') {
-        if (PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p))) {
-            return false;
-        }
-        return isAdminPath || isEmployeePath;
-    }
-
-    return false;
-}
-
-const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">{text}</p>
-    </div>
-);
-
-function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
+export default function AppLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const router = useRouter();
-    const { user, isUserLoading } = useUser();
-    const auth = useFirebaseAuth();
+    const { user, auth } = useAuth();
     const [unreadCount, setUnreadCount] = useState(0);
-    const searchParams = useSearchParams();
-    const showAiAssistantWelcome = searchParams.get('tour') === 'true';
     const { open: openCommandPalette } = useCommandPalette();
     const { open: openTools } = useGlobalTools();
     const [isSidebarDefaultOpen, setIsSidebarDefaultOpen] = useState(true);
 
     const logout = () => {
-      auth.signOut();
+      if (auth) {
+        auth.signOut();
+      }
     }
     
     useEffect(() => {
@@ -121,42 +56,14 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
-    // This single useEffect handles all redirection logic for a logged-in user.
     useEffect(() => {
-        if (isUserLoading || !user) {
-            return; // Don't do anything until we're sure who the user is
-        }
-        
-        const role = user.role || 'guest';
-        const isAllowed = isPathAllowed(pathname, role);
-        const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-        const isOnRootPath = pathname === '/';
-
-        let destination: string | null = null;
-        
-        // Priority 1: If a logged-in user is on a public page or the root, redirect them.
-        if (isOnPublicPath || isOnRootPath) {
-            destination = role === 'employee' ? '/employee' : '/admin';
-        }
-        // Priority 2: If they are on a path not allowed for their role, redirect them.
-        else if (!isAllowed) {
-            destination = role === 'employee' ? '/employee' : '/admin';
-        }
-        
-        if (destination && destination !== pathname) {
-            router.replace(destination);
-        }
-        
-    }, [pathname, user, isUserLoading, router]);
-
-    useEffect(() => {
-        if (!user?.id) return;
+        if (!user || !user.id) return;
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
         const q = query(
             notificationsRef, 
-            where('recipientId', 'in', ['all', user.id])
+            where('recipientId', 'in', ['all', user.id]),
         );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -164,12 +71,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             const liveNotifications: NotificationMessage[] = [];
             snapshot.forEach(doc => {
                 const notif = { id: doc.id, ...doc.data() } as NotificationMessage;
-                liveNotifications.push(notif);
                 if (!notif.readBy.includes(user.id)) {
                     count++;
                 }
             });
-            liveNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             
             setUnreadCount(count);
         }, (error) => {
@@ -177,7 +82,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         });
 
         return () => unsubscribe();
-    }, [user?.id]);
+    }, [user]);
     
     useEffect(() => {
       const down = (e: KeyboardEvent) => {
@@ -194,18 +99,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
     
-    const isCurrentlyAllowed = user ? isPathAllowed(pathname, user.role) : false;
-    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    // If we're about to redirect, show a loader to prevent flicker
-    if ((isOnPublicPath && user) || (pathname === '/' && user) || (!isCurrentlyAllowed && user)) {
-        return <FullScreenLoader text="Redirecting..." />;
-    }
-
-    if (!isCurrentlyAllowed && !isUserLoading) {
-        return <FullScreenLoader text="Access Denied. Redirecting..." />;
-    }
-
-    const isAdmin = user.role === 'owner' || user.role === 'manager';
+    const isAdmin = user?.role === 'owner' || user?.role === 'manager';
     
     return (
         <SidebarProvider defaultOpen={isSidebarDefaultOpen}>
@@ -216,7 +110,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>
-                    {user.role === 'employee' && (
+                    {user?.role === 'employee' && (
                         <SidebarGroup>
                             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
                             <SidebarMenu>
@@ -310,7 +204,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         </SidebarGroup>
                     )}
 
-                    {isAdmin && (
+                    {isAdmin && user && (
                         <SidebarGroup>
                             <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
                             <SidebarMenu>
@@ -586,41 +480,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </main>
             </SidebarInset>
             <CommandPalette />
-            <AiAssistantWidget initialOpen={showAiAssistantWelcome} />
+            <AiAssistantWidget initialOpen={false} />
             <GlobalToolsWidget />
         </SidebarProvider>
     );
-}
-
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isUserLoading } = useUser();
-    const router = useRouter();
-    const pathname = usePathname();
-
-    useEffect(() => {
-        if (isUserLoading) {
-            return; // Wait until Firebase has determined the auth state.
-        }
-
-        const isGuest = !user;
-        const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-
-        if (isGuest && !isOnPublicPath) {
-            router.replace('/login');
-        }
-    }, [user, isUserLoading, pathname, router]);
-
-    // While loading the auth state, show a full-screen loader.
-    if (isUserLoading) {
-        return <FullScreenLoader />;
-    }
-
-    // If the user is not authenticated, render the children (which will be the Login page).
-    if (!user) {
-        return <>{children}</>;
-    }
-
-    // If the user is authenticated, render the main layout.
-    // The AuthenticatedLayout itself will handle role-based redirects.
-    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
 }
