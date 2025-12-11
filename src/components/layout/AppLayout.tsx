@@ -27,19 +27,16 @@ import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
-import { format, isBefore, addDays, parseISO, addMonths } from 'date-fns';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
-import { onSnapshot, collection, query, where, orderBy, Firestore } from 'firebase/firestore';
-import { getFirestoreInstance, addNotification, getFleetAssets, getNotifications } from '@/lib/firestoreService';
-import { checkWeatherAndNotify } from '@/lib/weatherService';
-import { loadSystemSettings } from '@/lib/settingsService';
+import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 // --- Authorization Configuration ---
 const PATH_CONFIG = {
   PUBLIC: ['/login'],
-  SHARED_AUTH: ['/help', '/notifications', '/reports', '/weather', '/reports/'], // Note the trailing slash for dynamic routes
+  SHARED_AUTH: ['/help', '/notifications', '/weather', '/reports', '/my-profile', '/reports/'], // Note the trailing slash for dynamic routes
   EMPLOYEE_BASE: '/employee',
   ADMIN_BASE: '/admin',
   OWNER_ONLY: [
@@ -123,96 +120,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       document.addEventListener("keydown", down)
       return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
-
-    useEffect(() => {
-        if (user && (user.role === 'owner' || user.role === 'manager')) {
-            
-            const checkAndCreateNotifications = async () => {
-                const [assets, notifications] = await Promise.all([
-                    getFleetAssets(),
-                    getNotifications()
-                ]);
-
-                const today = new Date();
-                today.setHours(0, 0, 0, 0); 
-                const thirtyDaysFromNow = addDays(today, 30);
-                
-                const notificationPromises: Promise<any>[] = [];
-
-                assets.forEach(asset => {
-                    // Check registration
-                    if (asset.registrationDueDate) {
-                        const dueDate = parseISO(asset.registrationDueDate);
-                        const notifId = `expiry-reg-${asset.id}`;
-                        if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
-                            const isExpired = isBefore(dueDate, today);
-                            const newNotif: Omit<NotificationMessage, 'id'> = {
-                                id: notifId, recipientId: 'all', title: `Vehicle Registration ${isExpired ? 'Expired' : 'Expiring Soon'}`,
-                                content: `The registration for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
-                                senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                            };
-                            notificationPromises.push(addNotification(newNotif, notifId));
-                        }
-                    }
-
-                    // Check insurance
-                    if (asset.insuranceDueDate) {
-                        const dueDate = parseISO(asset.insuranceDueDate);
-                        const notifId = `expiry-ins-${asset.id}`;
-                         if (isBefore(dueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === insNotifId)) {
-                            const isExpired = isBefore(dueDate, today);
-                             const newNotif: Omit<NotificationMessage, 'id'> = {
-                                id: notifId, recipientId: 'all', title: `Vehicle Insurance ${isExpired ? 'Expired' : 'Expiring Soon'}`,
-                                content: `The insurance for ${asset.name} (${asset.vin}) ${isExpired ? 'expired' : 'expires'} on ${format(dueDate, 'PPP')}. Please update it in Manage Fleet.`,
-                                senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                            };
-                            notificationPromises.push(addNotification(newNotif, notifId));
-                        }
-                    }
-
-                    // Check maintenance schedule
-                    if (asset.maintenanceSchedule) {
-                        for (const [key, value] of Object.entries(asset.maintenanceSchedule)) {
-                            if (value && value.intervalMonths && value.lastServiceDate) {
-                                const nextDueDate = addMonths(parseISO(value.lastServiceDate), value.intervalMonths);
-                                const serviceName = key.replace(/([A-Z])/g, ' $1').trim();
-                                const notifId = `maint-${key}-${asset.id}`;
-
-                                if (isBefore(nextDueDate, thirtyDaysFromNow) && !notifications.some(n => n.id === notifId)) {
-                                    const isOverdue = isBefore(nextDueDate, today);
-                                    const newNotif: Omit<NotificationMessage, 'id'> = {
-                                        id: notifId, recipientId: 'all', title: `Maintenance ${isOverdue ? 'Overdue' : 'Due Soon'}: ${serviceName}`,
-                                        content: `The ${serviceName} for ${asset.name} (${asset.vin}) is ${isOverdue ? 'overdue' : 'due'} on ${format(nextDueDate, 'PPP')}. Please log the service once completed.`,
-                                        senderName: 'System Alert', timestamp: new Date().toISOString(), readBy: [],
-                                    };
-                                    notificationPromises.push(addNotification(newNotif, notifId));
-                                }
-                            }
-                        }
-                    }
-                });
-
-                if (notificationPromises.length > 0) {
-                    Promise.all(notificationPromises);
-                }
-            };
-            
-            checkAndCreateNotifications();
-            
-            const settings = loadSystemSettings();
-            const locationSettings = { locationLat: settings.locationLat, locationLon: settings.locationLon };
-
-            const weatherInterval = setInterval(() => {
-                console.log('Checking weather for notifications...');
-                checkWeatherAndNotify(locationSettings);
-            }, 1000 * 60 * 30);
-
-            checkWeatherAndNotify(locationSettings);
-            
-            return () => clearInterval(weatherInterval);
-        }
-    }, [user]);
-
+    
 
     if (!user) {
         return <FullScreenLoader text="Redirecting..." />;
@@ -241,8 +149,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     </Link>
                                 </SidebarMenuItem>
                                  <SidebarMenuItem>
-                                    <Link href="/employee/my-profile">
-                                        <SidebarMenuButton tooltip="My Profile" isActive={pathname.startsWith('/employee/my-profile')}>
+                                    <Link href="/my-profile">
+                                        <SidebarMenuButton tooltip="My Profile" isActive={pathname.startsWith('/my-profile')}>
                                             <UserIcon /><span>My Profile</span>
                                         </SidebarMenuButton>
                                     </Link>
