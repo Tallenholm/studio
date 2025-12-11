@@ -54,17 +54,7 @@ const PATH_CONFIG = {
   ],
 };
 
-const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
-    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-        <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="mt-4 text-lg text-muted-foreground">{text}</p>
-    </div>
-);
-
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    if (role === 'guest') {
-        return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    }
     if (role === 'owner') {
         return true; 
     }
@@ -91,6 +81,13 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     return false;
 }
 
+const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
+    <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+        <Loader2 className="h-12 w-12 animate-spin text-primary" />
+        <p className="mt-4 text-lg text-muted-foreground">{text}</p>
+    </div>
+);
+
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
@@ -107,16 +104,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       auth.signOut();
     }
     
-    // This effect runs once when the authenticated layout mounts.
-    // Its only job is to redirect the user away from the root path if they are logged in.
-    useEffect(() => {
-        if (pathname === '/' && user) {
-            const destination = user.role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
-            router.replace(destination);
-        }
-    }, [pathname, user, router]);
-
-
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const savedState = document.cookie.split('; ').find(row => row.startsWith('sidebar_state='));
@@ -125,6 +112,28 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             }
         }
     }, []);
+
+    useEffect(() => {
+        if (!user) return; // Should not happen in this component, but safe guard.
+
+        // 1. Handle redirects for logged-in users on public/root pages
+        const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+        const isOnRootPath = pathname === '/';
+        const userDashboard = user.role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
+
+        if (isOnPublicPath || isOnRootPath) {
+            router.replace(userDashboard);
+            return; // Exit early to avoid further checks on the old path
+        }
+        
+        // 2. Handle role-based access for protected pages
+        const isAllowed = isPathAllowed(pathname, user.role);
+        if (!isAllowed) {
+            router.replace(userDashboard);
+        }
+
+    }, [pathname, user, router]);
+
 
     useEffect(() => {
         if (!user) return;
@@ -164,21 +173,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     
 
     if (!user) {
-        // This should theoretically not be reached if AppLayout's logic is correct,
-        // but it's a safe fallback.
         return <FullScreenLoader text="Redirecting to login..." />;
     }
 
-    if (pathname === '/') {
-        // While redirecting from the root, show a loader.
+    // While redirecting, show a loader. This prevents rendering a page that the user will be navigated away from.
+    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    if(isOnPublicPath || pathname === '/' || !isPathAllowed(pathname, user.role)) {
         return <FullScreenLoader text="Redirecting..." />;
-    }
-    
-    const isAllowed = isPathAllowed(pathname, user.role);
-    if (!isAllowed) {
-        // This handles cases where a logged-in user tries to access a page
-        // they are not allowed to see (e.g., employee trying to access /admin).
-        return <FullScreenLoader text="Access Denied. Redirecting..." />;
     }
 
     const isAdmin = user.role === 'owner' || user.role === 'manager';
@@ -580,13 +581,9 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         
         const isGuest = !user;
         const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-        const isOnRootPath = pathname === '/';
-
+        
         if (isGuest && !isOnPublicPath) {
             router.replace('/login');
-        } else if (user && (isOnPublicPath || isOnRootPath)) {
-            const destination = user.role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
-            router.replace(destination);
         }
 
     }, [user, isUserLoading, pathname, router]);
