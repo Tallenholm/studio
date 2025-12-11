@@ -13,7 +13,7 @@ import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import { getAdminDashboardData, type AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/contexts/AuthContext';
+import { useAuth } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
