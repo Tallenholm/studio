@@ -122,17 +122,16 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!user) return; // Should never happen here, but for type safety
-
-        const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-        const isOnRootPath = pathname === '/';
-        const isAllowedOnCurrentPath = isPathAllowed(pathname, user.role);
+        if (!user || !user.role) return;
 
         let destination = '';
+        const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+        const isOnRootPath = pathname === '/';
+        const isAllowed = isPathAllowed(pathname, user.role);
 
         if (isOnPublicPath || isOnRootPath) {
-             destination = user.role === 'employee' ? '/employee' : '/admin';
-        } else if (!isAllowedOnCurrentPath) {
+            destination = user.role === 'employee' ? '/employee' : '/admin';
+        } else if (!isAllowed) {
             destination = user.role === 'employee' ? '/employee' : '/admin';
         }
 
@@ -143,7 +142,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
 
     useEffect(() => {
-        if (!user) return;
+        if (!user || !user.id) return; // Guard against undefined user or user.id
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
@@ -155,11 +154,16 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             snapshot.forEach(doc => {
                 const notif = { id: doc.id, ...doc.data() } as NotificationMessage;
                 liveNotifications.push(notif);
-                if (!notif.readBy.includes(user.uid)) {
+                if (!notif.readBy.includes(user.id)) {
                     count++;
                 }
             });
+            // Sort client-side to avoid needing a composite index
+            liveNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            
             setUnreadCount(count);
+        }, (error) => {
+            console.error("Error fetching real-time notifications:", error);
         });
 
         return () => unsubscribe();
@@ -182,14 +186,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     
 
     if (!user) {
-        return <FullScreenLoader text="Redirecting to login..." />;
+        return <FullScreenLoader text="Authenticating..." />;
     }
 
-    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    const isRedirecting = isOnPublicPath || pathname === '/' || !isPathAllowed(pathname, user.role);
-
-    if (isRedirecting) {
-        return <FullScreenLoader text="Access Denied. Redirecting..." />;
+    if (!isPathAllowed(pathname, user.role) || pathname === '/' || PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p))) {
+        return <FullScreenLoader text="Redirecting..." />;
     }
 
     const isAdmin = user.role === 'owner' || user.role === 'manager';
