@@ -189,7 +189,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader text="Authenticating..." />;
     }
 
-    if (!isPathAllowed(pathname, user.role) || pathname === '/' || PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p))) {
+    const isAllowed = isPathAllowed(pathname, user.role);
+    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    if (!isAllowed || isOnPublicPath || pathname === '/') {
         return <FullScreenLoader text="Redirecting..." />;
     }
 
@@ -603,10 +605,11 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader />;
     }
 
-    if (user) {
-        return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+    if (!user) {
+        // Guest user on a public path (e.g., /login) or being redirected
+        return <>{children}</>;
     }
 
-    // Guest user on a public path (e.g., /login)
-    return <>{children}</>;
+    // User is logged in, render the main authenticated layout
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
 }
