@@ -8,9 +8,9 @@ import { useAuth } from '@/contexts/AuthContext';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Bell, Loader2, Circle, Mail } from 'lucide-react';
-import { formatDistanceToNow } from 'date-fns';
+import { formatDistanceToNow, parseISO } from 'date-fns';
 import { cn } from '@/lib/utils';
-import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 
 export default function NotificationsPage() {
@@ -29,7 +29,6 @@ export default function NotificationsPage() {
     const q = query(
         notificationsRef, 
         where('recipientId', 'in', ['all', user.id]),
-        orderBy('timestamp', 'desc')
     );
 
     const unsubscribe = onSnapshot(q, (snapshot) => {
@@ -37,6 +36,8 @@ export default function NotificationsPage() {
         snapshot.forEach(doc => {
             liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
         });
+        // Sort on the client side
+        liveNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
         setNotifications(liveNotifications);
         setIsLoading(false);
     }, (error) => {
@@ -101,7 +102,7 @@ export default function NotificationsPage() {
                                 <div className="flex justify-between items-start">
                                     <span className={cn("text-base", !isRead ? "font-bold" : "font-semibold")}>{notif.title}</span>
                                      <span className="text-xs text-muted-foreground whitespace-nowrap">
-                                        {formatDistanceToNow(new Date(notif.timestamp), { addSuffix: true })}
+                                        {formatDistanceToNow(parseISO(notif.timestamp), { addSuffix: true })}
                                     </span>
                                 </div>
                                 <p className="text-sm text-muted-foreground text-left">

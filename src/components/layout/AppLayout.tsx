@@ -36,8 +36,12 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 // --- Authorization Configuration ---
 const PATH_CONFIG = {
   PUBLIC: ['/login'],
-  SHARED_AUTH: ['/help', '/notifications', '/weather', '/reports', '/my-profile'], // Note: dynamic routes need to check with startsWith
-  EMPLOYEE_BASE: '/employee',
+  SHARED_AUTH: ['/help', '/notifications', '/weather', '/my-profile'], // Note: dynamic routes need to check with startsWith
+  EMPLOYEE_ONLY: [
+    '/employee',
+    '/pre-trip',
+    '/post-trip',
+  ],
   ADMIN_BASE: '/admin',
   OWNER_ONLY: [
     '/admin/manage-users',
@@ -55,16 +59,20 @@ const PATH_CONFIG = {
 };
 
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    if (role === 'owner') {
-        return true; 
-    }
+    if (role === 'owner') return true;
+    if (role === 'guest') return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
     
-    // Check if the path is a dynamic sub-route of a shared authenticated path
+    // Check shared authenticated routes
     if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
         return true;
     }
     
-    const isEmployeePath = pathname.startsWith(PATH_CONFIG.EMPLOYEE_BASE);
+    // Check employee-only base routes
+     if (PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p))) {
+        return true;
+    }
+
+    const isEmployeePath = pathname.startsWith('/employee');
     const isAdminPath = pathname.startsWith(PATH_CONFIG.ADMIN_BASE);
 
     if (role === 'employee') {
@@ -114,24 +122,23 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!user) return; // Should not happen in this component, but safe guard.
+        if (!user) return; // Should never happen here, but for type safety
 
-        // 1. Handle redirects for logged-in users on public/root pages
         const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
         const isOnRootPath = pathname === '/';
-        const userDashboard = user.role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
+        const isAllowedOnCurrentPath = isPathAllowed(pathname, user.role);
+
+        let destination = '';
 
         if (isOnPublicPath || isOnRootPath) {
-            router.replace(userDashboard);
-            return; // Exit early to avoid further checks on the old path
-        }
-        
-        // 2. Handle role-based access for protected pages
-        const isAllowed = isPathAllowed(pathname, user.role);
-        if (!isAllowed) {
-            router.replace(userDashboard);
+             destination = user.role === 'employee' ? '/employee' : '/admin';
+        } else if (!isAllowedOnCurrentPath) {
+            destination = user.role === 'employee' ? '/employee' : '/admin';
         }
 
+        if (destination && destination !== pathname) {
+            router.replace(destination);
+        }
     }, [pathname, user, router]);
 
 
@@ -140,12 +147,14 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]), orderBy('timestamp', 'desc'));
+        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.id]));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
+            const liveNotifications: NotificationMessage[] = [];
             let count = 0;
             snapshot.forEach(doc => {
-                const notif = doc.data() as NotificationMessage;
+                const notif = { id: doc.id, ...doc.data() } as NotificationMessage;
+                liveNotifications.push(notif);
                 if (!notif.readBy.includes(user.uid)) {
                     count++;
                 }
@@ -176,10 +185,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         return <FullScreenLoader text="Redirecting to login..." />;
     }
 
-    // While redirecting, show a loader. This prevents rendering a page that the user will be navigated away from.
     const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    if(isOnPublicPath || pathname === '/' || !isPathAllowed(pathname, user.role)) {
-        return <FullScreenLoader text="Redirecting..." />;
+    const isRedirecting = isOnPublicPath || pathname === '/' || !isPathAllowed(pathname, user.role);
+
+    if (isRedirecting) {
+        return <FullScreenLoader text="Access Denied. Redirecting..." />;
     }
 
     const isAdmin = user.role === 'owner' || user.role === 'manager';
