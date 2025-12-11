@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter, useSearchParams } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -99,7 +99,7 @@ const FullScreenLoader = ({ text = 'Loading...' }: { text?: string }) => (
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user } = useUser();
+    const { user, isUserLoading } = useUser();
     const auth = useFirebaseAuth();
     const [unreadCount, setUnreadCount] = useState(0);
     const searchParams = useSearchParams();
@@ -121,36 +121,47 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         }
     }, []);
 
+    // This single useEffect handles all redirection logic for a logged-in user.
     useEffect(() => {
-        if (!user || !user.role) return;
-
-        let destination = '';
+        if (isUserLoading || !user) {
+            return; // Don't do anything until we're sure who the user is
+        }
+        
+        const role = user.role || 'guest';
+        const isAllowed = isPathAllowed(pathname, role);
         const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
         const isOnRootPath = pathname === '/';
-        const isAllowed = isPathAllowed(pathname, user.role);
 
+        let destination: string | null = null;
+        
+        // Priority 1: If a logged-in user is on a public page or the root, redirect them.
         if (isOnPublicPath || isOnRootPath) {
-            destination = user.role === 'employee' ? '/employee' : '/admin';
-        } else if (!isAllowed) {
-            destination = user.role === 'employee' ? '/employee' : '/admin';
+            destination = role === 'employee' ? '/employee' : '/admin';
         }
-
+        // Priority 2: If they are on a path not allowed for their role, redirect them.
+        else if (!isAllowed) {
+            destination = role === 'employee' ? '/employee' : '/admin';
+        }
+        
         if (destination && destination !== pathname) {
             router.replace(destination);
         }
-    }, [pathname, user, router]);
-
+        
+    }, [pathname, user, isUserLoading, router]);
 
     useEffect(() => {
-        if (!user || !user.id) return; // Guard against undefined user or user.id
+        if (!user?.id) return;
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.id]));
+        const q = query(
+            notificationsRef, 
+            where('recipientId', 'in', ['all', user.id])
+        );
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            const liveNotifications: NotificationMessage[] = [];
             let count = 0;
+            const liveNotifications: NotificationMessage[] = [];
             snapshot.forEach(doc => {
                 const notif = { id: doc.id, ...doc.data() } as NotificationMessage;
                 liveNotifications.push(notif);
@@ -158,7 +169,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                     count++;
                 }
             });
-            // Sort client-side to avoid needing a composite index
             liveNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
             
             setUnreadCount(count);
@@ -167,7 +177,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         });
 
         return () => unsubscribe();
-    }, [user]);
+    }, [user?.id]);
     
     useEffect(() => {
       const down = (e: KeyboardEvent) => {
@@ -184,15 +194,15 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
     
-
-    if (!user) {
-        return <FullScreenLoader text="Authenticating..." />;
+    const isCurrentlyAllowed = user ? isPathAllowed(pathname, user.role) : false;
+    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    // If we're about to redirect, show a loader to prevent flicker
+    if ((isOnPublicPath && user) || (pathname === '/' && user) || (!isCurrentlyAllowed && user)) {
+        return <FullScreenLoader text="Redirecting..." />;
     }
 
-    const isAllowed = isPathAllowed(pathname, user.role);
-    const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    if (!isAllowed || isOnPublicPath || pathname === '/') {
-        return <FullScreenLoader text="Redirecting..." />;
+    if (!isCurrentlyAllowed && !isUserLoading) {
+        return <FullScreenLoader text="Access Denied. Redirecting..." />;
     }
 
     const isAdmin = user.role === 'owner' || user.role === 'manager';
@@ -589,27 +599,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
 
     useEffect(() => {
         if (isUserLoading) {
-            return; // Wait until we know the user's auth state
+            return; // Wait until Firebase has determined the auth state.
         }
-        
+
         const isGuest = !user;
         const isOnPublicPath = PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-        
+
         if (isGuest && !isOnPublicPath) {
             router.replace('/login');
         }
-
     }, [user, isUserLoading, pathname, router]);
 
+    // While loading the auth state, show a full-screen loader.
     if (isUserLoading) {
         return <FullScreenLoader />;
     }
 
+    // If the user is not authenticated, render the children (which will be the Login page).
     if (!user) {
-        // Guest user on a public path (e.g., /login) or being redirected
         return <>{children}</>;
     }
 
-    // User is logged in, render the main authenticated layout
+    // If the user is authenticated, render the main layout.
+    // The AuthenticatedLayout itself will handle role-based redirects.
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
 }
