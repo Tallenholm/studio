@@ -521,7 +521,6 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
         return true; 
     }
     
-    // Check against shared authenticated paths
     if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p))) {
         return true;
     }
@@ -534,40 +533,21 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     }
 
     if (role === 'manager') {
-        // Manager can't access owner-only paths.
         if (PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p))) {
             return false;
         }
-        // Manager can access all other admin paths and all employee paths.
         return isAdminPath || isEmployeePath;
     }
 
-    // Deny by default
     return false;
 }
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isUserLoading } = useUser();
-    const pathname = usePathname();
+function RedirectHandler() {
     const router = useRouter();
-
-    // If loading, show a full-screen loader.
-    if (isUserLoading) {
-        return <FullScreenLoader />;
-    }
-
+    const { user } = useUser();
+    const pathname = usePathname();
     const role = user?.role || 'guest';
-    const isAllowed = isPathAllowed(pathname, role);
-
-    // If the user is on a page they are allowed to see, render it.
-    if (isAllowed) {
-        if (!user) {
-            return <>{children}</>; // Public pages for guests
-        }
-        return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
-    }
     
-    // If not allowed, redirect them. This effect runs only when a redirect is needed.
     useEffect(() => {
         let destination: string;
         if (user) {
@@ -580,6 +560,37 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         router.replace(destination);
     }, [pathname, user, role, router]);
 
-    // While redirecting, show a loader.
+    // This component renders a loader while the redirect is in progress.
     return <FullScreenLoader text="Redirecting..." />;
+}
+
+
+export default function AppLayout({ children }: { children: React.ReactNode }) {
+    const { user, isUserLoading } = useUser();
+    const router = useRouter();
+    const pathname = usePathname();
+    const role = user?.role || 'guest';
+    const isAllowed = isPathAllowed(pathname, role);
+    
+    if (isUserLoading) {
+        return <FullScreenLoader />;
+    }
+
+    // Unauthenticated user on a public path (e.g., /login)
+    if (!user && isAllowed) {
+        return <>{children}</>;
+    }
+    
+    // Authenticated user on an allowed path
+    if (user && isAllowed) {
+        // If user is on the root page, they should be redirected, but let RedirectHandler do it.
+        if (pathname === '/') {
+            return <RedirectHandler />;
+        }
+        return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+    }
+    
+    // If we're here, a redirect is needed
+    // (e.g., guest on protected route, logged-in user on /login, or user on a forbidden route)
+    return <RedirectHandler />;
 }
