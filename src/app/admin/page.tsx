@@ -13,7 +13,7 @@ import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import { getAdminDashboardData, type AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
-import { useAuth } from '@/firebase/provider';
+import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
@@ -198,7 +198,7 @@ export default function FleetCheckDashboardPage() {
 
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { toast } = useToast();
-  const { user } = useAuth();
+  const { user } = useUser();
 
 
   useEffect(() => {
@@ -340,12 +340,12 @@ export default function FleetCheckDashboardPage() {
                 <ul className="space-y-3 max-h-60 overflow-y-auto">
                   {selectedDayItems.map(item => (
                     <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
-                      {item.itemType === 'job' ? getJobTypeIcon(item.jobType) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
+                      {item.itemType === 'job' ? getJobTypeIcon((item as Job).jobType) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
                       <div>
-                        <p className="font-semibold">{item.title || item.name}</p>
+                        <p className="font-semibold">{item.title || (item as Job).name}</p>
                         {item.itemType === 'job' ? (
                           <>
-                            <p className="text-sm text-muted-foreground">Job for: {item.clientName}</p>
+                            <p className="text-sm text-muted-foreground">Job for: {(item as Job).clientName}</p>
                             <Link href={`/admin/jobs/${item.id}`} className="text-sm text-primary hover:underline">View Job Details</Link>
                           </>
                         ) : (

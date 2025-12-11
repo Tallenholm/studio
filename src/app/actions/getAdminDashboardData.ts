@@ -9,8 +9,8 @@ import { getJobStatus } from '@/lib/job-utils';
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
-  jobs: Job[];
   events: CalendarEvent[];
+  jobs: Job[]; // For the calendar
   stats: {
     activeJobs: number;
     totalAssets: number;
@@ -22,6 +22,7 @@ export interface AdminDashboardData {
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   let briefing: DailyBriefingOutput | null = null;
   
+  // Fetch all data in parallel
   const [
     allJobs = [],
     allExpenseReports = [],
@@ -46,6 +47,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   const today = new Date();
   
   try {
+    // Prepare only the necessary, filtered data for the AI briefing
     const attentionReports = allReports
       .filter(r => 
         r.overallStatus === 'fail' && 
@@ -68,12 +70,12 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
     const briefingInput = {
         date: today.toISOString(),
-        jobs: JSON.stringify(activeJobs),
-        reports: JSON.stringify(attentionReports),
-        timeOffRequests: JSON.stringify(pendingTimeOff),
-        expenseReports: JSON.stringify(pendingExpenses),
-        tasks: JSON.stringify(pendingTasks),
-        events: JSON.stringify(todaysEvents),
+        jobs: JSON.stringify(activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType}))),
+        reports: JSON.stringify(attentionReports.map(r => ({id: r.id, assetName: r.assetName, employeeName: r.employeeName}))),
+        timeOffRequests: JSON.stringify(pendingTimeOff.map(r => ({id: r.id, employeeName: r.employeeName}))),
+        expenseReports: JSON.stringify(pendingExpenses.map(r => ({id: r.id, employeeName: r.employeeName, amount: r.amount}))),
+        tasks: JSON.stringify(pendingTasks.map(t => ({id: t.id, title: t.title, assignedToEmployeeName: t.assignedToEmployeeName}))),
+        events: JSON.stringify(todaysEvents.map(e => ({id: e.id, title: e.title}))),
     };
 
     briefing = await generateDailyBriefing(briefingInput);
@@ -92,8 +94,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   return {
       briefing,
-      jobs: allJobs,
       events: allEvents,
+      jobs: allJobs, // Return all jobs for the calendar
       stats,
   };
 }

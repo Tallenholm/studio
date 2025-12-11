@@ -32,16 +32,20 @@ const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-sidebar-help-employee', title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!", side: 'right' },
 ];
 
+interface EmployeeDashboardData {
+    jobs: Job[];
+    events: CalendarEvent[];
+    tasks: Task[];
+    reports: InspectionReport[];
+}
+
 export default function EmployeeHubPage() {
   const { user } = useUser();
   const searchParams = useSearchParams();
   const [isLoading, setIsLoading] = useState(true);
   const [date, setDate] = useState<Date | undefined>(new Date());
   
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [reports, setReports] = useState<InspectionReport[]>([]);
+  const [dashboardData, setDashboardData] = useState<EmployeeDashboardData | null>(null);
 
   const [isTourOpen, setIsTourOpen] = useState(false);
 
@@ -61,10 +65,12 @@ export default function EmployeeHubPage() {
                 getInspectionReports(),
             ]);
 
-            setJobs(loadedJobs);
-            setEvents(loadedEvents);
-            setTasks(loadedTasks.filter(t => t.assignedToEmployeeId === user.uid));
-            setReports(loadedReports.filter(r => r.employeeId === user.uid));
+            setDashboardData({
+                jobs: loadedJobs,
+                events: loadedEvents,
+                tasks: loadedTasks.filter(t => t.assignedToEmployeeId === user.uid),
+                reports: loadedReports.filter(r => r.employeeId === user.uid),
+            });
             setIsLoading(false);
         }
     }
@@ -73,9 +79,9 @@ export default function EmployeeHubPage() {
   }, [searchParams, user]);
 
   const { assignedExcavationJobs, assignedSnowContracts, assignedConcreteJobs, assignedMiscJobs } = useMemo(() => {
-    if (!user) return { assignedExcavationJobs: [], assignedSnowContracts: [], assignedConcreteJobs: [], assignedMiscJobs: [] };
+    if (!user || !dashboardData) return { assignedExcavationJobs: [], assignedSnowContracts: [], assignedConcreteJobs: [], assignedMiscJobs: [] };
     
-    const assignedJobs = jobs
+    const assignedJobs = dashboardData.jobs
       .filter(job => 
         job.assignedEmployeeIds?.includes(user.uid) ||
         job.assignedTruckIds?.includes(user.uid) || // For older data model compatibility
@@ -91,16 +97,17 @@ export default function EmployeeHubPage() {
         assignedConcreteJobs: assignedJobs.filter(j => j.jobType === 'concrete'),
         assignedMiscJobs: assignedJobs.filter(j => j.jobType === 'misc'),
     };
-  }, [jobs, user]);
+  }, [dashboardData, user]);
 
   const eventDates = useMemo(() => {
-    return events.filter(event => event.date).map(event => parseISO(event.date));
-  }, [events]);
+    if (!dashboardData) return [];
+    return dashboardData.events.filter(event => event.date).map(event => parseISO(event.date));
+  }, [dashboardData]);
 
   const selectedDayEvents = useMemo(() => {
-    if (!date) return [];
-    return events.filter(event => event.date && isSameDay(parseISO(event.date), date));
-  }, [date, events]);
+    if (!date || !dashboardData) return [];
+    return dashboardData.events.filter(event => event.date && isSameDay(parseISO(event.date), date));
+  }, [date, dashboardData]);
   
   const getEventTypeLabel = (type: CalendarEvent['type']) => {
     switch (type) {
@@ -111,7 +118,7 @@ export default function EmployeeHubPage() {
     }
   }
 
-  const renderJobBoard = (jobs: Job[], jobType: Job['jobType']) => {
+  const renderJobBoard = (jobs: (Job & {status: JobStatus})[], jobType: Job['jobType']) => {
       const icons = {
           excavation: Briefcase,
           snow_removal: Snowflake,
@@ -162,7 +169,7 @@ export default function EmployeeHubPage() {
       );
   }
 
-  if (isLoading) {
+  if (isLoading || !dashboardData) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -320,12 +327,12 @@ export default function EmployeeHubPage() {
             <div className="lg:col-span-2 grid grid-cols-2 gap-6">
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
                     <Check className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-4xl font-bold"><AnimatedCounter value={tasks.filter(t => t.status === 'completed').length} /></p>
+                    <p className="text-4xl font-bold"><AnimatedCounter value={dashboardData.tasks.filter(t => t.status === 'completed').length} /></p>
                     <p className="text-sm text-muted-foreground">Tasks Completed</p>
                 </Card>
                  <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
                     <FileText className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-4xl font-bold"><AnimatedCounter value={reports.length} /></p>
+                    <p className="text-4xl font-bold"><AnimatedCounter value={dashboardData.reports.length} /></p>
                     <p className="text-sm text-muted-foreground">Inspections Done</p>
                 </Card>
             </div>
