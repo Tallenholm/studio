@@ -550,49 +550,36 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
     const pathname = usePathname();
     const router = useRouter();
-    const [isRouteChecked, setIsRouteChecked] = useState(false);
 
-    useEffect(() => {
-        if (isUserLoading) return;
-
-        const role = user?.role || 'guest';
-        let destination: string | null = null;
-
-        if (user) {
-            // Logged-in user logic
-            if (PATH_CONFIG.PUBLIC.includes(pathname) || pathname === '/') {
-                destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
-            } else if (!isPathAllowed(pathname, role)) {
-                destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
-            }
-        } else {
-            // Guest user logic
-            if (!isPathAllowed(pathname, 'guest')) {
-                destination = '/login';
-            }
-        }
-
-        if (destination) {
-            router.replace(destination);
-        } else {
-            setIsRouteChecked(true); // Path is allowed, stop loading
-        }
-    }, [isUserLoading, user, pathname, router]);
-
-
-    if (isUserLoading || !isRouteChecked) {
+    // If loading, show a full-screen loader.
+    if (isUserLoading) {
         return <FullScreenLoader />;
     }
 
-    if (!user && isPathAllowed(pathname, 'guest')) {
-        return <>{children}</>;
-    }
-    
-    if (user && isPathAllowed(pathname, user.role)) {
+    const role = user?.role || 'guest';
+    const isAllowed = isPathAllowed(pathname, role);
+
+    // If the user is on a page they are allowed to see, render it.
+    if (isAllowed) {
+        if (!user) {
+            return <>{children}</>; // Public pages for guests
+        }
         return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
     }
+    
+    // If not allowed, redirect them. This effect runs only when a redirect is needed.
+    useEffect(() => {
+        let destination: string;
+        if (user) {
+            // Logged-in user on a forbidden or root path
+            destination = role === 'employee' ? PATH_CONFIG.EMPLOYEE_BASE : PATH_CONFIG.ADMIN_BASE;
+        } else {
+            // Guest on a protected path
+            destination = '/login';
+        }
+        router.replace(destination);
+    }, [pathname, user, role, router]);
 
-    // This case handles the brief moment before a redirect happens,
-    // or if a route check fails for an unknown reason.
-    return <FullScreenLoader />;
+    // While redirecting, show a loader.
+    return <FullScreenLoader text="Redirecting..." />;
 }
