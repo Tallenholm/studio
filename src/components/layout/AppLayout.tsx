@@ -2,7 +2,7 @@
 'use client';
 
 import Link from 'next/link';
-import { usePathname } from 'next/navigation';
+import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo } from 'react';
 import {
   SidebarProvider,
@@ -32,17 +32,8 @@ import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
-function FullScreenLoader({ text }: { text: string }) {
-    return (
-        <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 text-lg text-muted-foreground">{text}</p>
-        </div>
-    );
-}
-
 function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
     
     if (isLoading) {
         return <FullScreenLoader text="Authenticating..." />;
@@ -53,6 +44,15 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+}
+
+function FullScreenLoader({ text }: { text: string }) {
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-lg text-muted-foreground">{text}</p>
+        </div>
+    );
 }
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
@@ -520,3 +520,5 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
+
+    
