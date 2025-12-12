@@ -160,17 +160,22 @@ export default function ManageInventoryPage() {
     
     const updateData: Partial<InventoryItem> = {
         status: newStatus,
-        assignedToType: isNowInUse ? (assignmentInfo?.assignedToType || itemToUpdate.assignedToType) : undefined,
-        assignedToId: isNowInUse ? (assignmentInfo?.assignedToId || itemToUpdate.assignedToId) : undefined,
-        assignedToName: isNowInUse ? (assignmentInfo?.assignedToName || itemToUpdate.assignedToName) : undefined,
     };
+    if (isNowInUse) {
+      updateData.assignedToType = assignmentInfo?.assignedToType;
+      updateData.assignedToId = assignmentInfo?.assignedToId;
+      updateData.assignedToName = assignmentInfo?.assignedToName;
+    } else {
+      updateData.assignedToType = undefined;
+      updateData.assignedToId = undefined;
+      updateData.assignedToName = undefined;
+    }
 
     await updateInventoryItem(itemId, updateData);
 
     setInventory(prevInventory =>
       prevInventory.map(item => {
         if (item.id === itemId) {
-          // Construct a new object to ensure no old properties linger
           const updatedItem: InventoryItem = {
             ...item,
             status: newStatus,
@@ -180,7 +185,6 @@ export default function ManageInventoryPage() {
             updatedItem.assignedToId = assignmentInfo?.assignedToId;
             updatedItem.assignedToName = assignmentInfo?.assignedToName;
           } else {
-            // Explicitly clear assignment fields if not in use
             delete updatedItem.assignedToType;
             delete updatedItem.assignedToId;
             delete updatedItem.assignedToName;
@@ -193,7 +197,6 @@ export default function ManageInventoryPage() {
 
     toast({ title: "Status Updated", description: `"${itemToUpdate.name}" status set to ${newStatus.replace('_', ' ')}.` });
   };
-  
 
   async function removeItem(itemId: string) {
     const itemToRemove = inventory.find(i => i.id === itemId);
@@ -219,7 +222,7 @@ export default function ManageInventoryPage() {
         case 'maintenance': return 'destructive'; // Will be styled orange via cn
         case 'lost': return 'outline';
     }
-  }
+  };
 
   if (isLoading) {
     return (
@@ -374,7 +377,7 @@ export default function ManageInventoryPage() {
                                     {item.status === 'available' && (
                                         <>
                                             <DropdownMenuItem onSelect={() => handleAssignClick(item)}>Assign</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={()={() => updateItemStatus(item.id, 'maintenance')}}>Mark for Maintenance</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'maintenance')}>Mark for Maintenance</DropdownMenuItem>
                                         </>
                                     )}
                                     {item.status === 'in_use' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'available')}>Check In</DropdownMenuItem>}
@@ -455,5 +458,3 @@ export default function ManageInventoryPage() {
     </div>
   );
 }
-
-    
