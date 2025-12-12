@@ -160,31 +160,18 @@ export default function ManageInventoryPage() {
     
     const updateData: Partial<InventoryItem> = {
         status: newStatus,
+        assignedToType: isNowInUse ? assignmentInfo?.assignedToType : undefined,
+        assignedToId: isNowInUse ? assignmentInfo?.assignedToId : undefined,
+        assignedToName: isNowInUse ? assignmentInfo?.assignedToName : undefined,
     };
-    if (isNowInUse) {
-      updateData.assignedToType = assignmentInfo?.assignedToType;
-      updateData.assignedToId = assignmentInfo?.assignedToId;
-      updateData.assignedToName = assignmentInfo?.assignedToName;
-    } else {
-      updateData.assignedToType = undefined;
-      updateData.assignedToId = undefined;
-      updateData.assignedToName = undefined;
-    }
 
     await updateInventoryItem(itemId, updateData);
 
     setInventory(prevInventory =>
       prevInventory.map(item => {
         if (item.id === itemId) {
-          const updatedItem: InventoryItem = {
-            ...item,
-            status: newStatus,
-          };
-          if (isNowInUse) {
-            updatedItem.assignedToType = assignmentInfo?.assignedToType;
-            updatedItem.assignedToId = assignmentInfo?.assignedToId;
-            updatedItem.assignedToName = assignmentInfo?.assignedToName;
-          } else {
+          const updatedItem = { ...item, ...updateData };
+          if (!isNowInUse) {
             delete updatedItem.assignedToType;
             delete updatedItem.assignedToId;
             delete updatedItem.assignedToName;
