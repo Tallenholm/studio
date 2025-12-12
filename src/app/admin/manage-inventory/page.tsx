@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -156,28 +157,39 @@ export default function ManageInventoryPage() {
     if (!itemToUpdate) return;
     
     const isNowInUse = newStatus === 'in_use';
+    
     const updateData: Partial<InventoryItem> = {
         status: newStatus,
         assignedToType: isNowInUse ? (assignmentInfo?.assignedToType || itemToUpdate.assignedToType) : undefined,
         assignedToId: isNowInUse ? (assignmentInfo?.assignedToId || itemToUpdate.assignedToId) : undefined,
         assignedToName: isNowInUse ? (assignmentInfo?.assignedToName || itemToUpdate.assignedToName) : undefined,
     };
-    
-    // Clear fields if not in use
-    if (!isNowInUse) {
-        updateData.assignedToType = undefined;
-        updateData.assignedToId = undefined;
-        updateData.assignedToName = undefined;
-    }
 
     await updateInventoryItem(itemId, updateData);
 
-    setInventory(inventory.map(i => {
-        if (i.id === itemId) {
-            return { ...i, ...updateData };
+    setInventory(prevInventory =>
+      prevInventory.map(item => {
+        if (item.id === itemId) {
+          // Construct a new object to ensure no old properties linger
+          const updatedItem: InventoryItem = {
+            ...item,
+            status: newStatus,
+          };
+          if (isNowInUse) {
+            updatedItem.assignedToType = assignmentInfo?.assignedToType;
+            updatedItem.assignedToId = assignmentInfo?.assignedToId;
+            updatedItem.assignedToName = assignmentInfo?.assignedToName;
+          } else {
+            // Explicitly clear assignment fields if not in use
+            delete updatedItem.assignedToType;
+            delete updatedItem.assignedToId;
+            delete updatedItem.assignedToName;
+          }
+          return updatedItem;
         }
-        return i;
-    }).sort((a,b) => a.name.localeCompare(b.name)));
+        return item;
+      })
+    );
 
     toast({ title: "Status Updated", description: `"${itemToUpdate.name}" status set to ${newStatus.replace('_', ' ')}.` });
   };
@@ -362,7 +374,7 @@ export default function ManageInventoryPage() {
                                     {item.status === 'available' && (
                                         <>
                                             <DropdownMenuItem onSelect={() => handleAssignClick(item)}>Assign</DropdownMenuItem>
-                                            <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'maintenance')}>Mark for Maintenance</DropdownMenuItem>
+                                            <DropdownMenuItem onSelect={()={() => updateItemStatus(item.id, 'maintenance')}}>Mark for Maintenance</DropdownMenuItem>
                                         </>
                                     )}
                                     {item.status === 'in_use' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'available')}>Check In</DropdownMenuItem>}
@@ -443,3 +455,5 @@ export default function ManageInventoryPage() {
     </div>
   );
 }
+
+    
