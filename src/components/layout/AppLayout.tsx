@@ -17,6 +17,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarSeparator,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -93,6 +94,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
             });
             
+            // Sort on client side
+            liveNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+
             const count = liveNotifications.filter(notif => !notif.readBy.includes(user.uid)).length;
             setUnreadCount(count);
 
