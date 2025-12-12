@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -112,12 +111,20 @@ export default function ManageInventoryPage() {
   
   async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
-      // Ensure status and other non-form fields are preserved on edit
-      const dataToUpdate = { ...values, status: editingItem.status };
+      const dataToUpdate: Partial<InventoryItem> = { ...values };
       await updateInventoryItem(editingItem.id, dataToUpdate);
-      const updatedItems = inventory.map(i => 
-        i.id === editingItem.id ? { ...i, ...values } : i
-      );
+      
+      const updatedItems = inventory.map(i => {
+        if (i.id === editingItem.id) {
+          // Explicitly carry over the non-form fields to prevent them from being lost
+          return {
+            ...i, // old item with status, assignments etc.
+            ...values, // new form values
+          };
+        }
+        return i;
+      });
+
       setInventory(updatedItems.sort((a, b) => a.name.localeCompare(b.name)));
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
@@ -174,7 +181,6 @@ export default function ManageInventoryPage() {
     setInventory(prevInventory =>
         prevInventory.map(item => {
             if (item.id === itemId) {
-                // Construct a new object to ensure no old data remains
                 const updatedItem: InventoryItem = {
                     ...item,
                     status: newStatus,
