@@ -113,7 +113,9 @@ export default function ManageInventoryPage() {
   async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
       await updateInventoryItem(editingItem.id, values);
-      const updatedItems = inventory.map(i => i.id === editingItem.id ? { ...i, ...values } : i);
+      const updatedItems = inventory.map(i => 
+        i.id === editingItem.id ? { ...i, ...values, status: i.status } : i
+      );
       setInventory(updatedItems.sort((a,b) => a.name.localeCompare(b.name)));
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
