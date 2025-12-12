@@ -112,11 +112,13 @@ export default function ManageInventoryPage() {
   
   async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
-      await updateInventoryItem(editingItem.id, values);
+      // Ensure status and other non-form fields are preserved on edit
+      const dataToUpdate = { ...values, status: editingItem.status };
+      await updateInventoryItem(editingItem.id, dataToUpdate);
       const updatedItems = inventory.map(i => 
-        i.id === editingItem.id ? { ...i, ...values, status: i.status } : i
+        i.id === editingItem.id ? { ...i, ...values } : i
       );
-      setInventory(updatedItems.sort((a,b) => a.name.localeCompare(b.name)));
+      setInventory(updatedItems.sort((a, b) => a.name.localeCompare(b.name)));
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
       const newItemData: Omit<InventoryItem, 'id'> = {
@@ -170,18 +172,20 @@ export default function ManageInventoryPage() {
     await updateInventoryItem(itemId, updateData);
 
     setInventory(prevInventory =>
-      prevInventory.map(item => {
-        if (item.id === itemId) {
-          const updatedItem = { ...item, ...updateData };
-          if (!isNowInUse) {
-            delete updatedItem.assignedToType;
-            delete updatedItem.assignedToId;
-            delete updatedItem.assignedToName;
-          }
-          return updatedItem;
-        }
-        return item;
-      })
+        prevInventory.map(item => {
+            if (item.id === itemId) {
+                // Construct a new object to ensure no old data remains
+                const updatedItem: InventoryItem = {
+                    ...item,
+                    status: newStatus,
+                    assignedToType: isNowInUse ? assignmentInfo?.assignedToType : undefined,
+                    assignedToId: isNowInUse ? assignmentInfo?.assignedToId : undefined,
+                    assignedToName: isNowInUse ? assignmentInfo?.assignedToName : undefined,
+                };
+                return updatedItem;
+            }
+            return item;
+        })
     );
 
     toast({ title: "Status Updated", description: `"${itemToUpdate.name}" status set to ${newStatus.replace('_', ' ')}.` });
