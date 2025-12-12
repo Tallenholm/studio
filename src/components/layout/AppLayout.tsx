@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useMemo } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -17,11 +17,10 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarSeparator,
-  SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
 import type { NotificationMessage } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
@@ -29,13 +28,38 @@ import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
-import { onSnapshot, collection, query, where, orderBy } from 'firebase/firestore';
+import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
-export default function AppLayout({ children }: { children: React.ReactNode }) {
+function FullScreenLoader({ text }: { text: string }) {
+    return (
+        <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
+            <Loader2 className="h-12 w-12 animate-spin text-primary" />
+            <p className="mt-4 text-lg text-muted-foreground">{text}</p>
+        </div>
+    );
+}
+
+function AppLayout({ children }: { children: React.ReactNode }) {
+    const { user, isLoading } = useAuth();
+    
+    if (isLoading) {
+        return <FullScreenLoader text="Authenticating..." />;
+    }
+
+    if (!user) {
+        return <>{children}</>;
+    }
+
+    return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
+}
+
+function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const { user, auth } = useAuth();
+    const router = useRouter();
+
     const [unreadCount, setUnreadCount] = useState(0);
     const { open: openCommandPalette } = useCommandPalette();
     const { open: openTools } = useGlobalTools();
@@ -57,26 +81,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
     }, []);
 
     useEffect(() => {
-        if (!user || !user.id) return;
+        if (!user || !user.uid) return;
         const db = getFirestoreInstance();
         
         const notificationsRef = collection(db, "notifications");
-        const q = query(
-            notificationsRef, 
-            where('recipientId', 'in', ['all', user.id]),
-        );
+        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]));
 
         const unsubscribe = onSnapshot(q, (snapshot) => {
-            let count = 0;
             const liveNotifications: NotificationMessage[] = [];
             snapshot.forEach(doc => {
-                const notif = { id: doc.id, ...doc.data() } as NotificationMessage;
-                if (!notif.readBy.includes(user.id)) {
-                    count++;
-                }
+                liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
             });
             
+            const count = liveNotifications.filter(notif => !notif.readBy.includes(user.uid)).length;
             setUnreadCount(count);
+
         }, (error) => {
             console.error("Error fetching real-time notifications:", error);
         });
@@ -339,14 +358,28 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-jobs">
                                         <SidebarMenuButton tooltip="Excavation Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
-                                            <Briefcase /><span>Excavation Jobs</span>
+                                            <Briefcase /><span>Excavation</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <Link href="/admin/manage-utilities">
+                                        <SidebarMenuButton tooltip="Utilities Jobs" isActive={pathname.startsWith('/admin/manage-utilities')}>
+                                            <Wrench /><span>Utilities</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <Link href="/admin/manage-landscaping">
+                                        <SidebarMenuButton tooltip="Landscaping Jobs" isActive={pathname.startsWith('/admin/manage-landscaping')}>
+                                            <Sprout /><span>Landscaping</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-snow">
                                         <SidebarMenuButton tooltip="Snow Contracts" isActive={pathname.startsWith('/admin/manage-snow')}>
-                                            <Snowflake /><span>Snow Contracts</span>
+                                            <Snowflake /><span>Snow</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -360,21 +393,21 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-rentals">
                                         <SidebarMenuButton tooltip="Manage Rentals" isActive={pathname.startsWith('/admin/manage-rentals')}>
-                                            <ArrowRightLeft /><span>Manage Rentals</span>
+                                            <ArrowRightLeft /><span>Rentals</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-concrete">
                                         <SidebarMenuButton tooltip="Concrete Jobs" isActive={pathname.startsWith('/admin/manage-concrete')}>
-                                            <Droplets /><span>Concrete Jobs</span>
+                                            <Droplets /><span>Concrete</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-misc">
                                         <SidebarMenuButton tooltip="Misc Jobs" isActive={pathname.startsWith('/admin/manage-misc')}>
-                                            <Package /><span>Misc. Jobs</span>
+                                            <Package /><span>Misc.</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -485,3 +518,5 @@ export default function AppLayout({ children }: { children: React.ReactNode }) {
         </SidebarProvider>
     );
 }
+
+export default AppLayout;

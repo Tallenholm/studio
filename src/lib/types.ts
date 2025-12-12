@@ -187,7 +187,7 @@ export interface Client {
 
 export type JobStatus = 'upcoming' | 'active' | 'completed';
 
-export type JobType = 'excavation' | 'snow_removal' | 'concrete' | 'misc';
+export type JobType = 'excavation' | 'utilities' | 'concrete' | 'landscaping' | 'snow_removal' | 'misc';
 
 export interface SnowServiceLog {
   timestamp: string; // ISO string

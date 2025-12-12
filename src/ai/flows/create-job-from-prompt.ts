@@ -18,7 +18,7 @@ const CreateJobFromPromptOutputSchema = z.object({
   jobValue: z.number().optional().describe('The total monetary value of the job. Should be a number. If not mentioned, this field should be omitted.'),
   startDate: z.string().describe("The start date of the job in 'YYYY-MM-DD' format."),
   endDate: z.string().describe("The end date of the job in 'YYYY-MM-DD' format."),
-  jobType: z.enum(['excavation', 'snow_removal', 'concrete', 'misc']).describe('The type of work. Infer this from the prompt. If it mentions plowing, salting, or snow, it is "snow_removal". If it mentions "concrete", "pour", "slab", or "patio" it is "concrete". If it mentions "excavation", "digging", "grading", it is "excavation". For anything else, like deliveries or general labor, classify as "misc".'),
+  jobType: z.enum(['excavation', 'utilities', 'concrete', 'landscaping', 'snow_removal', 'misc']).describe('The type of work. Infer this from the prompt.'),
   concreteYards: z.number().optional().describe('For concrete jobs, estimate the cubic yards of concrete needed. If dimensions like "20x30 foot slab" and a thickness are mentioned, calculate the volume. Assume a standard thickness of 4 inches if not specified.'),
 });
 export type CreateJobFromPromptOutput = z.infer<typeof CreateJobFromPromptOutputSchema>;
@@ -38,10 +38,11 @@ Today's date is {{{currentDate}}}. Use this as a reference for relative dates li
 Analyze the following prompt and extract the details for the job. Infer job names from the description if not explicitly provided. Ensure all dates are in 'YYYY-MM-DD' format. If a monetary value for the job is not mentioned in the prompt, omit the 'jobValue' field entirely from your response.
 
 Critically, you must determine the 'jobType' based on these rules:
-- If the prompt mentions words like "snow", "plow", "salt", "ice", or other winter-related terms, set the jobType to 'snow_removal'.
-- If the prompt mentions words like "concrete", "pour", "slab", "patio", or "foundation", set the jobType to 'concrete'.
-- For concrete jobs, if dimensions are provided (e.g., "20x30 foot patio"), calculate the cubic yards of concrete required. Assume a standard slab thickness of 4 inches (0.333 feet) unless another thickness is specified. The formula is (Length_ft * Width_ft * (Thickness_in / 12)) / 27.
-- If the prompt mentions "excavation", "digging", "grading", or other earth-moving terms, and is not about concrete, set it to 'excavation'.
+- If the prompt mentions "snow", "plow", "salt", or "ice", set jobType to 'snow_removal'.
+- If it mentions "sewer", "water line", "drainage", or "utility trench", set jobType to 'utilities'.
+- If it mentions "concrete", "pour", "slab", or "patio", set jobType to 'concrete'. For concrete jobs, if dimensions are provided (e.g., "20x30 foot patio"), calculate the cubic yards of concrete required. Assume a standard slab thickness of 4 inches (0.333 feet) unless another thickness is specified. The formula is (Length_ft * Width_ft * (Thickness_in / 12)) / 27.
+- If it mentions "sod", "landscaping", "ground restoration", or "seeding", set jobType to 'landscaping'.
+- If it mentions "excavation", "digging", "grading", or "site prep", and isn't better classified as utilities or concrete, set it to 'excavation'.
 - For all other tasks, such as "delivery", "hauling", or general labor, classify it as 'misc'.
 
 Prompt:
