@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -111,23 +112,26 @@ export default function ManageInventoryPage() {
   
   async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
+      // For edits, only update fields present in the form schema.
+      // Status and assignment are handled separately.
       const dataToUpdate: Partial<InventoryItem> = { ...values };
       await updateInventoryItem(editingItem.id, dataToUpdate);
-      
-      const updatedItems = inventory.map(i => {
-        if (i.id === editingItem.id) {
-          // Explicitly carry over the non-form fields to prevent them from being lost
-          return {
-            ...i, // old item with status, assignments etc.
-            ...values, // new form values
-          };
-        }
-        return i;
-      });
 
-      setInventory(updatedItems.sort((a, b) => a.name.localeCompare(b.name)));
+      setInventory(prevInventory =>
+        prevInventory.map(i => {
+          if (i.id === editingItem.id) {
+            // Correctly merge form values with existing non-form properties
+            return {
+              ...i, // old item with status, assignments etc.
+              ...values, // new form values
+            };
+          }
+          return i;
+        })
+      );
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
+      // For new items, set default status
       const newItemData: Omit<InventoryItem, 'id'> = {
         status: 'available',
         ...values,
@@ -179,20 +183,23 @@ export default function ManageInventoryPage() {
     await updateInventoryItem(itemId, updateData);
 
     setInventory(prevInventory =>
-        prevInventory.map(item => {
-            if (item.id === itemId) {
-                const updatedItem: InventoryItem = {
-                    ...item,
-                    status: newStatus,
-                    assignedToType: isNowInUse ? assignmentInfo?.assignedToType : undefined,
-                    assignedToId: isNowInUse ? assignmentInfo?.assignedToId : undefined,
-                    assignedToName: isNowInUse ? assignmentInfo?.assignedToName : undefined,
-                };
-                return updatedItem;
-            }
-            return item;
-        })
+      prevInventory.map(item => {
+          if (item.id === itemId) {
+              // Construct a new, complete object to avoid state issues
+              const updatedItem: InventoryItem = {
+                  ...item, // Carry over all old properties
+                  status: newStatus, // Set the new status
+                  // Explicitly set or clear assignment fields
+                  assignedToType: isNowInUse ? assignmentInfo?.assignedToType : undefined,
+                  assignedToId: isNowInUse ? assignmentInfo?.assignedToId : undefined,
+                  assignedToName: isNowInUse ? assignmentInfo?.assignedToName : undefined,
+              };
+              return updatedItem;
+          }
+          return item;
+      })
     );
+
 
     toast({ title: "Status Updated", description: `"${itemToUpdate.name}" status set to ${newStatus.replace('_', ' ')}.` });
   };
