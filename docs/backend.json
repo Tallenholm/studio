@@ -137,6 +137,24 @@
         "checklistItemId",
         "status"
       ]
+    },
+    "InventoryItem": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "InventoryItem",
+      "type": "object",
+      "description": "Represents a single item in the company's inventory, such as a tool or material.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the inventory item." },
+        "name": { "type": "string", "description": "The name of the item." },
+        "type": { "type": "string", "enum": ["tool", "material", "consumable"], "description": "The type of inventory item." },
+        "category": { "type": "string", "description": "A user-defined category for grouping items (e.g., 'Power Tools')." },
+        "quantity": { "type": "number", "description": "The quantity of the item available." },
+        "status": { "type": "string", "enum": ["available", "in_use", "maintenance", "lost"], "description": "The current status of the item." },
+        "assignedToType": { "type": "string", "enum": ["employee", "job", "vehicle"], "description": "The type of entity the item is assigned to, if in use." },
+        "assignedToId": { "type": "string", "description": "The ID of the entity the item is assigned to." },
+        "assignedToName": { "type": "string", "description": "The denormalized name of the entity for easy display." }
+      },
+      "required": ["id", "name", "type", "quantity", "status"]
     }
   },
   "auth": {
@@ -169,6 +187,12 @@
         "$ref": "#/backend/entities/InspectionResult"
       },
       "description": "A subcollection storing the pass/fail result for each individual item within a specific inspection report. This allows for detailed reporting and analysis."
+    },
+    "/inventory/{inventoryItemId}": {
+      "schema": {
+        "$ref": "#/backend/entities/InventoryItem"
+      },
+      "description": "Tracks all company inventory, including tools, materials, and consumables."
     }
   }
 }

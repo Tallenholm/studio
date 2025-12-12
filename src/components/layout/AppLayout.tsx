@@ -3,7 +3,7 @@
 
 import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
-import { useEffect, useState, useMemo } from 'react';
+import { useEffect, useState } from 'react';
 import {
   SidebarProvider,
   Sidebar,
@@ -17,13 +17,12 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarSeparator,
-  SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout, Loader2 } from 'lucide-react';
 import { useAuth } from '@/contexts/AuthContext';
-import type { NotificationMessage } from '@/lib/types';
+import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -32,9 +31,10 @@ import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { SidebarInset } from '../ui/sidebar';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+    const { user, isLoading } = useAuth();
     
     if (isLoading) {
         return <FullScreenLoader text="Authenticating..." />;
@@ -58,8 +58,8 @@ function FullScreenLoader({ text }: { text: string }) {
 
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
-    const { user, auth } = useAuth();
     const router = useRouter();
+    const { user, auth } = useAuth();
 
     const [unreadCount, setUnreadCount] = useState(0);
     const { open: openCommandPalette } = useCommandPalette();
@@ -69,6 +69,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const logout = () => {
       if (auth) {
         auth.signOut();
+        router.push('/login');
       }
     }
     
@@ -121,6 +122,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       document.addEventListener("keydown", down)
       return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
+
+    useEffect(() => {
+        if (pathname === '/') {
+            const destination = user?.role === 'employee' ? '/employee' : '/admin';
+            router.replace(destination);
+        }
+    }, [pathname, user, router]);
     
     const isAdmin = user?.role === 'owner' || user?.role === 'manager';
     
@@ -524,5 +532,3 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
-
-    
