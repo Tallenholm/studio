@@ -9,6 +9,7 @@ import { loadSystemSettings } from '@/lib/settingsService';
 import { fetchWeather } from '@/lib/weatherService';
 import type { WeatherData, ForecastDay, HourlyForecast } from '@/lib/weather-utils';
 import { weatherDescriptions } from '@/lib/weather-utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 
 const getWeatherIcon = (code: number | null, size: 'large' | 'small' = 'large') => {
     const className = size === 'large' ? "h-10 w-10" : "h-6 w-6";
@@ -25,12 +26,15 @@ const getWeatherIcon = (code: number | null, size: 'large' | 'small' = 'large') 
     return <Thermometer className={`${className} text-gray-400`} />;
 };
 
+type RadarLayer = 'radar' | 'wind' | 'snow';
+
 export default function WeatherPage() {
     const [weatherData, setWeatherData] = useState<WeatherData | null>(null);
     const [location, setLocation] = useState({ lat: 41.12, lon: -87.86 });
     const [locationName, setLocationName] = useState('your location');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState<string | null>(null);
+    const [radarLayer, setRadarLayer] = useState<RadarLayer>('radar');
 
     useEffect(() => {
         const settings = loadSystemSettings();
@@ -45,7 +49,17 @@ export default function WeatherPage() {
                 const data = await fetchWeather(location.lat, location.lon);
                 setWeatherData(data);
                 setLocationName(`Lat: ${location.lat.toFixed(2)}, Lon: ${location.lon.toFixed(2)}`);
-                setError(null);
+                
+                // Set default radar layer based on weather
+                const todaysWeatherCode = data.daily?.weather_code?.[0] ?? 0;
+                if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
+                    setRadarLayer('snow');
+                } else if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
+                    setRadarLayer('radar');
+                } else {
+                    setRadarLayer('wind');
+                }
+
             } catch (err: any) {
                 console.error("Weather fetch error:", err);
                 setError(err.message || "Could not load weather data.");
@@ -56,9 +70,9 @@ export default function WeatherPage() {
         loadWeather();
     }, [location]);
 
-    const { dailyForecast, hourlyForecast, radarLayer } = useMemo(() => {
+    const { dailyForecast, hourlyForecast } = useMemo(() => {
         if (!weatherData) {
-            return { dailyForecast: [], hourlyForecast: [], radarLayer: 'radar' };
+            return { dailyForecast: [], hourlyForecast: [] };
         }
         
         const today = startOfToday();
@@ -90,18 +104,8 @@ export default function WeatherPage() {
             }))
             .filter(h => parseISO(h.time) >= now)
             .slice(0, 24);
-            
-        const todaysWeatherCode = daily[0]?.weatherCode ?? 0;
-        let layer = 'radar';
-        if ([71, 73, 75, 85, 86].includes(todaysWeatherCode)) {
-            layer = 'snow';
-        } else if ([51, 53, 55, 61, 63, 65, 80, 81, 82, 95, 96, 99].includes(todaysWeatherCode)) {
-            layer = 'radar';
-        } else {
-             layer = 'wind';
-        }
 
-        return { dailyForecast: daily, hourlyForecast: hourly, radarLayer: layer };
+        return { dailyForecast: daily, hourlyForecast: hourly };
     }, [weatherData]);
 
     return (
@@ -117,6 +121,13 @@ export default function WeatherPage() {
             <Card className="mb-8">
                 <CardHeader>
                     <CardTitle>Live Radar</CardTitle>
+                    <Tabs value={radarLayer} onValueChange={(value) => setRadarLayer(value as RadarLayer)} className="w-full pt-2">
+                        <TabsList>
+                            <TabsTrigger value="radar">Radar</TabsTrigger>
+                            <TabsTrigger value="wind">Wind</TabsTrigger>
+                            <TabsTrigger value="snow">Snow</TabsTrigger>
+                        </TabsList>
+                    </Tabs>
                 </CardHeader>
                 <CardContent>
                     <div className="h-96 md:h-auto md:aspect-video w-full bg-muted rounded-lg overflow-hidden border">
