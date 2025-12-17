@@ -31,9 +31,16 @@ const calculateHealthScore = (asset: FleetAsset, reports: InspectionReport[], lo
  */
 const getMaintenanceCostData = (logs: MaintenanceLog[]): { name: string; totalCost: number }[] => {
     const sixMonthsAgo = subMonths(new Date(), 6);
-    const assetLogs = logs.filter(l => isAfter(parseISO(l.date), sixMonthsAgo));
     
     const costByMonth: Record<string, number> = {};
+
+    // Initialize months
+    for (let i = 5; i >= 0; i--) {
+        const month = format(subMonths(new Date(), i), 'MMM');
+        costByMonth[month] = 0;
+    }
+
+    const assetLogs = logs.filter(l => isAfter(parseISO(l.date), sixMonthsAgo));
 
     assetLogs.forEach(log => {
       const month = format(parseISO(log.date), 'MMM');
