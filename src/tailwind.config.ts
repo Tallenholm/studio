@@ -1,3 +1,4 @@
+
 import type {Config} from 'tailwindcss';
 import tailwindcssAnimate from 'tailwindcss-animate';
 
@@ -12,7 +13,7 @@ export default {
     extend: {
       fontFamily: {
         body: ['var(--font-body)', 'sans-serif'],
-        headline: ['var(--font-headline)', 'sans-serif'],
+        headline: ['var(--font-body)', 'sans-serif'],
       },
       colors: {
         background: 'hsl(var(--background))',
