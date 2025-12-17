@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -10,7 +11,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
 import { useAuth } from '@/contexts/AuthContext';
-import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown, Eye, Camera, History } from 'lucide-react';
+import { Loader2, AlertTriangle, Briefcase, Building2, Calendar, DollarSign, MapPin, Truck, Box, Shovel, MessageSquare, Send, User as UserIcon, Snowflake, Users as UsersIcon, Droplets, Package, TrendingUp, TrendingDown, Eye, Camera, History, Wrench } from 'lucide-react';
 import { format, parseISO, formatDistanceToNow } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -34,7 +35,7 @@ export default function JobDetailsPage() {
   const [newNote, setNewNote] = useState('');
 
   // New state for cost analysis
-  const [jobCosts, setJobCosts] = useState({ maintenanceCost: 0, expenseCost: 0, totalCost: 0, estimatedProfit: 0 });
+  const [jobCosts, setJobCosts] = useState({ maintenanceCost: 0, expenseCost: 0, laborCost: 0, totalCost: 0, estimatedProfit: 0 });
   const [isLoadingCosts, setIsLoadingCosts] = useState(true);
 
   useEffect(() => {
@@ -308,16 +309,16 @@ export default function JobDetailsPage() {
                     ) : (
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                           <div className="p-4 bg-muted/50 rounded-lg text-center">
-                              <p className="text-sm text-muted-foreground">Maintenance Cost</p>
+                              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><UsersIcon className="h-4 w-4"/>Labor Cost</p>
+                              <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.laborCost} type="currency" /></p>
+                          </div>
+                          <div className="p-4 bg-muted/50 rounded-lg text-center">
+                              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><Wrench className="h-4 w-4"/>Maintenance</p>
                               <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.maintenanceCost} type="currency" /></p>
                           </div>
                           <div className="p-4 bg-muted/50 rounded-lg text-center">
-                              <p className="text-sm text-muted-foreground">Expense Cost</p>
+                              <p className="text-sm text-muted-foreground flex items-center justify-center gap-1"><DollarSign className="h-4 w-4"/>Expenses</p>
                               <p className="text-2xl font-bold">-<AnimatedCounter value={jobCosts.expenseCost} type="currency" /></p>
-                          </div>
-                          <div className="p-4 bg-muted/50 rounded-lg text-center">
-                              <p className="text-sm text-muted-foreground">Total Costs</p>
-                              <p className="text-2xl font-bold text-destructive">-<AnimatedCounter value={jobCosts.totalCost} type="currency" /></p>
                           </div>
                           <div className="p-4 rounded-lg text-center" style={{background: jobCosts.estimatedProfit >= 0 ? 'hsla(var(--primary) / 0.1)' : 'hsla(var(--destructive) / 0.1)'}}>
                               <p className="text-sm" style={{color: jobCosts.estimatedProfit >= 0 ? 'hsl(var(--primary))' : 'hsl(var(--destructive))'}}>Est. Profit / Loss</p>

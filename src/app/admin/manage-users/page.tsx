@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +13,7 @@ import {
   TableHeader,
   TableRow,
 } from '@/components/ui/table';
-import { Users, Loader2, MoreHorizontal, KeyRound, Pencil } from 'lucide-react';
+import { Users, Loader2, MoreHorizontal, KeyRound, Pencil, DollarSign } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getUsers, updateUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
@@ -20,6 +21,9 @@ import { useUser, useAuth } from '@/firebase/provider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
+import { Input } from '@/components/ui/input';
+import { Label } from '@/components/ui/label';
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
@@ -29,8 +33,12 @@ export default function UserManagementPage() {
   const auth = useAuth();
   const [isSaving, setIsSaving] = useState<string | null>(null); // Store user ID being saved
 
+  // State for setting hourly rate
+  const [rateUser, setRateUser] = useState<User | null>(null);
+  const [newRate, setNewRate] = useState('');
+
   useEffect(() => {
-    const fetchUsers = async () => {
+    async function fetchUsers() {
         setIsLoading(true);
         try {
             const loadedUsers = await getUsers();
@@ -83,6 +91,34 @@ export default function UserManagementPage() {
         setIsSaving(null);
     }
   };
+
+  const handleSetRate = async () => {
+    if (!rateUser || newRate === '') return;
+    const rate = parseFloat(newRate);
+    if (isNaN(rate) || rate < 0) {
+        toast({ variant: 'destructive', title: 'Invalid Rate', description: 'Please enter a valid positive number for the hourly rate.' });
+        return;
+    }
+    
+    setIsSaving(rateUser.id);
+    try {
+        await updateUser(rateUser.id, { hourlyRate: rate });
+        setUsers(users.map(u => u.id === rateUser.id ? { ...u, hourlyRate: rate } : u));
+        toast({ title: 'Hourly Rate Updated', description: `${rateUser.name}'s hourly rate has been set to $${rate.toFixed(2)}.` });
+    } catch (error) {
+        console.error('Rate change error:', error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Failed to update hourly rate.' });
+    } finally {
+        setIsSaving(null);
+        setRateUser(null);
+        setNewRate('');
+    }
+  };
+
+  const formatCurrency = (value: number | undefined) => {
+    if (value === undefined || value === null) return 'N/A';
+    return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
+  }
   
   if (isLoading) {
     return (
@@ -124,6 +160,7 @@ export default function UserManagementPage() {
                                     <TableHead>Employee Name</TableHead>
                                     <TableHead>Email</TableHead>
                                     <TableHead>Role</TableHead>
+                                    <TableHead>Hourly Rate</TableHead>
                                     <TableHead className="text-right w-[100px]">Actions</TableHead>
                                     </TableRow>
                                 </TableHeader>
@@ -146,6 +183,7 @@ export default function UserManagementPage() {
                                                 </DropdownMenuContent>
                                             </DropdownMenu>
                                         </TableCell>
+                                        <TableCell className="text-muted-foreground">{formatCurrency(user.hourlyRate)}</TableCell>
                                         <TableCell className="text-right">
                                             {isSaving === user.id ? (
                                                 <Loader2 className="h-5 w-5 animate-spin mx-auto" />
@@ -172,6 +210,10 @@ export default function UserManagementPage() {
                                                             </DropdownMenuSubContent>
                                                         </DropdownMenuPortal>
                                                     </DropdownMenuSub>
+                                                    <DropdownMenuItem onClick={() => setRateUser(user)}>
+                                                        <DollarSign className="mr-2 h-4 w-4" />
+                                                        Set Rate
+                                                    </DropdownMenuItem>
                                                     <DropdownMenuSeparator />
                                                     <DropdownMenuItem onClick={() => handlePasswordReset(user.email, user.id)}>
                                                         <KeyRound className="mr-2 h-4 w-4" />
@@ -199,8 +241,32 @@ export default function UserManagementPage() {
         </CardContent>
       </Card>
     </div>
+
+    <AlertDialog open={!!rateUser} onOpenChange={(open) => !open && setRateUser(null)}>
+        <AlertDialogContent>
+        <AlertDialogHeader>
+            <AlertDialogTitle>Set Hourly Rate for {rateUser?.name}</AlertDialogTitle>
+            <AlertDialogDescription>
+            Enter the new hourly rate for this employee. This will be used for job cost estimations.
+            </AlertDialogDescription>
+        </AlertDialogHeader>
+        <div className="py-2">
+            <Label htmlFor="hourly-rate">Hourly Rate ($)</Label>
+            <Input
+                id="hourly-rate"
+                type="number"
+                placeholder="e.g., 25.50"
+                value={newRate}
+                onChange={(e) => setNewRate(e.target.value)}
+                defaultValue={rateUser?.hourlyRate}
+            />
+        </div>
+        <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={handleSetRate}>Save Rate</AlertDialogAction>
+        </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
-
-    

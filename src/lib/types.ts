@@ -15,6 +15,7 @@ export interface User {
   email: string;
   name: string;
   role: UserRole;
+  hourlyRate?: number;
 }
 
 export type MaintenanceScheduleItem = {
