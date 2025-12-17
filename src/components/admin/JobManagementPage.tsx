@@ -92,6 +92,8 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
   const [searchTerm, setSearchTerm] = useState('');
   const [clientFilter, setClientFilter] = useState('all');
 
+  const isMapsApiKeyAvailable = !!process.env.NEXT_PUBLIC_GOOGLE_MAPS_API_KEY;
+
   const form = useForm<z.infer<typeof jobSchema>>({
     resolver: zodResolver(jobSchema),
     defaultValues: {
@@ -531,9 +533,10 @@ export default function JobManagementPage({ jobType, pageTitle, pageDescription,
                                             <FormLabel>Address</FormLabel>
                                             <FormControl>
                                                 <AddressAutocomplete
-                                                value={field.value}
-                                                onChange={field.onChange}
-                                                placeholder="e.g., 123 Main St, Anytown"
+                                                  value={field.value}
+                                                  onChange={field.onChange}
+                                                  placeholder="e.g., 123 Main St, Anytown"
+                                                  isApiKeyAvailable={isMapsApiKeyAvailable}
                                                 />
                                             </FormControl>
                                             <FormMessage />
