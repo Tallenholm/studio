@@ -4,7 +4,7 @@
 import { useState, useEffect, useMemo } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Sun, Cloud, Snowflake, CloudRain, CloudLightning, Thermometer, CloudDrizzle, Droplets, Wind, Sunrise, Sunset, Loader2, AlertTriangle, MapPin } from 'lucide-react';
-import { format, parseISO, isSameDay } from 'date-fns';
+import { format, parseISO, isSameDay, startOfToday } from 'date-fns';
 import { loadSystemSettings } from '@/lib/settingsService';
 import { fetchWeather } from '@/lib/weatherService';
 import type { WeatherData, ForecastDay, HourlyForecast } from '@/lib/weather-utils';
@@ -60,18 +60,22 @@ export default function WeatherPage() {
         if (!weatherData) {
             return { dailyForecast: [], hourlyForecast: [], radarLayer: 'radar' };
         }
+        
+        const today = startOfToday();
 
-        const daily: ForecastDay[] = (weatherData.daily.time || []).map((t, i) => ({
-            time: t,
-            weatherCode: weatherData.daily.weather_code[i] ?? 0,
-            tempMax: weatherData.daily.temperature_2m_max[i] ?? 0,
-            tempMin: weatherData.daily.temperature_2m_min[i] ?? 0,
-            sunrise: weatherData.daily.sunrise[i],
-            sunset: weatherData.daily.sunset[i],
-            precipitation: weatherData.daily.precipitation_probability_max[i] ?? 0,
-            precipitationSum: weatherData.daily.precipitation_sum[i] ?? 0,
-            uvIndex: weatherData.daily.uv_index_max[i] ?? 0,
-        }));
+        const daily: ForecastDay[] = (weatherData.daily.time || [])
+            .map((t, i) => ({
+                time: t,
+                weatherCode: weatherData.daily.weather_code[i] ?? 0,
+                tempMax: weatherData.daily.temperature_2m_max[i] ?? 0,
+                tempMin: weatherData.daily.temperature_2m_min[i] ?? 0,
+                sunrise: weatherData.daily.sunrise[i],
+                sunset: weatherData.daily.sunset[i],
+                precipitation: weatherData.daily.precipitation_probability_max[i] ?? 0,
+                precipitationSum: weatherData.daily.precipitation_sum[i] ?? 0,
+                uvIndex: weatherData.daily.uv_index_max[i] ?? 0,
+            }))
+            .filter(day => parseISO(day.time) >= today);
 
         const now = new Date();
         const hourly: HourlyForecast[] = (weatherData.hourly.time || [])
