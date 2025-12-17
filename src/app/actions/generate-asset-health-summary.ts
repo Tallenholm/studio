@@ -9,42 +9,14 @@ interface GenerateAssetHealthSummaryParams {
 }
 
 /**
- * A Server Action that fetches an asset's history and uses an AI flow to generate
- * a natural language health summary.
+ * A Server Action that invokes an AI flow to generate a natural language health summary for a given asset.
+ * The flow itself is responsible for fetching the required data.
  */
 export async function generateAssetHealthSummary(
   { assetId }: GenerateAssetHealthSummaryParams
 ): Promise<string> {
-  // 1. Load all necessary data from Firestore
-  const [asset, allReports, allLogs] = await Promise.all([
-    getFleetAssetById(assetId),
-    getInspectionReports(),
-    getMaintenanceLogs()
-  ]);
-  
-  if (!asset) {
-    throw new Error(`Asset with ID ${assetId} not found.`);
-  }
-
-  // 2. Filter reports and logs specific to this asset
-  const assetReports = allReports.filter(r => 
-    r.truckVin === asset.vin || 
-    r.trailerVin === asset.vin || 
-    r.heavyEquipmentVin === asset.vin
-  );
-  
-  const assetLogs = allLogs.filter(l => l.assetId === assetId);
-  
-  // 3. Sort and stringify the history for the AI prompt
-  const inspectionHistory = JSON.stringify(
-    assetReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10) // Limit to last 10
-  );
-  const maintenanceHistory = JSON.stringify(
-    assetLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10) // Limit to last 10
-  );
-
-  // 4. Call the centralized AI flow with the prepared data
-  const summary = await generateSummaryFlow({ inspectionHistory, maintenanceHistory });
-  
+  // The AI flow now fetches its own data using a tool. 
+  // This server action is just a pass-through to invoke the flow.
+  const summary = await generateSummaryFlow({ assetId });
   return summary;
 }

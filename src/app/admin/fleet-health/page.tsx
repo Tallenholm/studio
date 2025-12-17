@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { generateAssetHealthSummary } from '@/ai/flows/generate-asset-health-summary';
+import { generateAssetHealthSummary } from '@/app/actions/generate-asset-health-summary';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Brain, HeartPulse, Loader2, Truck, Box, Shovel, AlertTriangle } from 'lucide-react';

@@ -38,6 +38,7 @@ const getAssetHistory = ai.defineTool(
         description: "Retrieves the recent inspection and maintenance history for a specific fleet asset.",
         inputSchema: z.object({ assetId: z.string() }),
         outputSchema: z.object({
+            assetName: z.string(),
             inspectionHistory: z.string(),
             maintenanceHistory: z.string(),
         }),
@@ -54,9 +55,9 @@ const getAssetHistory = ai.defineTool(
         }
 
         const assetReports = allReports.filter(r =>
-            r.truckVin === asset.vin ||
-            r.trailerVin === asset.vin ||
-            r.heavyEquipmentVin === asset.vin
+            (r.truckVin && r.truckVin === asset.vin) ||
+            (r.trailerVin && r.trailerVin === asset.vin) ||
+            (r.heavyEquipmentVin && r.heavyEquipmentVin === asset.vin)
         );
 
         const assetLogs = allLogs.filter(l => l.assetId === assetId);
@@ -68,7 +69,7 @@ const getAssetHistory = ai.defineTool(
             assetLogs.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()).slice(0, 10)
         );
 
-        return { inspectionHistory, maintenanceHistory };
+        return { assetName: asset.name, inspectionHistory, maintenanceHistory };
     }
 );
 
@@ -76,7 +77,7 @@ const getAssetHistory = ai.defineTool(
 const prompt = ai.definePrompt({
   name: 'generateAssetHealthSummaryPrompt',
   tools: [getAssetHistory],
-  prompt: `You are a master fleet mechanic and data analyst. Your task is to provide a concise health summary for a piece of equipment based on its inspection and maintenance history.
+  system: `You are a master fleet mechanic and data analyst. Your task is to provide a concise health summary for a piece of equipment based on its inspection and maintenance history.
 
 Use the provided tool to fetch the asset's history. Analyze the data to identify:
 - The most common or recurring issues.
@@ -84,7 +85,7 @@ Use the provided tool to fetch the asset's history. Analyze the data to identify
 - Any patterns that might suggest an upcoming failure (e.g., repeated failures of the same component).
 - An overall assessment of the asset's condition.
 
-Keep your summary brief (2-3 sentences), professional, and to the point. Focus on actionable insights.`,
+Keep your summary brief (2-3 sentences), professional, and to the point. Focus on actionable insights for the asset provided by the user.`,
 });
 
 const generateAssetHealthSummaryFlow = ai.defineFlow(
@@ -93,14 +94,12 @@ const generateAssetHealthSummaryFlow = ai.defineFlow(
     inputSchema: GenerateAssetHealthSummaryInputSchema,
     outputSchema: GenerateAssetHealthSummaryOutputSchema,
   },
-  async (input) => {
+  async ({ assetId }) => {
+    
     const llmResponse = await prompt.generate({
-        input: {
-            question: `Please provide a health summary for asset ${input.assetId}.`,
-            assetId: input.assetId
-        },
+        input: `Please provide a health summary for asset ${assetId}.`,
     });
 
-    return llmResponse.text;
+    return llmResponse.text();
   }
 );
