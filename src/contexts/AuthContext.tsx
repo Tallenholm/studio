@@ -4,9 +4,9 @@
 import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
 import { onAuthStateChanged, Auth, User as FirebaseUser } from 'firebase/auth';
 import { doc, onSnapshot } from 'firebase/firestore';
-import { initializeFirebase } from '@/lib/firebase-initialize';
 import type { User } from '@/lib/types';
 import { getFirestoreInstance } from '@/lib/firestoreService';
+import { useAuth as useFirebaseAuth } from '@/firebase/provider';
 
 interface AuthContextType {
   user: User | null;
@@ -22,7 +22,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const { auth } = initializeFirebase();
+  const auth = useFirebaseAuth();
 
   useEffect(() => {
     if (!auth) {
