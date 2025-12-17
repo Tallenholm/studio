@@ -62,7 +62,7 @@ export default function AdvancedReportsPage() {
     totalAmount: { label: 'Amount', color: 'hsl(var(--chart-3))' },
   };
 
-  if (!reportData) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
@@ -119,12 +119,7 @@ export default function AdvancedReportsPage() {
             </CardContent>
           </Card>
           
-          {isLoading ? (
-             <div className="flex flex-col justify-center items-center min-h-[30rem]">
-                <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-                <p className="text-lg text-muted-foreground">Generating Reports...</p>
-            </div>
-          ) : !reportData.hasData ? (
+          {!reportData?.hasData ? (
              <div className="text-center py-10 border-2 border-dashed rounded-lg">
                 <div className="flex justify-center items-center gap-4 mb-4 text-muted-foreground">
                     <AlertTriangle className="h-10 w-10" />
