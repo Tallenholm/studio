@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -49,7 +50,7 @@ import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
 import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
+import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
 
 const maintenanceIntervalSchema = z.object({
     intervalMonths: z.coerce.number().positive('Interval must be positive.').optional(),
@@ -99,8 +100,12 @@ export default function FleetManagementPage() {
     async function fetchData() {
         setIsLoading(true);
         try {
-            const data = await getFleetAssets();
-            setAssets(data);
+            const [assetsData, notifications] = await Promise.all([
+                getFleetAssets(),
+                getNotifications()
+            ]);
+            setAssets(assetsData);
+            checkAndCreateExpiryNotifications(assetsData, notifications);
         } catch (error) {
             console.error("Failed to fetch fleet assets:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load fleet assets.' });
@@ -110,6 +115,58 @@ export default function FleetManagementPage() {
     }
     fetchData();
   }, [toast]);
+  
+  const checkAndCreateExpiryNotifications = async (assetsToCheck: FleetAsset[], existingNotifications: NotificationMessage[]) => {
+      const today = new Date();
+      const thirtyDaysFromNow = addDays(today, 30);
+      const notificationPromises: Promise<any>[] = [];
+
+      for (const asset of assetsToCheck) {
+          // Check Registration
+          if (asset.registrationDueDate) {
+              const dueDate = parseISO(asset.registrationDueDate);
+              if (isBefore(dueDate, thirtyDaysFromNow)) {
+                  const notifId = `expiry-reg-${asset.id}`;
+                  if (!existingNotifications.some(n => n.id === notifId)) {
+                      notificationPromises.push(
+                          addNotification({
+                              recipientId: 'all', // Target admins
+                              title: 'Registration Expiring Soon',
+                              content: `The registration for ${asset.name} is due on ${format(dueDate, 'PPP')}.`,
+                              senderName: 'System Alert',
+                              timestamp: new Date().toISOString(),
+                              readBy: [],
+                          }, notifId)
+                      );
+                  }
+              }
+          }
+
+          // Check Insurance
+          if (asset.insuranceDueDate) {
+              const dueDate = parseISO(asset.insuranceDueDate);
+              if (isBefore(dueDate, thirtyDaysFromNow)) {
+                  const notifId = `expiry-ins-${asset.id}`;
+                  if (!existingNotifications.some(n => n.id === notifId)) {
+                       notificationPromises.push(
+                          addNotification({
+                              recipientId: 'all',
+                              title: 'Insurance Expiring Soon',
+                              content: `The insurance for ${asset.name} is due on ${format(dueDate, 'PPP')}.`,
+                              senderName: 'System Alert',
+                              timestamp: new Date().toISOString(),
+                              readBy: [],
+                          }, notifId)
+                      );
+                  }
+              }
+          }
+      }
+      if (notificationPromises.length > 0) {
+        await Promise.all(notificationPromises);
+        toast({ title: 'Renewal Reminders Sent', description: `Notifications for ${notificationPromises.length} upcoming renewals have been sent.`});
+      }
+  };
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
