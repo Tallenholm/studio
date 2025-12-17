@@ -1,13 +1,12 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Files, Download, Truck, Box, BookOpen as DocumentIcon, Loader2, BookOpen } from 'lucide-react';
+import { Files, Download, Truck, Box, BookOpen as DocumentIcon, BookOpen } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useMemo } from 'react';
-import { getDocuments } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
-
+import { getDocuments } from '@/lib/firestoreService';
 
 // Helper function to get an icon for a category
 const getCategoryIcon = (categoryName: string) => {
@@ -18,27 +17,18 @@ const getCategoryIcon = (categoryName: string) => {
   return DocumentIcon;
 };
 
-export default function CompanyDocumentsPage() {
-  const [documents, setDocuments] = useState<ManagedDocument[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface CompanyDocumentsClientPageProps {
+    initialDocuments: ManagedDocument[];
+}
 
-  useEffect(() => {
-    async function fetchData() {
-        setIsLoading(true);
-        const docs = await getDocuments();
-        setDocuments(docs.filter(d => d.documentType === 'general'));
-        setIsLoading(false);
-    }
-    fetchData();
-  }, []);
-
-  const generalDocuments = useMemo(() => {
-    return documents.reduce((acc, doc) => {
+function CompanyDocumentsClientPage({ initialDocuments }: CompanyDocumentsClientPageProps) {
+  const generalDocuments = (initialDocuments || [])
+        .filter(d => d.documentType === 'general')
+        .reduce((acc, doc) => {
             (acc[doc.category] = acc[doc.category] || []).push(doc);
             return acc;
         }, {} as Record<string, ManagedDocument[]>);
-  }, [documents]);
-
+  
   const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
     const totalDocs = Object.values(groupedDocs).reduce((sum, docs) => sum + docs.length, 0);
     if (totalDocs === 0) return (
@@ -96,15 +86,6 @@ export default function CompanyDocumentsPage() {
     );
   };
   
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Documents...</p>
-      </div>
-    );
-  }
-  
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
@@ -120,4 +101,10 @@ export default function CompanyDocumentsPage() {
       </div>
     </div>
   );
+}
+
+
+export default async function CompanyDocumentsPage() {
+    const initialDocuments = await getDocuments();
+    return <CompanyDocumentsClientPage initialDocuments={initialDocuments} />;
 }

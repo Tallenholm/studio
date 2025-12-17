@@ -1,10 +1,11 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '@/lib/firestoreService';
+import { addCalendarEvent, deleteCalendarEvent, getCalendarEvents } from '@/lib/firestoreService';
 import type { CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -35,7 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calendar as CalendarIcon, Loader2, CalendarPlus } from 'lucide-react';
+import { PlusCircle, Trash2, Calendar as CalendarIcon, CalendarPlus } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
@@ -46,9 +47,12 @@ const eventSchema = z.object({
   description: z.string().optional(),
 });
 
-export default function ManageCalendarPage() {
-  const [events, setEvents] = useState<CalendarEvent[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface ManageCalendarClientPageProps {
+    initialEvents: CalendarEvent[];
+}
+
+function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPageProps) {
+  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof eventSchema>>({
@@ -61,20 +65,8 @@ export default function ManageCalendarPage() {
   });
 
   useEffect(() => {
-    async function fetchEvents() {
-        setIsLoading(true);
-        try {
-            const loadedEvents = await getCalendarEvents();
-            setEvents(loadedEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-        } catch (error) {
-            console.error("Error fetching calendar events:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load calendar events.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    fetchEvents();
-  }, [toast]);
+    setEvents(initialEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+  }, [initialEvents]);
 
   async function onSubmit(values: z.infer<typeof eventSchema>) {
     const newEventData: Omit<CalendarEvent, 'id'> = {
@@ -107,15 +99,6 @@ export default function ManageCalendarPage() {
         case 'maintenance': return 'Maintenance';
         default: return 'Event';
     }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Calendar Events...</p>
-      </div>
-    );
   }
   
   return (
@@ -276,4 +259,11 @@ export default function ManageCalendarPage() {
       </Card>
     </div>
   );
+}
+
+
+export default async function ManageCalendarPage() {
+    const initialEvents = await getCalendarEvents();
+
+    return <ManageCalendarClientPage initialEvents={initialEvents} />;
 }

@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getTasks, updateTask } from '@/lib/firestoreService';
+import { updateTask, getTasks } from '@/lib/firestoreService';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -40,9 +40,12 @@ const completeTaskSchema = z.object({
   completionPhotoUrl: z.string().optional(),
 });
 
-export default function MyTasksPage() {
-  const [tasks, setTasks] = useState<Task[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface MyTasksClientPageProps {
+    initialTasks: Task[];
+}
+
+function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
+  const [tasks, setTasks] = useState<Task[]>(initialTasks);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -56,16 +59,8 @@ export default function MyTasksPage() {
   });
 
   useEffect(() => {
-    async function fetchData() {
-      if (user) {
-        setIsLoading(true);
-        const allTasks = await getTasks();
-        setTasks(allTasks.filter(t => t.assignedToEmployeeId === user.uid).sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
-        setIsLoading(false);
-      }
-    }
-    fetchData();
-  }, [user]);
+    setTasks(initialTasks.sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+  }, [initialTasks]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -116,15 +111,6 @@ export default function MyTasksPage() {
     setSelectedTask(task);
     form.reset({ completionNotes: '', completionPhotoUrl: '' }); // Clear form on open
     setIsDialogOpen(true);
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Your Tasks...</p>
-      </div>
-    );
   }
   
   const pendingTasks = tasks.filter(t => t.status === 'pending');
@@ -266,4 +252,16 @@ export default function MyTasksPage() {
         </Dialog>
     </div>
   );
+}
+
+
+export default async function MyTasksPage() {
+    const { user } = useAuth();
+    let initialTasks: Task[] = [];
+    if (user) {
+        const allTasks = await getTasks();
+        initialTasks = allTasks.filter(t => t.assignedToEmployeeId === user.uid);
+    }
+    
+    return <MyTasksClientPage initialTasks={initialTasks} />;
 }

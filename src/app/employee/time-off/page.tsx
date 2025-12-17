@@ -16,9 +16,8 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Loader2, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format, addDays } from 'date-fns';
+import { format } from 'date-fns';
 import { useUser } from '@/firebase/provider';
-import { DateRange } from 'react-day-picker';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
 
@@ -30,9 +29,12 @@ const requestSchema = z.object({
   reason: z.string().min(10, 'Please provide a brief reason for your request (min. 10 characters).'),
 });
 
-export default function TimeOffPage() {
-  const [requests, setRequests] = useState<TimeOffRequest[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface TimeOffClientPageProps {
+    initialRequests: TimeOffRequest[];
+}
+
+function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
+  const [requests, setRequests] = useState<TimeOffRequest[]>(initialRequests);
   const { toast } = useToast();
   const { user } = useUser();
 
@@ -44,16 +46,8 @@ export default function TimeOffPage() {
   });
 
   useEffect(() => {
-    async function fetchRequests() {
-        if (user) {
-            setIsLoading(true);
-            const allRequests = await getTimeOffRequests();
-            setRequests(allRequests.filter(r => r.employeeId === user.uid).sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
-            setIsLoading(false);
-        }
-    }
-    fetchRequests();
-  }, [user]);
+    setRequests(initialRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+  }, [initialRequests]);
 
   async function onSubmit(values: z.infer<typeof requestSchema>) {
     if (!user) {
@@ -83,15 +77,6 @@ export default function TimeOffPage() {
           case 'pending': return 'secondary';
           default: return 'outline';
       }
-  }
-
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Your Requests...</p>
-      </div>
-    );
   }
   
   return (
@@ -227,4 +212,14 @@ export default function TimeOffPage() {
       </Card>
     </div>
   );
+}
+
+export default async function TimeOffPage() {
+    const { user } = useAuth();
+    let initialRequests: TimeOffRequest[] = [];
+    if (user) {
+        const allRequests = await getTimeOffRequests();
+        initialRequests = allRequests.filter(r => r.employeeId === user.uid);
+    }
+    return <TimeOffClientPage initialRequests={initialRequests} />;
 }

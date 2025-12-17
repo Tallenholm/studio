@@ -1,36 +1,28 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, FileText, FileBadge, Loader2 } from 'lucide-react';
+import { Download, FileText, FileBadge } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
-import { useState, useEffect, useMemo } from 'react';
-import { getDocuments } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
+import { getDocuments } from '@/lib/firestoreService';
 import { useAuth } from '@/contexts/AuthContext';
 
-export default function PersonalDocumentsPage() {
-  const [documents, setDocuments] = useState<ManagedDocument[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
 
-  useEffect(() => {
-    async function fetchData() {
-        if (user) {
-            setIsLoading(true);
-            const docs = await getDocuments();
-            setDocuments(docs.filter(d => d.employeeId === user.uid));
-            setIsLoading(false);
-        }
-    }
-    fetchData();
-  }, [user]);
+interface PersonalDocumentsClientPageProps {
+  initialDocuments: ManagedDocument[];
+}
 
-  const { taxDocuments, employmentDocuments } = useMemo(() => {
-    const tax = documents.filter(d => d.documentType === 'tax');
-    const employment = documents.filter(d => d.documentType === 'employment');
-    return { taxDocuments: tax, employmentDocuments: employment };
-  }, [documents]);
+function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClientPageProps) {
+  const { taxDocuments, employmentDocuments } = (initialDocuments || []).reduce(
+    (acc, doc) => {
+        if (doc.documentType === 'tax') acc.taxDocuments.push(doc);
+        if (doc.documentType === 'employment') acc.employmentDocuments.push(doc);
+        return acc;
+    }, 
+    { taxDocuments: [], employmentDocuments: [] } as { taxDocuments: ManagedDocument[], employmentDocuments: ManagedDocument[] }
+  );
 
   const renderDocumentSection = (title: string, Icon: React.ElementType, docs: ManagedDocument[]) => {
     return (
@@ -76,15 +68,6 @@ export default function PersonalDocumentsPage() {
     );
   };
 
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Documents...</p>
-      </div>
-    );
-  }
-
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
@@ -101,4 +84,15 @@ export default function PersonalDocumentsPage() {
       </div>
     </div>
   );
+}
+
+export default async function PersonalDocumentsPage() {
+    const { user } = useAuth();
+    let initialDocuments: ManagedDocument[] = [];
+    if (user) {
+        const allDocs = await getDocuments();
+        initialDocuments = allDocs.filter(d => d.employeeId === user.uid);
+    }
+    
+    return <PersonalDocumentsClientPage initialDocuments={initialDocuments} />;
 }

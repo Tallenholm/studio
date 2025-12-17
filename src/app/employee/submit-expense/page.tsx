@@ -17,7 +17,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { Input } from '@/components/ui/input';
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye, DollarSign, Brain } from 'lucide-react';
+import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useUser } from '@/firebase/provider';
@@ -35,9 +35,12 @@ const expenseSchema = z.object({
   receiptPhotoUrl: z.string().url({ message: 'A receipt photo upload is required.' }),
 });
 
-export default function SubmitExpensePage() {
-  const [reports, setReports] = useState<ExpenseReport[]>([]);
-  const [isMounted, setIsMounted] = useState(false);
+interface SubmitExpenseClientPageProps {
+    initialReports: ExpenseReport[];
+}
+
+function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProps) {
+  const [reports, setReports] = useState<ExpenseReport[]>(initialReports);
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
@@ -53,22 +56,14 @@ export default function SubmitExpensePage() {
   });
 
   useEffect(() => {
-    async function fetchReports() {
-        if (user) {
-            setIsMounted(true);
-            const allReports = await getExpenseReports();
-            setReports(allReports.filter(r => r.employeeId === user.uid).sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        }
-    }
-    fetchReports();
-  }, [user]);
+    setReports(initialReports.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  }, [initialReports]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file) {
       setIsScanning(true);
       
-      // First, get the data URI for AI processing
       const reader = new FileReader();
       reader.readAsDataURL(file);
       const dataUriPromise = new Promise<string>((resolve) => {
@@ -76,7 +71,6 @@ export default function SubmitExpensePage() {
       });
 
       try {
-        // Concurrently upload to storage and process with AI
         const uploadPromise = uploadFile(file, `receipts/${user?.id || 'unknown'}/${Date.now()}-${file.name}`);
         const dataUri = await dataUriPromise;
         const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
@@ -86,7 +80,6 @@ export default function SubmitExpensePage() {
         form.setValue('receiptPhotoUrl', downloadUrl);
         form.clearErrors('receiptPhotoUrl');
         
-        // Populate form with extracted data
         if (extractedData.amount) form.setValue('amount', extractedData.amount);
         if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
         if (extractedData.description) form.setValue('description', extractedData.description);
@@ -136,15 +129,6 @@ export default function SubmitExpensePage() {
 
   const getCategoryLabel = (category: ExpenseReport['category']) => {
       return category.charAt(0).toUpperCase() + category.slice(1);
-  }
-
-  if (!isMounted) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Expenses...</p>
-      </div>
-    );
   }
   
   return (
@@ -345,4 +329,16 @@ export default function SubmitExpensePage() {
       </Card>
     </div>
   );
+}
+
+
+export default async function SubmitExpensePage() {
+    const { user } = useAuth();
+    let initialReports: ExpenseReport[] = [];
+    if (user) {
+        const allReports = await getExpenseReports();
+        initialReports = allReports.filter(r => r.employeeId === user.uid);
+    }
+    
+    return <SubmitExpenseClientPage initialReports={initialReports} />;
 }

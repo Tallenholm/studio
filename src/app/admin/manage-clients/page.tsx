@@ -36,7 +36,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Loader2, Pencil, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const clientSchema = z.object({
@@ -46,10 +46,14 @@ const clientSchema = z.object({
   contactPhone: z.string().optional(),
 });
 
-export default function ManageClientsPage() {
-  const [clients, setClients] = useState<Client[]>([]);
-  const [jobs, setJobs] = useState<Job[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
+interface ManageClientsClientPageProps {
+    initialClients: Client[];
+    initialJobs: Job[];
+}
+
+function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsClientPageProps) {
+  const [clients, setClients] = useState<Client[]>(initialClients);
+  const [jobs, setJobs] = useState<Job[]>(initialJobs);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
@@ -64,25 +68,10 @@ export default function ManageClientsPage() {
     },
   });
 
-  useEffect(() => {
-    async function fetchData() {
-        setIsLoading(true);
-        try {
-            const [loadedClients, loadedJobs] = await Promise.all([
-                getClients(),
-                getJobs()
-            ]);
-            setClients(loadedClients.sort((a,b) => a.name.localeCompare(b.name)));
-            setJobs(loadedJobs);
-        } catch (error) {
-            console.error("Error fetching data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load client data.' });
-        } finally {
-            setIsLoading(false);
-        }
-    }
-    fetchData();
-  }, [toast]);
+   useEffect(() => {
+    setClients(initialClients.sort((a,b) => a.name.localeCompare(b.name)));
+    setJobs(initialJobs);
+  }, [initialClients, initialJobs]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -135,15 +124,6 @@ export default function ManageClientsPage() {
       description: `Client "${clientToRemove?.name}" has been removed.`,
       variant: 'destructive',
     });
-  }
-  
-  if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Clients...</p>
-      </div>
-    );
   }
 
   return (
@@ -304,4 +284,14 @@ export default function ManageClientsPage() {
       </Card>
     </div>
   );
+}
+
+
+export default async function ManageClientsPage() {
+    const [initialClients, initialJobs] = await Promise.all([
+        getClients(),
+        getJobs()
+    ]);
+
+    return <ManageClientsClientPage initialClients={initialClients} initialJobs={initialJobs} />;
 }
