@@ -1,12 +1,10 @@
 
 'use client';
 
-import React, { createContext, useContext, useEffect, useState, ReactNode } from 'react';
-import { onAuthStateChanged, Auth, User as FirebaseUser } from 'firebase/auth';
-import { doc, onSnapshot } from 'firebase/firestore';
+import React, { createContext, useContext, ReactNode } from 'react';
+import { Auth, User as FirebaseUser } from 'firebase/auth';
 import type { User } from '@/lib/types';
-import { getFirestoreInstance } from '@/lib/firestoreService';
-import { useAuth as useFirebaseAuth } from '@/firebase/provider';
+import { useUser as useFirebaseUser } from '@/firebase/provider'; // Renamed to avoid conflict
 
 interface AuthContextType {
   user: User | null;
@@ -18,56 +16,9 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const [user, setUser] = useState<User | null>(null);
-  const [firebaseUser, setFirebaseUser] = useState<FirebaseUser | null>(null);
-  const [isLoading, setIsLoading] = useState(true);
+  const { user, firebaseUser, isUserLoading, auth } = useFirebaseUser();
 
-  const auth = useFirebaseAuth();
-
-  useEffect(() => {
-    if (!auth) {
-      setIsLoading(false);
-      return;
-    }
-
-    const unsubscribe = onAuthStateChanged(auth, async (fbUser) => {
-      setFirebaseUser(fbUser);
-      if (fbUser) {
-        const db = getFirestoreInstance();
-        const userDocRef = doc(db, 'users', fbUser.uid);
-        
-        // Use onSnapshot for real-time user role updates
-        const unsubUserDoc = onSnapshot(userDocRef, (userDocSnap) => {
-          if (userDocSnap.exists()) {
-            setUser({ id: userDocSnap.id, ...userDocSnap.data() } as User);
-          } else {
-            // This might happen during sign-up before the user doc is created.
-            setUser({
-              id: fbUser.uid,
-              uid: fbUser.uid,
-              email: fbUser.email || '',
-              name: fbUser.displayName || 'New User',
-              role: 'employee', // Default role
-            });
-          }
-          setIsLoading(false);
-        }, (error) => {
-            console.error("Error listening to user document:", error);
-            setUser(null);
-            setIsLoading(false);
-        });
-
-        return () => unsubUserDoc();
-      } else {
-        setUser(null);
-        setIsLoading(false);
-      }
-    });
-
-    return () => unsubscribe();
-  }, [auth]);
-
-  const value = { user, firebaseUser, isLoading, auth };
+  const value = { user, firebaseUser, isLoading: isUserLoading, auth };
 
   return (
     <AuthContext.Provider value={value}>
@@ -76,6 +27,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
+// This hook is kept for components that might still use it, but it now
+// gets its data from the single source of truth in FirebaseProvider.
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {
@@ -83,5 +36,3 @@ export function useAuth() {
   }
   return context;
 }
-
-    

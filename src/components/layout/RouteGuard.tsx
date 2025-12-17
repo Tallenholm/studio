@@ -3,10 +3,10 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import AppLayout from './AppLayout';
 import type { UserRole } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { useUser } from '@/firebase/provider';
 
 const PATH_CONFIG = {
   PUBLIC: ['/login'],
@@ -33,34 +33,39 @@ const PATH_CONFIG = {
 };
 
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    if (role === 'owner') return true;
-    if (role === 'guest') return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    // 1. Owners can go anywhere
+    if (role === 'owner') {
+        return true;
+    }
     
-    // Check for shared authenticated paths first. If it's a match, grant access immediately.
+    // 2. Guests can only access public paths
+    if (role === 'guest') {
+        return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    }
+    
+    // 3. All authenticated users can access shared paths
     if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
         return true;
     }
-    
-    if (PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p))) {
-        return true;
-    }
 
-    const isEmployeePath = pathname.startsWith('/employee');
-    const isAdminPath = pathname.startsWith(PATH_CONFIG.ADMIN_BASE);
-
+    // 4. Role-specific paths
     if (role === 'employee') {
-        return isEmployeePath;
+        return PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p));
     }
 
     if (role === 'manager') {
-        if (PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p))) {
-            return false;
+        // Managers can access admin paths that are not owner-only
+        if (pathname.startsWith(PATH_CONFIG.ADMIN_BASE)) {
+            return !PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p));
         }
-        return isAdminPath || isEmployeePath;
+        // Managers can also access employee paths
+        return PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p));
     }
-
+    
+    // 5. Default to false if no rules match
     return false;
 }
+
 
 const FullScreenLoader = ({ text }: { text: string }) => (
     <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
@@ -70,12 +75,12 @@ const FullScreenLoader = ({ text }: { text: string }) => (
 );
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
-  const { user, isLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (isLoading) return; // Wait until auth state is determined
+    if (isUserLoading) return; // Wait until auth state is determined
 
     const role = user?.role || 'guest';
     const isPublicPath = PATH_CONFIG.PUBLIC.includes(pathname);
@@ -97,13 +102,13 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
         router.replace('/login');
       }
     }
-  }, [isLoading, user, pathname, router]);
+  }, [isUserLoading, user, pathname, router]);
 
   // Determine what to render based on current state
   const role = user?.role || 'guest';
   const isAllowed = isPathAllowed(pathname, role);
   
-  if (isLoading) {
+  if (isUserLoading) {
     return <FullScreenLoader text="Authenticating..." />;
   }
 
