@@ -112,26 +112,19 @@ export default function ManageInventoryPage() {
   
   async function onAddEditSubmit(values: z.infer<typeof itemSchema>) {
     if (editingItem) {
-      // For edits, only update fields present in the form schema.
-      // Status and assignment are handled separately.
       const dataToUpdate: Partial<InventoryItem> = { ...values };
       await updateInventoryItem(editingItem.id, dataToUpdate);
 
       setInventory(prevInventory =>
         prevInventory.map(i => {
           if (i.id === editingItem.id) {
-            // Correctly merge form values with existing non-form properties
-            return {
-              ...i, // old item with status, assignments etc.
-              ...values, // new form values
-            };
+            return { ...i, ...values }; // Correctly merge form values with the full existing item
           }
           return i;
         })
       );
       toast({ title: 'Item Updated', description: `Item "${values.name}" has been updated.` });
     } else {
-      // For new items, set default status
       const newItemData: Omit<InventoryItem, 'id'> = {
         status: 'available',
         ...values,
@@ -185,11 +178,9 @@ export default function ManageInventoryPage() {
     setInventory(prevInventory =>
       prevInventory.map(item => {
           if (item.id === itemId) {
-              // Construct a new, complete object to avoid state issues
               const updatedItem: InventoryItem = {
                   ...item, // Carry over all old properties
                   status: newStatus, // Set the new status
-                  // Explicitly set or clear assignment fields
                   assignedToType: isNowInUse ? assignmentInfo?.assignedToType : undefined,
                   assignedToId: isNowInUse ? assignmentInfo?.assignedToId : undefined,
                   assignedToName: isNowInUse ? assignmentInfo?.assignedToName : undefined,
@@ -463,4 +454,5 @@ export default function ManageInventoryPage() {
       </Dialog>
     </div>
   );
-}
+
+    
