@@ -35,14 +35,15 @@ import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isLoading } = useAuth();
+    const { user, isLoading, auth: authService } = useAuth();
     
     if (isLoading) {
         return <FullScreenLoader text="Authenticating..." />;
     }
 
     if (!user) {
-        return <>{children}</>;
+        // This case should ideally be handled by RouteGuard, but as a fallback:
+        return <FullScreenLoader text="Redirecting..." />;
     }
 
     return <AuthenticatedLayout>{children}</AuthenticatedLayout>;
@@ -124,13 +125,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
       return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
 
-    useEffect(() => {
-        if (pathname === '/') {
-            const destination = user?.role === 'employee' ? '/employee' : '/admin';
-            router.replace(destination);
-        }
-    }, [pathname, user, router]);
-    
     const isAdmin = user?.role === 'owner' || user?.role === 'manager';
     
     return (
@@ -533,3 +527,5 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
+
+    

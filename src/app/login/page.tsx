@@ -2,7 +2,7 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth, useUser } from '@/firebase/provider';
+import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -16,7 +16,6 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { initializeFirebase } from '@/lib/firebase-initialize';
 import { initiateEmailSignUp, initiateEmailSignIn } from '@/firebase/non-blocking-login';
 
 const loginSchema = z.object({
@@ -29,11 +28,8 @@ const signupSchema = z.object({
     password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
 });
 
-const { auth, isFirebaseConfigured } = initializeFirebase();
-
 export default function LoginPage() {
-  const { isUserLoading } = useUser();
-  const authService = useAuth();
+  const { isLoading, auth } = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('signin');
   const [resetEmail, setResetEmail] = useState('');
@@ -49,17 +45,20 @@ export default function LoginPage() {
   });
 
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
-    initiateEmailSignIn(authService, values.email, values.password);
+    if (!auth) return;
+    initiateEmailSignIn(auth, values.email, values.password);
   };
 
   const onSignupSubmit = (values: z.infer<typeof signupSchema>) => {
-    initiateEmailSignUp(authService, values.email, values.password);
+    if (!auth) return;
+    initiateEmailSignUp(auth, values.email, values.password);
   };
 
   const handleGoogleSignIn = async () => {
+    if (!auth) return;
     const provider = new GoogleAuthProvider();
     try {
-        await signInWithPopup(authService, provider);
+        await signInWithPopup(auth, provider);
         toast({ title: 'Login Successful', description: 'Welcome!' });
     } catch (error: any) {
         loginForm.setError('root', { message: error.message || 'An unknown login error occurred.' });
@@ -84,7 +83,7 @@ export default function LoginPage() {
     }
   };
   
-  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isUserLoading;
+  const isFormDisabled = !auth || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isLoading;
   const loginError = loginForm.formState.errors.root?.message;
   const signupError = signupForm.formState.errors.root?.message;
   
@@ -96,7 +95,7 @@ export default function LoginPage() {
           <CardDescription>Please sign in or create an account</CardDescription>
         </CardHeader>
         <CardContent>
-          {!isFirebaseConfigured ? (
+          {!auth ? (
               <div className="flex flex-col items-center justify-center gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
                 <AlertCircle className="h-8 w-8" />
                 <p className="font-bold text-center">Firebase Not Configured</p>
@@ -181,3 +180,5 @@ export default function LoginPage() {
     </div>
   );
 }
+
+    

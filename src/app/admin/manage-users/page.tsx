@@ -16,19 +16,17 @@ import { Users, Loader2, MoreHorizontal, KeyRound, Pencil } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
 import { getUsers, updateUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase/provider';
+import { useUser, useAuth } from '@/firebase/provider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
-import { initializeFirebase } from '@/lib/firebase-initialize';
-
-const { auth } = initializeFirebase();
 
 export default function UserManagementPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user: currentUser } = useUser();
+  const auth = useAuth();
   const [isSaving, setIsSaving] = useState<string | null>(null); // Store user ID being saved
 
   useEffect(() => {
@@ -204,3 +202,5 @@ export default function UserManagementPage() {
     </>
   );
 }
+
+    
