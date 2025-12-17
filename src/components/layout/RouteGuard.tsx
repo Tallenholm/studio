@@ -36,6 +36,7 @@ function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
     if (role === 'owner') return true;
     if (role === 'guest') return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
     
+    // Check for shared authenticated paths first. If it's a match, grant access immediately.
     if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
         return true;
     }
