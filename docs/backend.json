@@ -155,6 +155,25 @@
         "assignedToName": { "type": "string", "description": "The denormalized name of the entity for easy display." }
       },
       "required": ["id", "name", "type", "quantity", "status"]
+    },
+    "Rental": {
+      "$schema": "http://json-schema.org/draft-07/schema#",
+      "title": "Rental",
+      "type": "object",
+      "description": "Represents an equipment rental agreement with a third party.",
+      "properties": {
+        "id": { "type": "string", "description": "Unique identifier for the rental." },
+        "assetId": { "type": "string", "description": "The ID of the fleet asset being rented." },
+        "assetName": { "type": "string", "description": "Denormalized name of the asset for easy display." },
+        "renterName": { "type": "string", "description": "The name of the person or company renting the asset." },
+        "contactInfo": { "type": "string", "description": "Contact information for the renter." },
+        "startDate": { "type": "string", "format": "date", "description": "The start date of the rental period." },
+        "endDate": { "type": "string", "format": "date", "description": "The end date of the rental period." },
+        "rate": { "type": "number", "description": "The rental rate." },
+        "rateType": { "type": "string", "enum": ["daily", "weekly", "monthly"], "description": "The type of rate (e.g., daily, weekly)." },
+        "notes": { "type": "string", "description": "Additional notes about the rental." }
+      },
+      "required": ["id", "assetId", "assetName", "renterName", "startDate", "endDate", "rate", "rateType"]
     }
   },
   "auth": {
@@ -193,6 +212,12 @@
         "$ref": "#/backend/entities/InventoryItem"
       },
       "description": "Tracks all company inventory, including tools, materials, and consumables."
+    },
+    "/rentals/{rentalId}": {
+      "schema": {
+        "$ref": "#/backend/entities/Rental"
+      },
+      "description": "Tracks all third-party equipment rentals."
     }
   }
 }

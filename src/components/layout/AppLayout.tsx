@@ -17,6 +17,7 @@ import {
   SidebarGroup,
   SidebarGroupLabel,
   SidebarSeparator,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -31,7 +32,6 @@ import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
-import { SidebarInset } from '../ui/sidebar';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isLoading } = useAuth();
