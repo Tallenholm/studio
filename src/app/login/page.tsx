@@ -17,6 +17,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { initiateEmailSignUp, initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { isFirebaseConfigured } from '@/lib/firebase-initialize';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -83,7 +84,7 @@ export default function LoginPage() {
     }
   };
   
-  const isFormDisabled = !auth || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isLoading;
+  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isLoading;
   const loginError = loginForm.formState.errors.root?.message;
   const signupError = signupForm.formState.errors.root?.message;
   
@@ -95,7 +96,7 @@ export default function LoginPage() {
           <CardDescription>Please sign in or create an account</CardDescription>
         </CardHeader>
         <CardContent>
-          {!auth ? (
+          {!isFirebaseConfigured ? (
               <div className="flex flex-col items-center justify-center gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md">
                 <AlertCircle className="h-8 w-8" />
                 <p className="font-bold text-center">Firebase Not Configured</p>

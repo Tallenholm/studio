@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Auth, User as FirebaseUser } from 'firebase/auth';
 import type { User } from '@/lib/types';
-import { useUser } from '@/firebase/provider'; // Renamed to avoid conflict
+import { useUser } from '@/firebase/provider'; 
 
 interface AuthContextType {
   user: User | null;
@@ -27,8 +28,8 @@ export function AuthProvider({ children }: { children: ReactNode }) {
   );
 }
 
-// This hook is kept for components that might still use it, but it now
-// gets its data from the single source of truth in FirebaseProvider.
+// This hook is kept for backward compatibility with any components that might still use it,
+// but it now gets its data from the single source of truth in FirebaseProvider.
 export function useAuth() {
   const context = useContext(AuthContext);
   if (context === undefined) {

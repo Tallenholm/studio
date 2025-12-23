@@ -364,29 +364,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-jobs">
-                                        <SidebarMenuButton tooltip="Excavation Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
-                                            <Briefcase /><span>Excavation</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                    <Link href="/admin/manage-utilities">
-                                        <SidebarMenuButton tooltip="Utilities Jobs" isActive={pathname.startsWith('/admin/manage-utilities')}>
-                                            <Wrench /><span>Utilities</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                                 <SidebarMenuItem>
-                                    <Link href="/admin/manage-landscaping">
-                                        <SidebarMenuButton tooltip="Landscaping Jobs" isActive={pathname.startsWith('/admin/manage-landscaping')}>
-                                            <Sprout /><span>Landscaping</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <Link href="/admin/manage-snow">
-                                        <SidebarMenuButton tooltip="Snow Contracts" isActive={pathname.startsWith('/admin/manage-snow')}>
-                                            <Snowflake /><span>Snow</span>
+                                        <SidebarMenuButton tooltip="Manage Jobs" isActive={pathname.startsWith('/admin/manage-jobs')}>
+                                            <Briefcase /><span>Manage Jobs</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -401,20 +380,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/admin/manage-rentals">
                                         <SidebarMenuButton tooltip="Manage Rentals" isActive={pathname.startsWith('/admin/manage-rentals')}>
                                             <ArrowRightLeft /><span>Rentals</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <Link href="/admin/manage-concrete">
-                                        <SidebarMenuButton tooltip="Concrete Jobs" isActive={pathname.startsWith('/admin/manage-concrete')}>
-                                            <Droplets /><span>Concrete</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
-                                <SidebarMenuItem>
-                                    <Link href="/admin/manage-misc">
-                                        <SidebarMenuButton tooltip="Misc Jobs" isActive={pathname.startsWith('/admin/manage-misc')}>
-                                            <Package /><span>Misc.</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -527,5 +492,3 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
-
-    

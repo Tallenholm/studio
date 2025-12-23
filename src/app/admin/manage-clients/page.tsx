@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getClients, addClient, updateClient, deleteClient, getJobs } from '@/lib/firestoreService';
+import { addClient, updateClient, deleteClient } from '@/lib/firestoreService';
 import type { Client, Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -53,7 +54,7 @@ interface ManageClientsClientPageProps {
 
 function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsClientPageProps) {
   const [clients, setClients] = useState<Client[]>(initialClients);
-  const [jobs, setJobs] = useState<Job[]>(initialJobs);
+  const [jobs] = useState<Job[]>(initialJobs);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
@@ -70,8 +71,7 @@ function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsC
 
    useEffect(() => {
     setClients(initialClients.sort((a,b) => a.name.localeCompare(b.name)));
-    setJobs(initialJobs);
-  }, [initialClients, initialJobs]);
+  }, [initialClients]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -288,6 +288,8 @@ function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsC
 
 
 export default async function ManageClientsPage() {
+    // This is now a Server Component
+    const { getClients, getJobs } = await import('@/lib/firestoreService');
     const [initialClients, initialJobs] = await Promise.all([
         getClients(),
         getJobs()

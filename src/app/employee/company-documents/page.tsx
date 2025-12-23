@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,7 +7,6 @@ import { Files, Download, Truck, Box, BookOpen as DocumentIcon, BookOpen } from 
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
-import { getDocuments } from '@/lib/firestoreService';
 
 // Helper function to get an icon for a category
 const getCategoryIcon = (categoryName: string) => {
@@ -105,6 +105,7 @@ function CompanyDocumentsClientPage({ initialDocuments }: CompanyDocumentsClient
 
 
 export default async function CompanyDocumentsPage() {
+    const { getDocuments } = await import('@/lib/firestoreService');
     const initialDocuments = await getDocuments();
     return <CompanyDocumentsClientPage initialDocuments={initialDocuments} />;
 }

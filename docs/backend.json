@@ -2,7 +2,6 @@
 {
   "entities": {
     "UserProfile": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "UserProfile",
       "type": "object",
       "description": "Represents a user's profile information.",
@@ -15,196 +14,345 @@
       },
       "required": ["uid", "email", "name", "role"]
     },
-    "Vehicle": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "Vehicle",
+    "FleetAsset": {
+      "title": "FleetAsset",
       "type": "object",
-      "description": "Represents a vehicle in the fleet, such as a truck, trailer, or skid steer.",
+      "description": "Represents a vehicle or piece of equipment in the company's fleet.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the vehicle."
-        },
-        "vin": {
-          "type": "string",
-          "description": "Vehicle Identification Number (VIN) of the vehicle."
-        },
-        "year": {
-          "type": "number",
-          "description": "The manufacturing year of the vehicle."
-        },
-        "make": {
-          "type": "string",
-          "description": "The make of the vehicle (e.g., Chevy)."
-        },
-        "model": {
-          "type": "string",
-          "description": "The model of the vehicle (e.g., 6500)."
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of vehicle (e.g., truck, trailer, skid steer)."
-        },
-        "bedType": {
-          "type": "string",
-          "description": "The bed type of the vehicle (e.g., dump bed, tilt deck)."
-        }
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["truck", "trailer", "heavyEquipment"] },
+        "name": { "type": "string" },
+        "vin": { "type": "string" },
+        "year": { "type": "string" },
+        "make": { "type": "string" },
+        "model": { "type": "string" },
+        "registrationDueDate": { "type": "string", "format": "date" },
+        "insuranceDueDate": { "type": "string", "format": "date" },
+        "maintenanceSchedule": { "$ref": "#/entities/MaintenanceSchedule" }
       },
-      "required": [
-        "id",
-        "vin",
-        "year",
-        "make",
-        "model",
-        "type"
-      ]
+      "required": ["id", "type", "name", "vin"]
     },
-    "ChecklistItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "ChecklistItem",
-      "type": "object",
-      "description": "Represents a single item on a pre-trip or post-trip inspection checklist.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the checklist item."
-        },
-        "description": {
-          "type": "string",
-          "description": "Description of the inspection item."
-        },
-        "instructions": {
-          "type": "string",
-          "description": "Detailed instructions for performing the inspection."
-        },
-        "vehicleType": {
-          "type": "string",
-          "description": "The Vehicle Type the inspection applies to."
+    "MaintenanceSchedule": {
+        "title": "MaintenanceSchedule",
+        "type": "object",
+        "properties": {
+            "oilChange": { "$ref": "#/entities/MaintenanceScheduleItem" },
+            "tireRotation": { "$ref": "#/entities/MaintenanceScheduleItem" },
+            "brakeInspection": { "$ref": "#/entities/MaintenanceScheduleItem" },
+            "fluidCheck": { "$ref": "#/entities/MaintenanceScheduleItem" }
         }
-      },
-      "required": [
-        "id",
-        "description",
-        "instructions"
-      ]
+    },
+    "MaintenanceScheduleItem": {
+        "title": "MaintenanceScheduleItem",
+        "type": "object",
+        "properties": {
+            "intervalMonths": { "type": "number" },
+            "lastServiceDate": { "type": "string", "format": "date" }
+        }
     },
     "InspectionReport": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "InspectionReport",
       "type": "object",
       "description": "Represents a pre-trip or post-trip inspection report for a vehicle.",
       "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the inspection report."
-        },
-        "vehicleId": {
-          "type": "string",
-          "description": "Reference to Vehicle. (Relationship: Vehicle 1:N InspectionReport)"
-        },
-        "date": {
-          "type": "string",
-          "description": "Date and time the inspection was performed.",
-          "format": "date-time"
-        },
-        "type": {
-          "type": "string",
-          "description": "The type of inspection (pre-trip or post-trip)."
-        },
-        "notes": {
-          "type": "string",
-          "description": "Additional notes or comments about the inspection."
-        }
+        "id": { "type": "string" },
+        "type": { "type": "string", "enum": ["pre-trip", "post-trip"] },
+        "date": { "type": "string", "format": "date-time" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "truckVin": { "type": "string" },
+        "trailerVin": { "type": "string" },
+        "heavyEquipmentVin": { "type": "string" },
+        "sections": { "type": "array", "items": { "$ref": "#/entities/InspectionSection" } },
+        "overallStatus": { "type": "string", "enum": ["pass", "fail"] }
       },
-      "required": [
-        "id",
-        "vehicleId",
-        "date",
-        "type"
-      ]
+      "required": ["id", "type", "date", "sections", "overallStatus"]
     },
-    "InspectionResult": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
-      "title": "InspectionResult",
-      "type": "object",
-      "description": "Represents the result of a single checklist item in an inspection report.",
-      "properties": {
-        "id": {
-          "type": "string",
-          "description": "Unique identifier for the inspection result."
-        },
-        "reportId": {
-          "type": "string",
-          "description": "Reference to InspectionReport. (Relationship: InspectionReport 1:N InspectionResult)"
-        },
-        "checklistItemId": {
-          "type": "string",
-          "description": "Reference to ChecklistItem. (Relationship: ChecklistItem 1:N InspectionResult)"
-        },
-        "status": {
-          "type": "string",
-          "description": "The status of the checklist item (pass or fail)."
+    "InspectionSection": {
+        "title": "InspectionSection",
+        "type": "object",
+        "properties": {
+            "vehicleType": { "type": "string" },
+            "name": { "type": "string" },
+            "items": { "type": "array", "items": { "$ref": "#/entities/CompletedInspectionItem" } }
         }
-      },
-      "required": [
-        "id",
-        "reportId",
-        "checklistItemId",
-        "status"
-      ]
+    },
+    "CompletedInspectionItem": {
+        "title": "CompletedInspectionItem",
+        "type": "object",
+        "properties": {
+            "itemId": { "type": "string" },
+            "name": { "type": "string" },
+            "status": { "type": "string", "enum": ["pass", "fail", "pending"] },
+            "notes": { "type": "string" },
+            "photoUrl": { "type": "string", "format": "uri" }
+        }
     },
     "InventoryItem": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "InventoryItem",
       "type": "object",
-      "description": "Represents a single item in the company's inventory, such as a tool or material.",
+      "description": "Represents an item in the company's inventory.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the inventory item." },
-        "name": { "type": "string", "description": "The name of the item." },
-        "type": { "type": "string", "enum": ["tool", "material", "consumable"], "description": "The type of inventory item." },
-        "category": { "type": "string", "description": "A user-defined category for grouping items (e.g., 'Power Tools')." },
-        "quantity": { "type": "number", "description": "The quantity of the item available." },
-        "status": { "type": "string", "enum": ["available", "in_use", "maintenance", "lost"], "description": "The current status of the item." },
-        "assignedToType": { "type": "string", "enum": ["employee", "job", "vehicle"], "description": "The type of entity the item is assigned to, if in use." },
-        "assignedToId": { "type": "string", "description": "The ID of the entity the item is assigned to." },
-        "assignedToName": { "type": "string", "description": "The denormalized name of the entity for easy display." }
+        "id": { "type": "string" },
+        "name": { "type": "string" },
+        "type": { "type": "string", "enum": ["tool", "material", "consumable"] },
+        "category": { "type": "string" },
+        "quantity": { "type": "number" },
+        "status": { "type": "string", "enum": ["available", "in_use", "maintenance", "lost"] },
+        "assignedToType": { "type": "string", "enum": ["employee", "job", "vehicle"] },
+        "assignedToId": { "type": "string" },
+        "assignedToName": { "type": "string" }
       },
       "required": ["id", "name", "type", "quantity", "status"]
     },
     "Rental": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Rental",
       "type": "object",
-      "description": "Represents an equipment rental agreement with a third party.",
+      "description": "Represents an equipment rental agreement.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the rental." },
-        "assetId": { "type": "string", "description": "The ID of the fleet asset being rented." },
-        "assetName": { "type": "string", "description": "Denormalized name of the asset for easy display." },
-        "renterName": { "type": "string", "description": "The name of the person or company renting the asset." },
-        "contactInfo": { "type": "string", "description": "Contact information for the renter." },
-        "startDate": { "type": "string", "format": "date", "description": "The start date of the rental period." },
-        "endDate": { "type": "string", "format": "date", "description": "The end date of the rental period." },
-        "rate": { "type": "number", "description": "The rental rate." },
-        "rateType": { "type": "string", "enum": ["daily", "weekly", "monthly"], "description": "The type of rate (e.g., daily, weekly)." },
-        "notes": { "type": "string", "description": "Additional notes about the rental." }
+        "id": { "type": "string" },
+        "assetId": { "type": "string" },
+        "assetName": { "type": "string" },
+        "renterName": { "type": "string" },
+        "contactInfo": { "type": "string" },
+        "startDate": { "type": "string", "format": "date" },
+        "endDate": { "type": "string", "format": "date" },
+        "rate": { "type": "number" },
+        "rateType": { "type": "string", "enum": ["daily", "weekly", "monthly"] },
+        "notes": { "type": "string" }
       },
       "required": ["id", "assetId", "assetName", "renterName", "startDate", "endDate", "rate", "rateType"]
     },
     "Violation": {
-      "$schema": "http://json-schema.org/draft-07/schema#",
       "title": "Violation",
       "type": "object",
-      "description": "Represents a documented employee violation for safety, conduct, or performance.",
+      "description": "Represents a documented employee violation.",
       "properties": {
-        "id": { "type": "string", "description": "Unique identifier for the violation record." },
-        "employeeId": { "type": "string", "description": "The ID of the employee who committed the violation." },
-        "employeeName": { "type": "string", "description": "Denormalized name of the employee for easy display." },
-        "date": { "type": "string", "format": "date", "description": "The date the violation occurred." },
-        "type": { "type": "string", "enum": ["safety", "conduct", "performance", "other"], "description": "The category of the violation." },
-        "description": { "type": "string", "description": "A detailed, objective description of the incident." },
-        "actionTaken": { "type": "string", "description": "The disciplinary or corrective action that was taken." }
+        "id": { "type": "string" },
+        "employeeId": { "type": "string" },
+        "employeeName": { "type": "string" },
+        "date": { "type": "string", "format": "date" },
+        "type": { "type": "string", "enum": ["safety", "conduct", "performance", "other"] },
+        "description": { "type": "string" },
+        "actionTaken": { "type": "string" }
       },
       "required": ["id", "employeeId", "employeeName", "date", "type", "description", "actionTaken"]
+    },
+    "Job": {
+        "title": "Job",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "clientId": { "type": "string" },
+            "clientName": { "type": "string" },
+            "address": { "type": "string" },
+            "jobValue": { "type": "number" },
+            "jobType": { "type": "string", "enum": ["excavation", "utilities", "concrete", "landscaping", "snow_removal", "misc"] },
+            "startDate": { "type": "string", "format": "date" },
+            "endDate": { "type": "string", "format": "date" },
+            "assignedEmployeeIds": { "type": "array", "items": { "type": "string" } },
+            "assignedTruckIds": { "type": "array", "items": { "type": "string" } },
+            "assignedTrailerIds": { "type": "array", "items": { "type": "string" } },
+            "assignedHeavyEquipmentIds": { "type": "array", "items": { "type": "string" } },
+            "openingTime": { "type": "string" },
+            "closingTime": { "type": "string" },
+            "equipmentNeeds": { "type": "string" },
+            "assignedSidewalkCrewIds": { "type": "array", "items": { "type": "string" } },
+            "snowServices": { "$ref": "#/entities/SnowServices" },
+            "snowLog": { "$ref": "#/entities/SnowLog" },
+            "concreteYards": { "type": "number" },
+            "notes": { "type": "array", "items": { "$ref": "#/entities/JobNote" } }
+        },
+        "required": ["id", "name", "clientId", "clientName", "address", "jobType", "startDate", "endDate"]
+    },
+    "SnowServices": {
+        "title": "SnowServices",
+        "type": "object",
+        "properties": {
+            "plowing": { "type": "boolean" },
+            "salting": { "type": "boolean" },
+            "sidewalks": { "type": "boolean" }
+        }
+    },
+    "SnowLog": {
+        "title": "SnowLog",
+        "type": "object",
+        "properties": {
+            "plowing": { "type": "array", "items": { "$ref": "#/entities/SnowServiceLog" } },
+            "salting": { "type": "array", "items": { "$ref": "#/entities/SnowServiceLog" } },
+            "sidewalks": { "type": "array", "items": { "$ref": "#/entities/SnowServiceLog" } }
+        }
+    },
+    "SnowServiceLog": {
+        "title": "SnowServiceLog",
+        "type": "object",
+        "properties": {
+            "timestamp": { "type": "string", "format": "date-time" },
+            "employeeId": { "type": "string" },
+            "employeeName": { "type": "string" },
+            "photoDataUri": { "type": "string" }
+        }
+    },
+    "JobNote": {
+        "title": "JobNote",
+        "type": "object",
+        "properties": {
+            "timestamp": { "type": "string", "format": "date-time" },
+            "content": { "type": "string" },
+            "author": { "type": "string" }
+        }
+    },
+    "Client": {
+        "title": "Client",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "contactPerson": { "type": "string" },
+            "contactEmail": { "type": "string", "format": "email" },
+            "contactPhone": { "type": "string" }
+        },
+        "required": ["id", "name"]
+    },
+    "ExpenseReport": {
+        "title": "ExpenseReport",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "employeeId": { "type": "string" },
+            "employeeName": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "amount": { "type": "number" },
+            "category": { "type": "string", "enum": ["fuel", "food", "lodging", "supplies", "other"] },
+            "description": { "type": "string" },
+            "receiptPhotoUrl": { "type": "string", "format": "uri" },
+            "status": { "type": "string", "enum": ["pending", "approved", "denied"] }
+        },
+        "required": ["id", "employeeId", "employeeName", "date", "amount", "category", "description", "receiptPhotoUrl", "status"]
+    },
+    "WorkOrder": {
+        "title": "WorkOrder",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "reportId": { "type": "string" },
+            "assetId": { "type": "string" },
+            "assetName": { "type": "string" },
+            "dateCreated": { "type": "string", "format": "date-time" },
+            "dateCompleted": { "type": "string", "format": "date-time" },
+            "reportedBy": { "type": "string" },
+            "status": { "type": "string", "enum": ["open", "in-progress", "completed", "on-hold"] },
+            "issueDescription": { "type": "string" },
+            "mechanicNotes": { "type": "string" },
+            "mechanic": { "type": "string" },
+            "cost": { "type": "number" }
+        },
+        "required": ["id", "reportId", "assetId", "assetName", "dateCreated", "reportedBy", "status", "issueDescription"]
+    },
+    "Task": {
+        "title": "Task",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "assignedToEmployeeId": { "type": "string" },
+            "assignedToEmployeeName": { "type": "string" },
+            "createdByAdminName": { "type": "string" },
+            "dateAssigned": { "type": "string", "format": "date-time" },
+            "dateCompleted": { "type": "string", "format": "date-time" },
+            "status": { "type": "string", "enum": ["pending", "completed"] },
+            "requiresPhoto": { "type": "boolean" },
+            "completionNotes": { "type": "string" },
+            "completionPhotoUrl": { "type": "string", "format": "uri" }
+        },
+        "required": ["id", "title", "description", "assignedToEmployeeId", "assignedToEmployeeName", "createdByAdminName", "dateAssigned", "status", "requiresPhoto"]
+    },
+    "TimeOffRequest": {
+        "title": "TimeOffRequest",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "employeeId": { "type": "string" },
+            "employeeName": { "type": "string" },
+            "startDate": { "type": "string", "format": "date" },
+            "endDate": { "type": "string", "format": "date" },
+            "reason": { "type": "string" },
+            "status": { "type": "string", "enum": ["pending", "approved", "denied"] }
+        },
+        "required": ["id", "employeeId", "employeeName", "startDate", "endDate", "reason", "status"]
+    },
+    "ManagedDocument": {
+        "title": "ManagedDocument",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "title": { "type": "string" },
+            "description": { "type": "string" },
+            "category": { "type": "string" },
+            "documentType": { "type": "string", "enum": ["general", "tax", "employment"] },
+            "documentUrl": { "type": "string", "format": "uri" },
+            "employeeId": { "type": "string" },
+            "employeeName": { "type": "string" }
+        },
+        "required": ["id", "title", "description", "category", "documentType", "documentUrl"]
+    },
+    "SnowRoute": {
+        "title": "SnowRoute",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "name": { "type": "string" },
+            "type": { "type": "string", "enum": ["plowing", "salting", "sidewalks"] },
+            "assignedJobIds": { "type": "array", "items": { "type": "string" } },
+            "assignedVehicleIds": { "type": "array", "items": { "type": "string" } },
+            "assignedEmployeeIds": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "name", "type"]
+    },
+    "CalendarEvent": {
+        "title": "CalendarEvent",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "title": { "type": "string" },
+            "type": { "type": "string", "enum": ["time-off", "company-event", "maintenance"] },
+            "description": { "type": "string" }
+        },
+        "required": ["id", "date", "title", "type"]
+    },
+    "NotificationMessage": {
+        "title": "NotificationMessage",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "timestamp": { "type": "string", "format": "date-time" },
+            "title": { "type": "string" },
+            "content": { "type": "string" },
+            "recipientId": { "type": "string" },
+            "senderName": { "type": "string" },
+            "readBy": { "type": "array", "items": { "type": "string" } }
+        },
+        "required": ["id", "timestamp", "title", "content", "recipientId", "senderName", "readBy"]
+    },
+    "MaintenanceLog": {
+        "title": "MaintenanceLog",
+        "type": "object",
+        "properties": {
+            "id": { "type": "string" },
+            "assetId": { "type": "string" },
+            "assetName": { "type": "string" },
+            "date": { "type": "string", "format": "date" },
+            "serviceType": { "type": "string", "enum": ["routine", "repair", "inspection", "other"] },
+            "routineService": { "type": "string" },
+            "description": { "type": "string" },
+            "cost": { "type": "number" },
+            "mechanic": { "type": "string" },
+            "workOrderId": { "type": "string" }
+        },
+        "required": ["id", "assetId", "assetName", "date", "serviceType", "description"]
     }
   },
   "auth": {
@@ -215,52 +363,72 @@
   },
   "firestore": {
     "/users/{userId}": {
-      "schema": {
-        "$ref": "#/backend/entities/UserProfile"
-      },
+      "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores user profile information, including their role for access control."
     },
-    "/vehicles/{vehicleId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Vehicle"
-      },
-      "description": "Stores all information about a single vehicle, including its specifications and maintenance schedule. This collection is the source of truth for all fleet assets."
+    "/fleetAssets/{assetId}": {
+      "schema": { "$ref": "#/entities/FleetAsset" },
+      "description": "Stores all company vehicles and heavy equipment."
     },
-    "/checklist_items/{checklistItemId}": {
-      "schema": {
-        "$ref": "#/backend/entities/ChecklistItem"
-      },
-      "description": "This is a static collection containing the master list of all possible inspection items for all vehicle types. It is used to generate the checklists dynamically on the client."
-    },
-    "/inspection_reports/{inspectionReportId}": {
-      "schema": {
-        "$ref": "#/backend/entities/InspectionReport"
-      },
-      "description": "Contains the main document for each inspection report. It links to the vehicles and user who performed the inspection and holds the overall status."
-    },
-    "/inspection_reports/{inspectionReportId}/inspection_results/{inspectionResultId}": {
-      "schema": {
-        "$ref": "#/backend/entities/InspectionResult"
-      },
-      "description": "A subcollection storing the pass/fail result for each individual item within a specific inspection report. This allows for detailed reporting and analysis."
+    "/inspectionReports/{reportId}": {
+      "schema": { "$ref": "#/entities/InspectionReport" },
+      "description": "Contains the main document for each inspection report."
     },
     "/inventory/{inventoryItemId}": {
-      "schema": {
-        "$ref": "#/backend/entities/InventoryItem"
-      },
+      "schema": { "$ref": "#/entities/InventoryItem" },
       "description": "Tracks all company inventory, including tools, materials, and consumables."
     },
     "/rentals/{rentalId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Rental"
-      },
+      "schema": { "$ref": "#/entities/Rental" },
       "description": "Tracks all third-party equipment rentals."
     },
     "/violations/{violationId}": {
-      "schema": {
-        "$ref": "#/backend/entities/Violation"
-      },
+      "schema": { "$ref": "#/entities/Violation" },
       "description": "Tracks all documented employee violations for internal records."
+    },
+    "/jobs/{jobId}": {
+      "schema": { "$ref": "#/entities/Job" },
+      "description": "Stores all job or contract information."
+    },
+    "/clients/{clientId}": {
+      "schema": { "$ref": "#/entities/Client" },
+      "description": "Stores information about company clients."
+    },
+    "/expenseReports/{reportId}": {
+      "schema": { "$ref": "#/entities/ExpenseReport" },
+      "description": "Stores employee expense submissions."
+    },
+    "/workOrders/{orderId}": {
+      "schema": { "$ref": "#/entities/WorkOrder" },
+      "description": "Stores work orders generated from failed inspections."
+    },
+    "/tasks/{taskId}": {
+      "schema": { "$ref": "#/entities/Task" },
+      "description": "Stores tasks assigned to employees."
+    },
+    "/timeOffRequests/{requestId}": {
+      "schema": { "$ref": "#/entities/TimeOffRequest" },
+      "description": "Stores employee time off requests."
+    },
+    "/documents/{docId}": {
+      "schema": { "$ref": "#/entities/ManagedDocument" },
+      "description": "Stores company policies and employee-specific documents."
+    },
+    "/snowRoutes/{routeId}": {
+      "schema": { "$ref": "#/entities/SnowRoute" },
+      "description": "Defines snow removal routes by grouping jobs, vehicles, and crew."
+    },
+    "/calendarEvents/{eventId}": {
+      "schema": { "$ref": "#/entities/CalendarEvent" },
+      "description": "Stores company-wide events for the calendar."
+    },
+    "/notifications/{notificationId}": {
+      "schema": { "$ref": "#/entities/NotificationMessage" },
+      "description": "Stores system and user-generated notifications."
+    },
+     "/maintenanceLogs/{logId}": {
+      "schema": { "$ref": "#/entities/MaintenanceLog" },
+      "description": "A complete service history for all fleet assets."
     }
   }
 }
