@@ -8,7 +8,7 @@ import { useForm } from 'react-hook-form';
 import Image from 'next/image';
 import { getJobs, updateJob, getUsers, getFleetAssets, getSnowRoutes } from '@/lib/firestoreService';
 import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Loader2, Snowflake, CheckCircle2, MapPin, Building2, Truck, Users as UsersIcon, Printer, History, PlusCircle, Camera, FileUp, Eye, Brain } from 'lucide-react';
@@ -35,7 +35,7 @@ export default function SnowRoutesPage() {
   const [users, setUsers] = useState<User[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useUser();
   const { toast } = useToast();
 
   // State for modals/dialogs
@@ -73,7 +73,7 @@ export default function SnowRoutesPage() {
 
     fetchData().then(() => setIsLoading(false));
 
-    const q = query(collection(db, 'snowRoutes'), where('assignedEmployeeIds', 'array-contains', user.id));
+    const q = query(collection(db, 'snowRoutes'), where('assignedEmployeeIds', 'array-contains', user.uid));
     
     const unsubscribe = onSnapshot(q, (snapshot) => {
         const liveRoutes: SnowRoute[] = [];

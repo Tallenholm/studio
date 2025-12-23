@@ -4,7 +4,7 @@
 import React, { createContext, useContext, ReactNode } from 'react';
 import { Auth, User as FirebaseUser } from 'firebase/auth';
 import type { User } from '@/lib/types';
-import { useUser as useFirebaseUser } from '@/firebase/provider'; // Renamed to avoid conflict
+import { useUser } from '@/firebase/provider'; // Renamed to avoid conflict
 
 interface AuthContextType {
   user: User | null;
@@ -16,7 +16,7 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: ReactNode }) {
-  const { user, firebaseUser, isUserLoading, auth } = useFirebaseUser();
+  const { user, firebaseUser, isUserLoading, auth } = useUser();
 
   const value = { user, firebaseUser, isLoading: isUserLoading, auth };
 

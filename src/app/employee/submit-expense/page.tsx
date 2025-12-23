@@ -333,7 +333,7 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
 
 
 export default async function SubmitExpensePage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     let initialReports: ExpenseReport[] = [];
     if (user) {
         const allReports = await getExpenseReports();

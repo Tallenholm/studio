@@ -33,21 +33,21 @@ const PATH_CONFIG = {
 };
 
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    // 1. Owners can go anywhere
-    if (role === 'owner') {
-        return true;
-    }
-    
-    // 2. Guests can only access public paths
+    // 1. Guests can only access public paths
     if (role === 'guest') {
         return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
     }
     
-    // 3. All authenticated users can access shared paths
+    // 2. All authenticated users can access shared paths
     if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
         return true;
     }
 
+    // 3. Owners can go anywhere (except public paths if logged in)
+    if (role === 'owner') {
+        return !PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
+    }
+    
     // 4. Role-specific paths
     if (role === 'employee') {
         return PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p));
@@ -123,15 +123,27 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
     return <FullScreenLoader text="Access Denied. Redirecting..." />;
   }
   
+  const isAppPage = !PATH_CONFIG.PUBLIC.includes(pathname);
+  
   // If user is not logged in, just show the children (e.g., Login page)
-  if (!user) {
+  if (!user && !isAppPage) {
     return <>{children}</>;
   }
 
-  // If user is logged in and path is allowed, show the main layout
-  return (
-    <AppLayout>
-      {children}
-    </AppLayout>
-  );
+  // If it's an app page and user is authenticated, show the layout
+  if (user && isAppPage) {
+    return (
+      <AppLayout>
+        {children}
+      </AppLayout>
+    );
+  }
+
+  // Fallback for login page if no user
+  if (!user && isPublicPath) {
+    return <>{children}</>;
+  }
+
+  // Default loader while redirects happen
+  return <FullScreenLoader text="Loading..." />;
 }

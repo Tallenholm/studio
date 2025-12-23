@@ -20,17 +20,15 @@ export interface AdminDashboardData {
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  let briefing: DailyBriefingOutput | null = null;
-  
-  // Fetch all data in parallel
+  // Fetch all data in parallel for maximum efficiency
   const [
-    allJobs = [],
-    allExpenseReports = [],
-    allReports = [],
-    allTimeOffRequests = [],
-    allTasks = [],
-    allEvents = [],
-    allAssets = []
+    allJobs,
+    allExpenseReports,
+    allReports,
+    allTimeOffRequests,
+    allTasks,
+    allEvents,
+    allAssets
   ] = await Promise.all([
     getJobs().catch(() => []),
     getExpenseReports().catch(() => []),
@@ -41,13 +39,15 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     getFleetAssets().catch(() => []),
   ]).catch(err => {
     console.error("Critical error fetching dashboard data:", err);
-    return [[], [], [], [], [], [], []]; // Return empty arrays on major failure
+    // On a major failure, return empty arrays to prevent the dashboard from crashing.
+    return [[], [], [], [], [], [], []] as [Job[], any[], any[], any[], any[], CalendarEvent[], any[]];
   });
 
   const today = new Date();
+  let briefing: DailyBriefingOutput | null = null;
   
   try {
-    // Prepare only the necessary, filtered data for the AI briefing
+    // Prepare only the necessary, filtered data for the AI briefing to reduce payload
     const attentionReports = allReports
       .filter(r => 
         r.overallStatus === 'fail' && 
@@ -82,9 +82,10 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   } catch (error) {
     console.error("Failed to generate AI daily briefing:", error);
-    briefing = null;
+    briefing = null; // Ensure briefing is null on failure so the UI can handle it
   }
   
+  // Calculate stats after all data is fetched
   const stats = {
     activeJobs: allJobs.filter(j => getJobStatus(j) === 'active').length,
     totalAssets: allAssets.length,
@@ -95,7 +96,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return {
       briefing,
       events: allEvents,
-      jobs: allJobs, // Return all jobs for the calendar
+      jobs: allJobs, // Return all jobs for the calendar component
       stats,
   };
 }

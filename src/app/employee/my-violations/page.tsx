@@ -7,7 +7,6 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
 import { getViolations } from '@/lib/firestoreService';
-import { User } from 'firebase/auth';
 
 interface MyViolationsClientPageProps {
     initialViolations: Violation[];
@@ -66,7 +65,7 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
 }
 
 export default async function MyViolationsPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     let initialViolations: Violation[] = [];
     if (user) {
         const allViolations = await getViolations();

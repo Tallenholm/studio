@@ -256,7 +256,7 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
 
 
 export default async function MyTasksPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     let initialTasks: Task[] = [];
     if (user) {
         const allTasks = await getTasks();

@@ -7,7 +7,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
 import { getDocuments } from '@/lib/firestoreService';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 
 
 interface PersonalDocumentsClientPageProps {
@@ -87,7 +87,7 @@ function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClie
 }
 
 export default async function PersonalDocumentsPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     let initialDocuments: ManagedDocument[] = [];
     if (user) {
         const allDocs = await getDocuments();

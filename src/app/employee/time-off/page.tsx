@@ -215,7 +215,7 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
 }
 
 export default async function TimeOffPage() {
-    const { user } = useAuth();
+    const { user } = useUser();
     let initialRequests: TimeOffRequest[] = [];
     if (user) {
         const allRequests = await getTimeOffRequests();
