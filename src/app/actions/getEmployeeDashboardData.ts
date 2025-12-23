@@ -2,7 +2,7 @@
 'use server';
 
 import { getJobs, getCalendarEvents, getTasks, getInspectionReports } from '@/lib/firestoreService';
-import type { Job, CalendarEvent, Task, InspectionReport, User } from '@/lib/types';
+import type { Job, CalendarEvent, Task, InspectionReport } from '@/lib/types';
 
 export interface EmployeeDashboardData {
   jobs: Job[];
@@ -13,12 +13,9 @@ export interface EmployeeDashboardData {
 
 /**
  * A Server Action to fetch all necessary data for the employee dashboard.
+ * It now fetches all data and relies on the client to filter for the current user.
  */
-export async function getEmployeeDashboardData(user: User): Promise<EmployeeDashboardData> {
-  if (!user) {
-    return { jobs: [], events: [], tasks: [], reports: [] };
-  }
-
+export async function getEmployeeDashboardData(): Promise<EmployeeDashboardData> {
   const [
     allJobs = [],
     allEvents = [],
@@ -34,13 +31,12 @@ export async function getEmployeeDashboardData(user: User): Promise<EmployeeDash
     return [[], [], [], []];
   });
 
-  const employeeTasks = allTasks.filter(t => t.assignedToEmployeeId === user.uid);
-  const employeeReports = allReports.filter(r => r.employeeId === user.uid);
-
+  // Data is no longer pre-filtered on the server.
+  // The client component will filter tasks and reports based on the logged-in user.
   return {
-    jobs: allJobs, // Jobs are filtered client-side based on assignment
+    jobs: allJobs,
     events: allEvents,
-    tasks: employeeTasks,
-    reports: employeeReports,
+    tasks: allTasks,
+    reports: allReports,
   };
 }

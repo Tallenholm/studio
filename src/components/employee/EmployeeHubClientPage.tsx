@@ -32,7 +32,7 @@ const employeeTourSteps: TourStep[] = [
 ];
 
 interface EmployeeHubClientPageProps {
-  initialData: EmployeeDashboardData;
+  initialData: EmployeeDashboardData | null;
 }
 
 export default function EmployeeHubClientPage({ initialData }: EmployeeHubClientPageProps) {
@@ -40,7 +40,7 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
   const searchParams = useSearchParams();
   const [date, setDate] = useState<Date | undefined>(new Date());
   
-  const [dashboardData, setDashboardData] = useState<EmployeeDashboardData>(initialData);
+  const [dashboardData, setDashboardData] = useState<EmployeeDashboardData | null>(initialData);
   const [isTourOpen, setIsTourOpen] = useState(false);
 
    useEffect(() => {
@@ -50,8 +50,24 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
     }
   }, [searchParams]);
 
-  const { assignedExcavationJobs, assignedSnowContracts, assignedConcreteJobs, assignedMiscJobs } = useMemo(() => {
-    if (!user || !dashboardData) return { assignedExcavationJobs: [], assignedSnowContracts: [], assignedConcreteJobs: [], assignedMiscJobs: [] };
+  const { 
+    assignedExcavationJobs, 
+    assignedSnowContracts, 
+    assignedConcreteJobs, 
+    assignedMiscJobs,
+    employeeTasks,
+    employeeReports 
+  } = useMemo(() => {
+    if (!user || !dashboardData) {
+        return { 
+            assignedExcavationJobs: [], 
+            assignedSnowContracts: [], 
+            assignedConcreteJobs: [], 
+            assignedMiscJobs: [],
+            employeeTasks: [],
+            employeeReports: []
+        };
+    }
     
     const assignedJobs = dashboardData.jobs
       .filter(job => 
@@ -68,6 +84,8 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
         assignedSnowContracts: assignedJobs.filter(j => j.jobType === 'snow_removal'),
         assignedConcreteJobs: assignedJobs.filter(j => j.jobType === 'concrete'),
         assignedMiscJobs: assignedJobs.filter(j => j.jobType === 'misc'),
+        employeeTasks: dashboardData.tasks.filter(t => t.assignedToEmployeeId === user.uid),
+        employeeReports: dashboardData.reports.filter(r => r.employeeId === user.uid),
     };
   }, [dashboardData, user]);
 
@@ -299,12 +317,12 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
             <div className="lg:col-span-2 grid grid-cols-2 gap-6">
                 <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
                     <Check className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-4xl font-bold"><AnimatedCounter value={dashboardData.tasks.filter(t => t.status === 'completed').length} /></p>
+                    <p className="text-4xl font-bold"><AnimatedCounter value={employeeTasks.filter(t => t.status === 'completed').length} /></p>
                     <p className="text-sm text-muted-foreground">Tasks Completed</p>
                 </Card>
                  <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl text-center flex flex-col justify-center items-center p-4">
                     <FileText className="h-8 w-8 text-primary mb-2" />
-                    <p className="text-4xl font-bold"><AnimatedCounter value={dashboardData.reports.length} /></p>
+                    <p className="text-4xl font-bold"><AnimatedCounter value={employeeReports.length} /></p>
                     <p className="text-sm text-muted-foreground">Inspections Done</p>
                 </Card>
             </div>
