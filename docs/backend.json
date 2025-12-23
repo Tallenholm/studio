@@ -291,9 +291,10 @@
             "title": { "type": "string" },
             "description": { "type": "string" },
             "category": { "type": "string" },
-            "documentType": { "type": "string", "enum": ["general", "tax", "employment"] },
+            "documentType": { "type": "string", "enum": ["general", "tax", "employment", "maintenance"] },
             "documentUrl": { "type": "string", "format": "uri" },
             "employeeId": { "type": "string" },
+            "assetId": { "type": "string" },
             "employeeName": { "type": "string" }
         },
         "required": ["id", "title", "description", "category", "documentType", "documentUrl"]

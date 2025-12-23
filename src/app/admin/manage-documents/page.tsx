@@ -35,7 +35,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookOpen, Loader2, Download, Eye, FileUp, Files, User as UserIcon, Brain } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Brain, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
@@ -47,7 +47,8 @@ const documentSchema = z.object({
   title: z.string().min(1, 'Document title is required.'),
   category: z.string().optional(),
   employeeId: z.string().optional(),
-  documentType: z.enum(['general', 'tax', 'employment'], { required_error: 'Document type is required.' }),
+  assetId: z.string().optional(),
+  documentType: z.enum(['general', 'tax', 'employment', 'maintenance'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
   documentUrl: z.string().url({ message: 'A document file upload is required.' }),
 }).superRefine((data, ctx) => {
@@ -63,6 +64,13 @@ const documentSchema = z.object({
             code: z.ZodIssueCode.custom,
             message: 'Category is required for General documents.',
             path: ['category'],
+        });
+    }
+    if (data.documentType === 'maintenance' && !data.assetId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'A vehicle/asset must be selected for maintenance documents.',
+            path: ['assetId'],
         });
     }
 });
@@ -115,9 +123,8 @@ export default function ManageDocumentsPage() {
 
 
   const generalCategories = useMemo(() => {
-    const assetNames = fleetAssets.map(asset => asset.name);
-    return ['Company Policies', 'Handbooks', ...assetNames];
-  }, [fleetAssets]);
+    return ['Company Policies', 'Handbooks', 'Safety Manuals'];
+  }, []);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -157,7 +164,10 @@ export default function ManageDocumentsPage() {
     let docCategory = '';
     let employeeName: string | undefined = undefined;
 
-    if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
+    if (values.documentType === 'maintenance' && values.assetId) {
+        const asset = fleetAssets.find(a => a.id === values.assetId);
+        docCategory = asset?.name || 'Unknown Asset';
+    } else if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
         const employee = users.find(u => u.id === values.employeeId);
         if (employee) {
             docCategory = employee.name;
@@ -177,6 +187,7 @@ export default function ManageDocumentsPage() {
       documentUrl: values.documentUrl,
       category: docCategory,
       employeeId: values.employeeId,
+      assetId: values.assetId,
       employeeName: employeeName,
     };
 
@@ -186,7 +197,7 @@ export default function ManageDocumentsPage() {
     setIsDialogOpen(false);
     form.reset({
         title: '', category: '', documentType: 'general',
-        description: '', documentUrl: '',
+        description: '', documentUrl: '', assetId: undefined, employeeId: undefined,
     });
   }
 
@@ -201,13 +212,19 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const generalDocuments = useMemo(() => {
+  const { generalDocuments, maintenanceDocuments } = useMemo(() => {
     return documents
-        .filter(d => d.documentType === 'general')
         .reduce((acc, doc) => {
-            (acc[doc.category] = acc[doc.category] || []).push(doc);
+            if (doc.documentType === 'general') {
+                (acc.generalDocuments[doc.category] = acc.generalDocuments[doc.category] || []).push(doc);
+            } else if (doc.documentType === 'maintenance') {
+                (acc.maintenanceDocuments[doc.category] = acc.maintenanceDocuments[doc.category] || []).push(doc);
+            }
             return acc;
-        }, {} as Record<string, ManagedDocument[]>);
+        }, { 
+            generalDocuments: {} as Record<string, ManagedDocument[]>,
+            maintenanceDocuments: {} as Record<string, ManagedDocument[]>
+        });
   }, [documents]);
 
   const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
@@ -223,8 +240,8 @@ export default function ManageDocumentsPage() {
             <CardContent>
                 <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
                     <Files className="h-12 w-12 mx-auto mb-4 text-primary/70" />
-                    <h3 className="text-xl font-semibold text-foreground">No General Documents</h3>
-                    <p className="mt-2">No documents have been uploaded for this category yet.</p>
+                    <h3 className="text-xl font-semibold text-foreground">No Documents Yet</h3>
+                    <p className="mt-2">No documents have been uploaded for this category.</p>
                 </div>
             </CardContent>
         </Card>
@@ -332,6 +349,7 @@ export default function ManageDocumentsPage() {
                                 </FormControl>
                                 <SelectContent>
                                 <SelectItem value="general">Policy or General Document</SelectItem>
+                                <SelectItem value="maintenance">Maintenance Manual/Checklist</SelectItem>
                                 <SelectItem value="tax">Tax Form</SelectItem>
                                 <SelectItem value="employment">Employment Form</SelectItem>
                                 </SelectContent>
@@ -410,6 +428,31 @@ export default function ManageDocumentsPage() {
                               </FormItem>
                           )}
                       />
+                    ) : watchedDocType === 'maintenance' ? (
+                        <FormField
+                          control={form.control}
+                          name="assetId"
+                          render={({ field }) => (
+                              <FormItem>
+                              <FormLabel>Assign to Vehicle/Asset</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                  <SelectTrigger>
+                                      <SelectValue placeholder="Select an asset" />
+                                  </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                  {fleetAssets.map(asset => (
+                                      <SelectItem key={asset.id} value={asset.id}>
+                                          {asset.name}
+                                      </SelectItem>
+                                  ))}
+                                  </SelectContent>
+                              </Select>
+                              <FormMessage />
+                              </FormItem>
+                          )}
+                      />
                     ) : (
                       <FormField
                           control={form.control}
@@ -459,6 +502,7 @@ export default function ManageDocumentsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
+            {renderGroupedDocumentSection("Maintenance Manuals", Wrench, maintenanceDocuments)}
         </CardContent>
       </Card>
     </div>

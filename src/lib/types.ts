@@ -130,9 +130,10 @@ export interface ManagedDocument {
   title: string;
   description: string;
   category: string;
-  documentType: 'general' | 'tax' | 'employment';
+  documentType: 'general' | 'tax' | 'employment' | 'maintenance';
   documentUrl: string; // URL from Firebase Storage
   employeeId?: string;
+  assetId?: string;
   employeeName?: string;
 }
 
