@@ -1,4 +1,3 @@
-
 'use client';
 
 import type { Violation } from '@/lib/types';
@@ -65,6 +64,7 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
 }
 
 export default async function MyViolationsPage() {
+    const { getViolations } = await import('@/lib/firestoreService');
     const { user } = useUser();
     let initialViolations: Violation[] = [];
     if (user) {

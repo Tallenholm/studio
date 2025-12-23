@@ -1,4 +1,3 @@
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -87,6 +86,7 @@ function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClie
 }
 
 export default async function PersonalDocumentsPage() {
+    const { getDocuments } = await import('@/lib/firestoreService');
     const { user } = useUser();
     let initialDocuments: ManagedDocument[] = [];
     if (user) {

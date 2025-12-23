@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -215,6 +214,7 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
 }
 
 export default async function TimeOffPage() {
+    const { getTimeOffRequests } = await import('@/lib/firestoreService');
     const { user } = useUser();
     let initialRequests: TimeOffRequest[] = [];
     if (user) {

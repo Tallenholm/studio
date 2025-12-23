@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -256,6 +255,8 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
 
 
 export default async function MyTasksPage() {
+    // This is now a Server Component
+    const { getTasks } = await import('@/lib/firestoreService');
     const { user } = useUser();
     let initialTasks: Task[] = [];
     if (user) {

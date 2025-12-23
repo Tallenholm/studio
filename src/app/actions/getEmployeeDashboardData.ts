@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getJobs, getCalendarEvents, getTasks, getInspectionReports } from '@/lib/firestoreService';

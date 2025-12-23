@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -333,6 +332,8 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
 
 
 export default async function SubmitExpensePage() {
+    // This is now a Server Component
+    const { getExpenseReports } = await import('@/lib/firestoreService');
     const { user } = useUser();
     let initialReports: ExpenseReport[] = [];
     if (user) {
