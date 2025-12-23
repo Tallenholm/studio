@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -23,7 +22,6 @@ import {
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout, Loader2 } from 'lucide-react';
-import { useAuth } from '@/contexts/AuthContext';
 import type { NotificationMessage, UserRole } from '@/lib/types';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
@@ -33,11 +31,12 @@ import GlobalToolsWidget from '@/components/common/GlobalToolsWidget';
 import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
+import { useAuth, useUser } from '@/firebase/provider';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
-    const { user, isLoading, auth: authService } = useAuth();
+    const { user, isUserLoading } = useUser();
     
-    if (isLoading) {
+    if (isUserLoading) {
         return <FullScreenLoader text="Authenticating..." />;
     }
 
@@ -61,7 +60,8 @@ function FullScreenLoader({ text }: { text: string }) {
 function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const pathname = usePathname();
     const router = useRouter();
-    const { user, auth } = useAuth();
+    const { user } = useUser();
+    const auth = useAuth();
 
     const [unreadCount, setUnreadCount] = useState(0);
     const { open: openCommandPalette } = useCommandPalette();

@@ -22,10 +22,7 @@ const PATH_CONFIG = {
     '/admin/manage-expenses',
     '/admin/manage-clients',
     '/admin/manage-jobs',
-    '/admin/manage-snow',
     '/admin/manage-snow-routes',
-    '/admin/manage-concrete',
-    '/admin/manage-misc',
     '/admin/manage-rentals',
     '/admin/advanced-reports',
     '/admin/system-settings',
@@ -126,7 +123,7 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   const isAppPage = !PATH_CONFIG.PUBLIC.includes(pathname);
   
   // If user is not logged in, just show the children (e.g., Login page)
-  if (!user && !isAppPage) {
+  if (!user && isPublicPath) {
     return <>{children}</>;
   }
 

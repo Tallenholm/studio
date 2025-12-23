@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -5,8 +6,6 @@ import { Download, FileText, FileBadge } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
-import { getDocuments } from '@/lib/firestoreService';
-import { useUser } from '@/firebase/provider';
 
 
 interface PersonalDocumentsClientPageProps {
@@ -87,12 +86,10 @@ function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClie
 
 export default async function PersonalDocumentsPage() {
     const { getDocuments } = await import('@/lib/firestoreService');
-    const { user } = useUser();
-    let initialDocuments: ManagedDocument[] = [];
-    if (user) {
-        const allDocs = await getDocuments();
-        initialDocuments = allDocs.filter(d => d.employeeId === user.uid);
-    }
+    const { auth } = await import('@/firebase');
+    const allDocs = await getDocuments();
+    const currentUserId = auth.currentUser?.uid;
+    const initialDocuments = currentUserId ? allDocs.filter(d => d.employeeId === currentUserId) : [];
     
     return <PersonalDocumentsClientPage initialDocuments={initialDocuments} />;
 }

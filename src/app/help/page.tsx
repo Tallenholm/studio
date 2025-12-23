@@ -6,11 +6,11 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { HelpCircle, Mail, Info, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { faqs } from '@/lib/faq-data';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase';
 import { useMemo, useState, useEffect } from 'react';
 
 export default function HelpPage() {
-  const { user, isLoading } = useAuth();
+  const { user, isUserLoading } = useUser();
   const [isMounted, setIsMounted] = useState(false);
 
   useEffect(() => {
@@ -35,7 +35,7 @@ export default function HelpPage() {
     return combinedFaqs;
   }, [user]);
 
-  if (isLoading || !isMounted) {
+  if (isUserLoading || !isMounted) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />

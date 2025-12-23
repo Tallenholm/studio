@@ -15,7 +15,7 @@ import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
 import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
 import { Brain, Loader2, Sparkles, Send } from 'lucide-react';
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import type { UserRole } from '@/lib/types';
 
 interface AiAssistantWidgetProps {

@@ -38,7 +38,7 @@ import {
 } from '@/components/ui/select';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
@@ -329,5 +329,3 @@ export default function ManageTasksPage() {
     </div>
   );
 }
-
-    

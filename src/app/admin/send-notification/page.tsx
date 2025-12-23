@@ -27,7 +27,7 @@ import {
   SelectValue,
 } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import { MailPlus, Send, Loader2 } from 'lucide-react';
 
 const notificationSchema = z.object({

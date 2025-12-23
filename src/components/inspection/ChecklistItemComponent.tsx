@@ -18,7 +18,7 @@ import { Camera, Trash2, Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
-import { uploadFile } from '@/lib/firebase';
+import { uploadFile } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
 interface ChecklistItemProps {

@@ -2,12 +2,11 @@
 'use client';
 
 import { useState } from 'react';
-import { useAuth } from '@/contexts/AuthContext';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, AlertCircle, Chrome, UserPlus, KeyRound } from 'lucide-react';
+import { LogIn, AlertCircle, Chrome, UserPlus } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -17,7 +16,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
 import { initiateEmailSignUp, initiateEmailSignIn } from '@/firebase/non-blocking-login';
-import { isFirebaseConfigured } from '@/lib/firebase-initialize';
+import { isFirebaseConfigured, useAuth, useUser } from '@/firebase';
 
 const loginSchema = z.object({
   email: z.string().email({ message: 'Please enter a valid email address.' }),
@@ -30,7 +29,8 @@ const signupSchema = z.object({
 });
 
 export default function LoginPage() {
-  const { isLoading, auth } = useAuth();
+  const { isUserLoading } = useUser();
+  const auth = useAuth();
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState('signin');
   const [resetEmail, setResetEmail] = useState('');
@@ -84,7 +84,7 @@ export default function LoginPage() {
     }
   };
   
-  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isLoading;
+  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isUserLoading;
   const loginError = loginForm.formState.errors.root?.message;
   const signupError = signupForm.formState.errors.root?.message;
   

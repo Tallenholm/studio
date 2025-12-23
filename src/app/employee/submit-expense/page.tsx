@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -5,7 +6,6 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { addExpenseReport, getExpenseReports } from '@/lib/firestoreService';
-import { uploadFile } from '@/lib/firebase';
 import type { ExpenseReport } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -19,7 +19,7 @@ import { useToast } from '@/hooks/use-toast';
 import { Receipt, Loader2, Calendar as CalendarIcon, Send, FileUp, Eye } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
-import { useUser } from '@/firebase/provider';
+import { useUser, uploadFile } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
@@ -332,14 +332,11 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
 
 
 export default async function SubmitExpensePage() {
-    // This is now a Server Component
     const { getExpenseReports } = await import('@/lib/firestoreService');
-    const { user } = useUser();
-    let initialReports: ExpenseReport[] = [];
-    if (user) {
-        const allReports = await getExpenseReports();
-        initialReports = allReports.filter(r => r.employeeId === user.uid);
-    }
+    const { auth } = await import('@/firebase');
+    const allReports = await getExpenseReports();
+    const currentUserId = auth.currentUser?.uid;
+    const initialReports = currentUserId ? allReports.filter(r => r.employeeId === currentUserId) : [];
     
     return <SubmitExpenseClientPage initialReports={initialReports} />;
 }

@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -28,11 +29,13 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser } from '@/firebase/provider';
+import { useUser, uploadFile } from '@/firebase';
 import { ClipboardList, Loader2, CheckCircle2, Camera, FileUp, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';
-import { uploadFile } from '@/lib/firebase';
+import { cn } from '@/lib/utils';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import Link from 'next/link';
 
 const completeTaskSchema = z.object({
   completionNotes: z.string().optional(),
@@ -255,14 +258,11 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
 
 
 export default async function MyTasksPage() {
-    // This is now a Server Component
     const { getTasks } = await import('@/lib/firestoreService');
-    const { user } = useUser();
-    let initialTasks: Task[] = [];
-    if (user) {
-        const allTasks = await getTasks();
-        initialTasks = allTasks.filter(t => t.assignedToEmployeeId === user.uid);
-    }
+    const { auth } = await import('@/firebase');
+    const allTasks = await getTasks();
+    const currentUserId = auth.currentUser?.uid;
+    const initialTasks = currentUserId ? allTasks.filter(t => t.assignedToEmployeeId === currentUserId) : [];
     
     return <MyTasksClientPage initialTasks={initialTasks} />;
 }

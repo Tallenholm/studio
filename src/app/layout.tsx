@@ -3,7 +3,6 @@ import type { Metadata } from "next";
 import { PT_Sans } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
-import { AuthProvider } from "@/contexts/AuthContext";
 import RouteGuard from "@/components/layout/RouteGuard";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
 
@@ -27,11 +26,9 @@ export default function RootLayout({
     <html lang="en">
       <body className={`${ptSans.variable}`}>
         <FirebaseClientProvider>
-          <AuthProvider>
-            <RouteGuard>
-              {children}
-            </RouteGuard>
-          </AuthProvider>
+          <RouteGuard>
+            {children}
+          </RouteGuard>
         </FirebaseClientProvider>
         <Toaster />
       </body>

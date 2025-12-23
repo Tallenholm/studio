@@ -13,7 +13,7 @@ import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2, MapPin } from 'lucide-react';
 import { loadSystemSettings, saveSystemSettings, type SystemSettings } from '@/lib/settingsService';
-import { requestNotificationPermission } from '@/lib/firebase';
+import { requestNotificationPermission } from '@/firebase';
 
 export default function SystemSettingsPage() {
   const { toast } = useToast();

@@ -1,11 +1,10 @@
+
 'use client';
 
 import type { Violation } from '@/lib/types';
-import { useUser } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
-import { getViolations } from '@/lib/firestoreService';
 
 interface MyViolationsClientPageProps {
     initialViolations: Violation[];
@@ -65,14 +64,15 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
 
 export default async function MyViolationsPage() {
     const { getViolations } = await import('@/lib/firestoreService');
-    const { user } = useUser();
-    let initialViolations: Violation[] = [];
-    if (user) {
-        const allViolations = await getViolations();
-        initialViolations = allViolations
-            .filter(v => v.employeeId === user.uid)
-            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-    }
+    const { auth } = await import('@/firebase');
+    const allViolations = await getViolations();
+    const currentUserId = auth.currentUser?.uid;
+    
+    const initialViolations = currentUserId 
+        ? allViolations
+            .filter(v => v.employeeId === currentUserId)
+            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+        : [];
     
     return <MyViolationsClientPage initialViolations={initialViolations} />;
 }

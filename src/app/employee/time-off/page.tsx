@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Loader2, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useUser } from '@/firebase/provider';
+import { useUser } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
 
@@ -215,11 +216,10 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
 
 export default async function TimeOffPage() {
     const { getTimeOffRequests } = await import('@/lib/firestoreService');
-    const { user } = useUser();
-    let initialRequests: TimeOffRequest[] = [];
-    if (user) {
-        const allRequests = await getTimeOffRequests();
-        initialRequests = allRequests.filter(r => r.employeeId === user.uid);
-    }
+    const { auth } = await import('@/firebase');
+    const allRequests = await getTimeOffRequests();
+    const currentUserId = auth.currentUser?.uid;
+    const initialRequests = currentUserId ? allRequests.filter(r => r.employeeId === currentUserId) : [];
+    
     return <TimeOffClientPage initialRequests={initialRequests} />;
 }
