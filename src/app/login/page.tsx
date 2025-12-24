@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState } from 'react';
@@ -6,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, AlertCircle, Chrome, UserPlus } from 'lucide-react';
+import { LogIn, AlertCircle, Chrome, UserPlus, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -89,11 +88,14 @@ export default function LoginPage() {
   const signupError = signupForm.formState.errors.root?.message;
   
   return (
-    <div className="flex items-center justify-center min-h-screen bg-background p-4">
-      <Card className="w-full max-w-sm bg-card/90 backdrop-blur-xl border border-white/10 shadow-2xl">
+    <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
+      <Card className="w-full max-w-sm shadow-2xl">
         <CardHeader className="text-center items-center">
+            <div className="p-3 bg-primary/10 border border-primary/20 rounded-full mb-2">
+                <Truck className="h-8 w-8 text-primary" />
+            </div>
           <CardTitle className="text-3xl font-headline">Logan's Excavating</CardTitle>
-          <CardDescription>Please sign in or create an account</CardDescription>
+          <CardDescription>Fleet & Operations Management</CardDescription>
         </CardHeader>
         <CardContent>
           {!isFirebaseConfigured ? (

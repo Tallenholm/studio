@@ -37,7 +37,7 @@ const getBriefingItemIcon = (type: string) => {
 const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOutput | null, isLoading: boolean }) => {
   if (isLoading) {
     return (
-       <Card className="mb-8 border-primary/30 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
+       <Card className="mb-8 border-primary/30 shadow-lg bg-primary/5 hover:shadow-primary/10 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline text-primary">
               <Brain />
@@ -56,7 +56,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
 
   if (!briefing) {
      return (
-       <Card className="mb-8 border-destructive/50 shadow-xl bg-destructive/5 hover:shadow-destructive/20 transition-all duration-300">
+       <Card className="mb-8 border-destructive/50 shadow-lg bg-destructive/5 hover:shadow-destructive/10 transition-all duration-300">
           <CardHeader>
             <CardTitle className="flex items-center gap-2 font-headline text-destructive">
               <AlertTriangle />
@@ -74,9 +74,9 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
 
   if (allItems.length === 0) {
       return (
-           <Card className="mb-8 border-primary/50 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
+           <Card className="mb-8 border-green-500/50 shadow-lg bg-green-500/5 hover:shadow-green-500/10 transition-all duration-300">
                 <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline text-primary">
+                    <CardTitle className="flex items-center gap-2 font-headline text-green-600">
                     <ThumbsUp />
                     All Clear!
                     </CardTitle>
@@ -89,7 +89,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
   }
 
   return (
-    <Card className="mb-8 border-primary/30 shadow-xl bg-primary/5 hover:shadow-primary/20 transition-all duration-300">
+    <Card className="mb-8 border-primary/30 shadow-lg bg-primary/5 hover:shadow-primary/10 transition-all duration-300">
       <CardHeader>
         <CardTitle className="flex items-center gap-2 font-headline text-primary">
           <Brain />
@@ -105,7 +105,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
             <h3 className="font-semibold mb-2 flex items-center gap-2"><AlertTriangle className="text-destructive"/>Urgent Attention</h3>
             <ul className="space-y-2">
               {briefing.attentionItems.map(item => (
-                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card hover:bg-muted/50">
                   <div className="flex items-center gap-3">
                     {getBriefingItemIcon(item.type)}
                     <p>{item.summary}</p>
@@ -121,7 +121,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
             <h3 className="font-semibold mb-2 flex items-center gap-2"><CalendarDays className="text-primary/80"/>Today's Agenda</h3>
             <ul className="space-y-2">
               {briefing.todaysAgenda.map(item => (
-                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card hover:bg-muted/50">
                   <div className="flex items-center gap-3">
                     {getBriefingItemIcon(item.type)}
                     <p>{item.summary}</p>
@@ -137,7 +137,7 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
             <h3 className="font-semibold mb-2 flex items-center gap-2"><ClipboardCheck className="text-blue-500"/>Pending Actions</h3>
             <ul className="space-y-2">
               {briefing.pendingActions.map(item => (
-                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card/80 hover:bg-card">
+                <li key={item.id} className="flex items-center justify-between gap-4 p-3 rounded-md border bg-card hover:bg-muted/50">
                   <div className="flex items-center gap-3">
                     {getBriefingItemIcon(item.type)}
                     <p>{item.summary}</p>
@@ -291,9 +291,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
         <DailyBriefingCard briefing={dashboardData?.briefing || null} isLoading={isLoading} />
       </div>
 
-       <Card id="tour-step-calendar" className="mb-8 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+       <Card id="tour-step-calendar" className="mb-8">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-headline">
+          <CardTitle className="flex items-center gap-2 font-headline text-2xl">
             <CalendarIcon className="text-primary" />
             Operations Calendar
           </CardTitle>
@@ -352,9 +352,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
 
       <div id="tour-step-management-hubs" className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8">
         {/* People & Communication Card */}
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
+            <CardTitle className="flex items-center gap-2 font-headline text-xl">
               <Users className="text-primary" />
               People & Comms
             </CardTitle>
@@ -374,9 +374,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
         </Card>
 
         {/* Assets & Content Card */}
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
+            <CardTitle className="flex items-center gap-2 font-headline text-xl">
               <Cog className="text-primary" />
               Assets & Content
             </CardTitle>
@@ -393,9 +393,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
         </Card>
 
         {/* Operations & Analytics Card */}
-        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+        <Card>
           <CardHeader>
-            <CardTitle className="flex items-center gap-2 font-headline">
+            <CardTitle className="flex items-center gap-2 font-headline text-xl">
               <LineChart className="text-primary" />
               Operations & Analytics
             </CardTitle>
@@ -420,9 +420,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
         
         {/* System & Access Card */}
         {user?.role === 'owner' && (
-          <Card className="col-span-1 md:col-span-2 lg:col-span-3 bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <Card className="col-span-1 md:col-span-2 lg:col-span-3">
             <CardHeader>
-              <CardTitle className="flex items-center gap-2 font-headline">
+              <CardTitle className="flex items-center gap-2 font-headline text-xl">
                 <SlidersHorizontal className="text-primary" />
                 System & Tools
               </CardTitle>
