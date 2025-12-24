@@ -38,19 +38,15 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 const completeTaskSchema = z.object({
   completionNotes: z.string().optional(),
   completionPhotoUrl: z.string().optional(),
 });
 
-interface MyTasksClientPageProps {
-    initialTasks: Task[];
-}
 
-function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
-  const [tasks, setTasks] = useState<Task[]>(initialTasks);
+export default function MyTasksPage() {
+  const [tasks, setTasks] = useState<Task[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [selectedTask, setSelectedTask] = useState<Task | null>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -64,8 +60,24 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
   });
 
   useEffect(() => {
-    setTasks(initialTasks.sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
-  }, [initialTasks]);
+    if (!user) return;
+    setIsLoading(true);
+    async function fetchTasks() {
+        try {
+            const allTasks = await getTasks();
+            const userTasks = allTasks
+                .filter(t => t.assignedToEmployeeId === user.uid)
+                .sort((a, b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime());
+            setTasks(userTasks);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load your tasks.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchTasks();
+  }, [user, toast]);
+
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -120,6 +132,15 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
   
   const pendingTasks = tasks.filter(t => t.status === 'pending');
   const completedTasks = tasks.filter(t => t.status === 'completed');
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Your Tasks...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="container mx-auto py-8 space-y-8">
@@ -257,15 +278,4 @@ function MyTasksClientPage({ initialTasks }: MyTasksClientPageProps) {
         </Dialog>
     </div>
   );
-}
-
-
-export default async function MyTasksPage() {
-    const { getTasks } = await import('@/lib/firestoreService');
-    const { auth } = await import('@/firebase');
-    const allTasks = await getTasks();
-    const currentUserId = auth.currentUser?.uid;
-    const initialTasks = currentUserId ? allTasks.filter(t => t.assignedToEmployeeId === currentUserId) : [];
-    
-    return <MyTasksClientPage initialTasks={initialTasks} />;
 }

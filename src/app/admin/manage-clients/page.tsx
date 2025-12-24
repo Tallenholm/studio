@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { addClient, updateClient, deleteClient } from '@/lib/firestoreService';
+import { getClients, addClient, updateClient, deleteClient, getJobs } from '@/lib/firestoreService';
 import type { Client, Job } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,10 +37,8 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2 } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-
-export const dynamic = 'force-dynamic';
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
@@ -49,14 +47,11 @@ const clientSchema = z.object({
   contactPhone: z.string().optional(),
 });
 
-interface ManageClientsClientPageProps {
-    initialClients: Client[];
-    initialJobs: Job[];
-}
 
-function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsClientPageProps) {
-  const [clients, setClients] = useState<Client[]>(initialClients);
-  const [jobs] = useState<Job[]>(initialJobs);
+export default function ManageClientsPage() {
+  const [clients, setClients] = useState<Client[]>([]);
+  const [jobs, setJobs] = useState<Job[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
@@ -72,8 +67,23 @@ function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsC
   });
 
    useEffect(() => {
-    setClients(initialClients.sort((a,b) => a.name.localeCompare(b.name)));
-  }, [initialClients]);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const [initialClients, initialJobs] = await Promise.all([
+                getClients(),
+                getJobs()
+            ]);
+            setClients(initialClients.sort((a,b) => a.name.localeCompare(b.name)));
+            setJobs(initialJobs);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load client data.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [toast]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -126,6 +136,15 @@ function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsC
       description: `Client "${clientToRemove?.name}" has been removed.`,
       variant: 'destructive',
     });
+  }
+  
+  if (isLoading) {
+    return (
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg text-muted-foreground">Loading Clients...</p>
+        </div>
+    );
   }
 
   return (
@@ -286,16 +305,4 @@ function ManageClientsClientPage({ initialClients, initialJobs }: ManageClientsC
       </Card>
     </div>
   );
-}
-
-
-export default async function ManageClientsPage() {
-    // This is now a Server Component
-    const { getClients, getJobs } = await import('@/lib/firestoreService');
-    const [initialClients, initialJobs] = await Promise.all([
-        getClients(),
-        getJobs()
-    ]);
-
-    return <ManageClientsClientPage initialClients={initialClients} initialJobs={initialJobs} />;
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import {
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
 import { Coins, Loader2, Check, X, Eye } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 
@@ -73,7 +74,7 @@ export default function ManageExpensesPage() {
   const getCategoryLabel = (category: ExpenseReport['category']) => {
       return category.charAt(0).toUpperCase() + category.slice(1);
   }
-
+  
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -110,7 +111,7 @@ export default function ManageExpensesPage() {
                                 {reqs.map(req => (
                                 <TableRow key={req.id}>
                                     <TableCell className="font-medium">{req.employeeName}</TableCell>
-                                    <TableCell>{format(new Date(req.date), 'PPP')}</TableCell>
+                                    <TableCell>{format(parseISO(req.date), 'PPP')}</TableCell>
                                     <TableCell>${req.amount.toFixed(2)}</TableCell>
                                     <TableCell>{getCategoryLabel(req.category)}</TableCell>
                                     <TableCell className="text-muted-foreground max-w-xs">{req.description}</TableCell>

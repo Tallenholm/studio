@@ -41,7 +41,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser } from '@/firebase/provider';
 import { PlusCircle, Trash2, ClipboardList, Loader2, Camera, Eye } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
@@ -162,7 +162,7 @@ export default function ManageTasksPage() {
                   <div>
                       <p className="font-bold text-lg">{task.title}</p>
                       <p className="text-sm text-muted-foreground">Assigned to: {task.assignedToEmployeeName}</p>
-                      <p className="text-sm text-muted-foreground">Assigned: {format(new Date(task.dateAssigned), 'PPp')}</p>
+                      <p className="text-sm text-muted-foreground">Assigned: {format(parseISO(task.dateAssigned), 'PPp')}</p>
                   </div>
                   <div className="flex items-center gap-2">
                       <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
@@ -176,7 +176,7 @@ export default function ManageTasksPage() {
               
               {task.status === 'completed' && (
                   <div className="mt-4 border-t pt-3">
-                      <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
+                      <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(parseISO(task.dateCompleted), 'PPp') : 'N/A'}</p>
                       {task.completionNotes && <p className="text-sm mt-1 bg-background/50 p-2 rounded-md"><strong>Notes:</strong> {task.completionNotes}</p>}
                       {task.completionPhotoUrl && (
                           <div className="mt-2">

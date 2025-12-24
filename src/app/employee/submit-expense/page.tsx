@@ -27,8 +27,6 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import Link from 'next/link';
 
-export const dynamic = 'force-dynamic';
-
 const expenseSchema = z.object({
   date: z.date({ required_error: 'An expense date is required.' }),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than zero.'),
@@ -37,12 +35,10 @@ const expenseSchema = z.object({
   receiptPhotoUrl: z.string().url({ message: 'A receipt photo upload is required.' }),
 });
 
-interface SubmitExpenseClientPageProps {
-    initialReports: ExpenseReport[];
-}
 
-function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProps) {
-  const [reports, setReports] = useState<ExpenseReport[]>(initialReports);
+export default function SubmitExpensePage() {
+  const [reports, setReports] = useState<ExpenseReport[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [isScanning, setIsScanning] = useState(false);
   const { toast } = useToast();
   const { user } = useUser();
@@ -58,8 +54,23 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
   });
 
   useEffect(() => {
-    setReports(initialReports.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-  }, [initialReports]);
+    if (!user) return;
+    setIsLoading(true);
+    async function fetchReports() {
+        try {
+            const allReports = await getExpenseReports();
+            const userReports = allReports
+                .filter(r => r.employeeId === user.uid)
+                .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setReports(userReports);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load your expense history.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchReports();
+  }, [user, toast]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
@@ -137,6 +148,15 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
       return category.charAt(0).toUpperCase() + category.slice(1);
   }
   
+  if (isLoading) {
+    return (
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg text-muted-foreground">Loading Expense Manager...</p>
+        </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 space-y-8">
        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
@@ -335,15 +355,4 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
       </Card>
     </div>
   );
-}
-
-
-export default async function SubmitExpensePage() {
-    const { getExpenseReports } = await import('@/lib/firestoreService');
-    const { auth } = await import('@/firebase');
-    const allReports = await getExpenseReports();
-    const currentUserId = auth.currentUser?.uid;
-    const initialReports = currentUserId ? allReports.filter(r => r.employeeId === currentUserId) : [];
-    
-    return <SubmitExpenseClientPage initialReports={initialReports} />;
 }

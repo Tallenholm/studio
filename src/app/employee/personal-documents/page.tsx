@@ -2,20 +2,40 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Download, FileText, FileBadge } from 'lucide-react';
+import { Download, FileText, FileBadge, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
+import { getDocuments } from '@/lib/firestoreService';
+import { useUser } from '@/firebase';
+import { useToast } from '@/hooks/use-toast';
 
-export const dynamic = 'force-dynamic';
+export default function PersonalDocumentsPage() {
+  const [documents, setDocuments] = useState<ManagedDocument[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const { toast } = useToast();
 
-interface PersonalDocumentsClientPageProps {
-  initialDocuments: ManagedDocument[];
-}
+  useEffect(() => {
+    if (!user) return;
+    setIsLoading(true);
+    async function fetchData() {
+        try {
+            const allDocs = await getDocuments();
+            const userDocs = allDocs.filter(d => d.employeeId === user.uid);
+            setDocuments(userDocs);
+        } catch (error) {
+             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your documents.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [user, toast]);
 
-function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClientPageProps) {
-  const { taxDocuments, employmentDocuments } = (initialDocuments || []).reduce(
+  const { taxDocuments, employmentDocuments } = documents.reduce(
     (acc, doc) => {
         if (doc.documentType === 'tax') acc.taxDocuments.push(doc);
         if (doc.documentType === 'employment') acc.employmentDocuments.push(doc);
@@ -68,6 +88,15 @@ function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClie
     );
   };
 
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Documents...</p>
+      </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
@@ -84,14 +113,4 @@ function PersonalDocumentsClientPage({ initialDocuments }: PersonalDocumentsClie
       </div>
     </div>
   );
-}
-
-export default async function PersonalDocumentsPage() {
-    const { getDocuments } = await import('@/lib/firestoreService');
-    const { auth } = await import('@/firebase');
-    const allDocs = await getDocuments();
-    const currentUserId = auth.currentUser?.uid;
-    const initialDocuments = currentUserId ? allDocs.filter(d => d.employeeId === currentUserId) : [];
-    
-    return <PersonalDocumentsClientPage initialDocuments={initialDocuments} />;
 }

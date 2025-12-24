@@ -2,18 +2,41 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import type { Violation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { ShieldAlert } from 'lucide-react';
+import { ShieldAlert, Loader2 } from 'lucide-react';
 import { format } from 'date-fns';
+import { useUser } from '@/firebase';
+import { getViolations } from '@/lib/firestoreService';
+import { useToast } from '@/hooks/use-toast';
 
-export const dynamic = 'force-dynamic';
+export default function MyViolationsPage() {
+  const [violations, setViolations] = useState<Violation[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const { user } = useUser();
+  const { toast } = useToast();
 
-interface MyViolationsClientPageProps {
-    initialViolations: Violation[];
-}
+  useEffect(() => {
+    if (!user) return;
+    setIsLoading(true);
+    async function fetchViolations() {
+        try {
+            const allViolations = await getViolations();
+            const userViolations = allViolations
+                .filter(v => v.employeeId === user.uid)
+                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
+            setViolations(userViolations);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load your violation records.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchViolations();
+  }, [user, toast]);
 
-function MyViolationsClientPage({ initialViolations }: MyViolationsClientPageProps) {
+
   const getViolationTypeLabel = (type: Violation['type']) => {
     switch(type) {
         case 'safety': return 'Safety';
@@ -21,6 +44,15 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
         case 'performance': return 'Performance';
         case 'other': return 'Other';
     }
+  }
+
+  if (isLoading) {
+    return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Your Records...</p>
+      </div>
+    );
   }
 
   return (
@@ -38,9 +70,9 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
       </Card>
 
       <section>
-        {initialViolations.length > 0 ? (
+        {violations.length > 0 ? (
             <div className="space-y-4">
-            {initialViolations.map(v => (
+            {violations.map(v => (
                 <Card key={v.id} className="p-4 bg-muted/30">
                     <div className="flex justify-between items-start gap-4">
                         <p className="font-bold text-lg">{getViolationTypeLabel(v.type)} Violation</p>
@@ -63,19 +95,4 @@ function MyViolationsClientPage({ initialViolations }: MyViolationsClientPagePro
       </section>
     </div>
   );
-}
-
-export default async function MyViolationsPage() {
-    const { getViolations } = await import('@/lib/firestoreService');
-    const { auth } = await import('@/firebase');
-    const allViolations = await getViolations();
-    const currentUserId = auth.currentUser?.uid;
-    
-    const initialViolations = currentUserId 
-        ? allViolations
-            .filter(v => v.employeeId === currentUserId)
-            .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        : [];
-    
-    return <MyViolationsClientPage initialViolations={initialViolations} />;
 }

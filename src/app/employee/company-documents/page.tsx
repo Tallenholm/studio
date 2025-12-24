@@ -2,13 +2,15 @@
 
 'use client';
 
+import { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Files, Download, Truck, Box, BookOpen as DocumentIcon, BookOpen } from 'lucide-react';
+import { Files, Download, Truck, Box, BookOpen as DocumentIcon, BookOpen, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
+import { getDocuments } from '@/lib/firestoreService';
+import { useToast } from '@/hooks/use-toast';
 
-export const dynamic = 'force-dynamic';
 
 // Helper function to get an icon for a category
 const getCategoryIcon = (categoryName: string) => {
@@ -19,12 +21,28 @@ const getCategoryIcon = (categoryName: string) => {
   return DocumentIcon;
 };
 
-interface CompanyDocumentsClientPageProps {
-    initialDocuments: ManagedDocument[];
-}
 
-function CompanyDocumentsClientPage({ initialDocuments }: CompanyDocumentsClientPageProps) {
-  const generalDocuments = (initialDocuments || [])
+export default function CompanyDocumentsPage() {
+    const [documents, setDocuments] = useState<ManagedDocument[]>([]);
+    const [isLoading, setIsLoading] = useState(true);
+    const { toast } = useToast();
+
+    useEffect(() => {
+        async function fetchData() {
+            setIsLoading(true);
+            try {
+                const initialDocuments = await getDocuments();
+                setDocuments(initialDocuments);
+            } catch (error) {
+                toast({ variant: 'destructive', title: 'Error', description: 'Could not load company documents.' });
+            } finally {
+                setIsLoading(false);
+            }
+        }
+        fetchData();
+    }, [toast]);
+
+  const generalDocuments = documents
         .filter(d => d.documentType === 'general')
         .reduce((acc, doc) => {
             (acc[doc.category] = acc[doc.category] || []).push(doc);
@@ -88,6 +106,15 @@ function CompanyDocumentsClientPage({ initialDocuments }: CompanyDocumentsClient
     );
   };
   
+  if (isLoading) {
+    return (
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg text-muted-foreground">Loading Documents...</p>
+        </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8">
       <div className="mb-12 text-center">
@@ -103,11 +130,4 @@ function CompanyDocumentsClientPage({ initialDocuments }: CompanyDocumentsClient
       </div>
     </div>
   );
-}
-
-
-export default async function CompanyDocumentsPage() {
-    const { getDocuments } = await import('@/lib/firestoreService');
-    const initialDocuments = await getDocuments();
-    return <CompanyDocumentsClientPage initialDocuments={initialDocuments} />;
 }

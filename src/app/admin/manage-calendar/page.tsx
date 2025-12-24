@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { addCalendarEvent, deleteCalendarEvent } from '@/lib/firestoreService';
+import { getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '@/lib/firestoreService';
 import type { CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -37,11 +37,10 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Calendar as CalendarIcon, CalendarPlus } from 'lucide-react';
+import { PlusCircle, Trash2, Calendar as CalendarIcon, CalendarPlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 
-export const dynamic = 'force-dynamic';
 
 const eventSchema = z.object({
   date: z.date({ required_error: 'A date is required.' }),
@@ -50,12 +49,10 @@ const eventSchema = z.object({
   description: z.string().optional(),
 });
 
-interface ManageCalendarClientPageProps {
-    initialEvents: CalendarEvent[];
-}
 
-function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPageProps) {
-  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents);
+export default function ManageCalendarPage() {
+  const [events, setEvents] = useState<CalendarEvent[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof eventSchema>>({
@@ -68,8 +65,19 @@ function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPagePro
   });
 
   useEffect(() => {
-    setEvents(initialEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
-  }, [initialEvents]);
+    async function fetchData() {
+        setIsLoading(true);
+        try {
+            const initialEvents = await getCalendarEvents();
+            setEvents(initialEvents.sort((a,b) => new Date(a.date).getTime() - new Date(b.date).getTime()));
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load calendar events.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchData();
+  }, [toast]);
 
   async function onSubmit(values: z.infer<typeof eventSchema>) {
     const newEventData: Omit<CalendarEvent, 'id'> = {
@@ -102,6 +110,15 @@ function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPagePro
         case 'maintenance': return 'Maintenance';
         default: return 'Event';
     }
+  }
+
+  if (isLoading) {
+    return (
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg text-muted-foreground">Loading Calendar...</p>
+        </div>
+    );
   }
   
   return (
@@ -241,7 +258,7 @@ function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPagePro
                         <TableBody>
                             {events.map(event => (
                             <TableRow key={event.id}>
-                                <TableCell className="font-medium whitespace-nowrap">{format(new Date(event.date), 'PPP')}</TableCell>
+                                <TableCell className="font-medium whitespace-nowrap">{format(parseISO(event.date), 'PPP')}</TableCell>
                                 <TableCell>{event.title}</TableCell>
                                 <TableCell>{getEventTypeLabel(event.type)}</TableCell>
                                 <TableCell className="text-muted-foreground">{event.description || 'N/A'}</TableCell>
@@ -262,13 +279,4 @@ function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPagePro
       </Card>
     </div>
   );
-}
-
-
-export default async function ManageCalendarPage() {
-    // This is now a Server Component
-    const { getCalendarEvents } = await import('@/lib/firestoreService');
-    const initialEvents = await getCalendarEvents();
-
-    return <ManageCalendarClientPage initialEvents={initialEvents} />;
 }

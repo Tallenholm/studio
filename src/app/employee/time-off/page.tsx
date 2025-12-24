@@ -17,12 +17,10 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@
 import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Loader2, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
-
-export const dynamic = 'force-dynamic';
 
 const requestSchema = z.object({
   dateRange: z.object({
@@ -32,12 +30,10 @@ const requestSchema = z.object({
   reason: z.string().min(10, 'Please provide a brief reason for your request (min. 10 characters).'),
 });
 
-interface TimeOffClientPageProps {
-    initialRequests: TimeOffRequest[];
-}
 
-function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
-  const [requests, setRequests] = useState<TimeOffRequest[]>(initialRequests);
+export default function TimeOffPage() {
+  const [requests, setRequests] = useState<TimeOffRequest[]>([]);
+  const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
   const { user } = useUser();
 
@@ -49,8 +45,23 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
   });
 
   useEffect(() => {
-    setRequests(initialRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
-  }, [initialRequests]);
+    if (!user) return;
+    setIsLoading(true);
+    async function fetchRequests() {
+        try {
+            const allRequests = await getTimeOffRequests();
+            const userRequests = allRequests
+                .filter(r => r.employeeId === user.uid)
+                .sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
+            setRequests(userRequests);
+        } catch (error) {
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load your time off requests.' });
+        } finally {
+            setIsLoading(false);
+        }
+    }
+    fetchRequests();
+  }, [user, toast]);
 
   async function onSubmit(values: z.infer<typeof requestSchema>) {
     if (!user) {
@@ -67,7 +78,7 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
     };
     
     const newId = await addTimeOffRequest(newRequestData);
-    setRequests(prev => [{id: newId, ...newRequestData}, ...prev]);
+    setRequests(prev => [{id: newId, ...newRequestData}, ...prev].sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
 
     toast({ title: 'Request Submitted', description: 'Your time off request has been submitted for review.' });
     form.reset();
@@ -82,6 +93,15 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
       }
   }
   
+  if (isLoading) {
+    return (
+        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+            <p className="text-lg text-muted-foreground">Loading Time Off Requests...</p>
+        </div>
+    );
+  }
+
   return (
     <div className="container mx-auto py-8 space-y-8">
        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
@@ -195,8 +215,8 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
                         <TableBody>
                             {requests.map(req => (
                             <TableRow key={req.id}>
-                                <TableCell className="font-medium whitespace-nowrap">{format(new Date(req.startDate), 'PPP')}</TableCell>
-                                <TableCell className="font-medium whitespace-nowrap">{format(new Date(req.endDate), 'PPP')}</TableCell>
+                                <TableCell className="font-medium whitespace-nowrap">{format(parseISO(req.startDate), 'PPP')}</TableCell>
+                                <TableCell className="font-medium whitespace-nowrap">{format(parseISO(req.endDate), 'PPP')}</TableCell>
                                 <TableCell className="text-muted-foreground">{req.reason}</TableCell>
                                 <TableCell>
                                     <Badge variant={getStatusBadgeVariant(req.status)} className={cn(req.status === 'approved' && 'bg-primary')}>
@@ -215,14 +235,4 @@ function TimeOffClientPage({ initialRequests }: TimeOffClientPageProps) {
       </Card>
     </div>
   );
-}
-
-export default async function TimeOffPage() {
-    const { getTimeOffRequests } = await import('@/lib/firestoreService');
-    const { auth } = await import('@/firebase');
-    const allRequests = await getTimeOffRequests();
-    const currentUserId = auth.currentUser?.uid;
-    const initialRequests = currentUserId ? allRequests.filter(r => r.employeeId === currentUserId) : [];
-    
-    return <TimeOffClientPage initialRequests={initialRequests} />;
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -47,7 +48,7 @@ import { Calendar } from '@/components/ui/calendar';
 import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, ShieldAlert, Calendar as CalendarIcon, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { getUsers, getViolations, addViolation, deleteViolation } from '@/lib/firestoreService';
 
 const violationSchema = z.object({
@@ -318,7 +319,7 @@ export default function ManageViolationsPage() {
                                     {violations.map(v => (
                                     <TableRow key={v.id}>
                                         <TableCell className="font-medium">{v.employeeName}</TableCell>
-                                        <TableCell>{format(new Date(v.date), 'PPP')}</TableCell>
+                                        <TableCell>{format(parseISO(v.date), 'PPP')}</TableCell>
                                         <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
                                         <TableCell className="max-w-sm">{v.description}</TableCell>
                                         <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
