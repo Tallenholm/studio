@@ -2,7 +2,7 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 
 const SummarizeDocumentInputSchema = z.object({
   documentDataUri: z.string().describe("An image of a document as a data URI (e.g., 'data:image/jpeg;base64,...')."),

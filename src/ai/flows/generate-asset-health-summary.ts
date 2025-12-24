@@ -2,7 +2,7 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 import {getInspectionReports, getMaintenanceLogs, getFleetAssetById} from '@/lib/firestoreService';
 import type {InspectionReport, MaintenanceLog, FleetAsset} from '@/lib/types';
 import {subMonths, isAfter, parseISO} from 'date-fns';

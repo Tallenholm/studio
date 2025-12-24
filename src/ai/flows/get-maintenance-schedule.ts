@@ -2,7 +2,7 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 import type {MaintenanceSchedule} from '@/lib/types';
 
 const MaintenanceScheduleInputSchema = z.object({

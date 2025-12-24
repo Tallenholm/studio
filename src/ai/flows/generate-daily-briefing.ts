@@ -2,7 +2,7 @@
 'use server';
 
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 
 export const DailyBriefingInputSchema = z.object({
   date: z.string().describe("Today's date in ISO format."),

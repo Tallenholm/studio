@@ -1,7 +1,7 @@
 
 'use server';
 import {ai} from '@/ai/genkit';
-import {z} from 'genkit/zod';
+import {z} from 'zod';
 
 export const CreateJobFromPromptOutputSchema = z.object({
   name: z.string().describe('A concise, descriptive name for the job.'),
