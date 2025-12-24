@@ -1,7 +1,7 @@
 
 'use server';
 
-// import { generateAssetHealthSummary as generateSummaryFlow } from '@/ai/flows/generate-asset-health-summary';
+import { generateAssetHealthSummary as generateSummaryFlow } from '@/ai/flows/generate-asset-health-summary';
 import { getInspectionReports, getMaintenanceLogs, getFleetAssetById } from '@/lib/firestoreService';
 
 interface GenerateAssetHealthSummaryParams {
@@ -17,7 +17,6 @@ export async function generateAssetHealthSummary(
 ): Promise<string> {
   // The AI flow now fetches its own data using a tool. 
   // This server action is just a pass-through to invoke the flow.
-  // const summary = await generateSummaryFlow({ assetId });
-  // return summary;
-  return "AI summary is temporarily unavailable.";
+  const summary = await generateSummaryFlow({ assetId });
+  return summary;
 }

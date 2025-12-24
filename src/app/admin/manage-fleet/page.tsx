@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
-// import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
+import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
@@ -194,13 +194,7 @@ export default function FleetManagementPage() {
     }
     setIsAiLoading(true);
     try {
-        // const schedule = await getMaintenanceSchedule({ year, make, model });
-        const schedule = { // Fallback schedule
-            oilChange: { intervalMonths: 6 },
-            tireRotation: { intervalMonths: 6 },
-            brakeInspection: { intervalMonths: 12 },
-            fluidCheck: { intervalMonths: 3 },
-        };
+        const schedule = await getMaintenanceSchedule({ year, make, model });
         const currentSchedule = form.getValues('maintenanceSchedule') || {};
         const newSchedule: MaintenanceSchedule = {
             oilChange: schedule.oilChange ? { intervalMonths: schedule.oilChange.intervalMonths, lastServiceDate: currentSchedule.oilChange?.lastServiceDate } : undefined,
@@ -521,9 +515,9 @@ export default function FleetManagementPage() {
                         <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                         <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                      </div>
-                     <Button type="button" variant="outline" onClick={handleAiSuggest} disabled={true}>
+                     <Button type="button" variant="outline" onClick={handleAiSuggest} disabled={isAiLoading}>
                         {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4"/>}
-                        AI Suggestion Disabled
+                        Suggest Schedule with AI
                      </Button>
                      <div className="space-y-4 pt-4">
                         <MaintenanceScheduleField name="oilChange" label="Oil Change" />

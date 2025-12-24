@@ -31,7 +31,7 @@ import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useAuth, useUser } from '@/firebase/provider';
-// import AiAssistantWidget from '@/components/common/AiAssistantWidget';
+import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -485,7 +485,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </main>
             </SidebarInset>
             <CommandPalette />
-            {/* <AiAssistantWidget initialOpen={false} /> */}
+            <AiAssistantWidget initialOpen={false} />
             <GlobalToolsWidget />
         </SidebarProvider>
     );
