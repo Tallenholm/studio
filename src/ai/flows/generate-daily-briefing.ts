@@ -6,25 +6,14 @@ import { z } from 'zod';
 import { DailyBriefingOutputSchema } from './generate-daily-briefing-schema';
 import type { DailyBriefingOutput } from './generate-daily-briefing-schema';
 import { getJobs, getInspectionReports, getTimeOffRequests, getExpenseReports, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
-import type { Job, CalendarEvent, Task, TimeOffRequest, ExpenseReport, InspectionReport, FleetAsset } from '@/lib/types';
-import { isWithinInterval, subDays, isToday, parseISO, getDay } from 'date-fns';
-import { getJobStatus } from '@/lib/job-utils';
-
 
 const fetchDashboardDataTool = ai.defineTool(
     {
       name: 'fetchDashboardData',
-      description: 'Fetches all necessary data for the daily briefing from the database.',
+      description: 'Fetches all necessary data for the daily briefing from the database (jobs, reports, requests, etc.).',
       inputSchema: z.object({}),
-      outputSchema: z.object({
-        jobs: z.array(z.custom<Job>()),
-        reports: z.array(z.custom<InspectionReport>()),
-        timeOffRequests: z.array(z.custom<TimeOffRequest>()),
-        expenseReports: z.array(z.custom<ExpenseReport>()),
-        tasks: z.array(z.custom<Task>()),
-        events: z.array(z.custom<CalendarEvent>()),
-        assets: z.array(z.custom<FleetAsset>()),
-      }),
+      // REMOVED: The z.custom<Type>() was causing the flow to fail.
+      // The tool will now return raw data which the LLM is instructed to handle.
     },
     async () => {
         const [
@@ -43,7 +32,10 @@ const fetchDashboardDataTool = ai.defineTool(
             getTasks(),
             getCalendarEvents(),
             getFleetAssets(),
-        ]);
+        ]).catch((err) => {
+            console.error("Error fetching data in fetchDashboardDataTool:", err);
+            return [[], [], [], [], [], [], []]; // Return empty arrays on failure
+        });
         return { jobs, reports, timeOffRequests, expenseReports, tasks, events, assets };
     }
 );
@@ -78,7 +70,11 @@ const generateBriefingFlow = ai.defineFlow(
       },
     });
 
-    return llmResponse.output()!;
+    const output = llmResponse.output();
+    if (!output) {
+      throw new Error('AI response did not include a valid briefing object.');
+    }
+    return output;
   }
 );
 
@@ -86,3 +82,4 @@ const generateBriefingFlow = ai.defineFlow(
 export async function generateDailyBriefing(): Promise<DailyBriefingOutput> {
   return generateBriefingFlow();
 }
+
