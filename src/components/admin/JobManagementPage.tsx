@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -17,7 +16,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from '@/components/ui/table';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Loader2, Pencil, Filter, MoreHorizontal, Eye, Brain, AlertCircle } from 'lucide-react';
+import { PlusCircle, Trash2, Loader2, Pencil, Filter, MoreHorizontal, Eye, Brain, AlertCircle, Briefcase } from 'lucide-react';
 import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
@@ -63,13 +62,7 @@ export const jobSchema = z.object({
 });
 
 
-interface JobManagementPageProps {
-    pageTitle: string;
-    pageDescription: string;
-    pageIcon: React.ElementType;
-}
-
-export default function JobManagementPage({ pageTitle, pageDescription, pageIcon: PageIcon }: JobManagementPageProps) {
+export default function JobManagementPage() {
   const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
@@ -296,7 +289,6 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
             <TableRow>
                 <TableHead>Status</TableHead>
                 <TableHead>Job Name</TableHead>
-                <TableHead>Job Type</TableHead>
                 <TableHead>Client</TableHead>
                 <TableHead>Value</TableHead>
                 <TableHead>Dates</TableHead>
@@ -310,7 +302,6 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
                     <Badge variant={getStatusBadgeVariant(job.status)}>{job.status}</Badge>
                 </TableCell>
                 <TableCell className="font-medium">{job.name}</TableCell>
-                <TableCell className="capitalize">{job.jobType.replace('_', ' ')}</TableCell>
                 <TableCell>{job.clientName}</TableCell>
                 <TableCell>{formatCurrency(job.jobValue)}</TableCell>
                 <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
@@ -328,7 +319,7 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
                 </TableRow>
             )) : (
                 <TableRow>
-                <TableCell colSpan={7} className="h-24 text-center">No jobs found with current filters.</TableCell>
+                <TableCell colSpan={6} className="h-24 text-center">No jobs found with current filters.</TableCell>
                 </TableRow>
             )}
             </TableBody>
@@ -352,11 +343,11 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
           <div className="flex justify-between items-start flex-wrap gap-4">
             <div>
               <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <PageIcon className="h-8 w-8 text-primary" />
-                {pageTitle}
+                <Briefcase className="h-8 w-8 text-primary" />
+                Manage Jobs
               </CardTitle>
               <CardDescription className="mt-2">
-                {pageDescription}
+                Create, assign, and track all company jobs and contracts from a single, unified interface.
               </CardDescription>
             </div>
             <div className="flex gap-2">
@@ -397,32 +388,22 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
                 <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
                 <div className="flex items-center gap-2"><p className="text-sm text-muted-foreground">Total Active Value:</p><p className="text-xl font-bold text-primary"><AnimatedCounter value={totalActiveValue} type="currency" /></p></div>
             </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="Search by name or address..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
                  <Select value={clientFilter} onValueChange={setClientFilter}>
                     <SelectTrigger><SelectValue placeholder="Filter by client..." /></SelectTrigger>
                     <SelectContent><SelectItem value="all">All Clients</SelectItem>{clients.map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent>
                 </Select>
-                 <Select value={typeFilter} onValueChange={(val) => setTypeFilter(val as JobType | 'all')}>
-                    <SelectTrigger><SelectValue placeholder="Filter by job type..." /></SelectTrigger>
-                    <SelectContent>
-                        <SelectItem value="all">All Job Types</SelectItem>
-                        <SelectItem value="excavation">Excavation</SelectItem>
-                        <SelectItem value="utilities">Utilities</SelectItem>
-                        <SelectItem value="concrete">Concrete</SelectItem>
-                        <SelectItem value="landscaping">Landscaping</SelectItem>
-                        <SelectItem value="snow_removal">Snow Removal</SelectItem>
-                        <SelectItem value="misc">Misc</SelectItem>
-                    </SelectContent>
-                </Select>
             </CardContent>
           </Card>
-          <Tabs defaultValue="active" className="w-full">
-            <TabsList className="grid w-full grid-cols-3">
-              <TabsTrigger value="active">Active ({activeJobs.length})</TabsTrigger>
-              <TabsTrigger value="upcoming">Upcoming ({upcomingJobs.length})</TabsTrigger>
-              <TabsTrigger value="completed">Completed ({completedJobs.length})</TabsTrigger>
+          <Tabs defaultValue="active" className="w-full" onValueChange={(value) => setTypeFilter(value as JobType | 'all')}>
+            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto">
+              <TabsTrigger value="all">All</TabsTrigger>
+              <TabsTrigger value="active">Active</TabsTrigger>
+              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+              <TabsTrigger value="completed">Completed</TabsTrigger>
             </TabsList>
+            <TabsContent value="all" className="mt-4">{renderJobsTable(filteredJobs)}</TabsContent>
             <TabsContent value="active" className="mt-4">{renderJobsTable(activeJobs)}</TabsContent>
             <TabsContent value="upcoming" className="mt-4">{renderJobsTable(upcomingJobs)}</TabsContent>
             <TabsContent value="completed" className="mt-4">{renderJobsTable(completedJobs)}</TabsContent>
