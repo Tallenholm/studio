@@ -20,16 +20,7 @@ export interface AdminDashboardData {
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  let briefing: DailyBriefingOutput | null = null;
-  try {
-    // The AI flow now fetches its own data using a tool.
-    briefing = await generateDailyBriefing();
-  } catch (error) {
-    console.error("Failed to generate AI daily briefing:", error);
-    briefing = null; // Ensure briefing is null on failure so the UI can handle it
-  }
-
-  // Fetch data for non-AI parts of the dashboard in parallel
+  // Fetch all data required for the dashboard (AI and non-AI parts)
   const [
     allJobs = [],
     allEvents = [],
@@ -43,9 +34,24 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     getTimeOffRequests().catch(() => []),
     getInspectionReports().catch(() => [])
   ]).catch(err => {
-    console.error("Critical error fetching non-AI dashboard data:", err);
+    console.error("Critical error fetching dashboard data:", err);
     return [[], [], [], [], []];
   });
+
+  let briefing: DailyBriefingOutput | null = null;
+  try {
+    // Pass the fetched data directly to the AI flow
+    briefing = await generateDailyBriefing({
+      jobs: allJobs,
+      reports: allReports,
+      timeOffRequests: allTimeOffRequests,
+      events: allEvents,
+      assets: allAssets,
+    });
+  } catch (error) {
+    console.error("Failed to generate AI daily briefing:", error);
+    briefing = null; // Ensure briefing is null on failure so the UI can handle it
+  }
   
   // Calculate stats after all data is fetched
   const stats = {
