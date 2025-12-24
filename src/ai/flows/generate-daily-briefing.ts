@@ -34,7 +34,8 @@ const fetchDashboardDataTool = ai.defineTool(
             getFleetAssets(),
         ]).catch((err) => {
             console.error("Error fetching data in fetchDashboardDataTool:", err);
-            return [[], [], [], [], [], [], []]; // Return empty arrays on failure
+            // On failure, return empty arrays to allow the AI to proceed gracefully
+            return [[], [], [], [], [], [], []]; 
         });
         return { jobs, reports, timeOffRequests, expenseReports, tasks, events, assets };
     }
@@ -82,4 +83,3 @@ const generateBriefingFlow = ai.defineFlow(
 export async function generateDailyBriefing(): Promise<DailyBriefingOutput> {
   return generateBriefingFlow();
 }
-
