@@ -1,10 +1,10 @@
 
 
-import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing';
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
 
-export type { DailyBriefingOutput, DailyBriefingInput };
+export type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing-schema';
+export type { AnalyzeInspectionReportsOutput };
 
 export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
 export type UserRole = 'owner' | 'manager' | 'employee' | 'guest';

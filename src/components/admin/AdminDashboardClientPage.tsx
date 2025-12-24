@@ -9,7 +9,7 @@ import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIco
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
 import type { CalendarEvent, Job } from '@/lib/types';
-import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
+import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
 import type { AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
 import { useUser } from '@/firebase/provider';

@@ -2,7 +2,8 @@
 'use server';
 
 import { getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
-import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
+import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
+import type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing-schema';
 import type { Job, CalendarEvent } from '@/lib/types';
 import { isWithinInterval, subDays, isToday, parseISO } from 'date-fns';
 import { getJobStatus } from '@/lib/job-utils';
@@ -67,7 +68,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     const pendingExpenses = allExpenseReports.filter(r => r.status === 'pending');
     const pendingTasks = allTasks.filter(t => t.status === 'pending');
 
-    const briefingInput = {
+    const briefingInput: DailyBriefingInput = {
         date: today.toISOString(),
         jobs: JSON.stringify(activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType}))),
         reports: JSON.stringify(attentionReports.map(r => ({id: r.id, assetName: r.assetName, employeeName: r.employeeName}))),

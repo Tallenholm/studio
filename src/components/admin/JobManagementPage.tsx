@@ -23,6 +23,7 @@ import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
 import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
+import type { CreateJobFromPromptOutput } from '@/ai/flows/create-job-from-prompt-schema';
 import { Textarea } from '@/components/ui/textarea';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -153,7 +154,7 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
     setIsGeneratingJob(true);
     setAiError(null);
     try {
-      const result = await createJobFromPrompt(aiPrompt);
+      const result: CreateJobFromPromptOutput = await createJobFromPrompt(aiPrompt);
 
       const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
       if (!client && result.clientName) {

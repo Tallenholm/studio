@@ -51,7 +51,6 @@ const generateHealthSummaryFlow = ai.defineFlow(
     name: 'generateAssetHealthSummaryFlow',
     inputSchema: z.object({ assetId: z.string() }),
     outputSchema: z.string(),
-    tools: [fetchAssetDataTool],
   },
   async ({ assetId }) => {
     const prompt = `You are a fleet maintenance expert. Your task is to provide a concise, natural language summary of a vehicle's health based on its recent inspection reports and maintenance logs.
@@ -66,7 +65,7 @@ const generateHealthSummaryFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt,
-      model: 'gemini-pro',
+      model: 'gemini-1.5-flash',
       tools: [fetchAssetDataTool],
       toolChoice: 'auto',
       input: { assetId },

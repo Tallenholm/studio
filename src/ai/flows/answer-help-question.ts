@@ -9,15 +9,9 @@
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import { faqs } from '@/lib/faq-data';
-import type { UserRole } from '@/lib/types';
+import { AnswerHelpQuestionInputSchema } from './answer-help-question-schema';
+import type { AnswerHelpQuestionInput } from './answer-help-question-schema';
 
-
-export const AnswerHelpQuestionInputSchema = z.object({
-  question: z.string().describe('The user\'s question about the application.'),
-  role: z.string().describe('The role of the user asking the question (e.g., owner, manager, employee).'),
-});
-
-export type AnswerHelpQuestionInput = z.infer<typeof AnswerHelpQuestionInputSchema>;
 
 const answerHelpQuestionPrompt = ai.definePrompt(
   {
@@ -70,7 +64,7 @@ const answerHelpQuestionFlow = ai.defineFlow(
         owner: (input.role === 'owner') ? faqs.owner : [],
     };
     
-    const llmResponse = await answerHelpQuestionPrompt.generate({
+    const {text} = await answerHelpQuestionPrompt.generate({
       input: {
         question: input.question,
         role: input.role,
@@ -78,7 +72,7 @@ const answerHelpQuestionFlow = ai.defineFlow(
       },
     });
 
-    return llmResponse.text();
+    return text;
   }
 );
 
