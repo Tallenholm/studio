@@ -123,7 +123,7 @@ export default function ManageRequestsPage() {
                                 {reqs.map(req => (
                                 <TableRow key={req.id}>
                                     <TableCell className="font-medium">{req.employeeName}</TableCell>
-                                    <TableCell>{format(new Date(req.startDate), 'PPP')} - {format(new Date(req.endDate), 'PPP')}</TableCell>
+                                    <TableCell>{format(parseISO(req.startDate), 'PPP')} - {format(parseISO(req.endDate), 'PPP')}</TableCell>
                                     <TableCell className="text-muted-foreground max-w-xs">{req.reason}</TableCell>
                                     <TableCell>
                                         <Badge variant={getStatusBadgeVariant(req.status)} className={cn(req.status === 'approved' && 'bg-primary')}>
