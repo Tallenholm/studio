@@ -18,10 +18,16 @@ import { Input } from '@/components/ui/input';
 import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import { useToast } from '@/hooks/use-toast';
 import { Separator } from '@/components/ui/separator';
-import { optimizeSnowRoute } from '@/ai/flows/optimize-snow-route-flow';
-import type { OptimizeSnowRouteOutput } from '@/ai/flows/optimize-snow-route-flow';
+// import { optimizeSnowRoute } from '@/ai/flows/optimize-snow-route-flow';
+// import type { OptimizeSnowRouteOutput } from '@/ai/flows/optimize-snow-route-flow';
 import { arrayUnion, onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
+
+// Mock type
+type OptimizeSnowRouteOutput = {
+    optimizedJobs: any[];
+    rationale: string;
+};
 
 const logSchema = z.object({
   photoDataUri: z.string().optional(),
@@ -205,7 +211,8 @@ export default function SnowRoutesPage() {
     };
 
     try {
-        const plan = await optimizeSnowRoute(flowInput);
+        // const plan = await optimizeSnowRoute(flowInput);
+        const plan = { optimizedJobs: routeJobs, rationale: "AI optimization is temporarily unavailable. Displaying original order." };
         setOptimizedRoutePlan(plan);
     } catch (error) {
         console.error("Route optimization error:", error);
@@ -280,13 +287,13 @@ export default function SnowRoutesPage() {
                             <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
                             <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
                         </div>
-                         <Button onClick={() => handleOptimizeRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
+                         <Button onClick={() => handleOptimizeRoute(route)} className="print-hidden" disabled={true}>
                             {optimizingRouteId === route.id ? (
                                 <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                             ) : (
                                 <Brain className="mr-2 h-4 w-4" />
                             )}
-                            {optimizingRouteId === route.id ? 'Optimizing...' : 'Optimize Route'}
+                            AI Optimization Disabled
                         </Button>
                     </div>
                 </CardHeader>

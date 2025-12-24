@@ -6,12 +6,15 @@ import { useParams, useSearchParams, useRouter } from 'next/navigation';
 import { getInspectionReportById, getInspectionReports, updateInspectionReport, getWorkOrders, addWorkOrder, getFleetAssets } from '@/lib/firestoreService';
 import type { InspectionReport, WorkOrder } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
-import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
+// import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+
+// Mock types
+type AnalyzeInspectionReportsInput = any;
 
 export default function ReportDetailsPage() {
   const params = useParams();
@@ -56,28 +59,29 @@ export default function ReportDetailsPage() {
 
     setIsAnalyzing(true);
     try {
-      const allReports = await getInspectionReports();
-      const pastReportsForVin = allReports
-        .filter(r => r.truckVin === reportToUse.truckVin && r.id !== reportToUse.id && r.type === 'pre-trip')
-        .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-        .slice(0, 5) 
-        .map(r => JSON.stringify(r));
+    //   const allReports = await getInspectionReports();
+    //   const pastReportsForVin = allReports
+    //     .filter(r => r.truckVin === reportToUse.truckVin && r.id !== reportToUse.id && r.type === 'pre-trip')
+    //     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+    //     .slice(0, 5) 
+    //     .map(r => JSON.stringify(r));
 
-      const aiInput: AnalyzeInspectionReportsInput = {
-        currentReport: JSON.stringify(reportToUse),
-        pastReports: pastReportsForVin,
-        vehicleIdentificationNumber: reportToUse.truckVin || reportToUse.trailerVin || reportToUse.heavyEquipmentVin || 'UNKNOWN_VIN',
-      };
+    //   const aiInput: AnalyzeInspectionReportsInput = {
+    //     currentReport: JSON.stringify(reportToUse),
+    //     pastReports: pastReportsForVin,
+    //     vehicleIdentificationNumber: reportToUse.truckVin || reportToUse.trailerVin || reportToUse.heavyEquipmentVin || 'UNKNOWN_VIN',
+    //   };
 
-      const analysisResult = await analyzeInspectionReports(aiInput);
+    //   const analysisResult = await analyzeInspectionReports(aiInput);
 
-      const updatedReport = { ...reportToUse, anomalyReport: analysisResult };
-      await updateInspectionReport(reportToUse.id, { anomalyReport: analysisResult });
-      setReport(updatedReport);
+    //   const updatedReport = { ...reportToUse, anomalyReport: analysisResult };
+    //   await updateInspectionReport(reportToUse.id, { anomalyReport: analysisResult });
+    //   setReport(updatedReport);
 
       toast({
-        title: 'AI Analysis Complete',
-        description: 'Anomaly detection results are now available.',
+        title: 'AI Analysis Disabled',
+        description: 'The AI analysis feature is temporarily unavailable.',
+        variant: 'destructive',
       });
     } catch (error) {
       console.error('AI Analysis Error:', error);

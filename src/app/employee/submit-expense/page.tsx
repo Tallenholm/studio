@@ -23,7 +23,7 @@ import { useUser, uploadFile } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
+// import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import Link from 'next/link';
 
 const expenseSchema = z.object({
@@ -71,19 +71,19 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
 
       try {
         const uploadPromise = uploadFile(file, `receipts/${user?.id || 'unknown'}/${Date.now()}-${file.name}`);
-        const dataUri = await dataUriPromise;
-        const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
+        // const dataUri = await dataUriPromise;
+        // const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
 
-        const [downloadUrl, extractedData] = await Promise.all([uploadPromise, ocrPromise]);
+        const downloadUrl = await uploadPromise; //, extractedData] = await Promise.all([uploadPromise, ocrPromise]);
         
         form.setValue('receiptPhotoUrl', downloadUrl);
         form.clearErrors('receiptPhotoUrl');
         
-        if (extractedData.amount) form.setValue('amount', extractedData.amount);
-        if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
-        if (extractedData.description) form.setValue('description', extractedData.description);
+        // if (extractedData.amount) form.setValue('amount', extractedData.amount);
+        // if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
+        // if (extractedData.description) form.setValue('description', extractedData.description);
         
-        toast({ title: 'AI Assistant', description: 'Receipt details have been pre-filled.' });
+        toast({ title: 'File Uploaded', description: 'Your receipt has been uploaded.' });
 
       } catch (error) {
         console.error("File processing error:", error);
@@ -138,7 +138,7 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
                 <Receipt className="h-8 w-8 text-primary" />
                 Submit an Expense
             </CardTitle>
-            <CardDescription>Upload a receipt and let the AI assistant help you fill out the report.</CardDescription>
+            <CardDescription>Upload a receipt and fill out the report.</CardDescription>
         </CardHeader>
         <CardContent>
             <Form {...form}>
@@ -159,7 +159,7 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
                                           disabled={isScanning}
                                       >
                                           {isScanning ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}
-                                          {isScanning ? 'Scanning with AI...' : 'Upload Receipt'}
+                                          {isScanning ? 'Uploading...' : 'Upload Receipt'}
                                       </Button>
                                       <Input
                                           type="file"

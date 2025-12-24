@@ -13,7 +13,7 @@ import {
 } from '@/components/ui/sheet';
 import { Input } from '@/components/ui/input';
 import { useToast } from '@/hooks/use-toast';
-import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
+// import { answerHelpQuestion } from '@/ai/flows/answer-help-question';
 import { Brain, Loader2, Sparkles, Send } from 'lucide-react';
 import { useUser } from '@/firebase';
 import type { UserRole } from '@/lib/types';
@@ -71,7 +71,8 @@ export default function AiAssistantWidget({ initialOpen = false }: AiAssistantWi
     setIsAsking(true);
     setAiAnswer('');
     try {
-      const answer = await answerHelpQuestion({ question: aiQuestion, role: userRole });
+      // const answer = await answerHelpQuestion({ question: aiQuestion, role: userRole });
+      const answer = "The AI Assistant is temporarily unavailable. Please try again later.";
       setAiAnswer(answer);
     } catch (error) {
       console.error("AI Help Error:", error);
