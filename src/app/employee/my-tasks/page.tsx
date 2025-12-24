@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -29,7 +30,7 @@ import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, uploadFile } from '@/firebase';
+import { useUser, uploadFile } from '@/firebase/provider';
 import { ClipboardList, Loader2, CheckCircle2, Camera, FileUp, Eye } from 'lucide-react';
 import { format, formatDistanceToNow } from 'date-fns';
 import Image from 'next/image';

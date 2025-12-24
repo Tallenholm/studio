@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { useToast } from '@/hooks/use-toast';

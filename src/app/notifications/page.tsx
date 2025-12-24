@@ -1,10 +1,11 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
 import { updateNotification } from '@/lib/firestoreService';
 import type { NotificationMessage } from '@/lib/types';
-import { useAuth } from '@/contexts/AuthContext';
+import { useUser } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Bell, Loader2, Circle, Mail } from 'lucide-react';
@@ -16,7 +17,7 @@ import { getFirestoreInstance } from '@/lib/firestoreService';
 export default function NotificationsPage() {
   const [notifications, setNotifications] = useState<NotificationMessage[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { user } = useAuth();
+  const { user } = useUser();
   
   useEffect(() => {
     if (!user) {

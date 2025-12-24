@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -17,7 +18,7 @@ import { useToast } from '@/hooks/use-toast';
 import { CalendarPlus, Loader2, Calendar as CalendarIcon, Send } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
 

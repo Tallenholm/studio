@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -22,7 +23,7 @@ import { addInspectionReport, getFleetAssets } from '@/lib/firestoreService';
 import { useRouter } from 'next/navigation';
 import { useEffect, useState, useMemo, useRef } from 'react';
 import { Loader2, Send, Truck, Box, Shovel, ClipboardList, AlertTriangle } from 'lucide-react';
-import { useUser } from '@/firebase';
+import { useUser } from '@/firebase/provider';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 const completedItemSchema = z.object({

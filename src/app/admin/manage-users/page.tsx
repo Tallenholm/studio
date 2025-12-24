@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -16,7 +17,7 @@ import { Users, Loader2, MoreHorizontal, KeyRound, Pencil, DollarSign } from 'lu
 import { Badge } from '@/components/ui/badge';
 import { getUsers, updateUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
-import { useUser, useAuth } from '@/firebase';
+import { useUser, useAuth } from '@/firebase/provider';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger, DropdownMenuSub, DropdownMenuSubTrigger, DropdownMenuSubContent, DropdownMenuPortal, DropdownMenuSeparator } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 import { sendPasswordResetEmail } from 'firebase/auth';
