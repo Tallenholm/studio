@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
-// import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
+import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
@@ -194,18 +194,17 @@ export default function FleetManagementPage() {
     }
     setIsAiLoading(true);
     try {
-        // const schedule = await getMaintenanceSchedule({ year, make, model });
-        toast({ variant: 'destructive', title: 'AI Error', description: 'AI functionality is temporarily disabled.' });
-        // const currentSchedule = form.getValues('maintenanceSchedule') || {};
-        // const newSchedule: MaintenanceSchedule = {
-        //     oilChange: schedule.oilChange ? { intervalMonths: schedule.oilChange.intervalMonths, lastServiceDate: currentSchedule.oilChange?.lastServiceDate } : undefined,
-        //     tireRotation: schedule.tireRotation ? { intervalMonths: schedule.tireRotation.intervalMonths, lastServiceDate: currentSchedule.tireRotation?.lastServiceDate } : undefined,
-        //     brakeInspection: schedule.brakeInspection ? { intervalMonths: schedule.brakeInspection.intervalMonths, lastServiceDate: currentSchedule.brakeInspection?.lastServiceDate } : undefined,
-        //     fluidCheck: schedule.fluidCheck ? { intervalMonths: schedule.fluidCheck.intervalMonths, lastServiceDate: currentSchedule.fluidCheck?.lastServiceDate } : undefined,
-        // };
+        const schedule = await getMaintenanceSchedule({ year, make, model });
+        const currentSchedule = form.getValues('maintenanceSchedule') || {};
+        const newSchedule: MaintenanceSchedule = {
+            oilChange: schedule.oilChange ? { intervalMonths: schedule.oilChange.intervalMonths, lastServiceDate: currentSchedule.oilChange?.lastServiceDate } : undefined,
+            tireRotation: schedule.tireRotation ? { intervalMonths: schedule.tireRotation.intervalMonths, lastServiceDate: currentSchedule.tireRotation?.lastServiceDate } : undefined,
+            brakeInspection: schedule.brakeInspection ? { intervalMonths: schedule.brakeInspection.intervalMonths, lastServiceDate: currentSchedule.brakeInspection?.lastServiceDate } : undefined,
+            fluidCheck: schedule.fluidCheck ? { intervalMonths: schedule.fluidCheck.intervalMonths, lastServiceDate: currentSchedule.fluidCheck?.lastServiceDate } : undefined,
+        };
 
-        // form.setValue('maintenanceSchedule', newSchedule);
-        // toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been updated.' });
+        form.setValue('maintenanceSchedule', newSchedule);
+        toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been updated.' });
     } catch (error) {
         console.error('AI Schedule Suggestion Error:', error);
         toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });

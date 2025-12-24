@@ -2,13 +2,10 @@
 'use server';
 
 import { getJobs, getExpenseReports, getInspectionReports, getTimeOffRequests, getTasks, getCalendarEvents, getFleetAssets } from '@/lib/firestoreService';
-// import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
+import { generateDailyBriefing, type DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing';
 import type { Job, CalendarEvent } from '@/lib/types';
 import { isWithinInterval, subDays, isToday, parseISO } from 'date-fns';
 import { getJobStatus } from '@/lib/job-utils';
-
-// Mocked type
-type DailyBriefingOutput = any;
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
@@ -50,38 +47,37 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   let briefing: DailyBriefingOutput | null = null;
   
   try {
-    // const attentionReports = allReports
-    //   .filter(r => 
-    //     r.overallStatus === 'fail' && 
-    //     isWithinInterval(parseISO(r.date), { start: subDays(today, 2), end: today })
-    //   )
-    //   .map(report => {
-    //     const vin = report.truckVin || report.trailerVin || report.heavyEquipmentVin;
-    //     const asset = allAssets.find(a => a.vin === vin);
-    //     return {
-    //       ...report,
-    //       assetName: asset?.name || 'Unknown Asset',
-    //     };
-    //   });
+    const attentionReports = allReports
+      .filter(r => 
+        r.overallStatus === 'fail' && 
+        isWithinInterval(parseISO(r.date), { start: subDays(today, 2), end: today })
+      )
+      .map(report => {
+        const vin = report.truckVin || report.trailerVin || report.heavyEquipmentVin;
+        const asset = allAssets.find(a => a.vin === vin);
+        return {
+          ...report,
+          assetName: asset?.name || 'Unknown Asset',
+        };
+      });
 
-    // const activeJobs = allJobs.filter(j => getJobStatus(j) === 'active');
-    // const todaysEvents = allEvents.filter(e => isToday(parseISO(e.date)));
-    // const pendingTimeOff = allTimeOffRequests.filter(r => r.status === 'pending');
-    // const pendingExpenses = allExpenseReports.filter(r => r.status === 'pending');
-    // const pendingTasks = allTasks.filter(t => t.status === 'pending');
+    const activeJobs = allJobs.filter(j => getJobStatus(j) === 'active');
+    const todaysEvents = allEvents.filter(e => isToday(parseISO(e.date)));
+    const pendingTimeOff = allTimeOffRequests.filter(r => r.status === 'pending');
+    const pendingExpenses = allExpenseReports.filter(r => r.status === 'pending');
+    const pendingTasks = allTasks.filter(t => t.status === 'pending');
 
-    // const briefingInput = {
-    //     date: today.toISOString(),
-    //     jobs: JSON.stringify(activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType}))),
-    //     reports: JSON.stringify(attentionReports.map(r => ({id: r.id, assetName: r.assetName, employeeName: r.employeeName}))),
-    //     timeOffRequests: JSON.stringify(pendingTimeOff.map(r => ({id: r.id, employeeName: r.employeeName}))),
-    //     expenseReports: JSON.stringify(pendingExpenses.map(r => ({id: r.id, employeeName: r.employeeName, amount: r.amount}))),
-    //     tasks: JSON.stringify(pendingTasks.map(t => ({id: t.id, title: t.title, assignedToEmployeeName: t.assignedToEmployeeName}))),
-    //     events: JSON.stringify(todaysEvents.map(e => ({id: e.id, title: e.title}))),
-    // };
+    const briefingInput = {
+        date: today.toISOString(),
+        jobs: JSON.stringify(activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType}))),
+        reports: JSON.stringify(attentionReports.map(r => ({id: r.id, assetName: r.assetName, employeeName: r.employeeName}))),
+        timeOffRequests: JSON.stringify(pendingTimeOff.map(r => ({id: r.id, employeeName: r.employeeName}))),
+        expenseReports: JSON.stringify(pendingExpenses.map(r => ({id: r.id, employeeName: r.employeeName, amount: r.amount}))),
+        tasks: JSON.stringify(pendingTasks.map(t => ({id: t.id, title: t.title, assignedToEmployeeName: t.assignedToEmployeeName}))),
+        events: JSON.stringify(todaysEvents.map(e => ({id: e.id, title: e.title}))),
+    };
 
-    // briefing = await generateDailyBriefing(briefingInput);
-    briefing = null; // AI disabled
+    briefing = await generateDailyBriefing(briefingInput);
 
   } catch (error) {
     console.error("Failed to generate AI daily briefing:", error);
