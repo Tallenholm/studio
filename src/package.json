@@ -4,16 +4,12 @@
   "private": true,
   "scripts": {
     "dev": "next dev",
-    "genkit:dev": "genkit start",
-    "genkit:watch": "genkit start --watch",
     "build": "next build",
     "start": "next start",
     "lint": "next lint",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@genkit-ai/google-genai": "^1.8.0",
-    "@genkit-ai/next": "^1.8.0",
     "@hookform/resolvers": "^3.9.0",
     "@radix-ui/react-accordion": "^1.2.3",
     "@radix-ui/react-alert-dialog": "^1.1.6",
@@ -42,13 +38,12 @@
     "date-fns": "^3.6.0",
     "dotenv": "^16.5.0",
     "firebase": "^11.9.1",
-    "genkit": "^1.8.0",
     "lucide-react": "^0.475.0",
     "next": "14.2.35",
     "patch-package": "^8.0.0",
-    "react": "^18.2.0",
+    "react": "^18.3.1",
     "react-day-picker": "^8.10.1",
-    "react-dom": "^18.2.0",
+    "react-dom": "^18.3.1",
     "react-hook-form": "^7.54.2",
     "react-intersection-observer": "^9.13.0",
     "recharts": "^2.15.1",
@@ -58,10 +53,9 @@
     "zustand": "^4.5.2"
   },
   "devDependencies": {
-    "@types/node": "^20",
-    "@types/react": "^18.2.0",
-    "@types/react-dom": "^18.2.0",
-    "genkit-cli": "^1.8.0",
+    "@types/node": "^20.12.12",
+    "@types/react": "^18.3.3",
+    "@types/react-dom": "^18.3.0",
     "postcss": "^8",
     "tailwindcss": "^3.4.1",
     "typescript": "^5"
