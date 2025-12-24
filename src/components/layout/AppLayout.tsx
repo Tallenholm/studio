@@ -23,7 +23,6 @@ import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout, Loader2 } from 'lucide-react';
 import type { NotificationMessage, UserRole } from '@/lib/types';
-import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useGlobalTools } from '@/hooks/use-global-tools';
@@ -32,6 +31,7 @@ import { onSnapshot, collection, query, where } from 'firebase/firestore';
 import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useAuth, useUser } from '@/firebase/provider';
+// import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
 function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
@@ -485,7 +485,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </main>
             </SidebarInset>
             <CommandPalette />
-            <AiAssistantWidget initialOpen={false} />
+            {/* <AiAssistantWidget initialOpen={false} /> */}
             <GlobalToolsWidget />
         </SidebarProvider>
     );
