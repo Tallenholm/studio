@@ -1,10 +1,13 @@
 
+
 'use client';
 
 import type { Violation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert } from 'lucide-react';
 import { format } from 'date-fns';
+
+export const dynamic = 'force-dynamic';
 
 interface MyViolationsClientPageProps {
     initialViolations: Violation[];

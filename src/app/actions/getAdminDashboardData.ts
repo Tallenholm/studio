@@ -6,7 +6,7 @@ import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { DailyBriefingOutput, BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
 import type { Job, CalendarEvent } from '@/lib/types';
 import { getJobStatus } from '@/lib/job-utils';
-import { isToday, isAfter, subDays, parseISO } from 'date-fns';
+import { isToday, isAfter, subDays, parseISO, format } from 'date-fns';
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;

@@ -8,6 +8,8 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
+
 // Helper function to get an icon for a category
 const getCategoryIcon = (categoryName: string) => {
   const lowerCaseName = categoryName.toLowerCase();

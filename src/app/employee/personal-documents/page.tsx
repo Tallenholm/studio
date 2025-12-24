@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,6 +8,7 @@ import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
 
+export const dynamic = 'force-dynamic';
 
 interface PersonalDocumentsClientPageProps {
   initialDocuments: ManagedDocument[];

@@ -38,6 +38,8 @@ import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 const completeTaskSchema = z.object({
   completionNotes: z.string().optional(),
   completionPhotoUrl: z.string().optional(),

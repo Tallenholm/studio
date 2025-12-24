@@ -40,6 +40,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
+export const dynamic = 'force-dynamic';
+
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
   contactPerson: z.string().optional(),

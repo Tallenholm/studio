@@ -41,6 +41,8 @@ import { PlusCircle, Trash2, Calendar as CalendarIcon, CalendarPlus } from 'luci
 import { cn } from '@/lib/utils';
 import { format } from 'date-fns';
 
+export const dynamic = 'force-dynamic';
+
 const eventSchema = z.object({
   date: z.date({ required_error: 'A date is required.' }),
   title: z.string().min(1, 'Event title is required.'),

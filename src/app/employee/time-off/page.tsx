@@ -22,6 +22,8 @@ import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
 
+export const dynamic = 'force-dynamic';
+
 const requestSchema = z.object({
   dateRange: z.object({
     from: z.date({ required_error: 'A start date is required.' }),

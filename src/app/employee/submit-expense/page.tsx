@@ -27,6 +27,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 // import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import Link from 'next/link';
 
+export const dynamic = 'force-dynamic';
+
 const expenseSchema = z.object({
   date: z.date({ required_error: 'An expense date is required.' }),
   amount: z.coerce.number().min(0.01, 'Amount must be greater than zero.'),
