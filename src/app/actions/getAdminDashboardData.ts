@@ -57,8 +57,9 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         const vin = report.truckVin || report.trailerVin || report.heavyEquipmentVin;
         const asset = allAssets.find(a => a.vin === vin);
         return {
-          ...report,
+          id: report.id,
           assetName: asset?.name || 'Unknown Asset',
+          employeeName: report.employeeName || 'Unknown Employee',
         };
       });
 
@@ -70,12 +71,12 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
     const briefingInput: DailyBriefingInput = {
         date: today.toISOString(),
-        jobs: JSON.stringify(activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType}))),
-        reports: JSON.stringify(attentionReports.map(r => ({id: r.id, assetName: r.assetName, employeeName: r.employeeName}))),
-        timeOffRequests: JSON.stringify(pendingTimeOff.map(r => ({id: r.id, employeeName: r.employeeName}))),
-        expenseReports: JSON.stringify(pendingExpenses.map(r => ({id: r.id, employeeName: r.employeeName, amount: r.amount}))),
-        tasks: JSON.stringify(pendingTasks.map(t => ({id: t.id, title: t.title, assignedToEmployeeName: t.assignedToEmployeeName}))),
-        events: JSON.stringify(todaysEvents.map(e => ({id: e.id, title: e.title}))),
+        jobs: activeJobs.map(j => ({id: j.id, name: j.name, clientName: j.clientName, jobType: j.jobType})),
+        reports: attentionReports,
+        timeOffRequests: pendingTimeOff.map(r => ({id: r.id, employeeName: r.employeeName})),
+        expenseReports: pendingExpenses.map(r => ({id: r.id, employeeName: r.employeeName, amount: r.amount})),
+        tasks: pendingTasks.map(t => ({id: t.id, title: t.title, assignedToEmployeeName: t.assignedToEmployeeName})),
+        events: todaysEvents.map(e => ({id: e.id, title: e.title})),
     };
 
     briefing = await generateDailyBriefing(briefingInput);
