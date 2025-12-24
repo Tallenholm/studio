@@ -11,3 +11,6 @@ import '@/ai/flows/summarize-document.ts';
 import '@/ai/flows/get-maintenance-schedule.ts';
 import '@/ai/flows/optimize-snow-route-flow.ts';
 import '@/ai/flows/generate-asset-health-summary.ts';
+
+import { dev } from 'genkit';
+dev();
