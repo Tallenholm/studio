@@ -23,7 +23,7 @@ import { useUser, uploadFile } from '@/firebase';
 import { Badge } from '@/components/ui/badge';
 import Image from 'next/image';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
+// import { extractReceiptData } from '@/ai/flows/extract-receipt-data';
 import Link from 'next/link';
 
 const expenseSchema = z.object({
@@ -72,18 +72,22 @@ function SubmitExpenseClientPage({ initialReports }: SubmitExpenseClientPageProp
       try {
         const uploadPromise = uploadFile(file, `receipts/${user?.id || 'unknown'}/${Date.now()}-${file.name}`);
         const dataUri = await dataUriPromise;
-        const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
+        // const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
 
-        const [downloadUrl, extractedData] = await Promise.all([uploadPromise, ocrPromise]);
+        // const [downloadUrl, extractedData] = await Promise.all([uploadPromise, ocrPromise]);
+        const downloadUrl = await uploadPromise;
+        // const extractedData = { amount: 0, date: '', description: '' }; // Mock
         
         form.setValue('receiptPhotoUrl', downloadUrl);
         form.clearErrors('receiptPhotoUrl');
         
-        if (extractedData.amount) form.setValue('amount', extractedData.amount);
-        if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
-        if (extractedData.description) form.setValue('description', extractedData.description);
+        // if (extractedData.amount) form.setValue('amount', extractedData.amount);
+        // if (extractedData.date) form.setValue('date', parseISO(extractedData.date));
+        // if (extractedData.description) form.setValue('description', extractedData.description);
         
-        toast({ title: 'AI Scan Complete', description: 'Receipt data has been pre-filled. Please verify and submit.' });
+        // toast({ title: 'AI Scan Complete', description: 'Receipt data has been pre-filled. Please verify and submit.' });
+        toast({ title: 'Receipt Uploaded', description: 'Please fill out the form manually.' });
+
 
       } catch (error) {
         console.error("File processing error:", error);

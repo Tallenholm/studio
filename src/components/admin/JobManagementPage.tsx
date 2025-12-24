@@ -22,7 +22,7 @@ import { format } from 'date-fns';
 import { Badge } from '@/components/ui/badge';
 import Link from 'next/link';
 import { getJobStatus } from '@/lib/job-utils';
-// import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
+import { createJobFromPrompt } from '@/ai/flows/create-job-from-prompt';
 import { Textarea } from '@/components/ui/textarea';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -153,17 +153,7 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
     setIsGeneratingJob(true);
     setAiError(null);
     try {
-    //   const result = await createJobFromPrompt(aiPrompt);
-      const result = {
-        name: "AI Job Creation Disabled",
-        clientName: "",
-        address: "",
-        jobValue: 0,
-        jobType: 'misc' as JobType,
-        startDate: new Date().toISOString(),
-        endDate: new Date().toISOString(),
-        concreteYards: 0,
-      }
+      const result = await createJobFromPrompt(aiPrompt);
 
       const client = clients.find(c => c.name.toLowerCase() === result.clientName.toLowerCase());
       if (!client && result.clientName) {
@@ -185,9 +175,9 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
         },
       });
 
-      toast({ title: 'AI Feature Disabled', description: 'AI job creation is temporarily unavailable.' });
+      toast({ title: 'AI Prefill Complete', description: 'Job form has been populated. Please review and save.' });
       handleAiDialogOpenChange(false);
-      // setIsDialogOpen(true);
+      setIsDialogOpen(true);
 
     } catch (error) {
       console.error("AI Job Generation Error:", error);
@@ -370,7 +360,7 @@ export default function JobManagementPage({ pageTitle, pageDescription, pageIcon
             </div>
             <div className="flex gap-2">
               <Dialog open={isAiDialogOpen} onOpenChange={handleAiDialogOpenChange}>
-                  <DialogTrigger asChild><Button variant="outline" disabled><Brain className="mr-2 h-5 w-5" /> AI Disabled</Button></DialogTrigger>
+                  <DialogTrigger asChild><Button variant="outline"><Brain className="mr-2 h-5 w-5" /> Create with AI</Button></DialogTrigger>
                   <DialogContent className="sm:max-w-xl">
                       <DialogHeader><DialogTitle>Create Job with AI</DialogTitle><DialogDescription>Describe the job in plain English. The AI will populate the form for you.</DialogDescription></DialogHeader>
                       <div className="py-4 space-y-4">

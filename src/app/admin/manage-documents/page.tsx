@@ -39,7 +39,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Brain, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
-import { summarizeDocument } from '@/ai/flows/summarize-document';
+// import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { uploadFile } from '@/firebase';
 import { useAuth } from '@/contexts/AuthContext';
 
@@ -141,16 +141,19 @@ export default function ManageDocumentsPage() {
       try {
         const uploadPromise = uploadFile(file, `documents/${adminUser.uid}/${Date.now()}-${file.name}`);
         const dataUri = await dataUriPromise;
-        const ocrPromise = summarizeDocument({ documentDataUri: dataUri });
+        // const ocrPromise = summarizeDocument({ documentDataUri: dataUri });
 
-        const [downloadUrl, summary] = await Promise.all([uploadPromise, ocrPromise]);
+        // const [downloadUrl, summary] = await Promise.all([uploadPromise, ocrPromise]);
+        const downloadUrl = await uploadPromise;
+        const summary = { title: file.name, description: '' };
         
         form.setValue('documentUrl', downloadUrl);
         form.clearErrors('documentUrl');
         if (summary.title) form.setValue('title', summary.title);
         if (summary.description) form.setValue('description', summary.description);
         
-        toast({ title: 'AI Assistant', description: 'Document title and description have been pre-filled.' });
+        // toast({ title: 'AI Assistant', description: 'Document title and description have been pre-filled.' });
+        toast({ title: 'File Uploaded', description: 'The file has been uploaded.' });
 
       } catch (error) {
         console.error("File processing error:", error);
