@@ -285,7 +285,9 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             <StatCard title="Failed Reports" value={dashboardData?.stats.failedReports || 0} icon={AlertTriangle} link="/reports" />
       </div>
       
-      <WeatherForecast tourId="tour-step-weather-forecast" />
+      <div id="tour-step-weather-forecast">
+        <WeatherForecast />
+      </div>
       
       <div id="tour-step-ai-briefing">
         <DailyBriefingCard briefing={dashboardData?.briefing || null} isLoading={isLoading} />
@@ -443,3 +445,5 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     </>
   );
 }
+
+    

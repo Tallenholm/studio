@@ -1,12 +1,10 @@
-
-
 'use client';
 
 import { useState, useEffect } from 'react';
 import type { Violation } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { ShieldAlert, Loader2 } from 'lucide-react';
-import { format } from 'date-fns';
+import { format, parseISO } from 'date-fns';
 import { useUser } from '@/firebase';
 import { getViolations } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
@@ -76,7 +74,7 @@ export default function MyViolationsPage() {
                 <Card key={v.id} className="p-4 bg-muted/30">
                     <div className="flex justify-between items-start gap-4">
                         <p className="font-bold text-lg">{getViolationTypeLabel(v.type)} Violation</p>
-                        <p className="text-sm text-muted-foreground">{format(new Date(v.date), 'PPP')}</p>
+                        <p className="text-sm text-muted-foreground">{format(parseISO(v.date), 'PPP')}</p>
                     </div>
                     <div className="mt-2 space-y-2">
                       <p><strong className="font-medium text-foreground">Description:</strong> {v.description}</p>
@@ -96,3 +94,5 @@ export default function MyViolationsPage() {
     </div>
   );
 }
+
+    
