@@ -72,26 +72,30 @@ const FullScreenLoader = ({ text }: { text: string }) => (
 );
 
 export default function RouteGuard({ children }: { children: React.ReactNode }) {
-  const { user, isUserLoading } = useUser();
+  const { user, firebaseUser, isUserLoading } = useUser();
   const pathname = usePathname();
   const router = useRouter();
 
   useEffect(() => {
-    if (isUserLoading) return; // Wait until auth state is determined
+    // Don't run router logic until the Firebase user object is determined.
+    // We can act as soon as `firebaseUser` is not undefined.
+    if (isUserLoading && firebaseUser === null) {
+      return;
+    }
 
     const role = user?.role || 'guest';
     const isPublicPath = PATH_CONFIG.PUBLIC.includes(pathname);
     const isAllowed = isPathAllowed(pathname, role);
 
-    // If user is logged in
-    if (user) {
+    // If user is logged in (firebaseUser exists)
+    if (firebaseUser) {
       if (isPublicPath || pathname === '/') {
         // Redirect from login or root to appropriate dashboard
-        const destination = user.role === 'employee' ? '/employee' : '/admin';
+        const destination = role === 'employee' ? '/employee' : '/admin';
         router.replace(destination);
       } else if (!isAllowed) {
         // Redirect from a forbidden path to appropriate dashboard
-        const destination = user.role === 'employee' ? '/employee' : '/admin';
+        const destination = role === 'employee' ? '/employee' : '/admin';
         router.replace(destination);
       }
     } else { // If user is not logged in
@@ -99,48 +103,27 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
         router.replace('/login');
       }
     }
-  }, [isUserLoading, user, pathname, router]);
+  }, [firebaseUser, user, isUserLoading, pathname, router]);
 
   // Determine what to render based on current state
-  const role = user?.role || 'guest';
-  const isAllowed = isPathAllowed(pathname, role);
-  
+  // We check `isUserLoading` to show a loader while the user's profile and role are still being fetched,
+  // even if the firebaseUser object is already available.
   if (isUserLoading) {
     return <FullScreenLoader text="Authenticating..." />;
   }
 
-  // If a redirect is pending, show a loader to avoid content flicker
-  if (user && (PATH_CONFIG.PUBLIC.includes(pathname) || pathname === '/')) {
-    return <FullScreenLoader text="Redirecting..." />;
-  }
-  if (!user && !PATH_CONFIG.PUBLIC.includes(pathname)) {
-    return <FullScreenLoader text="Redirecting..." />;
-  }
-  if (user && !isAllowed) {
-    return <FullScreenLoader text="Access Denied. Redirecting..." />;
-  }
-  
   const isAppPage = !PATH_CONFIG.PUBLIC.includes(pathname);
-  
-  // If user is not logged in, just show the children (e.g., Login page)
-  if (!user && isPublicPath) {
+
+  // If user is logged in and on an app page, render the layout
+  if (firebaseUser && isAppPage) {
+    return <AppLayout>{children}</AppLayout>;
+  }
+
+  // If user is not logged in and on a public page, render the page
+  if (!firebaseUser && PATH_CONFIG.PUBLIC.includes(pathname)) {
     return <>{children}</>;
   }
 
-  // If it's an app page and user is authenticated, show the layout
-  if (user && isAppPage) {
-    return (
-      <AppLayout>
-        {children}
-      </AppLayout>
-    );
-  }
-
-  // Fallback for login page if no user
-  if (!user && isPublicPath) {
-    return <>{children}</>;
-  }
-
-  // Default loader while redirects happen
+  // Fallback loader for any other state (e.g., redirecting)
   return <FullScreenLoader text="Loading..." />;
 }

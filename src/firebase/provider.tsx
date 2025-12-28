@@ -90,6 +90,21 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
         const db = getFirestoreInstance();
         const userDocRef = doc(db, 'users', fbUser.uid);
 
+        // Immediately set a temporary user state. This allows the app to proceed
+        // with routing while the profile data is being fetched.
+        setUserState(prevState => ({
+          ...prevState,
+          firebaseUser: fbUser,
+          isUserLoading: true, // Keep loading until profile is fetched
+          appUser: prevState.appUser || { // Use existing profile if available, otherwise create temp
+            id: fbUser.uid,
+            uid: fbUser.uid,
+            email: fbUser.email || '',
+            name: fbUser.displayName || 'Loading...',
+            role: 'employee', // Default role, will be updated
+          }
+        }));
+
         const unsubscribeProfile = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             // Profile exists, update the full state
@@ -254,5 +269,3 @@ export const useUser = (): UserHookResult => {
   const { user, firebaseUser, isUserLoading, userError } = useFirebase();
   return { user, firebaseUser, isUserLoading, userError };
 };
-
-    
