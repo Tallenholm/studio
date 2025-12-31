@@ -1,4 +1,3 @@
-
 'use server';
 
 import { getMaintenanceLogs, getExpenseReports, getUsers } from '@/lib/firestoreService';
@@ -27,7 +26,7 @@ export async function getJobCost(job: Job | null) {
 
     const maintenanceCost = maintenanceLogs
       .filter(log => 
-        assignedAssetIds.has(log.assetId) && isWithinInterval(parseISO(log.date), jobInterval)
+        log.assetId && assignedAssetIds.has(log.assetId) && isWithinInterval(parseISO(log.date), jobInterval)
       )
       .reduce((acc, log) => acc + (log.cost || 0), 0);
       

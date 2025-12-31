@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -7,7 +6,7 @@ import { useCommandPalette } from '@/hooks/use-command-palette';
 import { useRouter } from 'next/navigation';
 import { getJobs, getClients, getFleetAssets } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, JobType } from '@/lib/types';
-import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package, Hammer, Route } from 'lucide-react';
+import { LayoutDashboard, Users, Truck, Briefcase, Building2, FileText, Cog, Snowflake, Droplets, Package, Hammer, Route, Calculator } from 'lucide-react';
 
 export default function CommandPalette() {
   const { isOpen, close } = useCommandPalette();
@@ -47,6 +46,7 @@ export default function CommandPalette() {
     { name: 'Manage Clients', href: '/admin/manage-clients', icon: <Building2 /> },
     { name: 'View Reports', href: '/reports', icon: <FileText /> },
     { name: 'System Settings', href: '/admin/system-settings', icon: <Cog /> },
+    { name: 'Operations Toolkit', href: '/admin/fleet-tools', icon: <Calculator /> },
   ];
   
   const getJobIcon = (jobType: Job['jobType']) => {

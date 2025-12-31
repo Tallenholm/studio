@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -28,24 +26,24 @@ import UnitConverter from '@/components/tools/UnitConverter';
 
 const toolCategories = [
     {
-        category: "General & Conversion",
+        category: "General &amp; Conversion",
         icon: Scale,
         tools: [
             { id: 'unit-converter', title: 'Unit Converter', description: 'Convert common construction units.', icon: Scale, component: <UnitConverter /> },
         ]
     },
     {
-        category: "Excavation & Earthwork",
+        category: "Excavation &amp; Earthwork",
         icon: Shovel,
         tools: [
             { id: 'excavation', title: 'Excavation Volume', description: 'Estimate bank and loose soil.', icon: Cuboid, component: <SoilVolumeCalculator /> },
             { id: 'trench', title: 'Trench Volume', description: 'Estimate excavation for a trench.', icon: Construction, component: <TrenchVolumeCalculator /> },
-            { id: 'slope', title: 'Slope & Grade', description: 'Calculate slope, grade, and angle.', icon: TrendingUp, component: <SlopeCalculator /> },
+            { id: 'slope', title: 'Slope &amp; Grade', description: 'Calculate slope, grade, and angle.', icon: TrendingUp, component: <SlopeCalculator /> },
             { id: 'retaining-wall', title: 'Retaining Wall', description: 'Estimate blocks needed.', icon: PanelTop, component: <RetainingWallCalculator /> },
         ]
     },
     {
-        category: "Paving & Surfaces",
+        category: "Paving &amp; Surfaces",
         icon: Route,
         tools: [
             { id: 'concrete', title: 'Concrete', description: 'Estimate cubic yards for a slab.', icon: Shovel, component: <ConcreteCalculator /> },

@@ -191,8 +191,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/employee/company-documents">
-                                        <SidebarMenuButton tooltip="Policies & Documents" isActive={pathname.startsWith('/employee/company-documents')}>
-                                            <BookOpen /><span>Policies & Documents</span>
+                                        <SidebarMenuButton tooltip="Policies &amp; Documents" isActive={pathname.startsWith('/employee/company-documents')}>
+                                            <BookOpen /><span>Policies &amp; Documents</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -258,7 +258,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
                             
                             <SidebarSeparator className="my-1" />
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People & Comms</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">People &amp; Comms</SidebarGroupLabel>
                             <SidebarMenu>
                                 {user.role === 'owner' && <SidebarMenuItem>
                                     <Link href="/admin/manage-users">
@@ -312,7 +312,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
 
                             <SidebarSeparator className="my-1" />
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Assets & Content</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Assets &amp; Content</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-fleet">
@@ -337,8 +337,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/admin/manage-documents">
-                                        <SidebarMenuButton tooltip="Policies & Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
-                                            <BookOpen /><span>Policies & Documents</span>
+                                        <SidebarMenuButton tooltip="Policies &amp; Documents" isActive={pathname.startsWith('/admin/manage-documents')}>
+                                            <BookOpen /><span>Policies &amp; Documents</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -352,7 +352,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
 
                             <SidebarSeparator className="my-1" />
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Ops & Analytics</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Ops &amp; Analytics</SidebarGroupLabel>
                             <SidebarMenu>
                                 {user.role === 'owner' && <>
                                 <SidebarMenuItem>
@@ -454,8 +454,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         </SidebarMenuItem>
                         <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
                             <Link href="/help">
-                                <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'}>
-                                    <HelpCircle /><span>Help & Support</span>
+                                <SidebarMenuButton tooltip="Help &amp; Support" isActive={pathname === '/help'}>
+                                    <HelpCircle /><span>Help &amp; Support</span>
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>

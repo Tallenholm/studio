@@ -1,5 +1,3 @@
-
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -262,7 +260,7 @@ export default function JobDetailsPage() {
                         <Calendar className="h-5 w-5 text-primary mt-1" />
                         <div>
                             <p className="text-muted-foreground">Dates</p>
-                            <p className="font-semibold">{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</p>
+                            <p className="font-semibold">{format(parseISO(job.startDate), 'PPP')} - {format(parseISO(job.endDate), 'PPP')}</p>
                         </div>
                     </div>
                     <div className="flex items-start gap-3">
@@ -353,7 +351,7 @@ export default function JobDetailsPage() {
                 <Card>
                    <AccordionItem value="item-3" className="border-b-0">
                     <AccordionTrigger className="p-6 hover:no-underline">
-                        <CardTitle className="text-xl">Assigned Personnel & Fleet</CardTitle>
+                        <CardTitle className="text-xl">Assigned Personnel &amp; Fleet</CardTitle>
                     </AccordionTrigger>
                     <AccordionContent className="px-6 pb-6">
                       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
@@ -386,7 +384,7 @@ export default function JobDetailsPage() {
                                     <div className="flex-1">
                                         <div className="flex justify-between items-center">
                                             <p className="font-semibold text-sm">{note.author}</p>
-                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(new Date(note.timestamp), { addSuffix: true })}</p>
+                                            <p className="text-xs text-muted-foreground">{formatDistanceToNow(parseISO(note.timestamp), { addSuffix: true })}</p>
                                         </div>
                                         <p className="text-sm text-foreground/80">{note.content}</p>
                                     </div>
