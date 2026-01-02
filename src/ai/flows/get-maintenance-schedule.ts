@@ -5,7 +5,7 @@ import {ai} from '@/ai/genkit';
 import {z} from 'zod';
 import type {MaintenanceSchedule} from '@/lib/types';
 
-const MaintenanceScheduleInputSchema = z.object({
+export const MaintenanceScheduleInputSchema = z.object({
   year: z.string(),
   make: z.string(),
   model: z.string(),
@@ -45,5 +45,36 @@ export async function getMaintenanceSchedule(input: z.infer<typeof MaintenanceSc
     });
 
     const llmResponse = await getSchedulePrompt.generate({ input });
+    return llmResponse.output()!;
+}
+
+export const VehicleInfoInputSchema = z.object({
+  vin: z.string().length(17, 'A 17-character VIN is required.'),
+});
+
+export const VehicleInfoOutputSchema = z.object({
+    year: z.string().describe("The model year of the vehicle."),
+    make: z.string().describe("The manufacturer of the vehicle (e.g., Ford, Chevrolet)."),
+    model: z.string().describe("The specific model of the vehicle (e.g., F-550, Silverado 3500HD)."),
+});
+
+export async function getVehicleInfoFromVin(input: z.infer<typeof VehicleInfoInputSchema>): Promise<z.infer<typeof VehicleInfoOutputSchema>> {
+    
+    const getVehicleInfoPrompt = ai.definePrompt({
+        name: 'getVehicleInfoPrompt',
+        inputSchema: VehicleInfoInputSchema,
+        output: {
+            format: 'json',
+            schema: VehicleInfoOutputSchema,
+        },
+        prompt: `You are an expert VIN decoder. Based on the following Vehicle Identification Number (VIN), provide the vehicle's year, make, and model.
+
+        VIN: {{vin}}
+        
+        Return the data in the requested JSON format.
+        `,
+    });
+
+    const llmResponse = await getVehicleInfoPrompt.generate({ input });
     return llmResponse.output()!;
 }

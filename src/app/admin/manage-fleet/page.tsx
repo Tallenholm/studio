@@ -47,7 +47,7 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
-import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
+import { getMaintenanceSchedule, getVehicleInfoFromVin } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
@@ -61,7 +61,7 @@ const maintenanceIntervalSchema = z.object({
 const assetSchema = z.object({
   type: z.enum(['truck', 'trailer', 'heavyEquipment'], { required_error: 'Asset type is required.' }),
   name: z.string().min(1, 'Asset name is required.'),
-  vin: z.string().min(1, 'VIN/Serial is required.').max(17, 'VIN must be 17 characters or less.'),
+  vin: z.string().min(1, 'VIN/Serial is required.'),
   year: z.string().optional(),
   make: z.string().optional(),
   model: z.string().optional(),
@@ -83,6 +83,7 @@ export default function FleetManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
+  const [isAiLoading, setIsAiLoading] = useState(false);
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // States for Barcode Scanner
@@ -200,12 +201,13 @@ export default function FleetManagementPage() {
     setIsDialogOpen(true);
   };
   
-  const triggerAiSuggest = async () => {
+  const triggerAiScheduleSuggest = async () => {
     const { year, make, model } = form.getValues();
     if (!year || !make || !model) {
       return;
     }
     
+    setIsAiLoading(true);
     try {
         const schedule = await getMaintenanceSchedule({ year, make, model });
         const currentSchedule = form.getValues('maintenanceSchedule') || {};
@@ -221,15 +223,32 @@ export default function FleetManagementPage() {
     } catch (error) {
         console.error('AI Schedule Suggestion Error:', error);
         toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });
+    } finally {
+        setIsAiLoading(false);
+    }
+  };
+  
+  const triggerAiVinDecode = async () => {
+    const vin = form.getValues('vin');
+    if (vin && vin.length >= 11) { // Standard VIN length is 17, but many decoders work with 11+
+      setIsAiLoading(true);
+      try {
+        const vehicleInfo = await getVehicleInfoFromVin({ vin });
+        form.setValue('year', vehicleInfo.year);
+        form.setValue('make', vehicleInfo.make);
+        form.setValue('model', vehicleInfo.model);
+        toast({ title: 'VIN Decoded', description: 'Vehicle year, make, and model have been populated.' });
+        // Now automatically trigger the schedule suggestion
+        await triggerAiScheduleSuggest();
+      } catch (error) {
+        console.error('AI VIN Decode Error:', error);
+        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not decode VIN. Please enter vehicle info manually.' });
+      } finally {
+        setIsAiLoading(false);
+      }
     }
   };
 
-  const handleVehicleInfoChange = () => {
-      if (debounceTimeoutRef.current) {
-          clearTimeout(debounceTimeoutRef.current);
-      }
-      debounceTimeoutRef.current = setTimeout(triggerAiSuggest, 1000);
-  };
 
   const startScanner = async () => {
     if (!isBarcodeDetectorSupported) {
@@ -244,7 +263,7 @@ export default function FleetManagementPage() {
             videoRef.current.srcObject = stream;
             videoRef.current.onloadedmetadata = () => {
                 videoRef.current?.play();
-                const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['code_128', 'ean_13', 'qr_code'] });
+                const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['code_128', 'ean_13', 'qr_code', 'code_39'] });
                 scannerIntervalRef.current = setInterval(async () => {
                     if (videoRef.current && videoRef.current.readyState >= 2) {
                         const barcodes = await barcodeDetector.detect(videoRef.current);
@@ -253,6 +272,7 @@ export default function FleetManagementPage() {
                             form.setValue('vin', detectedVin);
                             toast({ title: "VIN Scanned", description: `VIN ${detectedVin} has been populated.` });
                             stopScanner();
+                            await triggerAiVinDecode(); // Trigger decode after scan
                         }
                     }
                 }, 500);
@@ -524,7 +544,7 @@ export default function FleetManagementPage() {
                           <FormItem> 
                             <FormLabel>VIN / Serial Number</FormLabel> 
                             <div className="flex gap-2">
-                              <FormControl><Input placeholder="Enter 17-character VIN" {...field} /></FormControl>
+                              <FormControl><Input placeholder="Enter 17-character VIN" {...field} onBlur={triggerAiVinDecode} /></FormControl>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -609,13 +629,15 @@ export default function FleetManagementPage() {
                       </div>
                        <Separator />
                        <div className="space-y-2">
-                          <h3 className="text-lg font-medium">Preventative Maintenance Schedule</h3>
-                          <p className="text-sm text-muted-foreground">Fill in the vehicle details below. The AI will automatically suggest a standard maintenance schedule.</p>
+                          <h3 className="text-lg font-medium flex items-center gap-2">
+                              Preventative Maintenance Schedule
+                              {isAiLoading && <Loader2 className="h-4 w-4 animate-spin" />}
+                          </h3>
                        </div>
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
                        </div>
                        <div className="space-y-4 pt-4">
                           <MaintenanceScheduleField name="oilChange" label="Oil Change" />
