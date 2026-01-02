@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -46,7 +46,7 @@ import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, isBefore, addDays, addMonths, parseISO } from 'date-fns';
+import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
 import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -83,6 +83,7 @@ export default function FleetManagementPage() {
   const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
+  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -185,13 +186,13 @@ export default function FleetManagementPage() {
     });
     setIsDialogOpen(true);
   };
-
-  const handleAiSuggest = async () => {
+  
+  const triggerAiSuggest = async () => {
     const { year, make, model } = form.getValues();
     if (!year || !make || !model) {
-        toast({ variant: 'destructive', title: 'Missing Info', description: 'Please provide Year, Make, and Model to get AI suggestions.' });
-        return;
+      return;
     }
+    
     setIsAiLoading(true);
     try {
         const schedule = await getMaintenanceSchedule({ year, make, model });
@@ -204,7 +205,7 @@ export default function FleetManagementPage() {
         };
 
         form.setValue('maintenanceSchedule', newSchedule);
-        toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been updated.' });
+        toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been automatically populated.' });
     } catch (error) {
         console.error('AI Schedule Suggestion Error:', error);
         toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });
@@ -212,6 +213,14 @@ export default function FleetManagementPage() {
         setIsAiLoading(false);
     }
   };
+
+  const handleVehicleInfoChange = () => {
+      if (debounceTimeoutRef.current) {
+          clearTimeout(debounceTimeoutRef.current);
+      }
+      debounceTimeoutRef.current = setTimeout(triggerAiSuggest, 1000);
+  };
+
 
   async function onSubmit(values: AssetFormValues) {
     const assetData = {
@@ -474,7 +483,15 @@ export default function FleetManagementPage() {
                                     </FormControl>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value}
+                                        onSelect={field.onChange}
+                                        captionLayout="dropdown-nav"
+                                        fromYear={getYear(new Date()) - 10}
+                                        toYear={getYear(new Date()) + 10}
+                                        initialFocus
+                                    />
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />
@@ -497,7 +514,15 @@ export default function FleetManagementPage() {
                                     </FormControl>
                                     </PopoverTrigger>
                                     <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar mode="single" selected={field.value} onSelect={field.onChange} initialFocus />
+                                    <Calendar
+                                        mode="single"
+                                        selected={field.value}
+                                        onSelect={field.onChange}
+                                        captionLayout="dropdown-nav"
+                                        fromYear={getYear(new Date()) - 10}
+                                        toYear={getYear(new Date()) + 10}
+                                        initialFocus
+                                    />
                                     </PopoverContent>
                                 </Popover>
                                 <FormMessage />
@@ -508,17 +533,19 @@ export default function FleetManagementPage() {
                      <Separator />
                      <div className="space-y-2">
                         <h3 className="text-lg font-medium">Preventative Maintenance Schedule</h3>
-                        <p className="text-sm text-muted-foreground">Set service intervals in months. Last service date is updated automatically from Maintenance Logs.</p>
+                        <p className="text-sm text-muted-foreground">Fill in the vehicle details below. The AI will automatically suggest a standard maintenance schedule.</p>
                      </div>
                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
                      </div>
-                     <Button type="button" variant="outline" onClick={handleAiSuggest} disabled={isAiLoading}>
-                        {isAiLoading ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4"/>}
-                        Suggest Schedule with AI
-                     </Button>
+                     {isAiLoading && (
+                        <div className="flex items-center text-sm text-muted-foreground gap-2">
+                           <Loader2 className="h-4 w-4 animate-spin"/>
+                           Fetching AI suggestions...
+                        </div>
+                     )}
                      <div className="space-y-4 pt-4">
                         <MaintenanceScheduleField name="oilChange" label="Oil Change" />
                         <MaintenanceScheduleField name="tireRotation" label="Tire Rotation" />
