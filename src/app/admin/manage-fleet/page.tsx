@@ -42,7 +42,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain, MoreHorizontal, Barcode } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
@@ -51,6 +51,7 @@ import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const maintenanceIntervalSchema = z.object({
     intervalMonths: z.coerce.number().positive('Interval must be positive.').optional(),
@@ -80,10 +81,22 @@ export default function FleetManagementPage() {
   const [assets, setAssets] = useState<FleetAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
-  const [isAiLoading, setIsAiLoading] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+
+  // States for Barcode Scanner
+  const [isScannerOpen, setIsScannerOpen] = useState(false);
+  const [isBarcodeDetectorSupported, setIsBarcodeDetectorSupported] = useState(false);
+  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const scannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  useEffect(() => {
+    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
+      setIsBarcodeDetectorSupported(true);
+    }
+  }, []);
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -193,7 +206,6 @@ export default function FleetManagementPage() {
       return;
     }
     
-    setIsAiLoading(true);
     try {
         const schedule = await getMaintenanceSchedule({ year, make, model });
         const currentSchedule = form.getValues('maintenanceSchedule') || {};
@@ -209,8 +221,6 @@ export default function FleetManagementPage() {
     } catch (error) {
         console.error('AI Schedule Suggestion Error:', error);
         toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });
-    } finally {
-        setIsAiLoading(false);
     }
   };
 
@@ -219,6 +229,52 @@ export default function FleetManagementPage() {
           clearTimeout(debounceTimeoutRef.current);
       }
       debounceTimeoutRef.current = setTimeout(triggerAiSuggest, 1000);
+  };
+
+  const startScanner = async () => {
+    if (!isBarcodeDetectorSupported) {
+        toast({ variant: "destructive", title: "Unsupported Browser", description: "Barcode scanning is not supported on this browser." });
+        return;
+    }
+    setIsScannerOpen(true);
+    try {
+        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setCameraStream(stream);
+        if (videoRef.current) {
+            videoRef.current.srcObject = stream;
+            videoRef.current.onloadedmetadata = () => {
+                videoRef.current?.play();
+                const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['code_128', 'ean_13', 'qr_code'] });
+                scannerIntervalRef.current = setInterval(async () => {
+                    if (videoRef.current && videoRef.current.readyState >= 2) {
+                        const barcodes = await barcodeDetector.detect(videoRef.current);
+                        if (barcodes.length > 0) {
+                            const detectedVin = barcodes[0].rawValue;
+                            form.setValue('vin', detectedVin);
+                            toast({ title: "VIN Scanned", description: `VIN ${detectedVin} has been populated.` });
+                            stopScanner();
+                        }
+                    }
+                }, 500);
+            };
+        }
+    } catch (err) {
+        console.error("Camera access error:", err);
+        toast({ variant: "destructive", title: "Camera Error", description: "Could not access camera. Please grant permission." });
+        setIsScannerOpen(false);
+    }
+  };
+
+  const stopScanner = () => {
+    if (scannerIntervalRef.current) {
+        clearInterval(scannerIntervalRef.current);
+        scannerIntervalRef.current = null;
+    }
+    if (cameraStream) {
+        cameraStream.getTracks().forEach(track => track.stop());
+        setCameraStream(null);
+    }
+    setIsScannerOpen(false);
   };
 
 
@@ -430,143 +486,176 @@ export default function FleetManagementPage() {
 
 
   return (
-    <div className="container mx-auto py-8">
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Cog className="h-8 w-8 text-primary" />
-                Manage Fleet Assets
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Add, view, and remove the vehicles and equipment in your fleet.
-              </CardDescription>
+    <>
+      <div className="container mx-auto py-8">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <CardHeader>
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                  <Cog className="h-8 w-8 text-primary" />
+                  Manage Fleet Assets
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  Add, view, and remove the vehicles and equipment in your fleet.
+                </CardDescription>
+              </div>
+              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Add New Asset
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-4xl">
+                  <DialogHeader>
+                    <DialogTitle>{editingAsset ? 'Edit Fleet Asset' : 'Add New Fleet Asset'}</DialogTitle>
+                    <DialogDescription>
+                      Add a new truck, trailer, or piece of equipment to your fleet list.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
+                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField control={form.control} name="type" render={({ field }) => ( <FormItem> <FormLabel>Asset Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select an asset type" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="truck">Truck</SelectItem> <SelectItem value="trailer">Trailer</SelectItem> <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Name / Identifier</FormLabel> <FormControl><Input placeholder="e.g., Truck 01, Big Tex Trailer" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                       </div>
+                       <FormField control={form.control} name="vin" render={({ field }) => ( 
+                          <FormItem> 
+                            <FormLabel>VIN / Serial Number</FormLabel> 
+                            <div className="flex gap-2">
+                              <FormControl><Input placeholder="Enter 17-character VIN" {...field} /></FormControl>
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <Button type="button" variant="outline" size="icon" onClick={startScanner} disabled={!isBarcodeDetectorSupported}>
+                                      <Barcode className="h-5 w-5" />
+                                    </Button>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p>{isBarcodeDetectorSupported ? "Scan VIN from barcode" : "Barcode scanner not supported"}</p>
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            </div>
+                            <FormMessage /> 
+                          </FormItem> 
+                        )}/>
+                       <Separator />
+                       <h3 className="text-lg font-medium">Document Expiration Dates</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                          <FormField
+                              control={form.control}
+                              name="registrationDueDate"
+                              render={({ field }) => (
+                                  <FormItem className="flex flex-col">
+                                  <FormLabel>Registration Due Date</FormLabel>
+                                  <Popover>
+                                      <PopoverTrigger asChild>
+                                      <FormControl>
+                                          <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                          {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
+                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                          </Button>
+                                      </FormControl>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                          mode="single"
+                                          selected={field.value}
+                                          onSelect={field.onChange}
+                                          captionLayout="dropdown-nav"
+                                          fromYear={getYear(new Date()) - 10}
+                                          toYear={getYear(new Date()) + 10}
+                                          initialFocus
+                                      />
+                                      </PopoverContent>
+                                  </Popover>
+                                  <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                          <FormField
+                              control={form.control}
+                              name="insuranceDueDate"
+                              render={({ field }) => (
+                                  <FormItem className="flex flex-col">
+                                  <FormLabel>Insurance Due Date</FormLabel>
+                                  <Popover>
+                                      <PopoverTrigger asChild>
+                                      <FormControl>
+                                          <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
+                                          {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
+                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
+                                          </Button>
+                                      </FormControl>
+                                      </PopoverTrigger>
+                                      <PopoverContent className="w-auto p-0" align="start">
+                                      <Calendar
+                                          mode="single"
+                                          selected={field.value}
+                                          onSelect={field.onChange}
+                                          captionLayout="dropdown-nav"
+                                          fromYear={getYear(new Date()) - 10}
+                                          toYear={getYear(new Date()) + 10}
+                                          initialFocus
+                                      />
+                                      </PopoverContent>
+                                  </Popover>
+                                  <FormMessage />
+                                  </FormItem>
+                              )}
+                          />
+                      </div>
+                       <Separator />
+                       <div className="space-y-2">
+                          <h3 className="text-lg font-medium">Preventative Maintenance Schedule</h3>
+                          <p className="text-sm text-muted-foreground">Fill in the vehicle details below. The AI will automatically suggest a standard maintenance schedule.</p>
+                       </div>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
+                       </div>
+                       <div className="space-y-4 pt-4">
+                          <MaintenanceScheduleField name="oilChange" label="Oil Change" />
+                          <MaintenanceScheduleField name="tireRotation" label="Tire Rotation" />
+                          <MaintenanceScheduleField name="brakeInspection" label="Brake Inspection" />
+                          <MaintenanceScheduleField name="fluidCheck" label="Fluid Check" />
+                       </div>
+                      <DialogFooter className="pt-4">
+                        <Button type="submit">Save Asset</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
             </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Asset
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-4xl">
-                <DialogHeader>
-                  <DialogTitle>{editingAsset ? 'Edit Fleet Asset' : 'Add New Fleet Asset'}</DialogTitle>
-                  <DialogDescription>
-                    Add a new truck, trailer, or piece of equipment to your fleet list.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={form.control} name="type" render={({ field }) => ( <FormItem> <FormLabel>Asset Type</FormLabel> <Select onValueChange={field.onChange} defaultValue={field.value}> <FormControl><SelectTrigger><SelectValue placeholder="Select an asset type" /></SelectTrigger></FormControl> <SelectContent> <SelectItem value="truck">Truck</SelectItem> <SelectItem value="trailer">Trailer</SelectItem> <SelectItem value="heavyEquipment">Heavy Equipment</SelectItem> </SelectContent> </Select> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="name" render={({ field }) => ( <FormItem> <FormLabel>Name / Identifier</FormLabel> <FormControl><Input placeholder="e.g., Truck 01, Big Tex Trailer" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="vin" render={({ field }) => ( <FormItem> <FormLabel>VIN / Serial Number</FormLabel> <FormControl><Input placeholder="Enter 17-character VIN" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
-                     </div>
-                     <Separator />
-                     <h3 className="text-lg font-medium">Document Expiration Dates</h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="registrationDueDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Registration Due Date</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                        {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        captionLayout="dropdown-nav"
-                                        fromYear={getYear(new Date()) - 10}
-                                        toYear={getYear(new Date()) + 10}
-                                        initialFocus
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                        <FormField
-                            control={form.control}
-                            name="insuranceDueDate"
-                            render={({ field }) => (
-                                <FormItem className="flex flex-col">
-                                <FormLabel>Insurance Due Date</FormLabel>
-                                <Popover>
-                                    <PopoverTrigger asChild>
-                                    <FormControl>
-                                        <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                        {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
-                                        <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                        </Button>
-                                    </FormControl>
-                                    </PopoverTrigger>
-                                    <PopoverContent className="w-auto p-0" align="start">
-                                    <Calendar
-                                        mode="single"
-                                        selected={field.value}
-                                        onSelect={field.onChange}
-                                        captionLayout="dropdown-nav"
-                                        fromYear={getYear(new Date()) - 10}
-                                        toYear={getYear(new Date()) + 10}
-                                        initialFocus
-                                    />
-                                    </PopoverContent>
-                                </Popover>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    </div>
-                     <Separator />
-                     <div className="space-y-2">
-                        <h3 className="text-lg font-medium">Preventative Maintenance Schedule</h3>
-                        <p className="text-sm text-muted-foreground">Fill in the vehicle details below. The AI will automatically suggest a standard maintenance schedule.</p>
-                     </div>
-                     <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                        <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
-                        <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} onBlur={handleVehicleInfoChange} /></FormControl> <FormMessage /> </FormItem> )}/>
-                     </div>
-                     {isAiLoading && (
-                        <div className="flex items-center text-sm text-muted-foreground gap-2">
-                           <Loader2 className="h-4 w-4 animate-spin"/>
-                           Fetching AI suggestions...
-                        </div>
-                     )}
-                     <div className="space-y-4 pt-4">
-                        <MaintenanceScheduleField name="oilChange" label="Oil Change" />
-                        <MaintenanceScheduleField name="tireRotation" label="Tire Rotation" />
-                        <MaintenanceScheduleField name="brakeInspection" label="Brake Inspection" />
-                        <MaintenanceScheduleField name="fluidCheck" label="Fluid Check" />
-                     </div>
-                    <DialogFooter className="pt-4">
-                      <Button type="submit">Save Asset</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-            {renderAssetsTable('truck', 'Trucks')}
-            {renderAssetsTable('trailer', 'Trailers')}
-            {renderAssetsTable('heavyEquipment', 'Heavy Equipment')}
-        </CardContent>
-      </Card>
-    </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
+              {renderAssetsTable('truck', 'Trucks')}
+              {renderAssetsTable('trailer', 'Trailers')}
+              {renderAssetsTable('heavyEquipment', 'Heavy Equipment')}
+          </CardContent>
+        </Card>
+      </div>
+
+      <Dialog open={isScannerOpen} onOpenChange={stopScanner}>
+        <DialogContent>
+            <DialogHeader>
+                <DialogTitle>Scan VIN Barcode</DialogTitle>
+                <DialogDescription>
+                    Position the vehicle's VIN barcode in front of your camera.
+                </DialogDescription>
+            </DialogHeader>
+            <div className="relative aspect-video bg-black rounded-md overflow-hidden">
+                <video ref={videoRef} className="w-full h-full object-cover" playsInline />
+                <div className="absolute inset-0 border-[20px] border-black/50 box-border rounded-lg" />
+            </div>
+        </DialogContent>
+      </Dialog>
+    </>
   );
 }
+
+      
