@@ -263,9 +263,19 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
 
 /**
  * Hook specifically for accessing the application's user state (with roles).
+ * The RouteGuard ensures that isUserLoading will be false and user will be non-null
+ * inside any protected page, so components often don't need to handle the loading state themselves.
  * @returns {UserHookResult} Object with user, firebaseUser, isUserLoading, userError.
  */
 export const useUser = (): UserHookResult => {
-  const { user, firebaseUser, isUserLoading, userError } = useFirebase();
-  return { user, firebaseUser, isUserLoading, userError };
+  const context = useContext(FirebaseContext);
+  if (context === undefined) {
+    throw new Error('useUser must be used within a FirebaseProvider.');
+  }
+  return { 
+    user: context.user, 
+    firebaseUser: context.firebaseUser, 
+    isUserLoading: context.isUserLoading, 
+    userError: context.userError 
+  };
 };
