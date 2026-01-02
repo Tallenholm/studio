@@ -155,7 +155,6 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
 
 const managerTourSteps: TourStep[] = [
     { element: '#tour-step-admin-welcome', title: "Welcome to the Admin Dashboard", content: "This is your command center for managing all fleet operations. Let's take a quick look at the key features.", side: 'bottom' },
-    { element: '#tour-step-weather-forecast', title: "Daily Weather Forecast", content: "At the top, you'll find the daily weather forecast for your operational area, helping you plan for the day ahead.", side: 'bottom' },
     { element: '#tour-step-ai-briefing', title: "AI Daily Briefing", content: "The AI Daily Briefing is your intelligent assistant. It analyzes all data to give you a summary of the day's most important items, like failed inspections and pending requests.", side: 'bottom' },
     { element: '#tour-step-calendar', title: "Operations Calendar", content: "The Operations Calendar gives you a complete view of all scheduled jobs, company events, and approved time off. Click a date to see the agenda for that day.", side: 'bottom' },
     { element: '#tour-step-management-hubs', title: "Management Sections", content: "The cards below are your main navigation hubs. From here, you can manage everything from employees and clients to jobs, reports, and maintenance logs.", side: 'top' },
@@ -285,9 +284,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             <StatCard title="Failed Reports" value={dashboardData?.stats.failedReports || 0} icon={AlertTriangle} link="/reports" />
       </div>
       
-      <div id="tour-step-weather-forecast">
-        <WeatherForecast />
-      </div>
+      <WeatherForecast />
       
       <div id="tour-step-ai-briefing">
         <DailyBriefingCard briefing={dashboardData?.briefing || null} isLoading={isLoading} />
@@ -420,7 +417,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
           </CardContent>
         </Card>
         
-        {/* System & Access Card */}
+        {/* System & Tools Card */}
         {user?.role === 'owner' && (
           <Card className="col-span-1 md:col-span-2 lg:col-span-3">
             <CardHeader>
@@ -446,4 +443,3 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
   );
 }
 
-    

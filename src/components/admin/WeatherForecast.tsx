@@ -6,9 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Cloud } from 'lucide-react';
 
-export default function WeatherForecast({ tourId }: { tourId?: string }) {
+export default function WeatherForecast() {
     return (
-        <Card id={tourId} className="mb-8">
+        <Card className="mb-8">
             <CardHeader>
                 <CardTitle>Weather Center</CardTitle>
                 <CardDescription>
