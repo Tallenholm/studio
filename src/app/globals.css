@@ -94,6 +94,45 @@
     --sidebar-border: 215 28% 17%;
     --sidebar-ring: 195 100% 50%;
   }
+
+  /* === Midnight Slate Theme === */
+  .theme-slate.dark {
+    --background: 220 18% 12%;
+    --foreground: 210 40% 98%;
+    --card: 220 18% 16%;
+    --primary: 260 85% 65%; /* Vibrant Purple */
+    --accent: 200 85% 60%; /* Cyan */
+    --border: 220 18% 22%;
+    --input: 220 18% 22%;
+    --chart-1: 260 85% 65%;
+    --chart-2: 200 85% 60%;
+  }
+
+  /* === Desert Mirage Theme === */
+  .theme-desert.dark {
+    --background: 35 30% 15%;
+    --foreground: 35 20% 88%;
+    --card: 35 30% 18%;
+    --primary: 25 95% 60%; /* Bright Orange */
+    --accent: 180 50% 55%; /* Teal */
+    --border: 35 30% 25%;
+    --input: 35 30% 25%;
+    --chart-1: 25 95% 60%;
+    --chart-2: 180 50% 55%;
+  }
+
+  /* === Forest Canopy Theme === */
+  .theme-forest.dark {
+    --background: 120 40% 10%;
+    --foreground: 90 30% 90%;
+    --card: 120 40% 13%;
+    --primary: 80 70% 55%; /* Vibrant Lime Green */
+    --accent: 40 80% 60%; /* Gold */
+    --border: 120 40% 18%;
+    --input: 120 40% 18%;
+    --chart-1: 80 70% 55%;
+    --chart-2: 40 80% 60%;
+  }
 }
  
 @layer base {
@@ -105,7 +144,32 @@
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
+  
+  @keyframes animated-gradient {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+  }
+
+  body.theme-slate {
+    background: linear-gradient(300deg, hsl(220, 18%, 12%), hsl(260, 25%, 15%), hsl(220, 18%, 12%));
+    background-size: 180% 180%;
+    animation: animated-gradient 18s ease infinite;
+  }
+
+  body.theme-desert {
+     background: linear-gradient(300deg, hsl(35, 30%, 15%), hsl(25, 40%, 20%), hsl(35, 30%, 15%));
+    background-size: 180% 180%;
+    animation: animated-gradient 20s ease infinite;
+  }
+
+  body.theme-forest {
+    background: linear-gradient(300deg, hsl(120, 40%, 10%), hsl(100, 20%, 15%), hsl(120, 40%, 10%));
+    background-size: 180% 180%;
+    animation: animated-gradient 22s ease infinite;
+  }
 }
+
 
 .day-with-event {
   position: relative;

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -12,7 +11,7 @@ import { Separator } from '@/components/ui/separator';
 import { Switch } from '@/components/ui/switch';
 import { useToast } from '@/hooks/use-toast';
 import { Cog, Bell, Palette, DownloadCloud, Save, DatabaseZap, Loader2, MapPin } from 'lucide-react';
-import { loadSystemSettings, saveSystemSettings, type SystemSettings } from '@/lib/settingsService';
+import { loadSystemSettings, saveSystemSettings, type SystemSettings, themes } from '@/lib/settingsService';
 import { requestNotificationPermission } from '@/firebase';
 
 export default function SystemSettingsPage() {
@@ -92,22 +91,33 @@ export default function SystemSettingsPage() {
           
           <div className="space-y-4 p-6 border rounded-lg shadow-sm">
             <h3 className="text-xl font-semibold flex items-center gap-2"><Palette className="h-5 w-5 text-accent" />Appearance</h3>
-            <div className="flex items-center justify-between">
-              <Label htmlFor="dark-mode-toggle" className="text-base">Enable Dark Mode by Default</Label>
-              <Switch id="dark-mode-toggle" checked={settings.enableDarkMode} onCheckedChange={(checked) => handleSettingChange('enableDarkMode', checked)} />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="default-font-size" className="text-base">Default Font Size</Label>
-              <Select value={settings.defaultFontSize} onValueChange={(value) => handleSettingChange('defaultFontSize', value)}>
-                <SelectTrigger id="default-font-size" className="w-[180px]">
-                  <SelectValue placeholder="Medium" />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="small">Small</SelectItem>
-                  <SelectItem value="medium">Medium</SelectItem>
-                  <SelectItem value="large">Large</SelectItem>
-                </SelectContent>
-              </Select>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <Label htmlFor="theme-select">Theme</Label>
+                <Select value={settings.theme} onValueChange={(value) => handleSettingChange('theme', value)}>
+                  <SelectTrigger id="theme-select">
+                    <SelectValue placeholder="Select a theme" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {themes.map((theme) => (
+                      <SelectItem key={theme.value} value={theme.value}>{theme.label}</SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="default-font-size">Default Font Size</Label>
+                <Select value={settings.defaultFontSize} onValueChange={(value) => handleSettingChange('defaultFontSize', value)}>
+                  <SelectTrigger id="default-font-size">
+                    <SelectValue placeholder="Medium" />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="small">Small</SelectItem>
+                    <SelectItem value="medium">Medium</SelectItem>
+                    <SelectItem value="large">Large</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
             </div>
           </div>
           
@@ -162,7 +172,7 @@ export default function SystemSettingsPage() {
               </div>
             )}
           </div>
-
+          
           <Separator />
           
           <div className="space-y-4 p-6 border rounded-lg shadow-sm">
