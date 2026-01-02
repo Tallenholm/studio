@@ -414,8 +414,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>}
                                  <SidebarMenuItem>
                                     <Link href="/admin/fleet-tools">
-                                        <SidebarMenuButton tooltip="Operations Toolkit" isActive={pathname.startsWith('/admin/fleet-tools')}>
-                                            <Calculator /><span>Operations Toolkit</span>
+                                        <SidebarMenuButton tooltip="Calculators" isActive={pathname.startsWith('/admin/fleet-tools')}>
+                                            <Calculator /><span>Calculators</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -446,9 +446,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                            </Button>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton tooltip="Operations Toolkit" onClick={openTools}>
+                            <SidebarMenuButton tooltip="Calculators" onClick={openTools}>
                                 <Calculator />
-                                <span>Operations Toolkit</span>
+                                <span>Calculators</span>
                                 <kbd className="ml-auto hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘T</kbd>
                             </SidebarMenuButton>
                         </SidebarMenuItem>

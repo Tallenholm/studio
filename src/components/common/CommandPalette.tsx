@@ -47,7 +47,7 @@ export default function CommandPalette() {
     { name: 'Manage Clients', href: '/admin/manage-clients', icon: <Building2 /> },
     { name: 'View Reports', href: '/reports', icon: <FileText /> },
     { name: 'System Settings', href: '/admin/system-settings', icon: <Cog /> },
-    { name: 'Operations Toolkit', href: '/admin/fleet-tools', icon: <Calculator /> },
+    { name: 'Calculators', href: '/admin/fleet-tools', icon: <Calculator /> },
   ];
   
   const getJobIcon = (jobType: Job['jobType']) => {

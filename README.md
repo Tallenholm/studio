@@ -82,7 +82,7 @@ The central hub for managing all business operations.
 
 #### **System & Tools**
 - **System Settings:** (Owner only) Configure global application settings, including appearance, notification preferences, and the default location for weather forecasts.
-- **Operations Toolkit:** A suite of specialized calculators for project estimation (Concrete, Asphalt, Gravel, Labor Cost, etc.).
+- **Calculators:** A suite of specialized calculators for project estimation (Concrete, Asphalt, Gravel, Labor Cost, etc.).
 
 ---
 

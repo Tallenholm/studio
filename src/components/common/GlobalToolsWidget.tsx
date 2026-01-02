@@ -23,10 +23,10 @@ export default function GlobalToolsWidget() {
           <SheetHeader>
               <SheetTitle className="flex items-center gap-2 text-2xl">
                   <Calculator className="h-7 w-7 text-primary" />
-                  Operations Toolkit
+                  Calculators
               </SheetTitle>
               <SheetDescription>
-                  A comprehensive suite of calculators for project estimation and planning.
+                  A suite of calculators for project estimation and planning.
               </SheetDescription>
           </SheetHeader>
           <ScrollArea className="h-[calc(100%-4rem)] pr-6">
