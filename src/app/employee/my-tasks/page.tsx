@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
@@ -32,7 +31,7 @@ import { Badge } from '@/components/ui/badge';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, uploadFile } from '@/firebase/provider';
 import { ClipboardList, Loader2, CheckCircle2, Camera, FileUp, Eye } from 'lucide-react';
-import { format, formatDistanceToNow } from 'date-fns';
+import { format, formatDistanceToNow, parseISO } from 'date-fns';
 import Image from 'next/image';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -54,15 +53,20 @@ export default function MyTasksPage() {
   const { toast } = useToast();
   const { user } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
+
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
 
   const form = useForm<z.infer<typeof completeTaskSchema>>({
     resolver: zodResolver(completeTaskSchema),
   });
 
   useEffect(() => {
-    if (!user) return;
-    setIsLoading(true);
     async function fetchTasks() {
+        if (!user) return;
+        setIsLoading(true);
         try {
             const allTasks = await getTasks();
             const userTasks = allTasks
@@ -78,13 +82,22 @@ export default function MyTasksPage() {
     fetchTasks();
   }, [user, toast]);
 
+  useEffect(() => {
+    // Cleanup camera stream
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [stream]);
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
     if (file && user) {
         setIsProcessingFile(true);
         try {
-            const url = await uploadFile(file, `task_completions/${user.uid}/${Date.now()}-${file.name}`);
+            const path = `task_completions/${user.uid}/${Date.now()}-${file.name}`;
+            const url = await uploadFile(file, path);
             form.setValue('completionPhotoUrl', url);
             form.clearErrors('completionPhotoUrl');
             toast({ title: 'Photo Uploaded', description: 'Your photo has been attached.' });
@@ -95,6 +108,56 @@ export default function MyTasksPage() {
             setIsProcessingFile(false);
         }
     }
+  };
+
+  const handleOpenCamera = async () => {
+    if (stream) stream.getTracks().forEach(track => track.stop());
+    try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setStream(newStream);
+        setIsCameraOpen(true);
+    } catch (err) {
+        toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not access camera. Please check permissions.' });
+    }
+  };
+
+  useEffect(() => {
+    if(isCameraOpen && stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+    }
+  }, [isCameraOpen, stream]);
+
+  const handleCapturePhoto = () => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    
+    setIsProcessingFile(true);
+    // Convert data URL to blob to upload
+    fetch(dataUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        return uploadFile(file, `task_completions/${user?.uid}/${file.name}`);
+      })
+      .then(url => {
+        form.setValue('completionPhotoUrl', url);
+        form.clearErrors('completionPhotoUrl');
+        toast({ title: 'Photo Captured', description: 'Your photo has been attached.' });
+      })
+      .catch(error => {
+        console.error("Task photo capture error:", error);
+        toast({ variant: 'destructive', title: 'Capture Failed', description: 'Could not save the captured photo.' });
+      })
+      .finally(() => {
+        setIsProcessingFile(false);
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setIsCameraOpen(false);
+      });
   };
 
 
@@ -115,7 +178,6 @@ export default function MyTasksPage() {
 
     await updateTask(selectedTask.id, updatedTaskData);
     
-    // Refresh local state
     setTasks(tasks.map(t => t.id === selectedTask.id ? { ...t, ...updatedTaskData } as Task : t));
 
     toast({ title: 'Task Completed', description: `"${selectedTask.title}" marked as complete.` });
@@ -126,7 +188,7 @@ export default function MyTasksPage() {
 
   const openCompleteDialog = (task: Task) => {
     setSelectedTask(task);
-    form.reset({ completionNotes: '', completionPhotoUrl: '' }); // Clear form on open
+    form.reset({ completionNotes: '', completionPhotoUrl: '' });
     setIsDialogOpen(true);
   }
   
@@ -143,6 +205,8 @@ export default function MyTasksPage() {
   }
 
   return (
+    <>
+    <canvas ref={canvasRef} className="hidden" />
     <div className="container mx-auto py-8 space-y-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -163,7 +227,7 @@ export default function MyTasksPage() {
                     <div className="flex justify-between items-start gap-4">
                         <div>
                             <p className="font-bold text-lg">{task.title}</p>
-                            <p className="text-sm text-muted-foreground">Assigned {formatDistanceToNow(new Date(task.dateAssigned), { addSuffix: true })} by {task.createdByAdminName}</p>
+                            <p className="text-sm text-muted-foreground">Assigned {formatDistanceToNow(parseISO(task.dateAssigned), { addSuffix: true })} by {task.createdByAdminName}</p>
                         </div>
                         <Button onClick={() => openCompleteDialog(task)}>
                             <CheckCircle2 className="mr-2 h-5 w-5" /> Mark as Complete
@@ -188,7 +252,7 @@ export default function MyTasksPage() {
                     <div className="flex justify-between items-start">
                         <div>
                             <p className="font-bold text-lg text-muted-foreground line-through">{task.title}</p>
-                            <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(new Date(task.dateCompleted), 'PPp') : 'N/A'}</p>
+                            <p className="text-sm text-muted-foreground">Completed: {task.dateCompleted ? format(parseISO(task.dateCompleted), 'PPp') : 'N/A'}</p>
                         </div>
                         <Badge variant="default" className="bg-green-600">Completed</Badge>
                     </div>
@@ -245,16 +309,19 @@ export default function MyTasksPage() {
                                     <FormLabel>Verification Photo (Required)</FormLabel>
                                     <div className="space-y-2">
                                       <div className="flex items-center gap-2">
-                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile}>
-                                              {isProcessingFile ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}
-                                              {isProcessingFile ? 'Uploading...' : 'Upload File'}
-                                          </Button>
+                                          <Button type="button" variant="outline" onClick={handleOpenCamera} disabled={isProcessingFile}><Camera className="mr-2 h-4 w-4" />Use Camera</Button>
+                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile}><FileUp className="mr-2 h-4 w-4" />Upload</Button>
                                           <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} disabled={isProcessingFile}/>
                                       </div>
-                                       {field.value ? (
+                                       {field.value && !isProcessingFile ? (
                                             <div className="mt-2 text-sm flex items-center gap-2">
                                                 <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md border" />
                                                 <span>Photo attached.</span>
+                                            </div>
+                                        ) : isProcessingFile ? (
+                                            <div className="mt-2 text-sm flex items-center gap-2 text-muted-foreground">
+                                                <Loader2 className="h-4 w-4 animate-spin" />
+                                                <span>Processing...</span>
                                             </div>
                                         ) : (
                                             <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
@@ -276,6 +343,16 @@ export default function MyTasksPage() {
             </Form>
             </DialogContent>
         </Dialog>
+        <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+            <DialogContent className="max-w-3xl">
+                <DialogHeader><DialogTitle>Take Verification Photo</DialogTitle></DialogHeader>
+                <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline />
+                <DialogFooter>
+                    <Button type="button" onClick={handleCapturePhoto} className="w-full"><Camera className="mr-2 h-4 w-4"/>Capture</Button>
+                </DialogFooter>
+            </DialogContent>
+        </Dialog>
     </div>
+    </>
   );
 }

@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -15,7 +14,6 @@ import type { FleetAsset } from '@/lib/types';
 interface HealthSummary {
   assetId: string;
   summary: string;
-  isLoading: boolean;
 }
 
 const CHART_CONFIG = {
@@ -29,32 +27,42 @@ export default function FleetHealthPage() {
   const [fleetHealthData, setFleetHealthData] = useState<FleetHealthData[] | null>(null);
   const [summaries, setSummaries] = useState<Record<string, HealthSummary>>({});
   const { toast } = useToast();
+  const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
     const fetchData = async () => {
+      setIsLoading(true);
       try {
         const data = await getFleetHealthData();
         setFleetHealthData(data);
+
+        // Proactively fetch all summaries
+        const summaryPromises = data.map(assetData =>
+          generateAssetHealthSummary({ assetId: assetData.asset.id })
+            .then(summary => ({ assetId: assetData.asset.id, summary }))
+            .catch(error => {
+              console.error(`AI Health Summary Error for ${assetData.asset.name}:`, error);
+              return { assetId: assetData.asset.id, summary: 'AI analysis could not be completed.' };
+            })
+        );
+
+        const results = await Promise.all(summaryPromises);
+        const summariesMap = results.reduce((acc, result) => {
+          acc[result.assetId] = result;
+          return acc;
+        }, {} as Record<string, HealthSummary>);
+        
+        setSummaries(summariesMap);
+
       } catch (error) {
         console.error("Failed to load fleet health data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Could not load fleet health data.' });
+      } finally {
+        setIsLoading(false);
       }
     };
     fetchData();
   }, [toast]);
-
-  const handleGenerateSummary = async (assetId: string, assetName: string) => {
-    setSummaries(prev => ({ ...prev, [assetId]: { assetId, summary: '', isLoading: true } }));
-    try {
-      const summary = await generateAssetHealthSummary({ assetId });
-      setSummaries(prev => ({ ...prev, [assetId]: { assetId, summary, isLoading: false } }));
-      toast({ title: 'Analysis Complete', description: `Generated health summary for ${assetName}.` });
-    } catch (error) {
-      console.error('AI Health Summary Error:', error);
-      toast({ variant: 'destructive', title: 'Analysis Failed', description: `Could not generate summary for ${assetName}.` });
-      setSummaries(prev => ({ ...prev, [assetId]: { assetId, summary: 'Failed to generate summary.', isLoading: false } }));
-    }
-  };
 
   const getAssetIcon = (type: FleetAsset['type']) => {
     switch (type) {
@@ -64,11 +72,11 @@ export default function FleetHealthPage() {
     }
   };
 
-  if (!fleetHealthData) {
+  if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary" />
-        <p className="text-lg text-muted-foreground">Loading Fleet Health...</p>
+        <p className="text-lg text-muted-foreground">Loading Fleet Health & AI Analysis...</p>
       </div>
     );
   }
@@ -87,7 +95,7 @@ export default function FleetHealthPage() {
         </CardHeader>
       </Card>
 
-      {fleetHealthData.length === 0 ? (
+      {fleetHealthData && fleetHealthData.length === 0 ? (
         <Card className="text-center py-12">
             <CardHeader>
                 <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
@@ -101,7 +109,7 @@ export default function FleetHealthPage() {
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
-          {fleetHealthData.map(({ asset, healthScore, maintenanceCostData }) => {
+          {fleetHealthData?.map(({ asset, healthScore, maintenanceCostData }) => {
             const healthColor = healthScore > 80 ? 'text-green-500' : healthScore > 50 ? 'text-yellow-500' : 'text-red-500';
             
             return (
@@ -119,14 +127,14 @@ export default function FleetHealthPage() {
                 </CardHeader>
                 <CardContent className="flex-grow space-y-4">
                   <div>
-                    <h4 className="text-sm font-semibold mb-2">AI Health Summary</h4>
+                    <h4 className="text-sm font-semibold mb-2 flex items-center gap-1.5"><Brain className="h-4 w-4" />AI Health Summary</h4>
                     <div className="p-3 bg-muted/50 rounded-md border min-h-[100px] text-sm text-muted-foreground">
-                      {summaries[asset.id]?.isLoading ? (
+                      {!summaries[asset.id] ? (
                         <div className="flex items-center gap-2">
                           <Loader2 className="h-4 w-4 animate-spin" /> Analyzing history...
                         </div>
                       ) : (
-                        summaries[asset.id]?.summary || 'Click below to generate an AI summary.'
+                        summaries[asset.id].summary
                       )}
                     </div>
                   </div>
@@ -144,20 +152,6 @@ export default function FleetHealthPage() {
                     </div>
                   )}
                 </CardContent>
-                <CardFooter>
-                  <Button
-                    onClick={() => handleGenerateSummary(asset.id, asset.name)}
-                    disabled={summaries[asset.id]?.isLoading}
-                    className="w-full"
-                  >
-                    {summaries[asset.id]?.isLoading ? (
-                      <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                    ) : (
-                      <Brain className="mr-2 h-4 w-4" />
-                    )}
-                    Generate AI Summary
-                  </Button>
-                </CardFooter>
               </Card>
             );
           })}

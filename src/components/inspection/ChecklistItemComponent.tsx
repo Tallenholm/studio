@@ -1,7 +1,7 @@
 
 'use client';
 
-import { useState, useRef } from 'react';
+import { useState, useRef, useEffect } from 'react';
 import type { Control } from 'react-hook-form';
 import {
   FormControl,
@@ -14,17 +14,18 @@ import { RadioGroup, RadioGroupItem } from '@/components/ui/radio-group';
 import { Textarea } from '@/components/ui/textarea';
 import type { InspectionItem, InspectionStatus } from '@/lib/types';
 import { cn } from '@/lib/utils';
-import { Camera, Trash2, Loader2 } from 'lucide-react';
+import { Camera, Trash2, Loader2, FileUp } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import Image from 'next/image';
 import { uploadFile } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from '@/components/ui/dialog';
 
 interface ChecklistItemProps {
   item: InspectionItem;
-  control: Control<any>; // Control from react-hook-form
-  fieldNamePrefix: string; // e.g., "sections.0.items.0"
+  control: Control<any>; 
+  fieldNamePrefix: string; 
   currentStatus: InspectionStatus;
 }
 
@@ -36,8 +37,23 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
   };
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [isUploading, setIsUploading] = useState(false);
   const { toast } = useToast();
+  
+  const [stream, setStream] = useState<MediaStream | null>(null);
+  const [isCameraOpen, setIsCameraOpen] = useState(false);
+
+  useEffect(() => {
+    // Cleanup camera stream
+    return () => {
+        if (stream) {
+            stream.getTracks().forEach(track => track.stop());
+        }
+    };
+  }, [stream]);
+
 
   const handleFileChange = async (event: React.ChangeEvent<HTMLInputElement>, field: { onChange: (value: string) => void }) => {
     const file = event.target.files?.[0];
@@ -57,7 +73,57 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
     }
   };
 
+  const handleOpenCamera = async () => {
+    if (stream) stream.getTracks().forEach(track => track.stop());
+    try {
+        const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
+        setStream(newStream);
+        setIsCameraOpen(true);
+    } catch (err) {
+        toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not access camera. Please check permissions.' });
+    }
+  };
+
+  useEffect(() => {
+    if(isCameraOpen && stream && videoRef.current) {
+        videoRef.current.srcObject = stream;
+    }
+  }, [isCameraOpen, stream]);
+
+  const handleCapturePhoto = (onChange: (value: string) => void) => {
+    if (!videoRef.current || !canvasRef.current) return;
+    const canvas = canvasRef.current;
+    canvas.width = videoRef.current.videoWidth;
+    canvas.height = videoRef.current.videoHeight;
+    canvas.getContext('2d')?.drawImage(videoRef.current, 0, 0);
+    const dataUrl = canvas.toDataURL('image/jpeg');
+    
+    setIsUploading(true);
+    fetch(dataUrl)
+      .then(res => res.blob())
+      .then(blob => {
+        const file = new File([blob], `capture-${Date.now()}.jpg`, { type: 'image/jpeg' });
+        return uploadFile(file, `inspections/${file.name}`);
+      })
+      .then(url => {
+        onChange(url);
+        toast({ title: 'Photo Captured', description: 'Photo attached to the inspection item.' });
+      })
+      .catch(error => {
+        console.error("Inspection photo capture error:", error);
+        toast({ variant: 'destructive', title: 'Capture Failed', description: 'Could not save the captured photo.' });
+      })
+      .finally(() => {
+        setIsUploading(false);
+        if (stream) stream.getTracks().forEach(track => track.stop());
+        setStream(null);
+        setIsCameraOpen(false);
+      });
+  };
+
   return (
+    <>
+    <canvas ref={canvasRef} className="hidden" />
     <div className={cn("p-4 rounded-lg border transition-all duration-300", getStatusColor(currentStatus))}>
       <div className="flex items-center gap-2">
         <item.Icon className={cn("h-6 w-6 shrink-0",
@@ -71,7 +137,6 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
         <p className="text-sm text-muted-foreground mt-1 mb-3">{item.instructions}</p>
 
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-4">
-          {/* Column 1: Status and Notes */}
           <div className="space-y-4">
             <FormField
               control={control}
@@ -126,7 +191,6 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
             />
           </div>
 
-          {/* Column 2: Photo Upload */}
           <div className="mt-2 md:mt-0">
             <FormField
               control={control}
@@ -139,7 +203,6 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
                       <Input
                         type="file"
                         accept="image/*"
-                        capture="environment"
                         ref={fileInputRef}
                         className="hidden"
                         onChange={(e) => handleFileChange(e, field)}
@@ -147,16 +210,10 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
                         disabled={isUploading}
                       />
                       {!field.value ? (
-                        <Button
-                          type="button"
-                          variant="outline"
-                          className="w-full md:w-auto"
-                          onClick={() => fileInputRef.current?.click()}
-                          disabled={isUploading}
-                        >
-                          {isUploading ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4" />}
-                          {isUploading ? 'Uploading...' : 'Add Photo'}
-                        </Button>
+                        <div className="flex gap-2">
+                           <Button type="button" variant="outline" onClick={handleOpenCamera} disabled={isUploading}><Camera className="mr-2 h-4 w-4" />Camera</Button>
+                           <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isUploading}><FileUp className="mr-2 h-4 w-4" />Upload</Button>
+                        </div>
                       ) : (
                         <div className="relative w-32 h-32">
                           <Image
@@ -187,5 +244,21 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
         </div>
       </div>
     </div>
+     <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
+        <DialogContent className="max-w-3xl">
+            <DialogHeader><DialogTitle>Take Verification Photo</DialogTitle></DialogHeader>
+            <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline />
+            <DialogFooter>
+                 <FormField
+                    control={control}
+                    name={`${fieldNamePrefix}.photoUrl`}
+                    render={({ field }) => (
+                         <Button type="button" onClick={() => handleCapturePhoto(field.onChange)} className="w-full"><Camera className="mr-2 h-4 w-4"/>Capture</Button>
+                    )}
+                 />
+            </DialogFooter>
+        </DialogContent>
+    </Dialog>
+    </>
   );
 }
