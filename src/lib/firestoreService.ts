@@ -1,6 +1,6 @@
 
 
-import { initializeFirebase } from './firebase-initialize';
+import { initializeFirebase } from '@/firebase';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';

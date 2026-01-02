@@ -241,66 +241,59 @@ export default function ManageClientsPage() {
           </div>
         </CardHeader>
         <CardContent>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Client List</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {clients.length > 0 ? (
-                        <div className="border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                    <TableHead>Client Name</TableHead>
-                                    <TableHead>Contact Person</TableHead>
-                                    <TableHead>Email</TableHead>
-                                    <TableHead>Phone</TableHead>
-                                    <TableHead>Jobs</TableHead>
-                                    <TableHead className="text-right w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {clients.map(client => (
-                                    <TableRow key={client.id}>
-                                        <TableCell className="font-medium">{client.name}</TableCell>
-                                        <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
-                                        <TableCell className="text-muted-foreground">{client.contactEmail || 'N/A'}</TableCell>
-                                        <TableCell className="text-muted-foreground">{client.contactPhone || 'N/A'}</TableCell>
-                                        <TableCell className="text-muted-foreground">{jobs.filter(j => j.clientId === client.id).length}</TableCell>
-                                        <TableCell className="text-right">
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild>
-                                                <Button variant="ghost" size="icon">
-                                                    <MoreHorizontal className="h-4 w-4" />
-                                                    <span className="sr-only">Actions</span>
-                                                </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent align="end">
-                                                <DropdownMenuItem onClick={() => handleEditClick(client)}>
-                                                    <Pencil className="mr-2 h-4 w-4" />
-                                                    Edit
-                                                </DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => removeClient(client.id)} className="text-destructive">
-                                                    <Trash2 className="mr-2 h-4 w-4" />
-                                                    Delete
-                                                </DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
-                                        </TableCell>
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                          <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
-                          <h3 className="text-xl font-semibold text-foreground">No Clients Found</h3>
-                          <p className="mt-2">Click "Add New Client" to get started.</p>
-                        </div>
-                    )}
-                </CardContent>
-            </Card>
+          {clients.length > 0 ? (
+              <div className="border rounded-md">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                          <TableHead>Client Name</TableHead>
+                          <TableHead>Contact Person</TableHead>
+                          <TableHead>Email</TableHead>
+                          <TableHead>Phone</TableHead>
+                          <TableHead>Jobs</TableHead>
+                          <TableHead className="text-right w-[100px]">Actions</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {clients.map(client => (
+                          <TableRow key={client.id}>
+                              <TableCell className="font-medium">{client.name}</TableCell>
+                              <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
+                              <TableCell className="text-muted-foreground">{client.contactEmail || 'N/A'}</TableCell>
+                              <TableCell className="text-muted-foreground">{client.contactPhone || 'N/A'}</TableCell>
+                              <TableCell className="text-muted-foreground">{jobs.filter(j => j.clientId === client.id).length}</TableCell>
+                              <TableCell className="text-right">
+                                  <DropdownMenu>
+                                      <DropdownMenuTrigger asChild>
+                                      <Button variant="ghost" size="icon">
+                                          <MoreHorizontal className="h-4 w-4" />
+                                          <span className="sr-only">Actions</span>
+                                      </Button>
+                                      </DropdownMenuTrigger>
+                                      <DropdownMenuContent align="end">
+                                      <DropdownMenuItem onClick={() => handleEditClick(client)}>
+                                          <Pencil className="mr-2 h-4 w-4" />
+                                          Edit
+                                      </DropdownMenuItem>
+                                      <DropdownMenuItem onClick={() => removeClient(client.id)} className="text-destructive">
+                                          <Trash2 className="mr-2 h-4 w-4" />
+                                          Delete
+                                      </DropdownMenuItem>
+                                      </DropdownMenuContent>
+                                  </DropdownMenu>
+                              </TableCell>
+                          </TableRow>
+                          ))}
+                      </TableBody>
+                  </Table>
+              </div>
+          ) : (
+              <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                <h3 className="text-xl font-semibold text-foreground">No Clients Found</h3>
+                <p className="mt-2">Click "Add New Client" to get started.</p>
+              </div>
+          )}
         </CardContent>
       </Card>
     </div>

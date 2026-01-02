@@ -94,5 +94,3 @@ export default function MyViolationsPage() {
     </div>
   );
 }
-
-    

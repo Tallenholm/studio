@@ -274,6 +274,7 @@ export default function ManageRentalsPage() {
           </div>
         </CardHeader>
         <CardContent>
+          {rentalsWithStatus.length > 0 ? (
             <Tabs defaultValue="active" className="w-full">
                 <TabsList className="grid w-full grid-cols-3">
                     <TabsTrigger value="active">Active ({activeRentals.length})</TabsTrigger>
@@ -284,6 +285,13 @@ export default function ManageRentalsPage() {
                 <TabsContent value="upcoming" className="mt-4">{renderRentalsTable(upcomingRentals)}</TabsContent>
                 <TabsContent value="completed" className="mt-4">{renderRentalsTable(completedRentals)}</TabsContent>
             </Tabs>
+          ) : (
+             <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <ArrowRightLeft className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                <h3 className="text-xl font-semibold text-foreground">No Rentals Found</h3>
+                <p className="mt-2">Click "New Rental" to get started.</p>
+              </div>
+          )}
         </CardContent>
       </Card>
     </div>

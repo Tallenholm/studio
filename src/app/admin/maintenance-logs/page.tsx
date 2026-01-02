@@ -233,7 +233,11 @@ export default function MaintenanceLogsPage() {
               </Table>
             </div>
           ) : (
-            <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No maintenance logs found for {title.toLowerCase()}.</div>
+            <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <Wrench className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                <h3 className="text-xl font-semibold text-foreground">No Maintenance Logs Found</h3>
+                <p className="mt-2">No maintenance has been logged for {title.toLowerCase()} yet.</p>
+            </div>
           )}
         </CardContent>
       </Card>

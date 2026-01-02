@@ -297,47 +297,44 @@ export default function ManageViolationsPage() {
           </div>
         </CardHeader>
         <CardContent>
-            <Card>
-                <CardHeader>
-                    <CardTitle>Violation Log</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    {violations.length > 0 ? (
-                        <div className="border rounded-md">
-                            <Table>
-                                <TableHeader>
-                                    <TableRow>
-                                    <TableHead>Employee</TableHead>
-                                    <TableHead>Date</TableHead>
-                                    <TableHead>Type</TableHead>
-                                    <TableHead>Description</TableHead>
-                                    <TableHead>Action Taken</TableHead>
-                                    <TableHead className="text-right w-[100px]">Actions</TableHead>
-                                    </TableRow>
-                                </TableHeader>
-                                <TableBody>
-                                    {violations.map(v => (
-                                    <TableRow key={v.id}>
-                                        <TableCell className="font-medium">{v.employeeName}</TableCell>
-                                        <TableCell>{format(parseISO(v.date), 'PPP')}</TableCell>
-                                        <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
-                                        <TableCell className="max-w-sm">{v.description}</TableCell>
-                                        <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
-                                        <TableCell className="text-right">
-                                        <Button variant="ghost" size="icon" onClick={() => removeViolation(v.id)} aria-label={`Remove violation for ${v.employeeName}`}>
-                                            <Trash2 className="h-4 w-4 text-destructive" />
-                                        </Button>
-                                        </TableCell>
-                                    </TableRow>
-                                    ))}
-                                </TableBody>
-                            </Table>
-                        </div>
-                    ) : (
-                        <div className="text-center text-muted-foreground py-6 border-2 border-dashed rounded-lg">No violation records found.</div>
-                    )}
-                </CardContent>
-            </Card>
+          {violations.length > 0 ? (
+              <div className="border rounded-md">
+                  <Table>
+                      <TableHeader>
+                          <TableRow>
+                          <TableHead>Employee</TableHead>
+                          <TableHead>Date</TableHead>
+                          <TableHead>Type</TableHead>
+                          <TableHead>Description</TableHead>
+                          <TableHead>Action Taken</TableHead>
+                          <TableHead className="text-right w-[100px]">Actions</TableHead>
+                          </TableRow>
+                      </TableHeader>
+                      <TableBody>
+                          {violations.map(v => (
+                          <TableRow key={v.id}>
+                              <TableCell className="font-medium">{v.employeeName}</TableCell>
+                              <TableCell>{format(parseISO(v.date), 'PPP')}</TableCell>
+                              <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
+                              <TableCell className="max-w-sm">{v.description}</TableCell>
+                              <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
+                              <TableCell className="text-right">
+                              <Button variant="ghost" size="icon" onClick={() => removeViolation(v.id)} aria-label={`Remove violation for ${v.employeeName}`}>
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                              </TableCell>
+                          </TableRow>
+                          ))}
+                      </TableBody>
+                  </Table>
+              </div>
+          ) : (
+              <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                <h3 className="text-xl font-semibold text-foreground">No Violations Found</h3>
+                <p className="mt-2">No violation records have been logged yet.</p>
+              </div>
+          )}
         </CardContent>
       </Card>
     </div>
