@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { FleetAsset, VehicleType, MaintenanceSchedule, NotificationMessage, ManagedDocument } from '@/lib/types';
+import type { FleetAsset, VehicleType, ManagedDocument } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -46,13 +46,12 @@ import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar 
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
-import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
+import { format, isBefore, addDays, parseISO, getYear } from 'date-fns';
 import { getVehicleInfoFromVin } from '@/ai/flows/get-vehicle-info-from-vin';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification, addDocument, uploadFile } from '@/lib/firestoreService';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUser } from '@/firebase';
 import Link from 'next/link';
 
@@ -63,8 +62,8 @@ const assetSchema = z.object({
   year: z.string().optional(),
   make: z.string().optional(),
   model: z.string().optional(),
-  registrationDueDate: z.date().optional(),
-  insuranceDueDate: z.date().optional(),
+  registrationDueDate: z.date().optional().nullable(),
+  insuranceDueDate: z.date().optional().nullable(),
   // Temporary fields for handling document uploads
   registrationDocument: z.custom<File>().optional(),
   insuranceDocument: z.custom<File>().optional(),
@@ -291,17 +290,16 @@ export default function FleetManagementPage() {
 
   async function onSubmit(values: AssetFormValues) {
     let savedAsset: FleetAsset;
-    let documentPromises: Promise<string | void>[] = [];
 
     const assetData: Partial<FleetAsset> = {
       ...values,
-      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : undefined,
-      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : undefined,
+      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
+      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
     };
     
     if (editingAsset) {
         await updateFleetAsset(editingAsset.id, assetData);
-        savedAsset = { ...editingAsset, ...assetData };
+        savedAsset = { ...editingAsset, ...assetData } as FleetAsset;
         setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
@@ -541,18 +539,9 @@ export default function FleetManagementPage() {
                             <FormLabel>VIN / Serial Number</FormLabel> 
                             <div className="flex gap-2">
                               <FormControl><Input placeholder="Enter VIN or serial number" {...field} onBlur={triggerAiVinDecode} /></FormControl>
-                              <TooltipProvider>
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Button type="button" variant="outline" size="icon" onClick={startScanner} disabled={!isBarcodeDetectorSupported}>
-                                      <Barcode className="h-5 w-5" />
-                                    </Button>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{isBarcodeDetectorSupported ? "Scan VIN from barcode" : "Barcode scanner not supported"}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                              </TooltipProvider>
+                               <Button type="button" variant="outline" size="icon" onClick={startScanner} disabled={!isBarcodeDetectorSupported} aria-label="Scan VIN">
+                                   <Barcode className="h-5 w-5" />
+                               </Button>
                             </div>
                             <FormMessage /> 
                           </FormItem> 

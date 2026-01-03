@@ -1,3 +1,4 @@
+
 'use client';
 import { getAuth, type User } from 'firebase/auth';
 
@@ -75,9 +76,8 @@ function buildAuthObject(currentUser: User | null): FirebaseAuthObject | null {
  * @returns A structured request object.
  */
 function buildRequestObject(context: SecurityRuleContext): SecurityRuleRequest {
-  // To improve reliability, we will not include the auth object in the error report for now.
-  // This avoids potential race conditions with Firebase initialization.
-  const authObject: FirebaseAuthObject | null = null;
+  const auth = getAuth();
+  const authObject = buildAuthObject(auth.currentUser);
 
   return {
     auth: authObject,

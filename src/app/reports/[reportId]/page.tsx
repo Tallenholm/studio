@@ -2,30 +2,23 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams, useSearchParams, useRouter } from 'next/navigation';
-import { getInspectionReportById, getInspectionReports, updateInspectionReport, getWorkOrders, addWorkOrder, getFleetAssets } from '@/lib/firestoreService';
+import { useParams } from 'next/navigation';
+import { getInspectionReportById, getWorkOrders, addWorkOrder, getFleetAssets } from '@/lib/firestoreService';
 import type { InspectionReport, WorkOrder } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
-// import { analyzeInspectionReports, AnalyzeInspectionReportsInput } from '@/ai/flows/analyze-inspection-reports';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
 
-// Mock types
-type AnalyzeInspectionReportsInput = any;
-
 export default function ReportDetailsPage() {
   const params = useParams();
-  const searchParams = useSearchParams();
-  const router = useRouter();
   const reportId = params.reportId as string;
   const { toast } = useToast();
 
-  const [report, setReport] = useState<InspectionReport | null | undefined>(undefined); // undefined for loading, null for not found
+  const [report, setReport] = useState<InspectionReport | null | undefined>(undefined);
   const [hasWorkOrder, setHasWorkOrder] = useState<boolean>(false);
-  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -38,62 +31,12 @@ export default function ReportDetailsPage() {
         if (loadedReport) {
             const workOrders = await getWorkOrders();
             setHasWorkOrder(workOrders.some(wo => wo.reportId === reportId));
-
-            // Check if AI analysis should be triggered on load
-            if (loadedReport.type === 'pre-trip' && !loadedReport.anomalyReport && searchParams.get('analyze') === 'true') {
-                handleAnalyzeReport(loadedReport);
-            }
         }
         setIsLoading(false);
       }
       fetchReport();
     }
-  }, [reportId, searchParams]);
-
-  const handleAnalyzeReport = async (currentReportToAnalyze?: InspectionReport) => {
-    const reportToUse = currentReportToAnalyze || report;
-    if (!reportToUse || reportToUse.type !== 'pre-trip') {
-      toast({ title: 'Analysis Error', description: 'AI analysis is only available for pre-trip reports.', variant: 'destructive' });
-      return;
-    }
-
-    setIsAnalyzing(true);
-    try {
-    //   const allReports = await getInspectionReports();
-    //   const pastReportsForVin = allReports
-    //     .filter(r => r.truckVin === reportToUse.truckVin && r.id !== reportToUse.id && r.type === 'pre-trip')
-    //     .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
-    //     .slice(0, 5) 
-    //     .map(r => JSON.stringify(r));
-
-    //   const aiInput: AnalyzeInspectionReportsInput = {
-    //     currentReport: JSON.stringify(reportToUse),
-    //     pastReports: pastReportsForVin,
-    //     vehicleIdentificationNumber: reportToUse.truckVin || reportToUse.trailerVin || reportToUse.heavyEquipmentVin || 'UNKNOWN_VIN',
-    //   };
-
-    //   const analysisResult = await analyzeInspectionReports(aiInput);
-
-    //   const updatedReport = { ...reportToUse, anomalyReport: analysisResult };
-    //   await updateInspectionReport(reportToUse.id, { anomalyReport: analysisResult });
-    //   setReport(updatedReport);
-
-      toast({
-        title: 'AI Analysis Disabled',
-        description: 'The AI analysis feature is temporarily unavailable.',
-        variant: 'destructive',
-      });
-    } catch (error) {
-      console.error('AI Analysis Error:', error);
-      toast({
-        title: 'AI Analysis Failed',
-        description: error instanceof Error ? error.message : 'An unknown error occurred during AI analysis.',
-        variant: 'destructive',
-      });
-    } finally {
-      setIsAnalyzing(false);
-    }
-  };
+  }, [reportId]);
 
   const handleCreateWorkOrder = async () => {
     if (!report) return;
@@ -116,7 +59,7 @@ export default function ReportDetailsPage() {
 
     const newWorkOrder: Omit<WorkOrder, 'id'> = {
       reportId: report.id,
-      assetId: asset ? asset.id : 'unknown', // Use the asset ID from Firestore
+      assetId: asset ? asset.id : 'unknown',
       assetName: assetName,
       dateCreated: new Date().toISOString(),
       reportedBy: report.employeeName || 'Unknown',
@@ -126,8 +69,7 @@ export default function ReportDetailsPage() {
     
     await addWorkOrder(newWorkOrder);
     setHasWorkOrder(true);
-    toast({ title: 'Work Order Created', description: 'A new work order has been generated.' });
-    router.push('/admin/manage-work-orders');
+    toast({ title: 'Work Order Created', description: 'A new work order has been generated and can be viewed on the Manage Work Orders page.' });
   };
   
   if (isLoading || report === undefined) {
@@ -162,8 +104,6 @@ export default function ReportDetailsPage() {
     <div className="container mx-auto py-8">
       <ReportDisplayComponent 
         report={report} 
-        onAnalyze={report.type === 'pre-trip' ? () => handleAnalyzeReport() : undefined} 
-        isAnalyzing={isAnalyzing} 
         onCreateWorkOrder={handleCreateWorkOrder}
         hasWorkOrder={hasWorkOrder}
       />

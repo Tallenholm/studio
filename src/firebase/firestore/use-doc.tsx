@@ -1,3 +1,4 @@
+
 'use client';
     
 import { useState, useEffect } from 'react';
@@ -88,10 +89,8 @@ export function useDoc<T = any>(
     return () => unsubscribe();
   }, [memoizedDocRef]); // Re-run if the memoizedDocRef changes.
 
-  if(memoizedDocRef && !memoizedDocRef.__memo) {
-    // This is a developer error, not a user-facing one.
-    // Throwing an error would crash the app, so we warn instead.
-    console.warn('The reference passed to useDoc was not created with useMemoFirebase. This will cause infinite re-renders.');
+  if (process.env.NODE_ENV === 'development' && memoizedDocRef && !memoizedDocRef.__memo) {
+    console.warn('The reference passed to useDoc was not created with useMemoFirebase. This can cause infinite re-renders.');
   }
 
   return { data, isLoading, error };
