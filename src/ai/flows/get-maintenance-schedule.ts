@@ -67,12 +67,16 @@ export async function getVehicleInfoFromVin(input: z.infer<typeof VehicleInfoInp
             format: 'json',
             schema: VehicleInfoOutputSchema,
         },
-        prompt: `You are an expert VIN decoder. Based on the following Vehicle Identification Number (VIN) or serial number, provide the vehicle's year, make, and model. If it's not a standard 17-character VIN, do your best to identify the vehicle from the provided identifier.
+        prompt: `You are an expert VIN decoder. Your task is to extract the vehicle's year, make, and model from the provided Vehicle Identification Number (VIN).
 
-        VIN: {{vin}}
-        
-        Return the data in the requested JSON format.
-        `,
+        Follow these steps:
+        1.  Analyze the provided VIN: {{vin}}
+        2.  The 10th character of a standard 17-digit VIN typically represents the model year.
+        3.  The first few characters often indicate the manufacturer.
+        4.  Use the full VIN to determine the specific model.
+        5.  If it's not a standard 17-character VIN, do your best to identify the vehicle from the provided identifier.
+
+        Return the data in the requested JSON format.`,
     });
 
     const llmResponse = await getVehicleInfoPrompt.generate({ input });
