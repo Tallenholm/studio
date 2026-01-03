@@ -15,12 +15,11 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarGroup,
-  SidebarSub,
+  SidebarGroupLabel,
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarInset,
   SidebarSeparator,
-  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -261,7 +260,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                             </SidebarMenu>
                             
                             <SidebarMenu>
-                                <SidebarSub>
+                                <SidebarMenuSub>
                                     <SidebarMenuButton>
                                         <Users /> People & Comms
                                     </SidebarMenuButton>
@@ -274,8 +273,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         <Link href="/admin/personal-documents"><SidebarMenuSubButton>Personal Documents</SidebarMenuSubButton></Link>
                                         <Link href="/admin/send-notification"><SidebarMenuSubButton>Send Notification</SidebarMenuSubButton></Link>
                                     </SidebarMenuSub>
-                                </SidebarSub>
-                                <SidebarSub>
+                                </SidebarMenuSub>
+                                <SidebarMenuSub>
                                     <SidebarMenuButton>
                                         <Cog /> Assets & Content
                                     </SidebarMenuButton>
@@ -286,8 +285,8 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         <Link href="/admin/manage-documents"><SidebarMenuSubButton>Policies & Docs</SidebarMenuSubButton></Link>
                                         <Link href="/admin/manage-calendar"><SidebarMenuSubButton>Manage Calendar</SidebarMenuSubButton></Link>
                                     </SidebarMenuSub>
-                                </SidebarSub>
-                                <SidebarSub>
+                                </SidebarMenuSub>
+                                <SidebarMenuSub>
                                     <SidebarMenuButton>
                                         <LineChart /> Ops & Analytics
                                     </SidebarMenuButton>
@@ -301,7 +300,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         <Link href="/admin/maintenance-logs"><SidebarMenuSubButton>Maintenance Logs</SidebarMenuSubButton></Link>
                                         {user.role === 'owner' && <Link href="/admin/advanced-reports"><SidebarMenuSubButton>Advanced Reports</SidebarMenuSubButton></Link>}
                                     </SidebarMenuSub>
-                                </SidebarSub>
+                                </SidebarMenuSub>
                                 {user.role === 'owner' && (
                                 <SidebarMenuItem>
                                     <Link href="/admin/system-settings">
