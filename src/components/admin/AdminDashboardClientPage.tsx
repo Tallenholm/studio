@@ -21,6 +21,7 @@ import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Sprout } from 'lucide-react';
 import { Calculator } from 'lucide-react';
 import { Cloud } from 'lucide-react';
+import { useGlobalTools } from '@/hooks/use-global-tools';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -439,3 +440,5 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     </>
   );
 }
+
+    
