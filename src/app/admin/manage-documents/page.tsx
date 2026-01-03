@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Brain, Wrench } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Wrench } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
@@ -49,7 +49,7 @@ const documentSchema = z.object({
   category: z.string().optional(),
   employeeId: z.string().optional(),
   assetId: z.string().optional(),
-  documentType: z.enum(['general', 'tax', 'employment', 'maintenance'], { required_error: 'Document type is required.' }),
+  documentType: z.enum(['general', 'tax', 'employment', 'maintenance', 'registration', 'insurance'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
   documentUrl: z.string().url({ message: 'A document file upload is required.' }),
 }).superRefine((data, ctx) => {
@@ -67,10 +67,10 @@ const documentSchema = z.object({
             path: ['category'],
         });
     }
-    if (data.documentType === 'maintenance' && !data.assetId) {
+    if ((data.documentType === 'maintenance' || data.documentType === 'registration' || data.documentType === 'insurance') && !data.assetId) {
         ctx.addIssue({
             code: z.ZodIssueCode.custom,
-            message: 'A vehicle/asset must be selected for maintenance documents.',
+            message: 'A vehicle/asset must be selected for this document type.',
             path: ['assetId'],
         });
     }
@@ -165,7 +165,7 @@ export default function ManageDocumentsPage() {
     let docCategory = '';
     let employeeName: string | undefined = undefined;
 
-    if (values.documentType === 'maintenance' && values.assetId) {
+    if (['maintenance', 'registration', 'insurance'].includes(values.documentType) && values.assetId) {
         const asset = fleetAssets.find(a => a.id === values.assetId);
         docCategory = asset?.name || 'Unknown Asset';
     } else if ((values.documentType === 'employment' || values.documentType === 'tax') && values.employeeId) {
@@ -213,18 +213,18 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const { generalDocuments, maintenanceDocuments } = useMemo(() => {
+  const { generalDocuments, assetDocuments } = useMemo(() => {
     return documents
         .reduce((acc, doc) => {
             if (doc.documentType === 'general') {
                 (acc.generalDocuments[doc.category] = acc.generalDocuments[doc.category] || []).push(doc);
-            } else if (doc.documentType === 'maintenance') {
-                (acc.maintenanceDocuments[doc.category] = acc.maintenanceDocuments[doc.category] || []).push(doc);
+            } else if (['maintenance', 'registration', 'insurance'].includes(doc.documentType)) {
+                 (acc.assetDocuments[doc.category] = acc.assetDocuments[doc.category] || []).push(doc);
             }
             return acc;
         }, { 
             generalDocuments: {} as Record<string, ManagedDocument[]>,
-            maintenanceDocuments: {} as Record<string, ManagedDocument[]>
+            assetDocuments: {} as Record<string, ManagedDocument[]>
         });
   }, [documents]);
 
@@ -350,6 +350,8 @@ export default function ManageDocumentsPage() {
                                 </FormControl>
                                 <SelectContent>
                                 <SelectItem value="general">Policy or General Document</SelectItem>
+                                <SelectItem value="registration">Vehicle Registration</SelectItem>
+                                <SelectItem value="insurance">Vehicle Insurance</SelectItem>
                                 <SelectItem value="maintenance">Maintenance Manual/Checklist</SelectItem>
                                 <SelectItem value="tax">Tax Form</SelectItem>
                                 <SelectItem value="employment">Employment Form</SelectItem>
@@ -429,7 +431,7 @@ export default function ManageDocumentsPage() {
                               </FormItem>
                           )}
                       />
-                    ) : watchedDocType === 'maintenance' ? (
+                    ) : ['maintenance', 'registration', 'insurance'].includes(watchedDocType) ? (
                         <FormField
                           control={form.control}
                           name="assetId"
@@ -503,7 +505,7 @@ export default function ManageDocumentsPage() {
         </CardHeader>
         <CardContent className="space-y-6">
             {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
-            {renderGroupedDocumentSection("Maintenance Manuals", Wrench, maintenanceDocuments)}
+            {renderGroupedDocumentSection("Asset-Specific Documents", Wrench, assetDocuments)}
         </CardContent>
       </Card>
     </div>

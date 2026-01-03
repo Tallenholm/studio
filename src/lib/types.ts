@@ -41,6 +41,7 @@ export interface FleetAsset {
   registrationDueDate?: string; // YYYY-MM-DD
   insuranceDueDate?: string; // YYYY-MM-DD
   maintenanceSchedule?: MaintenanceSchedule;
+  documentIds?: string[];
 }
 
 export interface InspectionItem {
@@ -130,7 +131,7 @@ export interface ManagedDocument {
   title: string;
   description: string;
   category: string;
-  documentType: 'general' | 'tax' | 'employment' | 'maintenance';
+  documentType: 'general' | 'tax' | 'employment' | 'maintenance' | 'registration' | 'insurance';
   documentUrl: string; // URL from Firebase Storage
   employeeId?: string;
   assetId?: string;

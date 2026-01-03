@@ -28,7 +28,8 @@
         "model": { "type": "string" },
         "registrationDueDate": { "type": "string", "format": "date" },
         "insuranceDueDate": { "type": "string", "format": "date" },
-        "maintenanceSchedule": { "$ref": "#/entities/MaintenanceSchedule" }
+        "maintenanceSchedule": { "$ref": "#/entities/MaintenanceSchedule" },
+        "documentIds": { "type": "array", "items": { "type": "string" } }
       },
       "required": ["id", "type", "name", "vin"]
     },
@@ -291,7 +292,7 @@
             "title": { "type": "string" },
             "description": { "type": "string" },
             "category": { "type": "string" },
-            "documentType": { "type": "string", "enum": ["general", "tax", "employment", "maintenance"] },
+            "documentType": { "type": "string", "enum": ["general", "tax", "employment", "maintenance", "registration", "insurance"] },
             "documentUrl": { "type": "string", "format": "uri" },
             "employeeId": { "type": "string" },
             "assetId": { "type": "string" },

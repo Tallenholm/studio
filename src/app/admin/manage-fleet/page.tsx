@@ -5,7 +5,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import type { FleetAsset, VehicleType, MaintenanceSchedule, NotificationMessage } from '@/lib/types';
+import type { FleetAsset, VehicleType, MaintenanceSchedule, NotificationMessage, ManagedDocument } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -42,21 +42,19 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, Brain, MoreHorizontal, Barcode } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, MoreHorizontal, Barcode, FileUp, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
 import { getVehicleInfoFromVin } from '@/ai/flows/get-vehicle-info-from-vin';
+import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
+import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification, addDocument, uploadFile } from '@/lib/firestoreService';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-
-const maintenanceIntervalSchema = z.object({
-    intervalMonths: z.coerce.number().positive('Interval must be positive.').optional(),
-    lastServiceDate: z.string().optional(),
-});
+import { useUser } from '@/firebase';
+import Link from 'next/link';
 
 const assetSchema = z.object({
   type: z.enum(['truck', 'trailer', 'heavyEquipment'], { required_error: 'Asset type is required.' }),
@@ -67,12 +65,10 @@ const assetSchema = z.object({
   model: z.string().optional(),
   registrationDueDate: z.date().optional(),
   insuranceDueDate: z.date().optional(),
-  maintenanceSchedule: z.object({
-      oilChange: maintenanceIntervalSchema.optional(),
-      tireRotation: maintenanceIntervalSchema.optional(),
-      brakeInspection: maintenanceIntervalSchema.optional(),
-      fluidCheck: maintenanceIntervalSchema.optional(),
-  }).optional(),
+  // Temporary fields for handling document uploads
+  registrationDocument: z.custom<File>().optional(),
+  insuranceDocument: z.custom<File>().optional(),
+  documentIds: z.array(z.string()).optional(),
 });
 
 type AssetFormValues = z.infer<typeof assetSchema>;
@@ -83,7 +79,7 @@ export default function FleetManagementPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
-  const [isAiLoading, setIsAiLoading] = useState(false);
+  const { user: adminUser } = useUser();
   const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
 
   // States for Barcode Scanner
@@ -92,6 +88,12 @@ export default function FleetManagementPage() {
   const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
   const videoRef = useRef<HTMLVideoElement>(null);
   const scannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
+
+  // States for file uploads
+  const [isUploadingReg, setIsUploadingReg] = useState(false);
+  const [isUploadingIns, setIsUploadingIns] = useState(false);
+  const regFileInputRef = useRef<HTMLInputElement>(null);
+  const insFileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
@@ -203,8 +205,7 @@ export default function FleetManagementPage() {
   
   const triggerAiVinDecode = async () => {
     const vin = form.getValues('vin');
-    if (vin && vin.length >= 11) { // Standard VIN length is 17, but many decoders work with 11+
-      setIsAiLoading(true);
+    if (vin && vin.length >= 11) {
       try {
         const vehicleInfo = await getVehicleInfoFromVin({ vin });
         form.setValue('year', vehicleInfo.year);
@@ -212,10 +213,8 @@ export default function FleetManagementPage() {
         form.setValue('model', vehicleInfo.model);
         toast({ title: 'VIN Decoded', description: 'Vehicle year, make, and model have been populated.' });
       } catch (error) {
-        console.error('AI VIN Decode Error:', error);
-        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not decode VIN. Please enter vehicle info manually.' });
-      } finally {
-        setIsAiLoading(false);
+        console.error('VIN Decode Error:', error);
+        toast({ variant: 'destructive', title: 'VIN Decode Error', description: error instanceof Error ? error.message : 'Could not decode VIN.' });
       }
     }
   };
@@ -267,28 +266,86 @@ export default function FleetManagementPage() {
     }
     setIsScannerOpen(false);
   };
+  
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, fileType: 'registration' | 'insurance') => {
+      const file = event.target.files?.[0];
+      if (!file || !adminUser) return;
+
+      const setLoading = fileType === 'registration' ? setIsUploadingReg : setIsUploadingIns;
+      setLoading(true);
+      
+      try {
+          // This just sets the File object in the form state. Upload happens on final submit.
+          if (fileType === 'registration') {
+              form.setValue('registrationDocument', file);
+          } else {
+              form.setValue('insuranceDocument', file);
+          }
+      } catch (error) {
+           toast({ variant: 'destructive', title: "File Error", description: "Could not handle file."});
+      } finally {
+          setLoading(false);
+      }
+  }
 
 
   async function onSubmit(values: AssetFormValues) {
-    const assetData = {
+    let savedAsset: FleetAsset;
+    let documentPromises: Promise<string | void>[] = [];
+
+    const assetData: Partial<FleetAsset> = {
       ...values,
-      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
-      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
+      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : undefined,
+      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : undefined,
     };
     
-    let savedAsset: FleetAsset;
-
     if (editingAsset) {
-        const updateData: Partial<FleetAsset> = assetData as any; // Cast to avoid type issues with null dates
-        await updateFleetAsset(editingAsset.id, updateData);
-        savedAsset = { ...editingAsset, ...updateData };
+        await updateFleetAsset(editingAsset.id, assetData);
+        savedAsset = { ...editingAsset, ...assetData };
         setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
-        const newId = await addFleetAsset(assetData as any); // Cast to avoid type issues with null dates
+        const newId = await addFleetAsset(assetData as Omit<FleetAsset, 'id'>);
         savedAsset = { id: newId, ...assetData } as FleetAsset;
         setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
+    }
+
+    // Handle Document Uploads
+    const processDocument = async (file: File | undefined, docType: ManagedDocument['documentType'], asset: FleetAsset) => {
+        if (file && adminUser) {
+            const path = `documents/${asset.id}/${Date.now()}-${file.name}`;
+            const downloadUrl = await uploadFile(file, path);
+            
+            const reader = new FileReader();
+            reader.readAsDataURL(file);
+            const dataUri = await new Promise<string>(resolve => reader.onloadend = () => resolve(reader.result as string));
+            const summary = await summarizeDocument({ documentDataUri: dataUri });
+
+            const newDoc: Omit<ManagedDocument, 'id'> = {
+                title: summary.title || `${asset.name} ${docType}`,
+                description: summary.description || `Document for ${asset.name}`,
+                category: asset.name,
+                documentType: docType,
+                documentUrl: downloadUrl,
+                assetId: asset.id,
+            };
+            const newDocId = await addDocument(newDoc);
+            return newDocId;
+        }
+    };
+    
+    const newDocIds: string[] = [];
+    const regDocId = await processDocument(values.registrationDocument, 'registration', savedAsset);
+    if(regDocId) newDocIds.push(regDocId);
+    
+    const insDocId = await processDocument(values.insuranceDocument, 'insurance', savedAsset);
+    if(insDocId) newDocIds.push(insDocId);
+    
+    if (newDocIds.length > 0) {
+      const updatedIds = [...(savedAsset.documentIds || []), ...newDocIds];
+      await updateFleetAsset(savedAsset.id, { documentIds: updatedIds });
+      setAssets(assets.map(a => a.id === savedAsset.id ? {...a, documentIds: updatedIds} : a));
     }
     
     // Clean up any resolved notifications
@@ -343,7 +400,7 @@ export default function FleetManagementPage() {
     }
   }
 
-  const DateCell = ({ dateString }: { dateString?: string }) => {
+  const DateCell = ({ dateString }: { dateString?: string | null }) => {
     if (!dateString) return <TableCell className="text-muted-foreground">N/A</TableCell>;
 
     const date = parseISO(dateString);
@@ -441,40 +498,8 @@ export default function FleetManagementPage() {
     );
   }
 
-  const MaintenanceScheduleField = ({ name, label }: { name: keyof MaintenanceSchedule, label: string }) => {
-    return (
-        <div className="grid grid-cols-2 gap-4 items-end">
-            <FormField
-                control={form.control}
-                name={`maintenanceSchedule.${name}.intervalMonths`}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>{label} Interval</FormLabel>
-                        <FormControl>
-                             <div className="flex items-center">
-                                <Input type="number" placeholder="e.g., 6" {...field} onChange={e => field.onChange(e.target.value === '' ? undefined : e.target.value)} />
-                                <span className="ml-2 text-sm text-muted-foreground">months</span>
-                            </div>
-                        </FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-             <FormField
-                control={form.control}
-                name={`maintenanceSchedule.${name}.lastServiceDate`}
-                render={({ field }) => (
-                    <FormItem>
-                        <FormLabel>Last Service Date</FormLabel>
-                        <FormControl><Input type="text" disabled placeholder="Updated from logs" value={field.value ? format(parseISO(field.value), 'PPP') : 'No record'} /></FormControl>
-                        <FormMessage />
-                    </FormItem>
-                )}
-            />
-        </div>
-    )
-  }
-
+  const registrationFile = form.watch('registrationDocument');
+  const insuranceFile = form.watch('insuranceDocument');
 
   return (
     <>
@@ -533,78 +558,43 @@ export default function FleetManagementPage() {
                           </FormItem> 
                         )}/>
                        <Separator />
-                       <h3 className="text-lg font-medium">Vehicle Details</h3>
-                       <p className="text-sm text-muted-foreground -mt-2">This information is automatically populated by the AI after entering a valid VIN.</p>
+                       <h3 className="text-lg font-medium">Vehicle Details (Auto-filled from VIN)</h3>
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
                        </div>
                        <Separator />
-                       <h3 className="text-lg font-medium">Document Expiration Dates</h3>
-                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                          <FormField
-                              control={form.control}
-                              name="registrationDueDate"
-                              render={({ field }) => (
-                                  <FormItem className="flex flex-col">
-                                  <FormLabel>Registration Due Date</FormLabel>
-                                  <Popover>
-                                      <PopoverTrigger asChild>
-                                      <FormControl>
-                                          <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
-                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                          </Button>
-                                      </FormControl>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                          mode="single"
-                                          selected={field.value}
-                                          onSelect={field.onChange}
-                                          captionLayout="dropdown-nav"
-                                          fromYear={getYear(new Date()) - 10}
-                                          toYear={getYear(new Date()) + 10}
-                                          initialFocus
-                                      />
-                                      </PopoverContent>
-                                  </Popover>
-                                  <FormMessage />
-                                  </FormItem>
-                              )}
-                          />
-                          <FormField
-                              control={form.control}
-                              name="insuranceDueDate"
-                              render={({ field }) => (
-                                  <FormItem className="flex flex-col">
-                                  <FormLabel>Insurance Due Date</FormLabel>
-                                  <Popover>
-                                      <PopoverTrigger asChild>
-                                      <FormControl>
-                                          <Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>
-                                          {field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}
-                                          <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                          </Button>
-                                      </FormControl>
-                                      </PopoverTrigger>
-                                      <PopoverContent className="w-auto p-0" align="start">
-                                      <Calendar
-                                          mode="single"
-                                          selected={field.value}
-                                          onSelect={field.onChange}
-                                          captionLayout="dropdown-nav"
-                                          fromYear={getYear(new Date()) - 10}
-                                          toYear={getYear(new Date()) + 10}
-                                          initialFocus
-                                      />
-                                      </PopoverContent>
-                                  </Popover>
-                                  <FormMessage />
-                                  </FormItem>
-                              )}
-                          />
+                       <h3 className="text-lg font-medium">Documents &amp; Expiration</h3>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div className="space-y-4">
+                           <FormField control={form.control} name="registrationDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Registration Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
+                           <FormField control={form.control} name="registrationDocument" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Registration Document</FormLabel>
+                                <div className="flex items-center gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={() => regFileInputRef.current?.click()} disabled={isUploadingReg}>{isUploadingReg ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}Upload</Button>
+                                <Input type="file" ref={regFileInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'registration')} />
+                                {registrationFile && <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500"/>{registrationFile.name}</span>}
+                                {editingAsset?.documentIds?.length && <Link href={`/admin/manage-documents`}><Button variant="link" size="sm"><LinkIcon/>View existing</Button></Link>}
+                                </div>
+                            </FormItem>
+                           )}/>
+                        </div>
+                         <div className="space-y-4">
+                           <FormField control={form.control} name="insuranceDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Insurance Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
+                           <FormField control={form.control} name="insuranceDocument" render={({ field }) => (
+                            <FormItem>
+                                <FormLabel>Insurance Document</FormLabel>
+                                <div className="flex items-center gap-2">
+                                <Button type="button" variant="outline" size="sm" onClick={() => insFileInputRef.current?.click()} disabled={isUploadingIns}>{isUploadingIns ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <FileUp className="mr-2 h-4 w-4" />}Upload</Button>
+                                <Input type="file" ref={insFileInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'insurance')} />
+                                {insuranceFile && <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500"/>{insuranceFile.name}</span>}
+                                {editingAsset?.documentIds?.length && <Link href={`/admin/manage-documents`}><Button variant="link" size="sm"><LinkIcon/>View existing</Button></Link>}
+                                </div>
+                            </FormItem>
+                           )}/>
+                         </div>
                       </div>
                       <DialogFooter className="pt-4">
                         <Button type="submit">Save Asset</Button>
