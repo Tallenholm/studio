@@ -47,7 +47,8 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
-import { getMaintenanceSchedule, getVehicleInfoFromVin } from '@/ai/flows/get-maintenance-schedule';
+import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
+import { getVehicleInfoFromVin } from '@/ai/flows/get-vehicle-info-from-vin';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification } from '@/lib/firestoreService';
