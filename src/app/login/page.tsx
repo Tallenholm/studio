@@ -5,16 +5,15 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, AlertCircle, Chrome, UserPlus, Truck } from 'lucide-react';
+import { LogIn, AlertCircle, Chrome, Truck } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from '@/components/ui/alert-dialog';
 import { sendPasswordResetEmail, signInWithPopup, GoogleAuthProvider } from 'firebase/auth';
-import { initiateEmailSignUp, initiateEmailSignIn } from '@/firebase/non-blocking-login';
+import { initiateEmailSignIn } from '@/firebase/non-blocking-login';
 import { isFirebaseConfigured, useAuth, useUser } from '@/firebase';
 
 const loginSchema = z.object({
@@ -22,16 +21,10 @@ const loginSchema = z.object({
   password: z.string().min(1, { message: 'Password is required.' }),
 });
 
-const signupSchema = z.object({
-    email: z.string().email({ message: 'Please enter a valid email address.' }),
-    password: z.string().min(6, { message: 'Password must be at least 6 characters.' }),
-});
-
 export default function LoginPage() {
   const { isUserLoading } = useUser();
   const auth = useAuth();
   const { toast } = useToast();
-  const [activeTab, setActiveTab] = useState('signin');
   const [resetEmail, setResetEmail] = useState('');
 
   const loginForm = useForm<z.infer<typeof loginSchema>>({
@@ -39,19 +32,9 @@ export default function LoginPage() {
     defaultValues: { email: '', password: '' },
   });
 
-  const signupForm = useForm<z.infer<typeof signupSchema>>({
-    resolver: zodResolver(signupSchema),
-    defaultValues: { email: '', password: '' },
-  });
-
   const onLoginSubmit = (values: z.infer<typeof loginSchema>) => {
     if (!auth) return;
     initiateEmailSignIn(auth, values.email, values.password);
-  };
-
-  const onSignupSubmit = (values: z.infer<typeof signupSchema>) => {
-    if (!auth) return;
-    initiateEmailSignUp(auth, values.email, values.password);
   };
 
   const handleGoogleSignIn = async () => {
@@ -83,9 +66,8 @@ export default function LoginPage() {
     }
   };
   
-  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || signupForm.formState.isSubmitting || isUserLoading;
+  const isFormDisabled = !isFirebaseConfigured || loginForm.formState.isSubmitting || isUserLoading;
   const loginError = loginForm.formState.errors.root?.message;
-  const signupError = signupForm.formState.errors.root?.message;
   
   return (
     <div className="flex items-center justify-center min-h-screen bg-muted/40 p-4">
@@ -105,79 +87,54 @@ export default function LoginPage() {
                 <p className="text-center text-xs">Please add your project credentials to the .env file to enable login.</p>
               </div>
           ) : (
-            <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
-              <TabsList className="grid w-full grid-cols-2">
-                <TabsTrigger value="signin">Sign In</TabsTrigger>
-                <TabsTrigger value="signup">Sign Up</TabsTrigger>
-              </TabsList>
-              <TabsContent value="signin" className="space-y-4">
-                 <Form {...loginForm}>
-                    <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4 pt-4">
-                        <fieldset disabled={isFormDisabled} className="space-y-4">
-                        <FormField control={loginForm.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="name@company.com" {...field} /></FormControl><FormMessage /></FormItem>
+             <Form {...loginForm}>
+                <form onSubmit={loginForm.handleSubmit(onLoginSubmit)} className="space-y-4 pt-4">
+                    <fieldset disabled={isFormDisabled} className="space-y-4">
+                    <FormField control={loginForm.control} name="email" render={({ field }) => (
+                        <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="name@company.com" {...field} /></FormControl><FormMessage /></FormItem>
+                    )}/>
+                     <div>
+                        <FormField control={loginForm.control} name="password" render={({ field }) => (
+                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
                         )}/>
-                         <div>
-                            <FormField control={loginForm.control} name="password" render={({ field }) => (
-                                <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="••••••••" {...field} /></FormControl><FormMessage /></FormItem>
-                            )}/>
-                            <div className="text-right mt-2">
-                               <AlertDialog>
-                                  <AlertDialogTrigger asChild>
-                                    <Button variant="link" type="button" className="text-xs p-0 h-auto">Forgot Password?</Button>
-                                  </AlertDialogTrigger>
-                                  <AlertDialogContent>
-                                    <AlertDialogHeader>
-                                      <AlertDialogTitle>Reset Your Password</AlertDialogTitle>
-                                      <AlertDialogDescription>
-                                        Enter your email address below to receive a password reset link.
-                                      </AlertDialogDescription>
-                                    </AlertDialogHeader>
-                                    <div className="py-2">
-                                        <Label htmlFor="reset-email" className="sr-only">Email</Label>
-                                        <Input
-                                            id="reset-email"
-                                            type="email"
-                                            placeholder="name@company.com"
-                                            value={resetEmail}
-                                            onChange={(e) => setResetEmail(e.target.value)}
-                                        />
-                                    </div>
-                                    <AlertDialogFooter>
-                                      <AlertDialogCancel>Cancel</AlertDialogCancel>
-                                      <AlertDialogAction onClick={handlePasswordReset}>Send Reset Link</AlertDialogAction>
-                                    </AlertDialogFooter>
-                                  </AlertDialogContent>
-                                </AlertDialog>
-                            </div>
-                         </div>
-                        </fieldset>
-                        {loginError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" /><p>{loginError}</p></div>}
-                        <Button type="submit" className="w-full" disabled={isFormDisabled}><LogIn className="mr-2 h-5 w-5" /> Sign In</Button>
-                    </form>
-                </Form>
-                 <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or continue with</span></div></div>
-                <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}><Chrome className="mr-2 h-5 w-5" /> Sign In with Google</Button>
-              </TabsContent>
-
-              <TabsContent value="signup">
-                <Form {...signupForm}>
-                    <form onSubmit={signupForm.handleSubmit(onSignupSubmit)} className="space-y-4 pt-4">
-                        <fieldset disabled={isFormDisabled} className="space-y-4">
-                        <FormField control={signupForm.control} name="email" render={({ field }) => (
-                            <FormItem><FormLabel>Email</FormLabel><FormControl><Input placeholder="name@company.com" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        <FormField control={signupForm.control} name="password" render={({ field }) => (
-                            <FormItem><FormLabel>Password</FormLabel><FormControl><Input type="password" placeholder="At least 6 characters" {...field} /></FormControl><FormMessage /></FormItem>
-                        )}/>
-                        </fieldset>
-                        {signupError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" /><p>{signupError}</p></div>}
-                        <Button type="submit" className="w-full" disabled={isFormDisabled}><UserPlus className="mr-2 h-5 w-5" /> Create Account</Button>
-                    </form>
-                </Form>
-              </TabsContent>
-            </Tabs>
+                        <div className="text-right mt-2">
+                           <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="link" type="button" className="text-xs p-0 h-auto">Forgot Password?</Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>Reset Your Password</AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    Enter your email address below to receive a password reset link.
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <div className="py-2">
+                                    <Label htmlFor="reset-email" className="sr-only">Email</Label>
+                                    <Input
+                                        id="reset-email"
+                                        type="email"
+                                        placeholder="name@company.com"
+                                        value={resetEmail}
+                                        onChange={(e) => setResetEmail(e.target.value)}
+                                    />
+                                </div>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>Cancel</AlertDialogCancel>
+                                  <AlertDialogAction onClick={handlePasswordReset}>Send Reset Link</AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                        </div>
+                     </div>
+                    </fieldset>
+                    {loginError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" /><p>{loginError}</p></div>}
+                    <Button type="submit" className="w-full" disabled={isFormDisabled}><LogIn className="mr-2 h-5 w-5" /> Sign In</Button>
+                </form>
+            </Form>
           )}
+           <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or continue with</span></div></div>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}><Chrome className="mr-2 h-5 w-5" /> Sign In with Google</Button>
         </CardContent>
       </Card>
     </div>

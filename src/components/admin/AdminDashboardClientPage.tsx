@@ -17,7 +17,6 @@ import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
 import GuidedTour from '@/components/common/GuidedTour';
 import type { TourStep } from '@/components/common/GuidedTour';
-import WeatherForecast from '@/components/admin/WeatherForecast';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Sprout } from 'lucide-react';
 import { Calculator } from 'lucide-react';
@@ -284,8 +283,6 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             <StatCard title="Failed Reports" value={dashboardData?.stats.failedReports || 0} icon={AlertTriangle} link="/reports" />
       </div>
       
-      <WeatherForecast />
-      
       <div id="tour-step-ai-briefing">
         <DailyBriefingCard briefing={dashboardData?.briefing || null} isLoading={isLoading} />
       </div>
@@ -442,4 +439,3 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     </>
   );
 }
-
