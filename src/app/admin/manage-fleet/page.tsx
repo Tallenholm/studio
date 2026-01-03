@@ -272,21 +272,21 @@ export default function FleetManagementPage() {
   async function onSubmit(values: AssetFormValues) {
     const assetData = {
       ...values,
-      registrationDueDate: values.registrationDueDate?.toISOString().split('T')[0],
-      insuranceDueDate: values.insuranceDueDate?.toISOString().split('T')[0],
+      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
+      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
     };
     
     let savedAsset: FleetAsset;
 
     if (editingAsset) {
-        const updateData: Partial<FleetAsset> = assetData;
+        const updateData: Partial<FleetAsset> = assetData as any; // Cast to avoid type issues with null dates
         await updateFleetAsset(editingAsset.id, updateData);
         savedAsset = { ...editingAsset, ...updateData };
         setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
-        const newId = await addFleetAsset(assetData);
-        savedAsset = { id: newId, ...assetData };
+        const newId = await addFleetAsset(assetData as any); // Cast to avoid type issues with null dates
+        savedAsset = { id: newId, ...assetData } as FleetAsset;
         setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
         toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
     }
