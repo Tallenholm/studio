@@ -96,6 +96,7 @@ export default function ManageSnowRoutesPage() {
                 getFleetAssets()
             ]);
             setRoutes(loadedRoutes);
+            // Correctly filter for snow removal jobs for the assignment dropdown
             setJobs(allJobs.filter(j => j.jobType === 'snow_removal'));
             setUsers(loadedUsers);
             setFleetAssets(loadedAssets.filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));

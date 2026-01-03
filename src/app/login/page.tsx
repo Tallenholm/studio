@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState } from 'react';
@@ -42,7 +43,7 @@ export default function LoginPage() {
     const provider = new GoogleAuthProvider();
     try {
         await signInWithPopup(auth, provider);
-        toast({ title: 'Login Successful', description: 'Welcome!' });
+        // Toast is handled by the redirect now
     } catch (error: any) {
         loginForm.setError('root', { message: error.message || 'An unknown login error occurred.' });
     }

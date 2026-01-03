@@ -22,7 +22,6 @@ const PATH_CONFIG = {
     '/admin/manage-expenses',
     '/admin/manage-clients',
     '/admin/manage-jobs',
-    '/admin/manage-snow-routes',
     '/admin/manage-rentals',
     '/admin/advanced-reports',
     '/admin/system-settings',
@@ -30,37 +29,28 @@ const PATH_CONFIG = {
 };
 
 function isPathAllowed(pathname: string, role: UserRole | 'guest'): boolean {
-    // 1. Guests can only access public paths
     if (role === 'guest') {
         return PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
     }
-    
-    // 2. All authenticated users can access shared paths
-    if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p) && (pathname.length === p.length || pathname[p.length] === '/'))) {
+
+    if (PATH_CONFIG.SHARED_AUTH.some(p => pathname.startsWith(p))) {
         return true;
     }
-
-    // 3. Owners can go anywhere (except public paths if logged in)
-    if (role === 'owner') {
-        return !PATH_CONFIG.PUBLIC.some(p => pathname.startsWith(p));
-    }
     
-    // 4. Role-specific paths
-    if (role === 'employee') {
-        return PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p));
+    if (PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p))) {
+        return role === 'employee' || role === 'manager' || role === 'owner';
     }
 
-    if (role === 'manager') {
-        // Managers can access admin paths that are not owner-only
-        if (pathname.startsWith(PATH_CONFIG.ADMIN_BASE)) {
+    if (pathname.startsWith(PATH_CONFIG.ADMIN_BASE)) {
+        if (role === 'owner') return true;
+        if (role === 'manager') {
+            // Managers can access admin pages that are NOT owner-only
             return !PATH_CONFIG.OWNER_ONLY.some(p => pathname.startsWith(p));
         }
-        // Managers can also access employee paths
-        return PATH_CONFIG.EMPLOYEE_ONLY.some(p => pathname.startsWith(p));
+        return false;
     }
     
-    // 5. Default to false if no rules match
-    return false;
+    return false; // Default deny
 }
 
 
@@ -77,8 +67,6 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
   const router = useRouter();
 
   useEffect(() => {
-    // Don't run router logic until the Firebase user object is determined.
-    // We can act as soon as `firebaseUser` is not undefined.
     if (isUserLoading && firebaseUser === null) {
       return;
     }
@@ -87,43 +75,41 @@ export default function RouteGuard({ children }: { children: React.ReactNode }) 
     const isPublicPath = PATH_CONFIG.PUBLIC.includes(pathname);
     const isAllowed = isPathAllowed(pathname, role);
 
-    // If user is logged in (firebaseUser exists)
     if (firebaseUser) {
       if (isPublicPath || pathname === '/') {
-        // Redirect from login or root to appropriate dashboard
         const destination = role === 'employee' ? '/employee' : '/admin';
         router.replace(destination);
       } else if (!isAllowed) {
-        // Redirect from a forbidden path to appropriate dashboard
         const destination = role === 'employee' ? '/employee' : '/admin';
+        console.warn(`Redirecting unauthorized user (role: ${role}) from ${pathname} to ${destination}`);
         router.replace(destination);
       }
-    } else { // If user is not logged in
+    } else { 
       if (!isPublicPath) {
         router.replace('/login');
       }
     }
   }, [firebaseUser, user, isUserLoading, pathname, router]);
 
-  // Determine what to render based on current state
-  // We check `isUserLoading` to show a loader while the user's profile and role are still being fetched,
-  // even if the firebaseUser object is already available.
   if (isUserLoading) {
     return <FullScreenLoader text="Authenticating..." />;
   }
 
   const isAppPage = !PATH_CONFIG.PUBLIC.includes(pathname);
 
-  // If user is logged in and on an app page, render the layout
   if (firebaseUser && isAppPage) {
-    return <AppLayout>{children}</AppLayout>;
+    // Only render the layout if the user is authorized for the current path
+    // to prevent content flashing during redirects.
+    if (isPathAllowed(pathname, user?.role || 'guest')) {
+      return <AppLayout>{children}</AppLayout>;
+    }
+    // Otherwise, show a loader while redirecting.
+    return <FullScreenLoader text="Redirecting..." />;
   }
 
-  // If user is not logged in and on a public page, render the page
   if (!firebaseUser && PATH_CONFIG.PUBLIC.includes(pathname)) {
     return <>{children}</>;
   }
 
-  // Fallback loader for any other state (e.g., redirecting)
   return <FullScreenLoader text="Loading..." />;
 }

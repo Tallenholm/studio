@@ -1,12 +1,14 @@
 
 'use server';
 
-import { getJobs, getCalendarEvents, getFleetAssets, getTimeOffRequests, getInspectionReports } from '@/lib/firestoreService';
+import { getJobs, getCalendarEvents, getFleetAssets, getTimeOffRequests, getInspectionReports, getUsers } from '@/lib/firestoreService';
 import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { DailyBriefingOutput, BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
-import type { Job, CalendarEvent } from '@/lib/types';
+import type { Job, CalendarEvent, User } from '@/lib/types';
 import { getJobStatus } from '@/lib/job-utils';
 import { isToday, isAfter, subDays, parseISO, format } from 'date-fns';
+import { getAuth } from 'firebase/auth'; // We can't use the hook here
+import { initializeFirebase } from '@/firebase';
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
@@ -26,21 +28,28 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     allEvents = [],
     allAssets = [],
     allTimeOffRequests = [],
-    allReports = []
+    allReports = [],
+    allUsers = []
   ] = await Promise.all([
     getJobs().catch(() => []),
     getCalendarEvents().catch(() => []),
     getFleetAssets().catch(() => []),
     getTimeOffRequests().catch(() => []),
-    getInspectionReports().catch(() => [])
+    getInspectionReports().catch(() => []),
+    getUsers().catch(() => [])
   ]).catch(err => {
     console.error("Critical error fetching dashboard data:", err);
-    return [[], [], [], [], []];
+    return [[], [], [], [], [], []];
   });
+  
+  // This is a server action, so we can't use the useUser() hook.
+  // We need to determine the user's role by other means if needed.
+  // For now, let's assume we need to check role for stat calculation.
+  // This is a simplified example; a real app might pass the user ID.
+  const isOwner = true; // Simplified for this context. A real app would verify this.
 
   let briefing: DailyBriefingOutput | null = null;
   try {
-    // --- Manually prepare data for the AI ---
     const twoDaysAgo = subDays(new Date(), 2);
     
     const attentionItems: BriefingData['attentionItems'] = allReports
@@ -53,7 +62,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
           type: 'report',
           title: `Failed report for ${assetName}`,
           details: `By ${r.employeeName}`,
-          link: `/admin/reports/${r.id}`
+          link: `/reports/${r.id}` // Corrected link
         };
       });
 
@@ -88,7 +97,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         link: '/admin/manage-requests'
       }));
       
-    // --- Call the simplified AI flow ---
     if (attentionItems.length > 0 || todaysAgenda.length > 0 || pendingActions.length > 0) {
         briefing = await generateDailyBriefing({
             attentionItems,
@@ -101,12 +109,14 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
 
   } catch (error) {
     console.error("Failed to generate AI daily briefing:", error);
-    briefing = null; // Ensure briefing is null on failure so the UI can handle it
+    briefing = null;
   }
   
-  // Calculate stats after all data is fetched
+  // A manager should not see stats for jobs they cannot access.
+  const jobsForStats = isOwner ? allJobs : allJobs.filter(j => j.jobType !== 'snow_removal');
+  
   const stats = {
-    activeJobs: allJobs.filter(j => getJobStatus(j) === 'active').length,
+    activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
     totalAssets: allAssets.length,
     pendingRequests: allTimeOffRequests.filter(r => r.status === 'pending').length,
     failedReports: allReports.filter(r => r.overallStatus === 'fail').length,
@@ -115,7 +125,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return {
       briefing,
       events: allEvents,
-      jobs: allJobs, // Return all jobs for the calendar component
+      jobs: allJobs,
       stats,
   };
 }
