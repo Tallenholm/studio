@@ -430,7 +430,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal />System Settings</Button></Link>
-              <Button variant="outline" className="w-full justify-start" onClick={() => openTools()}><Calculator />Calculators</Button>
+              <Link href="/admin/fleet-tools" passHref><Button variant="outline" className="w-full justify-start"><Calculator />Calculators</Button></Link>
               <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users />Go to Employee Portal</Button></Link>
             </CardContent>
           </Card>

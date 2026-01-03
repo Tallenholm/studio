@@ -282,11 +282,16 @@ export default function SnowRoutesPage() {
                     </div>
                </div>
                {routeJobs.length > 0 ? routeJobs.map(job => {
-                    const services: {key: ServiceType, label: string}[] = [
-                        ...(job.snowServices?.plowing && route.type === 'plowing' ? [{key: 'plowing' as ServiceType, label: 'Plowing'}] : []),
-                        ...(job.snowServices?.salting && route.type === 'salting' ? [{key: 'salting' as ServiceType, label: 'Salting'}] : []),
-                        ...(job.snowServices?.sidewalks && route.type === 'sidewalks' ? [{key: 'sidewalks' as ServiceType, label: 'Sidewalks'}] : [])
-                    ];
+                    const services: {key: ServiceType, label: string}[] = [];
+                    if (job.snowServices?.plowing && route.type === 'plowing') {
+                        services.push({ key: 'plowing', label: 'Plowing' });
+                    }
+                    if (job.snowServices?.salting && route.type === 'salting') {
+                        services.push({ key: 'salting', label: 'Salting' });
+                    }
+                    if (job.snowServices?.sidewalks && route.type === 'sidewalks') {
+                        services.push({ key: 'sidewalks', label: 'Sidewalks' });
+                    }
                     
                     if (services.length === 0) return null;
                     
