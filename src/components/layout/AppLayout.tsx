@@ -19,6 +19,8 @@ import {
   SidebarMenuSub,
   SidebarMenuSubButton,
   SidebarInset,
+  SidebarSeparator,
+  SidebarGroupLabel,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -139,6 +141,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 <SidebarContent>
                     {user?.role === 'employee' && (
                         <SidebarGroup>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/employee">
@@ -232,6 +235,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
                     {isAdmin && user && (
                         <SidebarGroup>
+                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/admin">
@@ -366,5 +370,3 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
-
-    
