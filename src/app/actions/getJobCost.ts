@@ -34,8 +34,10 @@ export async function getJobCost(job: Job | null) {
         .filter(report => isWithinInterval(parseISO(report.date), jobInterval))
         .reduce((acc, report) => acc + report.amount, 0);
 
+    // Refined job duration calculation
     const jobDurationDays = differenceInBusinessDays(addDays(jobInterval.end, 1), jobInterval.start);
-    const jobDurationHours = Math.max(1, jobDurationDays) * 8; // Assume 8-hour work days
+    // Ensure a minimum of 1 day (8 hours) for jobs that start and end on the same day or over a weekend.
+    const jobDurationHours = Math.max(1, jobDurationDays) * 8; 
 
     const assignedMainCrewIds = new Set(job.assignedEmployeeIds || []);
     const assignedSidewalkCrewIds = new Set(job.assignedSidewalkCrewIds || []);
