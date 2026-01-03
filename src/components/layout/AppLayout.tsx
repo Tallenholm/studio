@@ -15,16 +15,13 @@ import {
   SidebarMenuButton,
   SidebarFooter,
   SidebarGroup,
-  SidebarGroupLabel,
-  SidebarSeparator,
-  SidebarInset,
   SidebarSub,
   SidebarMenuSub,
   SidebarMenuSubButton,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, Files, FileBadge, HeartPulse, Snowflake, Droplets, Package, Calculator, Hammer, Route, ArrowRightLeft, Cloud, User as UserIcon, Sprout, Loader2 } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, FileBadge, HeartPulse, Route, Calculator, Cloud, User as UserIcon, Loader2 } from 'lucide-react';
 import type { NotificationMessage } from '@/lib/types';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -141,7 +138,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 <SidebarContent>
                     {user?.role === 'employee' && (
                         <SidebarGroup>
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/employee">
@@ -259,9 +255,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                             </SidebarMenu>
                             
-                            <SidebarSeparator className="my-1" />
-
-                             <SidebarMenu>
+                            <SidebarMenu>
                                 <SidebarSub>
                                     <SidebarMenuButton>
                                         <Users /> People & Comms
@@ -296,7 +290,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         {user.role === 'owner' && <Link href="/admin/manage-clients"><SidebarMenuSubButton>Manage Clients</SidebarMenuSubButton></Link>}
                                         {user.role === 'owner' && <Link href="/admin/manage-jobs"><SidebarMenuSubButton>All Jobs</SidebarMenuSubButton></Link>}
                                         {user.role === 'owner' && <Link href="/admin/manage-rentals"><SidebarMenuSubButton>Manage Rentals</SidebarMenuSubButton></Link>}
-                                        {user.role === 'owner' && <Link href="/admin/manage-snow-routes"><SidebarMenuSubButton>Snow Routes</SidebarMenuSubButton></Link>}
+                                        <Link href="/admin/manage-snow-routes"><SidebarMenuSubButton>Snow Routes</SidebarMenuSubButton></Link>
                                         <Link href="/reports"><SidebarMenuSubButton>Inspection Reports</SidebarMenuSubButton></Link>
                                         <Link href="/admin/manage-work-orders"><SidebarMenuSubButton>Manage Work Orders</SidebarMenuSubButton></Link>
                                         <Link href="/admin/maintenance-logs"><SidebarMenuSubButton>Maintenance Logs</SidebarMenuSubButton></Link>

@@ -11,13 +11,13 @@ export const faqs = {
     },
     {
       question: "Where is my data stored?",
-      answer: "All application data, including reports, users, and documents, is stored locally in your web browser's local storage. This means the data is private to your browser and device. No data is sent to an external server for storage.",
+      answer: "All application data, including reports, users, and documents, is stored securely in Firebase, a Google cloud service. This ensures your data is safe and accessible across your devices.",
     },
   ],
   employee: [
     {
       question: "How do I perform a vehicle inspection and report damage?",
-      answer: "From the Employee Hub, go to 'Fleet Check' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. The checklists will appear on the same page. To report damage or an issue, mark the relevant item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
+      answer: "From the Employee Hub, go to 'Vehicle Inspections' and select either 'Pre-Trip' or 'Post-Trip'. Select the vehicle(s) you are inspecting. The checklists will appear on the same page. To report damage or an issue, mark the relevant item as 'Fail'. You must provide detailed notes about the issue in the text box that appears. You can also add a photo. Once complete, click 'Submit Inspection'. Any failed items will automatically be flagged for review on the Admin Dashboard.",
     },
     {
       question: "How do I use the Snow Routes page?",
@@ -33,7 +33,7 @@ export const faqs = {
     },
     {
         question: "How do I complete an assigned task?",
-        answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete'. If photo verification is required, you can use your device's camera or upload a file. The photo will be stamped with the date, time, and GPS coordinates. Add any notes and submit. The task will then be marked as complete.",
+        answer: "From the Employee Hub, go to 'My Tasks'. You will see a list of tasks assigned to you. Click 'Mark as Complete'. If photo verification is required, you can use your device's camera or upload a file. Add any notes and submit. The task will then be marked as complete.",
     },
     {
         question: "How do I view notifications?",
@@ -41,7 +41,7 @@ export const faqs = {
     },
     {
       question: "Where can I find documents?",
-      answer: "There are two document pages. 'Policies & Documents' contains general files for all employees, like safety manuals and vehicle information. 'Personal Documents' is a secure area where you can find your own tax forms (like W-2s) and employment-related documents (like your I-9). Both can be accessed from your Employee Hub or the sidebar.",
+      answer: "There are two document pages. 'Company Documents' contains general files for all employees, like safety manuals and vehicle information. 'Personal Documents' is a secure area where you can find your own tax forms (like W-2s) and employment-related documents (like your I-9). Both can be accessed from your Employee Hub or the sidebar.",
     },
     {
       question: "How do I view an employee violation?",
@@ -55,19 +55,15 @@ export const faqs = {
     },
     {
       question: "What does the AI Daily Briefing do?",
-      answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off or expense approvals. It helps you prioritize your work without having to manually check every section of the app.",
+      answer: "The AI Daily Briefing is your intelligent assistant that automatically summarizes the most important information for your day. When you log in, the AI analyzes all new reports, jobs, and requests to highlight urgent issues (like failed inspections), list your scheduled jobs and events for the day, and remind you of any pending actions like time-off approvals. It helps you prioritize your work without having to manually check every section of the app.",
     },
     {
       question: "How are Work Orders created and managed?",
       answer: "When an inspection is submitted with one or more 'Failed' items, an administrator can create a Work Order directly from that report. From the report page, the admin can click 'Create Work Order'. This generates a new entry on the 'Manage Work Orders' page, pre-filled with the vehicle information and issue description. Admins can then update the status, add notes, and track costs. When an admin completes a work order, the system automatically creates a corresponding entry in the Maintenance Logs, ensuring a complete and seamless audit trail for the repair. You can also click the eye icon on any work order to navigate directly back to the original inspection report that generated it.",
     },
-    {
-      question: "How does the AI Anomaly Detection work?",
-      answer: "After an employee completes a Pre-Trip inspection, you (as an admin) can view the report and click 'Run AI Analysis'. The AI compares the current report with past pre-trip reports for the same vehicle (based on VIN) to identify unusual patterns or potential maintenance needs. It then provides a summary of its findings.",
-    },
      {
       question: "How do I manage documents?",
-      answer: "Navigate to 'Policies & Documents' from your dashboard. When adding a new document, you must select its type: Policy/General, Tax, or Employment. For 'General' documents, you assign them to a text-based category (e.g., 'Company Policies'). For 'Tax' or 'Employment' documents, you must assign them to a specific employee from a dropdown list. This ensures they only appear in that employee's secure 'Personal Documents' section. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
+      answer: "Navigate to 'Policies & Documents' from your dashboard. When adding a new document, you must select its type: General, Registration, Insurance, Tax, etc. For 'Tax' or 'Employment' documents, you must assign them to a specific employee. This ensures they only appear in that employee's secure 'Personal Documents' section. For maintenance or registration documents, assign them to a specific asset. You can view all sensitive employee documents on the dedicated 'Personal Documents' page.",
     },
     {
       question: "How do I manage employee tasks?",
@@ -88,20 +84,24 @@ export const faqs = {
       answer: "Navigate to 'Advanced Reports' from the Admin Dashboard or sidebar. This page provides a powerful analytics overview of your fleet's data. You can use the filters at the top to narrow down the data by a specific date range (e.g., 'Last 30 Days') or by vehicle type (e.g., 'Trucks only'). The charts will update in real-time to reflect your selections, allowing you to gain deeper insights into trends and costs.",
     },
     {
+      question: "What is the Fleet Health page?",
+      answer: "The 'Fleet Health' page is an intelligence dashboard. It provides an at-a-glance health score for every asset based on recent failed inspections and repairs. It also uses AI to generate a natural language summary of the asset's condition and shows a 6-month chart of maintenance costs, helping you quickly identify vehicles that need attention.",
+    },
+    {
+      question: "What is the Job Cost Analysis?",
+      answer: "On the details page for any job, you'll find the 'Job Cost Analysis' section. It provides an estimated profit or loss by automatically calculating and subtracting operational costs (labor for all assigned crew, maintenance for assigned vehicles during the job's timeframe, and other expenses) from the total job value. This gives you a clear financial picture for each project.",
+    },
+    {
       question: "What can different Admin roles do?",
       answer: "There are two levels of administrative access: Manager and Owner. 'Managers' can handle day-to-day operations like managing tasks, violations, and documents. 'Owners' have full system access, including all manager permissions, plus the ability to manage users, clients, jobs, expenses, and view advanced financial reports. Only an Owner can change another user's role.",
     },
     {
       question: "How do I manage jobs for different business units (e.g., snow vs. excavation)?",
-      answer: "The application has dedicated management pages for different types of work: Excavation, Snow Removal, Concrete, and Miscellaneous. Each can be accessed from the Admin Dashboard or sidebar. This separation ensures that contracts, assignments, and terminology are specific to each operational area, preventing confusion and streamlining your workflow.",
+      answer: "The 'Manage Jobs' page allows you to create jobs of any type (Excavation, Snow Removal, Concrete, etc.). The form dynamically changes based on the job type you select, showing relevant fields for snow contracts or concrete estimates, for example. This keeps all your work organized in one place while catering to the specific needs of each business unit.",
     },
     {
       question: "How do I add and manage clients?",
       answer: "As an 'Owner', go to 'Manage Clients' from the dashboard or sidebar. Here you can add new clients with their contact information, edit existing clients, or remove them. This client list is then used when creating and assigning jobs.",
-    },
-    {
-      question: "How do I create and track excavation jobs?",
-      answer: "As an 'Owner', go to the 'Manage Jobs' page. You can create a new job manually, or use the 'Create with AI' button to generate one from a simple description. You can also edit existing jobs, assign specific fleet assets, and track job value. Use the search and filter controls to quickly find specific jobs by name, client, or status. Jobs are automatically organized into 'Upcoming', 'Active', and 'Completed' sections. For full details and a job-specific notes log, click 'View Details' on any job.",
     },
     {
       question: "How do I manage expense reports?",

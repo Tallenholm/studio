@@ -196,6 +196,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
 
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { user } = useUser();
+  const { open: openTools } = useGlobalTools();
 
 
   useEffect(() => {
@@ -405,8 +406,8 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 />Manage Clients</Button></Link>
             <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase />All Jobs</Button></Link>
             <Link href="/admin/manage-rentals" passHref><Button variant="outline" className="w-full justify-start"><ArrowRightLeft />Manage Rentals</Button></Link>
-            <Link href="/admin/manage-snow-routes" passHref><Button variant="outline" className="w-full justify-start"><Route />Snow Routes</Button></Link>
             </>}
+            <Link href="/admin/manage-snow-routes" passHref><Button variant="outline" className="w-full justify-start"><Route />Snow Routes</Button></Link>
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText />View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit />Manage Work Orders</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench />View Maintenance Logs</Button></Link>
@@ -429,7 +430,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             </CardHeader>
             <CardContent className="grid grid-cols-1 sm:grid-cols-3 gap-3">
               <Link href="/admin/system-settings" passHref><Button variant="outline" className="w-full justify-start"><SlidersHorizontal />System Settings</Button></Link>
-              <Button variant="outline" className="w-full justify-start" onClick={() => useGlobalTools.getState().open()}><Calculator />Calculators</Button>
+              <Button variant="outline" className="w-full justify-start" onClick={() => openTools()}><Calculator />Calculators</Button>
               <Link href="/employee" passHref><Button variant="outline" className="w-full justify-start"><Users />Go to Employee Portal</Button></Link>
             </CardContent>
           </Card>
@@ -440,5 +441,3 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     </>
   );
 }
-
-    
