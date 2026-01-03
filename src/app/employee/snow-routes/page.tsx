@@ -56,7 +56,7 @@ export default function SnowRoutesPage() {
   });
 
   useEffect(() => {
-    if (!user?.uid) {
+    if (!user?.uid) { // Guard against user object existing but uid being null
         setIsLoading(false);
         return;
     };
