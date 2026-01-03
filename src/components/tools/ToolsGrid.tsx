@@ -1,3 +1,4 @@
+
 'use client';
 
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -26,24 +27,24 @@ import UnitConverter from '@/components/tools/UnitConverter';
 
 const toolCategories = [
     {
-        category: "General &amp; Conversion",
+        category: "General & Conversion",
         icon: Scale,
         tools: [
             { id: 'unit-converter', title: 'Unit Converter', description: 'Convert common construction units.', icon: Scale, component: <UnitConverter /> },
         ]
     },
     {
-        category: "Excavation &amp; Earthwork",
+        category: "Excavation & Earthwork",
         icon: Shovel,
         tools: [
             { id: 'excavation', title: 'Excavation Volume', description: 'Estimate bank and loose soil.', icon: Cuboid, component: <SoilVolumeCalculator /> },
             { id: 'trench', title: 'Trench Volume', description: 'Estimate excavation for a trench.', icon: Construction, component: <TrenchVolumeCalculator /> },
-            { id: 'slope', title: 'Slope &amp; Grade', description: 'Calculate slope, grade, and angle.', icon: TrendingUp, component: <SlopeCalculator /> },
+            { id: 'slope', title: 'Slope & Grade', description: 'Calculate slope, grade, and angle.', icon: TrendingUp, component: <SlopeCalculator /> },
             { id: 'retaining-wall', title: 'Retaining Wall', description: 'Estimate blocks needed.', icon: PanelTop, component: <RetainingWallCalculator /> },
         ]
     },
     {
-        category: "Paving &amp; Surfaces",
+        category: "Paving & Surfaces",
         icon: Route,
         tools: [
             { id: 'concrete', title: 'Concrete', description: 'Estimate cubic yards for a slab.', icon: Shovel, component: <ConcreteCalculator /> },
@@ -84,7 +85,7 @@ export default function ToolsGrid() {
              {toolCategories.map((category) => (
                  <TabsTrigger key={category.category} value={category.category} className="flex flex-col h-auto p-3 gap-2">
                     <category.icon className="h-6 w-6" />
-                    <span className="text-center">{category.category}</span>
+                    <span className="text-center" dangerouslySetInnerHTML={{ __html: category.category }}></span>
                 </TabsTrigger>
              ))}
         </TabsList>

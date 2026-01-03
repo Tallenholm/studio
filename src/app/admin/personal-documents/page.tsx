@@ -1,12 +1,13 @@
+
 'use client';
 
-import { useState, useEffect, useMemo } from 'react';
+import { useState, useEffect } from 'react';
 import { getDocuments, deleteDocument } from '@/lib/firestoreService';
 import type { ManagedDocument } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { useToast } from '@/hooks/use-toast';
-import { Loader2, Download, Trash2, FileBadge, User as UserIcon } from 'lucide-react';
+import { Loader2, Download, Trash2, FileBadge } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 
@@ -18,12 +19,18 @@ export default function PersonalDocumentsPage() {
   useEffect(() => {
     async function fetchData() {
         setIsLoading(true);
-        const docs = await getDocuments();
-        setDocuments(docs.filter(d => d.documentType === 'tax' || d.documentType === 'employment'));
-        setIsLoading(false);
+        try {
+            const docs = await getDocuments();
+            setDocuments(docs.filter(d => d.documentType === 'tax' || d.documentType === 'employment'));
+        } catch (error) {
+            console.error("Failed to load personal documents:", error);
+            toast({ variant: 'destructive', title: 'Error', description: 'Could not load personal documents.' });
+        } finally {
+            setIsLoading(false);
+        }
     }
     fetchData();
-  }, []);
+  }, [toast]);
 
   async function removeDocument(docId: string) {
     const docToRemove = documents.find(d => d.id === docId);
@@ -35,83 +42,6 @@ export default function PersonalDocumentsPage() {
       variant: 'destructive',
     });
   }
-
-  const personalDocuments = useMemo(() => {
-    return documents
-        .reduce((acc, doc) => {
-            const employeeName = doc.employeeName || 'Unassigned';
-            (acc[employeeName] = acc[employeeName] || []).push(doc);
-            return acc;
-        }, {} as Record<string, ManagedDocument[]>);
-  }, [documents]);
-
-  const renderPersonalDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
-    if (Object.keys(groupedDocs).length === 0) {
-        return (
-            <Card>
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                        <Icon className="h-6 w-6 text-primary" />
-                        {title}
-                    </CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">No personal documents have been uploaded for this category yet.</div>
-                </CardContent>
-            </Card>
-        );
-    };
-
-    return (
-        <Card>
-            <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-2xl font-headline">
-                    <Icon className="h-6 w-6 text-primary" />
-                    {title}
-                </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-            {Object.entries(groupedDocs).map(([employeeName, docs]) => (
-                <div key={employeeName}>
-                    <h3 className="font-semibold text-lg text-muted-foreground mb-2 flex items-center gap-2">
-                        <UserIcon className="h-5 w-5" />
-                        {employeeName}
-                    </h3>
-                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-                        {docs.map(doc => (
-                           <Card key={doc.id} className="flex flex-col bg-muted/20">
-                               <CardHeader className="flex-row items-start justify-between">
-                                    <div>
-                                        <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
-                                        <CardDescription>{doc.documentType === 'tax' ? 'Tax Form' : 'Employment Form'}</CardDescription>
-                                    </div>
-                                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
-                                        <Trash2 className="h-4 w-4 text-destructive" />
-                                    </Button>
-                               </CardHeader>
-                               <CardContent className="flex-grow flex items-center justify-center pt-0">
-                                   <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
-                                      <Image
-                                        src={'https://placehold.co/850x1100.png'}
-                                        alt={`Preview of ${doc.title}`}
-                                        fill
-                                        className="object-cover object-top transition-transform group-hover:scale-105"
-                                        data-ai-hint="official document"
-                                      />
-                                       <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
-                                            <Download className="h-8 w-8 text-white"/>
-                                        </div>
-                                    </Link>
-                               </CardContent>
-                           </Card>
-                       ))}
-                    </div>
-                </div>
-            ))}
-            </CardContent>
-        </Card>
-    );
-  };
 
   if (isLoading) {
     return (
@@ -138,12 +68,46 @@ export default function PersonalDocumentsPage() {
             </div>
           </div>
         </CardHeader>
-        <CardContent className="space-y-6">
-            {renderPersonalDocumentSection("Personal & Tax Documents", FileBadge, personalDocuments)}
+        <CardContent>
+            {documents.length > 0 ? (
+                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                {documents.map(doc => (
+                    <Card key={doc.id} className="flex flex-col bg-muted/20">
+                        <CardHeader className="flex-row items-start justify-between">
+                            <div>
+                                <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
+                                <CardDescription>{doc.employeeName || 'Unassigned'}</CardDescription>
+                            </div>
+                            <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                        </CardHeader>
+                        <CardContent className="flex-grow flex items-center justify-center pt-0">
+                            <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
+                                <Image
+                                src={'https://placehold.co/850x1100.png'}
+                                alt={`Preview of ${doc.title}`}
+                                fill
+                                className="object-cover object-top transition-transform group-hover:scale-105"
+                                data-ai-hint="official document"
+                                />
+                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 group-hover:opacity-100 transition-opacity">
+                                    <Download className="h-8 w-8 text-white"/>
+                                </div>
+                            </Link>
+                        </CardContent>
+                    </Card>
+                ))}
+                </div>
+            ) : (
+                <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+                    <FileBadge className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+                    <h3 className="text-xl font-semibold text-foreground">No Personal Documents Found</h3>
+                    <p className="mt-2">Use the "Manage Policies & Documents" page to upload and assign sensitive documents to employees.</p>
+                </div>
+            )}
         </CardContent>
       </Card>
     </div>
   );
 }
-
-    

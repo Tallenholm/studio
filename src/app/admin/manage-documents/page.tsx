@@ -36,12 +36,11 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Wrench } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Wrench, FileBadge } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
-import { uploadFile } from '@/firebase';
-import { useAuth } from '@/contexts/AuthContext';
+import { uploadFile, useUser } from '@/firebase';
 
 
 const documentSchema = z.object({
@@ -84,7 +83,7 @@ export default function ManageDocumentsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
   const { toast } = useToast();
-  const { user: adminUser } = useAuth();
+  const { user: adminUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const form = useForm<z.infer<typeof documentSchema>>({
@@ -213,22 +212,25 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const { generalDocuments, assetDocuments } = useMemo(() => {
+  const { generalDocuments, assetDocuments, personalDocuments } = useMemo(() => {
     return documents
         .reduce((acc, doc) => {
             if (doc.documentType === 'general') {
                 (acc.generalDocuments[doc.category] = acc.generalDocuments[doc.category] || []).push(doc);
             } else if (['maintenance', 'registration', 'insurance'].includes(doc.documentType)) {
                  (acc.assetDocuments[doc.category] = acc.assetDocuments[doc.category] || []).push(doc);
+            } else if (['tax', 'employment'].includes(doc.documentType)) {
+                 (acc.personalDocuments[doc.employeeName || 'Unassigned'] = acc.personalDocuments[doc.employeeName || 'Unassigned'] || []).push(doc);
             }
             return acc;
         }, { 
             generalDocuments: {} as Record<string, ManagedDocument[]>,
-            assetDocuments: {} as Record<string, ManagedDocument[]>
+            assetDocuments: {} as Record<string, ManagedDocument[]>,
+            personalDocuments: {} as Record<string, ManagedDocument[]>
         });
   }, [documents]);
 
-  const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>) => {
+  const renderGroupedDocumentSection = (title: string, Icon: React.ElementType, groupedDocs: Record<string, ManagedDocument[]>, emptyText: string) => {
     if (Object.keys(groupedDocs).length === 0) {
       return (
         <Card>
@@ -242,7 +244,7 @@ export default function ManageDocumentsPage() {
                 <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
                     <Files className="h-12 w-12 mx-auto mb-4 text-primary/70" />
                     <h3 className="text-xl font-semibold text-foreground">No Documents Yet</h3>
-                    <p className="mt-2">No documents have been uploaded for this category.</p>
+                    <p className="mt-2">{emptyText}</p>
                 </div>
             </CardContent>
         </Card>
@@ -258,7 +260,7 @@ export default function ManageDocumentsPage() {
                 </CardTitle>
             </CardHeader>
             <CardContent className="space-y-4">
-            {Object.entries(groupedDocs).map(([category, docs]) => (
+            {Object.entries(groupedDocs).sort(([catA], [catB]) => catA.localeCompare(catB)).map(([category, docs]) => (
                 <div key={category}>
                     <h3 className="font-semibold text-lg text-muted-foreground mb-2">{category}</h3>
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
@@ -406,7 +408,7 @@ export default function ManageDocumentsPage() {
                         </FormItem>
                       )}
                     />
-                    {watchedDocType === 'employment' || watchedDocType === 'tax' ? (
+                    {watchedDocType === 'tax' || watchedDocType === 'employment' ? (
                        <FormField
                           control={form.control}
                           name="employeeId"
@@ -431,7 +433,8 @@ export default function ManageDocumentsPage() {
                               </FormItem>
                           )}
                       />
-                    ) : ['maintenance', 'registration', 'insurance'].includes(watchedDocType) ? (
+                    ) : null}
+                    {['maintenance', 'registration', 'insurance'].includes(watchedDocType) ? (
                         <FormField
                           control={form.control}
                           name="assetId"
@@ -456,7 +459,8 @@ export default function ManageDocumentsPage() {
                               </FormItem>
                           )}
                       />
-                    ) : (
+                    ) : null}
+                    {watchedDocType === 'general' ? (
                       <FormField
                           control={form.control}
                           name="category"
@@ -479,7 +483,7 @@ export default function ManageDocumentsPage() {
                             </FormItem>
                           )}
                         />
-                    )}
+                    ) : null}
                     <FormField
                       control={form.control}
                       name="description"
@@ -504,8 +508,9 @@ export default function ManageDocumentsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
-            {renderGroupedDocumentSection("General Documents", Files, generalDocuments)}
-            {renderGroupedDocumentSection("Asset-Specific Documents", Wrench, assetDocuments)}
+            {renderGroupedDocumentSection("General Documents", Files, generalDocuments, "No general company documents have been uploaded.")}
+            {renderGroupedDocumentSection("Asset-Specific Documents", Wrench, assetDocuments, "No documents have been assigned to specific assets.")}
+            {renderGroupedDocumentSection("Personal Employee Documents", FileBadge, personalDocuments, "No sensitive documents have been assigned to employees.")}
         </CardContent>
       </Card>
     </div>

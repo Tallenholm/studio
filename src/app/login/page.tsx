@@ -5,7 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { LogIn, AlertCircle, Chrome, Truck } from 'lucide-react';
+import { LogIn, AlertCircle, Chrome, Truck, Loader2 } from 'lucide-react';
 import { useToast } from '@/hooks/use-toast';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
@@ -129,12 +129,26 @@ export default function LoginPage() {
                      </div>
                     </fieldset>
                     {loginError && <div className="flex items-center gap-2 text-sm text-destructive"><AlertCircle className="h-4 w-4" /><p>{loginError}</p></div>}
-                    <Button type="submit" className="w-full" disabled={isFormDisabled}><LogIn className="mr-2 h-5 w-5" /> Sign In</Button>
+                    <Button type="submit" className="w-full" disabled={isFormDisabled}>
+                        {isUserLoading || loginForm.formState.isSubmitting ? (
+                            <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                        ) : (
+                            <LogIn className="mr-2 h-5 w-5" />
+                        )}
+                        Sign In
+                    </Button>
                 </form>
             </Form>
           )}
            <div className="relative my-6"><div className="absolute inset-0 flex items-center"><span className="w-full border-t" /></div><div className="relative flex justify-center text-xs uppercase"><span className="bg-card px-2 text-muted-foreground">Or continue with</span></div></div>
-            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}><Chrome className="mr-2 h-5 w-5" /> Sign In with Google</Button>
+            <Button variant="outline" className="w-full" onClick={handleGoogleSignIn} disabled={isFormDisabled}>
+                {isUserLoading ? (
+                    <Loader2 className="mr-2 h-5 w-5 animate-spin" />
+                ) : (
+                    <Chrome className="mr-2 h-5 w-5" />
+                )}
+                 Sign In with Google
+            </Button>
         </CardContent>
       </Card>
     </div>

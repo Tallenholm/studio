@@ -235,7 +235,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
                     {isAdmin && user && (
                         <SidebarGroup>
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/admin">

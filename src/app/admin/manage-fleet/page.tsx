@@ -42,12 +42,11 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, MoreHorizontal, Barcode, FileUp, CheckCircle, Link as LinkIcon } from 'lucide-react';
+import { PlusCircle, Trash2, Truck, Box, Shovel, Loader2, Cog, Pencil, Calendar as CalendarIcon, MoreHorizontal, FileUp, CheckCircle, Link as LinkIcon } from 'lucide-react';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, parseISO, getYear } from 'date-fns';
-import { getVehicleInfoFromVin } from '@/ai/flows/get-vehicle-info-from-vin';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -79,26 +78,12 @@ export default function FleetManagementPage() {
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
   const { user: adminUser } = useUser();
-  const debounceTimeoutRef = useRef<NodeJS.Timeout | null>(null);
-
-  // States for Barcode Scanner
-  const [isScannerOpen, setIsScannerOpen] = useState(false);
-  const [isBarcodeDetectorSupported, setIsBarcodeDetectorSupported] = useState(false);
-  const [cameraStream, setCameraStream] = useState<MediaStream | null>(null);
-  const videoRef = useRef<HTMLVideoElement>(null);
-  const scannerIntervalRef = useRef<NodeJS.Timeout | null>(null);
 
   // States for file uploads
   const [isUploadingReg, setIsUploadingReg] = useState(false);
   const [isUploadingIns, setIsUploadingIns] = useState(false);
   const regFileInputRef = useRef<HTMLInputElement>(null);
   const insFileInputRef = useRef<HTMLInputElement>(null);
-
-  useEffect(() => {
-    if (typeof window !== 'undefined' && 'BarcodeDetector' in window) {
-      setIsBarcodeDetectorSupported(true);
-    }
-  }, []);
 
   const form = useForm<AssetFormValues>({
     resolver: zodResolver(assetSchema),
@@ -201,71 +186,7 @@ export default function FleetManagementPage() {
     });
     setIsDialogOpen(true);
   };
-  
-  const triggerAiVinDecode = async () => {
-    const vin = form.getValues('vin');
-    if (vin && vin.length >= 11) {
-      try {
-        const vehicleInfo = await getVehicleInfoFromVin({ vin });
-        form.setValue('year', vehicleInfo.year);
-        form.setValue('make', vehicleInfo.make);
-        form.setValue('model', vehicleInfo.model);
-        toast({ title: 'VIN Decoded', description: 'Vehicle year, make, and model have been populated.' });
-      } catch (error) {
-        console.error('VIN Decode Error:', error);
-        toast({ variant: 'destructive', title: 'VIN Decode Error', description: error instanceof Error ? error.message : 'Could not decode VIN.' });
-      }
-    }
-  };
 
-
-  const startScanner = async () => {
-    if (!isBarcodeDetectorSupported) {
-        toast({ variant: "destructive", title: "Unsupported Browser", description: "Barcode scanning is not supported on this browser." });
-        return;
-    }
-    setIsScannerOpen(true);
-    try {
-        const stream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
-        setCameraStream(stream);
-        if (videoRef.current) {
-            videoRef.current.srcObject = stream;
-            videoRef.current.onloadedmetadata = () => {
-                videoRef.current?.play();
-                const barcodeDetector = new (window as any).BarcodeDetector({ formats: ['code_128', 'ean_13', 'qr_code', 'code_39'] });
-                scannerIntervalRef.current = setInterval(async () => {
-                    if (videoRef.current && videoRef.current.readyState >= 2) {
-                        const barcodes = await barcodeDetector.detect(videoRef.current);
-                        if (barcodes.length > 0) {
-                            const detectedVin = barcodes[0].rawValue;
-                            form.setValue('vin', detectedVin);
-                            toast({ title: "VIN Scanned", description: `VIN ${detectedVin} has been populated.` });
-                            stopScanner();
-                            await triggerAiVinDecode(); // Trigger decode after scan
-                        }
-                    }
-                }, 500);
-            };
-        }
-    } catch (err) {
-        console.error("Camera access error:", err);
-        toast({ variant: "destructive", title: "Camera Error", description: "Could not access camera. Please grant permission." });
-        setIsScannerOpen(false);
-    }
-  };
-
-  const stopScanner = () => {
-    if (scannerIntervalRef.current) {
-        clearInterval(scannerIntervalRef.current);
-        scannerIntervalRef.current = null;
-    }
-    if (cameraStream) {
-        cameraStream.getTracks().forEach(track => track.stop());
-        setCameraStream(null);
-    }
-    setIsScannerOpen(false);
-  };
-  
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>, fileType: 'registration' | 'insurance') => {
       const file = event.target.files?.[0];
       if (!file || !adminUser) return;
@@ -293,8 +214,8 @@ export default function FleetManagementPage() {
 
     const assetData: Partial<FleetAsset> = {
       ...values,
-      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
-      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
+      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : undefined,
+      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : undefined,
     };
     
     if (editingAsset) {
@@ -537,27 +458,22 @@ export default function FleetManagementPage() {
                        <FormField control={form.control} name="vin" render={({ field }) => ( 
                           <FormItem> 
                             <FormLabel>VIN / Serial Number</FormLabel> 
-                            <div className="flex gap-2">
-                              <FormControl><Input placeholder="Enter VIN or serial number" {...field} onBlur={triggerAiVinDecode} /></FormControl>
-                               <Button type="button" variant="outline" size="icon" onClick={startScanner} disabled={!isBarcodeDetectorSupported} aria-label="Scan VIN">
-                                   <Barcode className="h-5 w-5" />
-                               </Button>
-                            </div>
+                            <FormControl><Input placeholder="Enter VIN or serial number" {...field} /></FormControl>
                             <FormMessage /> 
                           </FormItem> 
                         )}/>
                        <Separator />
-                       <h3 className="text-lg font-medium">Vehicle Details (Auto-filled from VIN)</h3>
+                       <h3 className="text-lg font-medium">Vehicle Details</h3>
                        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="e.g., 2022" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="e.g., Ford" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="e.g., F-550" {...field} /></FormControl> <FormMessage /> </FormItem> )}/>
                        </div>
                        <Separator />
                        <h3 className="text-lg font-medium">Documents &amp; Expiration</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <div className="space-y-4">
-                           <FormField control={form.control} name="registrationDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Registration Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
+                           <FormField control={form.control} name="registrationDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Registration Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
                            <FormField control={form.control} name="registrationDocument" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Registration Document</FormLabel>
@@ -571,7 +487,7 @@ export default function FleetManagementPage() {
                            )}/>
                         </div>
                          <div className="space-y-4">
-                           <FormField control={form.control} name="insuranceDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Insurance Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
+                           <FormField control={form.control} name="insuranceDueDate" render={({ field }) => ( <FormItem className="flex flex-col"> <FormLabel>Insurance Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus/></PopoverContent> </Popover> <FormMessage /> </FormItem> )}/>
                            <FormField control={form.control} name="insuranceDocument" render={({ field }) => (
                             <FormItem>
                                 <FormLabel>Insurance Document</FormLabel>
@@ -601,21 +517,6 @@ export default function FleetManagementPage() {
           </CardContent>
         </Card>
       </div>
-
-      <Dialog open={isScannerOpen} onOpenChange={stopScanner}>
-        <DialogContent>
-            <DialogHeader>
-                <DialogTitle>Scan VIN Barcode</DialogTitle>
-                <DialogDescription>
-                    Position the vehicle's VIN barcode in front of your camera.
-                </DialogDescription>
-            </DialogHeader>
-            <div className="relative aspect-video bg-black rounded-md overflow-hidden">
-                <video ref={videoRef} className="w-full h-full object-cover" playsInline />
-                <div className="absolute inset-0 border-[20px] border-black/50 box-border rounded-lg" />
-            </div>
-        </DialogContent>
-      </Dialog>
     </>
   );
 }

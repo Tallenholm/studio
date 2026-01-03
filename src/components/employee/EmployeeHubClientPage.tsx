@@ -22,7 +22,6 @@ import type { EmployeeDashboardData } from '@/app/actions/getEmployeeDashboardDa
 
 const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
-    { element: '#tour-step-weather-forecast-employee', title: "Daily Weather Forecast", content: "Check the local weather forecast here to help you prepare for the day's conditions.", side: 'bottom' },
     { element: '#tour-step-main-tools', title: "Your Main Tools", content: "These cards are your main tools. Here you can start vehicle inspections ('Vehicle Inspections'), view your tasks, request time off, and more.", side: 'bottom' },
     { element: '#tour-step-job-board', title: "Your Assignments", content: "This section shows your currently active and upcoming assignments, separated by job type. You can get directions to the job site directly from here.", side: 'bottom' },
     { element: '#tour-step-company-calendar', title: "Company Calendar", content: "The Company Calendar shows you all company-wide events and your approved time off. Click any date to see what's scheduled.", side: 'bottom' },

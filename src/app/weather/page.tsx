@@ -77,7 +77,7 @@ export default function WeatherPage() {
         
         const today = startOfToday();
 
-        const daily: ForecastDay[] = (weatherData.daily.time || [])
+        const daily: ForecastDay[] = (weatherData.daily?.time || [])
             .map((t, i) => ({
                 time: t,
                 weatherCode: weatherData.daily.weather_code[i] ?? 0,
@@ -92,7 +92,7 @@ export default function WeatherPage() {
             .filter(day => parseISO(day.time) >= today);
 
         const now = new Date();
-        const hourly: HourlyForecast[] = (weatherData.hourly.time || [])
+        const hourly: HourlyForecast[] = (weatherData.hourly?.time || [])
             .map((t, i) => ({
                 time: t,
                 temp: weatherData.hourly.temperature_2m[i] ?? 0,
@@ -224,4 +224,3 @@ export default function WeatherPage() {
         </div>
     );
 }
-

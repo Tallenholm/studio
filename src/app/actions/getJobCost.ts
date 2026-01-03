@@ -37,7 +37,11 @@ export async function getJobCost(job: Job | null) {
     const jobDurationDays = differenceInBusinessDays(addDays(jobInterval.end, 1), jobInterval.start);
     const jobDurationHours = Math.max(1, jobDurationDays) * 8; // Assume 8-hour work days
 
-    const assignedEmployees = allUsers.filter(u => job.assignedEmployeeIds?.includes(u.id));
+    const assignedMainCrewIds = new Set(job.assignedEmployeeIds || []);
+    const assignedSidewalkCrewIds = new Set(job.assignedSidewalkCrewIds || []);
+    const allAssignedEmployeeIds = new Set([...assignedMainCrewIds, ...assignedSidewalkCrewIds]);
+    
+    const assignedEmployees = allUsers.filter(u => allAssignedEmployeeIds.has(u.id));
 
     const laborCost = assignedEmployees.reduce((acc, employee) => {
         if (employee.hourlyRate) {
