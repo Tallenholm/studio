@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect, useMemo, useRef } from 'react';
@@ -55,7 +56,7 @@ export default function SnowRoutesPage() {
   });
 
   useEffect(() => {
-    if (!user) return;
+    if (!user?.uid) return;
     setIsLoading(true);
     const db = getFirestoreInstance();
 
