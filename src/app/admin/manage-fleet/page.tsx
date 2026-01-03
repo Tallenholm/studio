@@ -47,7 +47,6 @@ import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover
 import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { format, isBefore, addDays, addMonths, parseISO, getYear } from 'date-fns';
-import { getMaintenanceSchedule } from '@/ai/flows/get-maintenance-schedule';
 import { getVehicleInfoFromVin } from '@/ai/flows/get-vehicle-info-from-vin';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
@@ -202,33 +201,6 @@ export default function FleetManagementPage() {
     setIsDialogOpen(true);
   };
   
-  const triggerAiScheduleSuggest = async () => {
-    const { year, make, model } = form.getValues();
-    if (!year || !make || !model) {
-      return;
-    }
-    
-    setIsAiLoading(true);
-    try {
-        const schedule = await getMaintenanceSchedule({ year, make, model });
-        const currentSchedule = form.getValues('maintenanceSchedule') || {};
-        const newSchedule: MaintenanceSchedule = {
-            oilChange: schedule.oilChange ? { intervalMonths: schedule.oilChange.intervalMonths, lastServiceDate: currentSchedule.oilChange?.lastServiceDate } : undefined,
-            tireRotation: schedule.tireRotation ? { intervalMonths: schedule.tireRotation.intervalMonths, lastServiceDate: currentSchedule.tireRotation?.lastServiceDate } : undefined,
-            brakeInspection: schedule.brakeInspection ? { intervalMonths: schedule.brakeInspection.intervalMonths, lastServiceDate: currentSchedule.brakeInspection?.lastServiceDate } : undefined,
-            fluidCheck: schedule.fluidCheck ? { intervalMonths: schedule.fluidCheck.intervalMonths, lastServiceDate: currentSchedule.fluidCheck?.lastServiceDate } : undefined,
-        };
-
-        form.setValue('maintenanceSchedule', newSchedule);
-        toast({ title: 'AI Suggestion Applied', description: 'Maintenance schedule intervals have been automatically populated.' });
-    } catch (error) {
-        console.error('AI Schedule Suggestion Error:', error);
-        toast({ variant: 'destructive', title: 'AI Error', description: 'Could not fetch maintenance suggestions.' });
-    } finally {
-        setIsAiLoading(false);
-    }
-  };
-  
   const triggerAiVinDecode = async () => {
     const vin = form.getValues('vin');
     if (vin && vin.length >= 11) { // Standard VIN length is 17, but many decoders work with 11+
@@ -239,8 +211,6 @@ export default function FleetManagementPage() {
         form.setValue('make', vehicleInfo.make);
         form.setValue('model', vehicleInfo.model);
         toast({ title: 'VIN Decoded', description: 'Vehicle year, make, and model have been populated.' });
-        // Now automatically trigger the schedule suggestion
-        await triggerAiScheduleSuggest();
       } catch (error) {
         console.error('AI VIN Decode Error:', error);
         toast({ variant: 'destructive', title: 'AI Error', description: 'Could not decode VIN. Please enter vehicle info manually.' });
@@ -563,6 +533,14 @@ export default function FleetManagementPage() {
                           </FormItem> 
                         )}/>
                        <Separator />
+                       <h3 className="text-lg font-medium">Vehicle Details</h3>
+                       <p className="text-sm text-muted-foreground -mt-2">This information is automatically populated by the AI after entering a valid VIN.</p>
+                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
+                       </div>
+                       <Separator />
                        <h3 className="text-lg font-medium">Document Expiration Dates</h3>
                       <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                           <FormField
@@ -628,24 +606,6 @@ export default function FleetManagementPage() {
                               )}
                           />
                       </div>
-                       <Separator />
-                       <div className="space-y-2">
-                          <h3 className="text-lg font-medium flex items-center gap-2">
-                              Preventative Maintenance Schedule
-                              {isAiLoading && <Loader2 className="h-4 w-4 animate-spin" />}
-                          </h3>
-                       </div>
-                       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                          <FormField control={form.control} name="year" render={({ field }) => ( <FormItem> <FormLabel>Year</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="make" render={({ field }) => ( <FormItem> <FormLabel>Make</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                          <FormField control={form.control} name="model" render={({ field }) => ( <FormItem> <FormLabel>Model</FormLabel> <FormControl><Input placeholder="Auto-filled from VIN" {...field} disabled /></FormControl> <FormMessage /> </FormItem> )}/>
-                       </div>
-                       <div className="space-y-4 pt-4">
-                          <MaintenanceScheduleField name="oilChange" label="Oil Change" />
-                          <MaintenanceScheduleField name="tireRotation" label="Tire Rotation" />
-                          <MaintenanceScheduleField name="brakeInspection" label="Brake Inspection" />
-                          <MaintenanceScheduleField name="fluidCheck" label="Fluid Check" />
-                       </div>
                       <DialogFooter className="pt-4">
                         <Button type="submit">Save Asset</Button>
                       </DialogFooter>
