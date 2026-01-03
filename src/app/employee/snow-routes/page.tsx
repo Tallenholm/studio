@@ -56,7 +56,11 @@ export default function SnowRoutesPage() {
   });
 
   useEffect(() => {
-    if (!user?.uid) return;
+    if (!user?.uid) {
+        setIsLoading(false);
+        return;
+    };
+    
     setIsLoading(true);
     const db = getFirestoreInstance();
 
@@ -71,7 +75,7 @@ export default function SnowRoutesPage() {
         setFleetAssets(loadedAssets);
     };
 
-    fetchData().then(() => setIsLoading(false));
+    fetchData().finally(() => setIsLoading(false));
 
     const q = query(collection(db, 'snowRoutes'), where('assignedEmployeeIds', 'array-contains', user.uid));
     
@@ -232,6 +236,115 @@ export default function SnowRoutesPage() {
     window.open(url, '_blank');
   }
 
+  const renderRouteSection = (title: string, routesToRender: SnowRoute[]) => (
+    <div className="space-y-8">
+      <h2 className="text-2xl font-headline font-semibold print-only">{title}</h2>
+      {routesToRender.map(route => {
+         const routeCrew = users.filter(u => route.assignedEmployeeIds?.includes(u.id));
+         const routeFleet = fleetAssets.filter(a => route.assignedVehicleIds?.includes(a.id));
+         
+         let routeJobs = (route.assignedJobIds || []).map(id => jobs.find(j => j.id === id)).filter((j): j is Job => !!j);
+         
+         // INTELLIGENT FILTERING FOR SALTING ROUTES
+         if (route.type === 'salting') {
+            routeJobs = routeJobs.filter(job => job.snowLog?.plowing && job.snowLog.plowing.length > 0);
+         }
+
+        return (
+        <Card key={route.id} className="printable-card bg-card/90 backdrop-blur-xl border-2 border-primary/20 shadow-xl">
+            <CardHeader>
+                <div className="flex justify-between items-start">
+                    <div>
+                        <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
+                        <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
+                    </div>
+                     <Button onClick={() => handleOptimizeRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
+                        {optimizingRouteId === route.id ? (
+                            <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                        ) : (
+                            <Brain className="mr-2 h-4 w-4" />
+                        )}
+                        AI Optimize Route
+                    </Button>
+                </div>
+            </CardHeader>
+            <CardContent className="space-y-4">
+               <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm p-4 border rounded-lg bg-muted/50">
+                    <div className="flex items-center gap-2">
+                        <UsersIcon className="h-4 w-4 text-primary" />
+                        <strong>Crew:</strong>
+                        <span className="text-muted-foreground">{routeCrew.map(c => c.name).join(', ') || 'N/A'}</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <Truck className="h-4 w-4 text-primary" />
+                        <strong>Fleet:</strong>
+                        <span className="text-muted-foreground">{routeFleet.map(f => f.name).join(', ') || 'N/A'}</span>
+                    </div>
+               </div>
+               {routeJobs.length > 0 ? routeJobs.map(job => {
+                    const services: {key: ServiceType, label: string}[] = [
+                        ...(job.snowServices?.plowing && route.type === 'plowing' ? [{key: 'plowing' as ServiceType, label: 'Plowing'}] : []),
+                        ...(job.snowServices?.salting && route.type === 'salting' ? [{key: 'salting' as ServiceType, label: 'Salting'}] : []),
+                        ...(job.snowServices?.sidewalks && route.type === 'sidewalks' ? [{key: 'sidewalks' as ServiceType, label: 'Sidewalks'}] : [])
+                    ];
+                    
+                    if (services.length === 0) return null;
+                    
+                    return (
+                         <Card key={job.id} className="bg-muted/30">
+                            <CardHeader>
+                                <div className="flex justify-between items-start">
+                                    <div>
+                                        <CardTitle className="text-xl font-headline flex items-center gap-2">
+                                            <Building2 className="h-5 w-5"/>
+                                            {job.clientName}
+                                        </CardTitle>
+                                        <CardDescription className="flex items-center gap-2 mt-1">
+                                            <MapPin className="h-4 w-4"/>
+                                            {job.address}
+                                        </CardDescription>
+                                    </div>
+                                </div>
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                                <Separator />
+                                <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                                {services.map(({key, label}) => {
+                                    const lastLog = getMostRecentLog(job, key);
+                                    const logCount = job.snowLog?.[key]?.length || 0;
+                                    return (
+                                        <div key={key} className="p-3 border rounded-md bg-background/50 space-y-2 flex flex-col justify-between">
+                                            <h4 className="font-semibold">{label}</h4>
+                                            {lastLog ? (
+                                                <div className="text-xs text-muted-foreground">
+                                                    <p>Last done {formatDistanceToNow(parseISO(lastLog.timestamp), { addSuffix: true })}</p>
+                                                    <p>by {lastLog.employeeName}</p>
+                                                </div>
+                                            ) : (
+                                                <p className="text-sm text-destructive font-medium">Pending</p>
+                                            )}
+                                            <div className="flex items-center gap-2 pt-2 border-t print-hidden">
+                                                <Button size="sm" className="flex-1" onClick={() => setLogServiceInfo({ job, service: key })}>
+                                                    <PlusCircle className="mr-2 h-4 w-4" /> Log
+                                                </Button>
+                                                <Button size="sm" variant="outline" disabled={logCount === 0} onClick={() => setHistoryInfo({job, service: key})}>
+                                                    <History className="mr-2 h-4 w-4" /> Hist. ({logCount})
+                                                </Button>
+                                            </div>
+                                        </div>
+                                    )
+                                })}
+                                </div>
+                            </CardContent>
+                        </Card>
+                    )
+                }) : <p className="text-center text-muted-foreground py-4">No jobs ready for this route type.</p>}
+            </CardContent>
+        </Card>
+      )})}
+    </div>
+  );
+
   if (isLoading || !user) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -240,6 +353,10 @@ export default function SnowRoutesPage() {
       </div>
     );
   }
+  
+  const plowingRoutes = routes.filter(r => r.type === 'plowing');
+  const saltingRoutes = routes.filter(r => r.type === 'salting');
+  const sidewalkRoutes = routes.filter(r => r.type === 'sidewalks');
 
   return (
     <>
@@ -266,102 +383,10 @@ export default function SnowRoutesPage() {
       </div>
 
       {routes.length > 0 ? (
-        <div className="space-y-8">
-          {routes.map(route => {
-             const routeCrew = users.filter(u => route.assignedEmployeeIds?.includes(u.id));
-             const routeFleet = fleetAssets.filter(a => route.assignedVehicleIds?.includes(a.id));
-             const routeJobs = (route.assignedJobIds || []).map(id => jobs.find(j => j.id === id)).filter((j): j is Job => !!j);
-
-            return (
-            <Card key={route.id} className="printable-card bg-card/90 backdrop-blur-xl border-2 border-primary/20 shadow-xl">
-                <CardHeader>
-                    <div className="flex justify-between items-start">
-                        <div>
-                            <CardTitle className="text-2xl font-headline capitalize">{route.name}</CardTitle>
-                            <CardDescription>Type: <span className="capitalize font-medium">{route.type}</span></CardDescription>
-                        </div>
-                         <Button onClick={() => handleOptimizeRoute(route)} className="print-hidden" disabled={optimizingRouteId === route.id}>
-                            {optimizingRouteId === route.id ? (
-                                <Loader2 className="mr-2 h-4 w-4 animate-spin" />
-                            ) : (
-                                <Brain className="mr-2 h-4 w-4" />
-                            )}
-                            AI Optimize Route
-                        </Button>
-                    </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                   <div className="grid grid-cols-1 md:grid-cols-2 gap-x-6 gap-y-2 text-sm p-4 border rounded-lg bg-muted/50">
-                        <div className="flex items-center gap-2">
-                            <UsersIcon className="h-4 w-4 text-primary" />
-                            <strong>Crew:</strong>
-                            <span className="text-muted-foreground">{routeCrew.map(c => c.name).join(', ') || 'N/A'}</span>
-                        </div>
-                        <div className="flex items-center gap-2">
-                            <Truck className="h-4 w-4 text-primary" />
-                            <strong>Fleet:</strong>
-                            <span className="text-muted-foreground">{routeFleet.map(f => f.name).join(', ') || 'N/A'}</span>
-                        </div>
-                   </div>
-                    {routeJobs.map(job => {
-                        const services: {key: ServiceType, label: string}[] = [
-                            ...(job.snowServices?.plowing && route.type === 'plowing' ? [{key: 'plowing' as ServiceType, label: 'Plowing'}] : []),
-                            ...(job.snowServices?.salting && route.type === 'salting' ? [{key: 'salting' as ServiceType, label: 'Salting'}] : []),
-                            ...(job.snowServices?.sidewalks && route.type === 'sidewalks' ? [{key: 'sidewalks' as ServiceType, label: 'Sidewalks'}] : [])
-                        ];
-                        
-                        return (
-                             <Card key={job.id} className="bg-muted/30">
-                                <CardHeader>
-                                    <div className="flex justify-between items-start">
-                                        <div>
-                                            <CardTitle className="text-xl font-headline flex items-center gap-2">
-                                                <Building2 className="h-5 w-5"/>
-                                                {job.clientName}
-                                            </CardTitle>
-                                            <CardDescription className="flex items-center gap-2 mt-1">
-                                                <MapPin className="h-4 w-4"/>
-                                                {job.address}
-                                            </CardDescription>
-                                        </div>
-                                    </div>
-                                </CardHeader>
-                                <CardContent className="space-y-4">
-                                    <Separator />
-                                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                                    {services.map(({key, label}) => {
-                                        const lastLog = getMostRecentLog(job, key);
-                                        const logCount = job.snowLog?.[key]?.length || 0;
-                                        return (
-                                            <div key={key} className="p-3 border rounded-md bg-background/50 space-y-2 flex flex-col justify-between">
-                                                <h4 className="font-semibold">{label}</h4>
-                                                {lastLog ? (
-                                                    <div className="text-xs text-muted-foreground">
-                                                        <p>Last done {formatDistanceToNow(parseISO(lastLog.timestamp), { addSuffix: true })}</p>
-                                                        <p>by {lastLog.employeeName}</p>
-                                                    </div>
-                                                ) : (
-                                                    <p className="text-sm text-destructive font-medium">Pending</p>
-                                                )}
-                                                <div className="flex items-center gap-2 pt-2 border-t print-hidden">
-                                                    <Button size="sm" className="flex-1" onClick={() => setLogServiceInfo({ job, service: key })}>
-                                                        <PlusCircle className="mr-2 h-4 w-4" /> Log
-                                                    </Button>
-                                                    <Button size="sm" variant="outline" disabled={logCount === 0} onClick={() => setHistoryInfo({job, service: key})}>
-                                                        <History className="mr-2 h-4 w-4" /> Hist. ({logCount})
-                                                    </Button>
-                                                </div>
-                                            </div>
-                                        )
-                                    })}
-                                    </div>
-                                </CardContent>
-                            </Card>
-                        )
-                    })}
-                </CardContent>
-            </Card>
-          )})}
+        <div className="space-y-12">
+            {plowingRoutes.length > 0 && renderRouteSection("Plowing Routes", plowingRoutes)}
+            {saltingRoutes.length > 0 && renderRouteSection("Salting Routes", saltingRoutes)}
+            {sidewalkRoutes.length > 0 && renderRouteSection("Sidewalk Routes", sidewalkRoutes)}
         </div>
       ) : (
         <Card className="text-center py-12 print-hidden">
