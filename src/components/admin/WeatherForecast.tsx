@@ -1,3 +1,4 @@
+
 'use client';
 
 import Link from 'next/link';
@@ -399,12 +400,14 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             </CardDescription>
           </CardHeader>
           <CardContent className="flex flex-col gap-3">
-            {user?.role === 'owner' && <>
-            <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 />Manage Clients</Button></Link>
-            <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase />All Jobs</Button></Link>
-            <Link href="/admin/manage-rentals" passHref><Button variant="outline" className="w-full justify-start"><ArrowRightLeft />Manage Rentals</Button></Link>
+            {user?.role === 'owner' && (
+              <>
+                <Link href="/admin/manage-clients" passHref><Button variant="outline" className="w-full justify-start"><Building2 />Manage Clients</Button></Link>
+                <Link href="/admin/manage-jobs" passHref><Button variant="outline" className="w-full justify-start"><Briefcase />All Jobs</Button></Link>
+                <Link href="/admin/manage-rentals" passHref><Button variant="outline" className="w-full justify-start"><ArrowRightLeft />Manage Rentals</Button></Link>
+              </>
+            )}
             <Link href="/admin/manage-snow-routes" passHref><Button variant="outline" className="w-full justify-start"><Route />Snow Routes</Button></Link>
-            </>}
             <Link href="/reports" passHref><Button variant="outline" className="w-full justify-start"><FileText />View Inspection Reports</Button></Link>
             <Link href="/admin/manage-work-orders" passHref><Button variant="outline" className="w-full justify-start"><ClipboardEdit />Manage Work Orders</Button></Link>
             <Link href="/admin/maintenance-logs" passHref><Button variant="outline" className="w-full justify-start"><Wrench />View Maintenance Logs</Button></Link>

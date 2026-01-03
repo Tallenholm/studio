@@ -22,6 +22,7 @@ import { Sprout } from 'lucide-react';
 import { Calculator } from 'lucide-react';
 import { Cloud } from 'lucide-react';
 import { useGlobalTools } from '@/hooks/use-global-tools';
+import WeatherForecast from './WeatherForecast';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
