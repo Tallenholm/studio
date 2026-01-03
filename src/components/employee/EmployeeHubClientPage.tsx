@@ -18,7 +18,6 @@ import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
-import WeatherForecast from '@/components/admin/WeatherForecast';
 import type { EmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
 
 const employeeTourSteps: TourStep[] = [
@@ -184,8 +183,6 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
           Your central hub for work tools.
         </p>
       </div>
-
-      <WeatherForecast tourId="tour-step-weather-forecast-employee" />
 
        <div id="tour-step-main-tools" className="grid grid-cols-2 md:grid-cols-4 lg:grid-cols-7 gap-6 mb-12">
             <Link href="/employee/fleet-check" passHref>
