@@ -456,28 +456,32 @@ export default function SnowRoutesPage() {
     {/* History Dialog */}
     <Dialog open={!!historyInfo} onOpenChange={() => setHistoryInfo(null)}>
         <DialogContent className="max-w-2xl">
-             <DialogHeader>
-                <DialogTitle>{historyInfo?.service.charAt(0).toUpperCase() + historyInfo!.service.slice(1)} History</DialogTitle>
-                <DialogDescription>Service log for {historyInfo?.job.clientName}.</DialogDescription>
-            </DialogHeader>
-            <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-4">
-                {(historyInfo?.job.snowLog?.[historyInfo.service] || []).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(log => (
-                    <div key={log.timestamp} className="p-3 border rounded-md flex gap-4">
-                        {log.photoDataUri && (
-                             <a href={log.photoDataUri} target="_blank" rel="noopener noreferrer" className="relative shrink-0">
-                                <Image src={log.photoDataUri} alt="Verification photo" width={80} height={80} className="rounded-md object-cover"/>
-                                <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 hover:opacity-100 transition-opacity">
-                                    <Eye className="h-6 w-6 text-white"/>
+            {historyInfo && (
+                <>
+                    <DialogHeader>
+                        <DialogTitle>{historyInfo.service.charAt(0).toUpperCase() + historyInfo.service.slice(1)} History</DialogTitle>
+                        <DialogDescription>Service log for {historyInfo.job.clientName}.</DialogDescription>
+                    </DialogHeader>
+                    <div className="max-h-[60vh] overflow-y-auto space-y-3 pr-4">
+                        {(historyInfo.job.snowLog?.[historyInfo.service] || []).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()).map(log => (
+                            <div key={log.timestamp} className="p-3 border rounded-md flex gap-4">
+                                {log.photoDataUri && (
+                                    <a href={log.photoDataUri} target="_blank" rel="noopener noreferrer" className="relative shrink-0">
+                                        <Image src={log.photoDataUri} alt="Verification photo" width={80} height={80} className="rounded-md object-cover"/>
+                                        <div className="absolute inset-0 bg-black/50 flex items-center justify-center rounded-md opacity-0 hover:opacity-100 transition-opacity">
+                                            <Eye className="h-6 w-6 text-white"/>
+                                        </div>
+                                    </a>
+                                )}
+                                <div className="text-sm">
+                                    <p><strong>Completed:</strong> {format(parseISO(log.timestamp), 'PPpp')}</p>
+                                    <p><strong>By:</strong> {log.employeeName}</p>
                                 </div>
-                            </a>
-                        )}
-                        <div className="text-sm">
-                            <p><strong>Completed:</strong> {format(parseISO(log.timestamp), 'PPpp')}</p>
-                            <p><strong>By:</strong> {log.employeeName}</p>
-                        </div>
+                            </div>
+                        ))}
                     </div>
-                ))}
-            </div>
+                </>
+            )}
         </DialogContent>
     </Dialog>
 
