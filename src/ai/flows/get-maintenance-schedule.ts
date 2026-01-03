@@ -49,7 +49,7 @@ export async function getMaintenanceSchedule(input: z.infer<typeof MaintenanceSc
 }
 
 export const VehicleInfoInputSchema = z.object({
-  vin: z.string().length(17, 'A 17-character VIN is required.'),
+  vin: z.string().min(1, 'A VIN or serial number is required.'),
 });
 
 export const VehicleInfoOutputSchema = z.object({
@@ -67,7 +67,7 @@ export async function getVehicleInfoFromVin(input: z.infer<typeof VehicleInfoInp
             format: 'json',
             schema: VehicleInfoOutputSchema,
         },
-        prompt: `You are an expert VIN decoder. Based on the following Vehicle Identification Number (VIN), provide the vehicle's year, make, and model.
+        prompt: `You are an expert VIN decoder. Based on the following Vehicle Identification Number (VIN) or serial number, provide the vehicle's year, make, and model. If it's not a standard 17-character VIN, do your best to identify the vehicle from the provided identifier.
 
         VIN: {{vin}}
         

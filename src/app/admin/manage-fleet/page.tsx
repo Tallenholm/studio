@@ -544,7 +544,7 @@ export default function FleetManagementPage() {
                           <FormItem> 
                             <FormLabel>VIN / Serial Number</FormLabel> 
                             <div className="flex gap-2">
-                              <FormControl><Input placeholder="Enter 17-character VIN" {...field} onBlur={triggerAiVinDecode} /></FormControl>
+                              <FormControl><Input placeholder="Enter VIN or serial number" {...field} onBlur={triggerAiVinDecode} /></FormControl>
                               <TooltipProvider>
                                 <Tooltip>
                                   <TooltipTrigger asChild>
@@ -679,5 +679,3 @@ export default function FleetManagementPage() {
     </>
   );
 }
-
-      
