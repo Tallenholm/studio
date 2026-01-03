@@ -18,6 +18,7 @@ import {
   SidebarSub,
   SidebarMenuSub,
   SidebarMenuSubButton,
+  SidebarInset,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -365,3 +366,5 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
+
+    
