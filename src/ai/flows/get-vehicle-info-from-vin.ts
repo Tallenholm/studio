@@ -18,59 +18,36 @@ export const VehicleInfoInputSchema = z.object({
 });
 export type VehicleInfoInput = z.infer<typeof VehicleInfoInputSchema>;
 
-
 /**
- * A Genkit Tool that directly calls the NHTSA (National Highway Traffic Safety Administration)
- * public API to decode a Vehicle Identification Number (VIN).
+ * A direct server action to decode a VIN using the NHTSA API.
+ * This replaces the previous Genkit flow for improved reliability.
  */
-const getVehicleInfoFromVinTool = ai.defineTool(
-  {
-    name: 'getVehicleInfoFromVinTool',
-    description: 'Fetches vehicle information from the NHTSA API based on a VIN.',
-    inputSchema: z.string(), // The tool takes a simple string (the VIN)
-    outputSchema: z.any(), // The output from the API can be complex, so we use z.any()
-  },
-  async (vin) => {
-    try {
-      const response = await fetch(`https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${vin}?format=json`);
-      if (!response.ok) {
-        throw new Error(`NHTSA API failed with status: ${response.status}`);
+export async function getVehicleInfoFromVin(input: VehicleInfoInput): Promise<VehicleInfoOutput> {
+  const url = `https://vpic.nhtsa.dot.gov/api/vehicles/DecodeVinValues/${input.vin}?format=json`;
+
+  try {
+    const response = await fetch(url);
+    if (!response.ok) {
+      throw new Error(`NHTSA API failed with status: ${response.status}`);
+    }
+    
+    const data = await response.json();
+    const results = data.Results?.[0];
+
+    if (!results || results.ErrorCode !== '0') {
+      const errorMsg = results?.ErrorText || 'VIN could not be decoded.';
+      if (errorMsg.includes("VIN is not 17 characters")) {
+        throw new Error("Invalid VIN length. Please enter a full 17-character VIN for decoding.");
       }
-      const data = await response.json();
-      // The API returns an array in the 'Results' property
-      return data?.Results?.[0] || null;
-    } catch (error) {
-      console.error('NHTSA API call failed:', error);
-      throw error;
+      throw new Error(errorMsg);
     }
-  }
-);
-
-
-/**
- * Defines the main Genkit flow for getting vehicle info. This flow uses the
- * NHTSA tool to fetch the data and then processes it into our desired format.
- */
-const getVehicleInfoFlow = ai.defineFlow(
-  {
-    name: 'getVehicleInfoFlow',
-    inputSchema: VehicleInfoInputSchema,
-    outputSchema: VehicleInfoOutputSchema,
-  },
-  async (input) => {
-    const vinData = await getVehicleInfoFromVinTool(input.vin);
-
-    if (!vinData || vinData.ErrorCode !== '0') {
-      throw new Error(`VIN could not be decoded. API Error: ${vinData?.ErrorText || 'Unknown error'}`);
-    }
-
-    // Extract the required fields from the API response
-    const year = vinData.ModelYear;
-    const make = vinData.Make;
-    const model = vinData.Model;
+    
+    const year = results.ModelYear;
+    const make = results.Make;
+    const model = results.Model;
 
     if (!year || !make || !model) {
-      throw new Error('API response was missing one or more required fields (Year, Make, Model).');
+      throw new Error('API returned incomplete data. Year, Make, or Model is missing.');
     }
 
     return {
@@ -78,13 +55,9 @@ const getVehicleInfoFlow = ai.defineFlow(
       make,
       model,
     };
+  } catch (error) {
+    console.error(`VIN Decode Error for ${input.vin}:`, error);
+    const errorMessage = error instanceof Error ? error.message : 'An unknown error occurred during VIN decoding.';
+    throw new Error(errorMessage);
   }
-);
-
-/**
- * The main exported function that client-side components will call.
- * This wraps our Genkit flow, providing a simple async function interface.
- */
-export async function getVehicleInfoFromVin(input: VehicleInfoInput): Promise<VehicleInfoOutput> {
-  return getVehicleInfoFlow(input);
 }
