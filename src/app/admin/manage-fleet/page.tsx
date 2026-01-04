@@ -219,23 +219,24 @@ export default function FleetManagementPage() {
         year: values.year,
         make: values.make,
         model: values.model,
-        registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
-        insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
     };
     
-    // Remove null date fields so Firestore doesn't get undefined
-    if (!assetData.registrationDueDate) delete assetData.registrationDueDate;
-    if (!assetData.insuranceDueDate) delete assetData.insuranceDueDate;
+    if (values.registrationDueDate) {
+        assetData.registrationDueDate = values.registrationDueDate.toISOString().split('T')[0];
+    }
+    if (values.insuranceDueDate) {
+        assetData.insuranceDueDate = values.insuranceDueDate.toISOString().split('T')[0];
+    }
     
     if (editingAsset) {
         await updateFleetAsset(editingAsset.id, assetData);
         savedAsset = { ...editingAsset, ...assetData } as FleetAsset;
-        setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => a.name.localeCompare(b.name)));
+        setAssets((prev) => prev.map(a => a.id === editingAsset.id ? savedAsset : a).sort((a,b) => (a.name || '').localeCompare(b.name || '')));
         toast({ title: 'Asset Updated', description: `${values.name} has been updated.` });
     } else {
         const newId = await addFleetAsset(assetData as Omit<FleetAsset, 'id'>);
         savedAsset = { id: newId, ...assetData } as FleetAsset;
-        setAssets((prev) => [...prev, savedAsset].sort((a,b) => a.name.localeCompare(b.name)));
+        setAssets((prev) => [...prev, savedAsset].sort((a,b) => (a.name || '').localeCompare(b.name || '')));
         toast({ title: 'Asset Added', description: `${values.name} has been added to the fleet.` });
     }
 
