@@ -181,8 +181,8 @@ export default function FleetManagementPage() {
     setEditingAsset(asset);
     form.reset({
       ...asset,
-      registrationDueDate: asset.registrationDueDate ? parseISO(asset.registrationDueDate) : undefined,
-      insuranceDueDate: asset.insuranceDueDate ? parseISO(asset.insuranceDueDate) : undefined,
+      registrationDueDate: asset.registrationDueDate ? parseISO(asset.registrationDueDate) : null,
+      insuranceDueDate: asset.insuranceDueDate ? parseISO(asset.insuranceDueDate) : null,
     });
     setIsDialogOpen(true);
   };
@@ -212,11 +212,20 @@ export default function FleetManagementPage() {
   async function onSubmit(values: AssetFormValues) {
     let savedAsset: FleetAsset;
 
-    const assetData: Partial<FleetAsset> = {
-      ...values,
-      registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : undefined,
-      insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : undefined,
+    const assetData: Partial<Omit<FleetAsset, 'id'>> = {
+        type: values.type,
+        name: values.name,
+        vin: values.vin,
+        year: values.year,
+        make: values.make,
+        model: values.model,
+        registrationDueDate: values.registrationDueDate ? values.registrationDueDate.toISOString().split('T')[0] : null,
+        insuranceDueDate: values.insuranceDueDate ? values.insuranceDueDate.toISOString().split('T')[0] : null,
     };
+    
+    // Remove null date fields so Firestore doesn't get undefined
+    if (!assetData.registrationDueDate) delete assetData.registrationDueDate;
+    if (!assetData.insuranceDueDate) delete assetData.insuranceDueDate;
     
     if (editingAsset) {
         await updateFleetAsset(editingAsset.id, assetData);
