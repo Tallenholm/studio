@@ -112,6 +112,7 @@ service cloud.firestore {
 
     match /documents/{docId} {
       allow write: if isAdmin();
+      // Allow read if user is admin, or if it's a general doc, or if it's specifically assigned to the user
       allow read: if isAdmin() || 
                     (resource.data.documentType == 'general') ||
                     (resource.data.employeeId == request.auth.uid);

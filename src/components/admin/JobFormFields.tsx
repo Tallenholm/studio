@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import { useMemo } from 'react';
@@ -36,6 +35,8 @@ interface JobFormFieldsProps {
 
 const MultiSelectDropdown = ({ items, fieldName, title, Icon, form }: { items: { id: string, name: string }[], fieldName: any, title: string, Icon: React.ElementType, form: UseFormReturn<any> }) => {
     const selectedIds = form.watch(fieldName) || [];
+    const selectedItems = items.filter(item => selectedIds.includes(item.id));
+  
     return (
       <FormField
         control={form.control}
@@ -46,7 +47,9 @@ const MultiSelectDropdown = ({ items, fieldName, title, Icon, form }: { items: {
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
                 <Button variant="outline" className="w-full justify-start text-left font-normal">
-                  {selectedIds.length > 0 ? `${selectedIds.length} selected` : `Select...`}
+                  <span className="truncate">
+                      {selectedItems.length > 0 ? selectedItems.map(i => i.name).join(', ') : `Select...`}
+                  </span>
                 </Button>
               </DropdownMenuTrigger>
               <DropdownMenuContent className="w-64" align="start">

@@ -28,6 +28,9 @@ export async function createJobFromPrompt(prompt: string): Promise<CreateJobFrom
   });
 
   const llmResponse = await createJobPrompt.generate();
-  return llmResponse.output()!;
+  const output = llmResponse.output();
+  if (!output) {
+      throw new Error("AI failed to generate a valid job structure.");
+  }
+  return output;
 }
-

@@ -70,7 +70,6 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
     const assignedJobs = dashboardData.jobs
       .filter(job => 
         job.assignedEmployeeIds?.includes(user.uid) ||
-        job.assignedTruckIds?.includes(user.uid) || // For older data model compatibility
         job.assignedSidewalkCrewIds?.includes(user.uid)
       )
       .map(job => ({ ...job, status: getJobStatus(job) }))

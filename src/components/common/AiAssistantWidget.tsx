@@ -25,11 +25,19 @@ interface AiAssistantWidgetProps {
 const getWelcomeMessage = (role: UserRole | 'guest') => {
     const baseIntro = "Hello! I'm your AI Assistant. I can answer any questions you have about using this application.";
 
-    if (role === 'owner' || role === 'manager') {
-        return `${baseIntro}\n\nFor example, you can ask:\n- "How do I create a job with AI?"\n- "What does the AI Daily Briefing do?"\n- "How are work orders created?"\n\nWhat can I help you with today?`;
+    if (role === 'owner') {
+        return `${baseIntro}\n\nFor example, you can ask:\n- "How do I create a job with AI?"\n- "What is Fleet Health?"\n- "How is Job Cost Analysis calculated?"\n\nWhat can I help you with today?`;
     }
     
-    return `${baseIntro}\n\nFor example, you can ask:\n- "How do I submit an inspection?"\n- "How do I request time off?"\n- "Where do I see my assigned tasks?"\n\nWhat can I help you with today?`;
+    if (role === 'manager') {
+        return `${baseIntro}\n\nFor example, you can ask:\n- "What does the AI Daily Briefing do?"\n- "How do I create Snow Routes?"\n- "How are work orders created?"\n\nWhat can I help you with today?`;
+    }
+    
+    if (role === 'employee') {
+        return `${baseIntro}\n\nFor example, you can ask:\n- "How do I submit an inspection?"\n- "How do I request time off?"\n- "Where do I see my assigned tasks?"\n\nWhat can I help you with today?`;
+    }
+
+    return `${baseIntro}\n\nAsk me anything about the application.`;
 }
 
 
