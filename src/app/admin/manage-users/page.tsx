@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -170,8 +171,8 @@ export default function UserManagementPage() {
                                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                                         <TableCell>
                                             <DropdownMenu>
-                                                <DropdownMenuTrigger asChild disabled={currentUser?.role !== 'owner' || isSaving === user.id}>
-                                                     <Button variant="ghost" className="h-auto p-1">
+                                                <DropdownMenuTrigger asChild disabled={currentUser?.role !== 'owner' || isSaving === user.id || currentUser?.id === user.id}>
+                                                     <Button variant="ghost" className="h-auto p-1 disabled:opacity-70 disabled:cursor-not-allowed">
                                                         <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge>
                                                      </Button>
                                                 </DropdownMenuTrigger>
@@ -197,7 +198,7 @@ export default function UserManagementPage() {
                                                 </DropdownMenuTrigger>
                                                 <DropdownMenuContent align="end">
                                                     <DropdownMenuSub>
-                                                        <DropdownMenuSubTrigger>
+                                                        <DropdownMenuSubTrigger disabled={currentUser?.id === user.id}>
                                                             <Pencil className="mr-2 h-4 w-4" />
                                                             <span>Change Role</span>
                                                         </DropdownMenuSubTrigger>

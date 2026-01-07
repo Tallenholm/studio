@@ -1,0 +1,153 @@
+
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    
+    // ======== HELPER FUNCTIONS ========
+    
+    // Get the user's role from their document in the /users collection
+    function getUserRole(userId) {
+      return get(/databases/$(database)/documents/users/$(userId)).data.role;
+    }
+    
+    // Check if the requesting user is an Owner
+    function isOwner() {
+      return getUserRole(request.auth.uid) == 'owner';
+    }
+    
+    // Check if the requesting user is a Manager
+    function isManager() {
+      return getUserRole(request.auth.uid) == 'manager';
+    }
+    
+    // Check if the requesting user is an Employee
+    function isEmployee() {
+      return getUserRole(request.auth.uid) == 'employee';
+    }
+
+    // Check if the user is an admin (Manager or Owner)
+    function isAdmin() {
+      return isOwner() || isManager();
+    }
+    
+    // Check if the user is authenticated
+    function isSignedIn() {
+      return request.auth != null;
+    }
+    
+    // Check if the user is the owner of the document
+    function isOwnerOf(userId) {
+      return request.auth.uid == userId;
+    }
+
+    // ======== COLLECTION RULES ========
+
+    // --- Users ---
+    // Only owners can manage user roles and data. All users can read the list.
+    match /users/{userId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+
+    // --- Jobs, Clients, Rentals, Routes ---
+    // Core operational data managed by admins. All employees can read.
+    match /jobs/{jobId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    match /clients/{clientId} {
+      allow read: if isSignedIn();
+      allow write: if isOwner();
+    }
+    match /rentals/{rentalId} {
+        allow read: if isSignedIn();
+        allow write: if isOwner();
+    }
+    match /snowRoutes/{routeId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+    }
+
+    // --- Employee Submissions (Inspections, Expenses, Tasks, Time Off) ---
+    // Employees can create. Admins can read/update. Employees can only read their own.
+    match /inspectionReports/{reportId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin() || get(/databases/$(database)/documents/inspectionReports/$(reportId)).data.employeeId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isAdmin();
+    }
+    
+    match /expenseReports/{reportId} {
+      allow create: if isSignedIn();
+      allow read: if isAdmin() || get(/databases/$(database)/documents/expenseReports/$(reportId)).data.employeeId == request.auth.uid;
+      allow update: if isAdmin();
+      allow delete: if isOwner();
+    }
+
+    match /tasks/{taskId} {
+      allow create: if isAdmin();
+      allow read, update: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
+      allow delete: if isAdmin();
+    }
+
+    match /timeOffRequests/{requestId} {
+       allow create: if isSignedIn();
+       allow read: if isAdmin() || get(/databases/$(database)/documents/timeOffRequests/$(requestId)).data.employeeId == request.auth.uid;
+       allow update: if isAdmin();
+       allow delete: if isAdmin();
+    }
+    
+    // --- Fleet, Inventory, Documents, Work Orders, Maintenance ---
+    // Managed by Admins, viewable by all.
+    match /fleetAssets/{assetId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+    
+    match /inventory/{itemId} {
+      allow read: if isSignedIn();
+      allow write: if isAdmin();
+    }
+
+    match /documents/{docId} {
+      allow write: if isAdmin();
+      allow read: if isAdmin() || 
+                    (resource.data.documentType == 'general') ||
+                    (resource.data.employeeId == request.auth.uid);
+    }
+    
+    match /workOrders/{orderId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+    }
+
+    match /maintenanceLogs/{logId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+    }
+    
+    match /violations/{violationId} {
+        allow create: if isAdmin();
+        allow read: if isAdmin() || get(/databases/$(database)/documents/violations/$(violationId)).data.employeeId == request.auth.uid;
+        allow delete: if isAdmin();
+    }
+
+    // --- Notifications & Calendar ---
+    // Calendar events are public reads for all signed-in users.
+    // Notifications are readable by their recipient or 'all'.
+    match /calendarEvents/{eventId} {
+        allow read: if isSignedIn();
+        allow write: if isAdmin();
+    }
+    
+    match /notifications/{notificationId} {
+      allow write: if isAdmin(); // Only admins can create/update notifications
+      allow read: if isSignedIn() && (
+                    resource.data.recipientId == 'all' || 
+                    resource.data.recipientId == request.auth.uid ||
+                    isAdmin() // Admins can read all notifications for moderation
+                  );
+    }
+  }
+}
