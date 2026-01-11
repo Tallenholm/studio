@@ -3,7 +3,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore } from 'firebase/firestore';
+import { getFirestore, type Firestore, enableIndexedDbPersistence, initializeFirestore } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
 
@@ -25,6 +25,7 @@ let auth: Auth | null = null;
 let db: Firestore | null = null;
 let storage: FirebaseStorage | null = null;
 let messaging: Messaging | null = null;
+let persistenceEnabled = false;
 
 export const isFirebaseConfigured = !!(firebaseConfig.projectId && firebaseConfig.apiKey);
 
@@ -35,11 +36,31 @@ export function initializeFirebase() {
             auth = getAuth(app);
             db = getFirestore(app);
             storage = getStorage(app);
+
             if (typeof window !== 'undefined') {
+                if (!persistenceEnabled) {
+                    try {
+                        enableIndexedDbPersistence(db)
+                            .then(() => {
+                                persistenceEnabled = true;
+                                console.log("Firestore offline persistence enabled.");
+                            })
+                            .catch((err) => {
+                                if (err.code == 'failed-precondition') {
+                                    console.warn("Firestore persistence failed-precondition. Multiple tabs open?");
+                                } else if (err.code == 'unimplemented') {
+                                    console.warn("Firestore persistence is not available in this browser.");
+                                }
+                            });
+                    } catch (e) {
+                         console.error("Failed to enable Firestore persistence", e);
+                    }
+                }
+                
                 try {
-                messaging = getMessaging(app);
+                    messaging = getMessaging(app);
                 } catch (e) {
-                console.error("Failed to initialize Firebase Messaging", e);
+                    console.error("Failed to initialize Firebase Messaging", e);
                 }
             }
         } catch (e) {
