@@ -3,7 +3,7 @@
 
 import { initializeApp, getApps, getApp, type FirebaseApp } from 'firebase/app';
 import { getAuth, type Auth } from 'firebase/auth';
-import { getFirestore, type Firestore, enableIndexedDbPersistence, initializeFirestore } from 'firebase/firestore';
+import { getFirestore, type Firestore, enableIndexedDbPersistence } from 'firebase/firestore';
 import { getStorage, type FirebaseStorage } from 'firebase/storage';
 import { getMessaging, getToken, type Messaging } from 'firebase/messaging';
 
@@ -37,7 +37,7 @@ export function initializeFirebase() {
             db = getFirestore(app);
             storage = getStorage(app);
 
-            if (typeof window !== 'undefined') {
+            if (typeof window !== 'undefined' && db) {
                 if (!persistenceEnabled) {
                     try {
                         enableIndexedDbPersistence(db)
@@ -47,13 +47,13 @@ export function initializeFirebase() {
                             })
                             .catch((err) => {
                                 if (err.code == 'failed-precondition') {
-                                    console.warn("Firestore persistence failed-precondition. Multiple tabs open?");
+                                    console.warn("Firestore persistence failed-precondition. This can happen with multiple tabs open.");
                                 } else if (err.code == 'unimplemented') {
                                     console.warn("Firestore persistence is not available in this browser.");
                                 }
                             });
                     } catch (e) {
-                         console.error("Failed to enable Firestore persistence", e);
+                         console.error("Failed to enable Firestore on-disk persistence", e);
                     }
                 }
                 
