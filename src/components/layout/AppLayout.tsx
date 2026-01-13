@@ -24,7 +24,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, FileBadge, HeartPulse, Route, Calculator, Cloud, User as UserIcon, Loader2 } from 'lucide-react';
+import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, FileBadge, HeartPulse, Route, Calculator, Cloud, User as UserIcon, Loader2, Map } from 'lucide-react';
 import type { NotificationMessage } from '@/lib/types';
 import CommandPalette from '@/components/common/CommandPalette';
 import { useCommandPalette } from '@/hooks/use-command-palette';
@@ -255,6 +255,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     <Link href="/weather">
                                         <SidebarMenuButton tooltip="Weather Center" isActive={pathname.startsWith('/weather')}>
                                             <Cloud /><span>Weather Center</span>
+                                        </SidebarMenuButton>
+                                    </Link>
+                                </SidebarMenuItem>
+                                 <SidebarMenuItem>
+                                    <Link href="/admin/operations-map">
+                                        <SidebarMenuButton tooltip="Operations Map" isActive={pathname.startsWith('/admin/operations-map')}>
+                                            <Map /><span>Operations Map</span>
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>

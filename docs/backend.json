@@ -148,6 +148,8 @@
             "clientId": { "type": "string" },
             "clientName": { "type": "string" },
             "address": { "type": "string" },
+            "latitude": { "type": "number" },
+            "longitude": { "type": "number" },
             "jobValue": { "type": "number" },
             "jobType": { "type": "string", "enum": ["excavation", "utilities", "concrete", "landscaping", "snow_removal", "misc"] },
             "startDate": { "type": "string", "format": "date" },
