@@ -57,7 +57,7 @@ export default function MyTasksPage() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
 
   const [stream, setStream] = useState<MediaStream | null>(null);
-  const [isCameraOpen, setIsCameraOpen] = useState(false);
+  const [isCameraView, setIsCameraView] = useState(false);
 
   const form = useForm<z.infer<typeof completeTaskSchema>>({
     resolver: zodResolver(completeTaskSchema),
@@ -115,17 +115,17 @@ export default function MyTasksPage() {
     try {
         const newStream = await navigator.mediaDevices.getUserMedia({ video: { facingMode: 'environment' } });
         setStream(newStream);
-        setIsCameraOpen(true);
+        setIsCameraView(true);
     } catch (err) {
         toast({ variant: 'destructive', title: 'Camera Error', description: 'Could not access camera. Please check permissions.' });
     }
   };
 
   useEffect(() => {
-    if(isCameraOpen && stream && videoRef.current) {
+    if(isCameraView && stream && videoRef.current) {
         videoRef.current.srcObject = stream;
     }
-  }, [isCameraOpen, stream]);
+  }, [isCameraView, stream]);
 
   const handleCapturePhoto = () => {
     if (!videoRef.current || !canvasRef.current) return;
@@ -156,10 +156,9 @@ export default function MyTasksPage() {
         setIsProcessingFile(false);
         if (stream) stream.getTracks().forEach(track => track.stop());
         setStream(null);
-        setIsCameraOpen(false);
+        setIsCameraView(false);
       });
   };
-
 
   async function onCompleteSubmit(values: z.infer<typeof completeTaskSchema>) {
     if (!selectedTask) return;
@@ -189,6 +188,7 @@ export default function MyTasksPage() {
   const openCompleteDialog = (task: Task) => {
     setSelectedTask(task);
     form.reset({ completionNotes: '', completionPhotoUrl: '' });
+    setIsCameraView(false);
     setIsDialogOpen(true);
   }
   
@@ -277,79 +277,81 @@ export default function MyTasksPage() {
       </section>
 
        <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-            <DialogContent className="sm:max-w-[500px]">
+            <DialogContent className="sm:max-w-[600px]">
             <DialogHeader>
                 <DialogTitle>Complete Task: {selectedTask?.title}</DialogTitle>
                 <DialogDescription>
-                Provide any notes and upload a photo if required to complete this task.
+                  {isCameraView ? "Point your camera at the subject and click capture." : "Provide any notes and upload a photo if required to complete this task."}
                 </DialogDescription>
             </DialogHeader>
-            <Form {...form}>
-                <form onSubmit={form.handleSubmit(onCompleteSubmit)} className="space-y-4 py-4">
-                    <FormField
-                        control={form.control}
-                        name="completionNotes"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Notes (Optional)</FormLabel>
-                            <FormControl>
-                                <Textarea placeholder="Add any relevant notes about the task completion." {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                    />
-                    
-                    {selectedTask?.requiresPhoto && (
+
+            {isCameraView ? (
+                <div>
+                  <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline />
+                  <Button type="button" onClick={handleCapturePhoto} className="w-full mt-4" disabled={isProcessingFile}>
+                    {isProcessingFile ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Camera className="mr-2 h-4 w-4"/>}
+                    {isProcessingFile ? 'Processing...' : 'Capture'}
+                  </Button>
+                </div>
+            ) : (
+                <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onCompleteSubmit)} className="space-y-4 py-4">
                         <FormField
                             control={form.control}
-                            name="completionPhotoUrl"
+                            name="completionNotes"
                             render={({ field }) => (
                                 <FormItem>
-                                    <FormLabel>Verification Photo (Required)</FormLabel>
-                                    <div className="space-y-2">
-                                      <div className="flex items-center gap-2">
-                                          <Button type="button" variant="outline" onClick={handleOpenCamera} disabled={isProcessingFile}><Camera className="mr-2 h-4 w-4" />Use Camera</Button>
-                                          <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile}><FileUp className="mr-2 h-4 w-4" />Upload</Button>
-                                          <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} disabled={isProcessingFile}/>
-                                      </div>
-                                       {field.value && !isProcessingFile ? (
-                                            <div className="mt-2 text-sm flex items-center gap-2">
-                                                <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md border" />
-                                                <span>Photo attached.</span>
-                                            </div>
-                                        ) : isProcessingFile ? (
-                                            <div className="mt-2 text-sm flex items-center gap-2 text-muted-foreground">
-                                                <Loader2 className="h-4 w-4 animate-spin" />
-                                                <span>Processing...</span>
-                                            </div>
-                                        ) : (
-                                            <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
-                                               <Camera className="h-4 w-4" />
-                                                <span>No photo attached.</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                    <FormMessage />
+                                <FormLabel>Notes (Optional)</FormLabel>
+                                <FormControl>
+                                    <Textarea placeholder="Add any relevant notes about the task completion." {...field} />
+                                </FormControl>
+                                <FormMessage />
                                 </FormItem>
                             )}
                         />
-                    )}
+                        
+                        {selectedTask?.requiresPhoto && (
+                            <FormField
+                                control={form.control}
+                                name="completionPhotoUrl"
+                                render={({ field }) => (
+                                    <FormItem>
+                                        <FormLabel>Verification Photo (Required)</FormLabel>
+                                        <div className="space-y-2">
+                                          <div className="flex items-center gap-2">
+                                              <Button type="button" variant="outline" onClick={handleOpenCamera} disabled={isProcessingFile}><Camera className="mr-2 h-4 w-4" />Use Camera</Button>
+                                              <Button type="button" variant="outline" onClick={() => fileInputRef.current?.click()} disabled={isProcessingFile}><FileUp className="mr-2 h-4 w-4" />Upload</Button>
+                                              <Input type="file" accept="image/*" ref={fileInputRef} className="hidden" onChange={handleFileChange} disabled={isProcessingFile}/>
+                                          </div>
+                                           {field.value && !isProcessingFile ? (
+                                                <div className="mt-2 text-sm flex items-center gap-2">
+                                                    <Image src={field.value} alt="Preview" width={48} height={48} className="rounded-md border" />
+                                                    <span>Photo attached.</span>
+                                                </div>
+                                            ) : isProcessingFile ? (
+                                                <div className="mt-2 text-sm flex items-center gap-2 text-muted-foreground">
+                                                    <Loader2 className="h-4 w-4 animate-spin" />
+                                                    <span>Processing...</span>
+                                                </div>
+                                            ) : (
+                                                <div className="mt-2 text-sm text-muted-foreground flex items-center gap-2">
+                                                   <Camera className="h-4 w-4" />
+                                                    <span>No photo attached.</span>
+                                                </div>
+                                            )}
+                                        </div>
+                                        <FormMessage />
+                                    </FormItem>
+                                )}
+                            />
+                        )}
 
-                <DialogFooter>
-                    <Button type="submit" disabled={isProcessingFile}>Submit Completion</Button>
-                </DialogFooter>
-                </form>
-            </Form>
-            </DialogContent>
-        </Dialog>
-        <Dialog open={isCameraOpen} onOpenChange={setIsCameraOpen}>
-            <DialogContent className="max-w-3xl">
-                <DialogHeader><DialogTitle>Take Verification Photo</DialogTitle></DialogHeader>
-                <video ref={videoRef} className="w-full aspect-video rounded-md bg-muted" autoPlay playsInline />
-                <DialogFooter>
-                    <Button type="button" onClick={handleCapturePhoto} className="w-full"><Camera className="mr-2 h-4 w-4"/>Capture</Button>
-                </DialogFooter>
+                    <DialogFooter>
+                        <Button type="submit" disabled={isProcessingFile}>Submit Completion</Button>
+                    </DialogFooter>
+                    </form>
+                </Form>
+            )}
             </DialogContent>
         </Dialog>
     </div>
