@@ -44,7 +44,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   
   // This is a server action, so we can't use the useUser() hook.
   // We need to determine the user's role by other means if needed.
-  // For now, let's assume we need to check role for stat calculation.
   // This is a simplified example; a real app might pass the user ID.
   const isOwner = true; // Simplified for this context. A real app would verify this.
 
@@ -62,7 +61,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
           type: 'report',
           title: `Failed report for ${assetName}`,
           details: `By ${r.employeeName}`,
-          link: `/reports/${r.id}` // Corrected link
+          link: `/reports/${r.id}`
         };
       });
 
