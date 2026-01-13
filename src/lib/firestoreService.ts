@@ -1,7 +1,7 @@
 
 
 import { initializeFirebase } from '@/firebase';
-import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -162,4 +162,34 @@ export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) =>
         })
       );
   });
+};
+
+/**
+ * Efficiently fetches inspection reports by a vehicle's VIN.
+ * @param vin The Vehicle Identification Number to query for.
+ * @returns A promise that resolves to an array of InspectionReport objects.
+ */
+export const getReportsByVin = async (vin: string): Promise<InspectionReport[]> => {
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'inspectionReports');
+    
+    // Create three separate queries for each possible VIN field
+    const q1 = query(reportsRef, where('truckVin', '==', vin));
+    const q2 = query(reportsRef, where('trailerVin', '==', vin));
+    const q3 = query(reportsRef, where('heavyEquipmentVin', '==', vin));
+
+    // Execute all queries in parallel
+    const [snapshot1, snapshot2, snapshot3] = await Promise.all([
+        getDocs(q1),
+        getDocs(q2),
+        getDocs(q3),
+    ]);
+
+    // Use a map to merge results and avoid duplicates
+    const resultsMap = new Map<string, InspectionReport>();
+    snapshot1.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
+    snapshot2.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
+    snapshot3.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
+
+    return Array.from(resultsMap.values());
 };

@@ -13,6 +13,8 @@ import { CHECKLIST_DATA } from '@/lib/data';
 import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
+import { parseISO } from 'date-fns';
+
 
 interface ReportDisplayProps {
   report: InspectionReport;
@@ -53,7 +55,7 @@ export default function ReportDisplayComponent({ report, onAnalyze, isAnalyzing,
              <CardDescription className="flex items-center gap-2 mt-2 text-sm flex-wrap">
               <span className="flex items-center gap-2">
                 <CalendarDays className="h-4 w-4 text-muted-foreground" />
-                {format(new Date(report.date), 'PPpp')}
+                {format(parseISO(report.date), 'PPpp')}
               </span>
               {report.employeeName && (
                 <>

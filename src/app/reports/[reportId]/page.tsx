@@ -2,24 +2,27 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { useParams } from 'next/navigation';
-import { getInspectionReportById, getWorkOrders, addWorkOrder, getFleetAssets } from '@/lib/firestoreService';
-import type { InspectionReport, WorkOrder } from '@/lib/types';
+import { useParams, useSearchParams } from 'next/navigation';
+import { getInspectionReportById, getWorkOrders, addWorkOrder, getFleetAssets, updateInspectionReport } from '@/lib/firestoreService';
+import type { InspectionReport, WorkOrder, AnalyzeInspectionReportsOutput } from '@/lib/types';
 import ReportDisplayComponent from '@/components/report/ReportDisplayComponent';
 import { useToast } from '@/hooks/use-toast';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { AlertTriangle, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import { Button } from '@/components/ui/button';
+import { runInspectionAnalysis } from '@/app/actions/runInspectionAnalysis';
 
 export default function ReportDetailsPage() {
   const params = useParams();
+  const searchParams = useSearchParams();
   const reportId = params.reportId as string;
   const { toast } = useToast();
 
   const [report, setReport] = useState<InspectionReport | null | undefined>(undefined);
   const [hasWorkOrder, setHasWorkOrder] = useState<boolean>(false);
   const [isLoading, setIsLoading] = useState(true);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
 
   useEffect(() => {
     if (reportId) {
@@ -31,12 +34,32 @@ export default function ReportDetailsPage() {
         if (loadedReport) {
             const workOrders = await getWorkOrders();
             setHasWorkOrder(workOrders.some(wo => wo.reportId === reportId));
+            
+            // Check if URL requests analysis
+            if (searchParams.get('analyze') === 'true' && !loadedReport.anomalyReport) {
+              handleRunAnalysis(loadedReport);
+            }
         }
         setIsLoading(false);
       }
       fetchReport();
     }
-  }, [reportId]);
+  }, [reportId, searchParams]);
+
+  const handleRunAnalysis = async (reportToAnalyze: InspectionReport) => {
+      if (isAnalyzing) return;
+      setIsAnalyzing(true);
+      try {
+        const result = await runInspectionAnalysis({ reportId: reportToAnalyze.id });
+        setReport(prev => prev ? { ...prev, anomalyReport: result } : null);
+        toast({ title: "AI Analysis Complete", description: "Anomaly detection has finished."});
+      } catch(error) {
+        console.error("AI Analysis Error:", error);
+        toast({ variant: 'destructive', title: "Analysis Failed", description: "The AI could not complete the analysis."});
+      } finally {
+        setIsAnalyzing(false);
+      }
+  }
 
   const handleCreateWorkOrder = async () => {
     if (!report) return;
@@ -106,6 +129,8 @@ export default function ReportDetailsPage() {
         report={report} 
         onCreateWorkOrder={handleCreateWorkOrder}
         hasWorkOrder={hasWorkOrder}
+        onAnalyze={() => handleRunAnalysis(report)}
+        isAnalyzing={isAnalyzing}
       />
     </div>
   );
