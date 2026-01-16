@@ -23,6 +23,7 @@ import { Calculator } from 'lucide-react';
 import { Cloud } from 'lucide-react';
 import { useGlobalTools } from '@/hooks/use-global-tools';
 import WeatherForecast from './WeatherForecast';
+import { getJobStatus } from '@/lib/job-utils';
 
 const getBriefingItemIcon = (type: string) => {
   switch (type) {
@@ -208,15 +209,27 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     }
   }, [searchParams]);
 
-  const { eventDates, jobRanges } = useMemo(() => {
-    if (!dashboardData) return { eventDates: [], jobRanges: [] };
+  const { eventDates, jobRanges, stats } = useMemo(() => {
+    if (!dashboardData) return { eventDates: [], jobRanges: [], stats: { activeJobs: 0, totalAssets: 0, pendingRequests: 0, failedReports: 0 } };
+    
     const eventDates = dashboardData.events.filter(event => event.date).map(event => parseISO(event.date));
     const jobRanges = dashboardData.jobs.filter(job => job.startDate && job.endDate).map(job => ({
       from: parseISO(job.startDate),
       to: parseISO(job.endDate),
     }));
-    return { eventDates, jobRanges };
-  }, [dashboardData]);
+
+    const isOwner = user?.role === 'owner';
+    const jobsForStats = isOwner ? dashboardData.jobs : dashboardData.jobs.filter(j => j.jobType !== 'snow_removal');
+    
+    const calculatedStats = {
+      activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
+      totalAssets: dashboardData.assets.length,
+      pendingRequests: dashboardData.timeOffRequests.filter(r => r.status === 'pending').length,
+      failedReports: dashboardData.reports.filter(r => r.overallStatus === 'fail').length,
+    };
+
+    return { eventDates, jobRanges, stats: calculatedStats };
+  }, [dashboardData, user]);
 
   const selectedDayItems = useMemo(() => {
     if (!date || !dashboardData) return [];
@@ -280,10 +293,10 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
       </div>
 
        <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4 mb-8">
-            <StatCard title="Active Jobs" value={dashboardData?.stats.activeJobs || 0} icon={Briefcase} link="/admin/manage-jobs" />
-            <StatCard title="Fleet Assets" value={dashboardData?.stats.totalAssets || 0} icon={Truck} link="/admin/manage-fleet" />
-            <StatCard title="Pending Requests" value={dashboardData?.stats.pendingRequests || 0} icon={ClipboardCheck} link="/admin/manage-requests" />
-            <StatCard title="Failed Reports" value={dashboardData?.stats.failedReports || 0} icon={AlertTriangle} link="/reports" />
+            <StatCard title="Active Jobs" value={stats.activeJobs} icon={Briefcase} link="/admin/manage-jobs" />
+            <StatCard title="Fleet Assets" value={stats.totalAssets} icon={Truck} link="/admin/manage-fleet" />
+            <StatCard title="Pending Requests" value={stats.pendingRequests} icon={ClipboardCheck} link="/admin/manage-requests" />
+            <StatCard title="Failed Reports" value={stats.failedReports} icon={AlertTriangle} link="/reports" />
       </div>
       
       <div id="tour-step-ai-briefing">

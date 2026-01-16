@@ -454,5 +454,3 @@ export default function ManageInventoryPage() {
       </Dialog>
     </div>
   );
-
-    

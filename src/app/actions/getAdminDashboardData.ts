@@ -4,22 +4,18 @@
 import { getJobs, getCalendarEvents, getFleetAssets, getTimeOffRequests, getInspectionReports, getUsers } from '@/lib/firestoreService';
 import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { DailyBriefingOutput, BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
-import type { Job, CalendarEvent, User } from '@/lib/types';
+import type { Job, CalendarEvent, User, InspectionReport, TimeOffRequest, FleetAsset } from '@/lib/types';
 import { getJobStatus } from '@/lib/job-utils';
 import { isToday, isAfter, subDays, parseISO, format } from 'date-fns';
-import { getAuth } from 'firebase/auth'; // We can't use the hook here
-import { initializeFirebase } from '@/firebase';
 
 export interface AdminDashboardData {
   briefing: DailyBriefingOutput | null;
+  jobs: Job[];
   events: CalendarEvent[];
-  jobs: Job[]; // For the calendar
-  stats: {
-    activeJobs: number;
-    totalAssets: number;
-    pendingRequests: number;
-    failedReports: number;
-  };
+  assets: FleetAsset[];
+  timeOffRequests: TimeOffRequest[];
+  reports: InspectionReport[];
+  users: User[];
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -42,11 +38,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     return [[], [], [], [], [], []];
   });
   
-  // This is a server action, so we can't use the useUser() hook.
-  // We need to determine the user's role by other means if needed.
-  // This is a simplified example; a real app might pass the user ID.
-  const isOwner = true; // Simplified for this context. A real app would verify this.
-
   let briefing: DailyBriefingOutput | null = null;
   try {
     const twoDaysAgo = subDays(new Date(), 2);
@@ -111,20 +102,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
     briefing = null;
   }
   
-  // A manager should not see stats for jobs they cannot access.
-  const jobsForStats = isOwner ? allJobs : allJobs.filter(j => j.jobType !== 'snow_removal');
-  
-  const stats = {
-    activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
-    totalAssets: allAssets.length,
-    pendingRequests: allTimeOffRequests.filter(r => r.status === 'pending').length,
-    failedReports: allReports.filter(r => r.overallStatus === 'fail').length,
-  };
-
   return {
       briefing,
       events: allEvents,
       jobs: allJobs,
-      stats,
+      assets: allAssets,
+      timeOffRequests: allTimeOffRequests,
+      reports: allReports,
+      users: allUsers
   };
 }
