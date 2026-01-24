@@ -193,3 +193,19 @@ export const getReportsByVin = async (vin: string): Promise<InspectionReport[]> 
 
     return Array.from(resultsMap.values());
 };
+
+export const getTasksForUser = async (userId: string): Promise<Task[]> => {
+    const db = getFirestoreInstance();
+    const tasksRef = collection(db, 'tasks');
+    const q = query(tasksRef, where('assignedToEmployeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+};
+
+export const getReportsForUser = async (userId: string): Promise<InspectionReport[]> => {
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'inspectionReports');
+    const q = query(reportsRef, where('employeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+};

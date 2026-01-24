@@ -1,12 +1,10 @@
 
-import { getEmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
 import EmployeeHubClientPage from '@/components/employee/EmployeeHubClientPage';
 import { Loader2 } from 'lucide-react';
 import { Suspense } from 'react';
 
 export default async function EmployeeHubPage() {
-    const initialData = await getEmployeeDashboardData();
-
+    // Data fetching is now handled by the client component.
     return (
         <Suspense fallback={
              <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -14,9 +12,7 @@ export default async function EmployeeHubPage() {
                 <p className="text-lg text-muted-foreground">Loading Hub...</p>
             </div>
         }>
-            <EmployeeHubClientPage
-                initialData={initialData}
-            />
+            <EmployeeHubClientPage />
         </Suspense>
     );
 }

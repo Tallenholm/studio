@@ -18,6 +18,7 @@ import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import React from 'react';
+import { getEmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
 import type { EmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
 
 const employeeTourSteps: TourStep[] = [
@@ -29,17 +30,29 @@ const employeeTourSteps: TourStep[] = [
     { element: '#tour-step-sidebar-help-employee', title: "Get Help", content: "If you ever need a reminder, click the 'Help & Support' link at the bottom of the sidebar for a full guide to all features. You're all set!", side: 'right' },
 ];
 
-interface EmployeeHubClientPageProps {
-  initialData: EmployeeDashboardData | null;
-}
-
-export default function EmployeeHubClientPage({ initialData }: EmployeeHubClientPageProps) {
-  const { user } = useUser();
+export default function EmployeeHubClientPage() {
+  const { user, isUserLoading } = useUser();
   const searchParams = useSearchParams();
   const [date, setDate] = useState<Date | undefined>(new Date());
   
-  const [dashboardData, setDashboardData] = useState<EmployeeDashboardData | null>(initialData);
+  const [dashboardData, setDashboardData] = useState<EmployeeDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
   const [isTourOpen, setIsTourOpen] = useState(false);
+
+  useEffect(() => {
+    if (user) {
+      getEmployeeDashboardData({ userId: user.uid })
+        .then(data => {
+          setDashboardData(data);
+        })
+        .catch(error => {
+          console.error("Failed to load employee dashboard data:", error);
+        })
+        .finally(() => {
+          setIsLoading(false);
+        });
+    }
+  }, [user]);
 
    useEffect(() => {
     const hasViewedTour = localStorage.getItem('hasViewedTour_employee');
@@ -81,8 +94,8 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
         assignedSnowContracts: assignedJobs.filter(j => j.jobType === 'snow_removal'),
         assignedConcreteJobs: assignedJobs.filter(j => j.jobType === 'concrete'),
         assignedMiscJobs: assignedJobs.filter(j => j.jobType === 'misc'),
-        employeeTasks: dashboardData.tasks.filter(t => t.assignedToEmployeeId === user.uid),
-        employeeReports: dashboardData.reports.filter(r => r.employeeId === user.uid),
+        employeeTasks: dashboardData.tasks,
+        employeeReports: dashboardData.reports,
     };
   }, [dashboardData, user]);
 
@@ -156,11 +169,20 @@ export default function EmployeeHubClientPage({ initialData }: EmployeeHubClient
       );
   }
 
+  if (isLoading || isUserLoading) {
+     return (
+      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
+        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
+        <p className="text-lg text-muted-foreground">Loading Your Hub...</p>
+      </div>
+    );
+  }
+
   if (!dashboardData) {
      return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Hub...</p>
+        <p className="text-lg text-muted-foreground">Loading Data...</p>
       </div>
     );
   }

@@ -1,6 +1,7 @@
+
 'use server';
 
-import { getJobs, getCalendarEvents, getTasks, getInspectionReports } from '@/lib/firestoreService';
+import { getJobs, getCalendarEvents, getTasksForUser, getReportsForUser } from '@/lib/firestoreService';
 import type { Job, CalendarEvent, Task, InspectionReport } from '@/lib/types';
 
 export interface EmployeeDashboardData {
@@ -11,31 +12,30 @@ export interface EmployeeDashboardData {
 }
 
 /**
- * A Server Action to fetch all necessary data for the employee dashboard.
- * It now fetches all data and relies on the client to filter for the current user.
+ * A Server Action to fetch all necessary data for the employee dashboard,
+ * now filtered specifically for the given user on the server.
  */
-export async function getEmployeeDashboardData(): Promise<EmployeeDashboardData> {
+export async function getEmployeeDashboardData({ userId }: { userId: string }): Promise<EmployeeDashboardData> {
   const [
     allJobs = [],
     allEvents = [],
-    allTasks = [],
-    allReports = []
+    userTasks = [],
+    userReports = []
   ] = await Promise.all([
-    getJobs(),
+    getJobs(), // Still get all jobs, as filtering by array-contains is complex and better done on client for this app's scale
     getCalendarEvents(),
-    getTasks(),
-    getInspectionReports(),
+    getTasksForUser(userId),
+    getReportsForUser(userId),
   ]).catch(err => {
-    console.error("Failed to fetch all dashboard data for employee:", err);
+    console.error("Failed to fetch dashboard data for employee:", err);
     return [[], [], [], []];
   });
 
-  // Data is no longer pre-filtered on the server.
-  // The client component will filter tasks and reports based on the logged-in user.
+  // Data is now efficiently pre-filtered on the server.
   return {
     jobs: allJobs,
     events: allEvents,
-    tasks: allTasks,
-    reports: allReports,
+    tasks: userTasks,
+    reports: userReports,
   };
 }
