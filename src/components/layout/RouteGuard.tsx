@@ -3,10 +3,15 @@
 
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect } from 'react';
-import AppLayout from './AppLayout';
 import type { UserRole } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { useUser } from '@/firebase/provider';
+import dynamic from 'next/dynamic';
+
+const AppLayout = dynamic(() => import('./AppLayout'), {
+  loading: () => <FullScreenLoader text="Loading Application..." />,
+  ssr: false,
+});
 
 const PATH_CONFIG = {
   PUBLIC: ['/login'],
