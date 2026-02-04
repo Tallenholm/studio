@@ -28,16 +28,14 @@ const calculateHealthScore = (asset: FleetAsset, reports: InspectionReport[], lo
 
 /**
  * Calculates maintenance cost data for a single asset over the last 6 months.
- * The logs passed in are assumed to be already filtered for this period.
+ * This function now takes a pre-initialized object for performance.
  */
-const getMaintenanceCostData = (logs: MaintenanceLog[]): { name: string; totalCost: number }[] => {
-    const costByMonth: Record<string, number> = {};
-
-    // Initialize months for the chart
-    for (let i = 5; i >= 0; i--) {
-        const month = format(subMonths(new Date(), i), 'MMM');
-        costByMonth[month] = 0;
-    }
+const getMaintenanceCostData = (
+    logs: MaintenanceLog[],
+    initialCostByMonth: Record<string, number>
+): { name: string; totalCost: number }[] => {
+    // Clone the initial object to avoid mutating the original across loop iterations
+    const costByMonth: Record<string, number> = { ...initialCostByMonth };
 
     // Aggregate costs from the pre-filtered logs
     logs.forEach(log => {
@@ -89,13 +87,21 @@ export async function getFleetHealthData(): Promise<FleetHealthData[]> {
         }
     }
 
+    // Initialize the months object ONCE, outside the loop.
+    const initialCostByMonth: Record<string, number> = {};
+    for (let i = 5; i >= 0; i--) {
+        const month = format(subMonths(new Date(), i), 'MMM');
+        initialCostByMonth[month] = 0;
+    }
+
     // 3. Map over assets and perform calculations on the smaller, pre-filtered datasets.
     const healthData = assets.map(asset => {
         const assetReports = reportsByVin[asset.vin] || [];
         const assetLogs = logsByAssetId[asset.id] || [];
 
         const score = calculateHealthScore(asset, assetReports, assetLogs);
-        const costData = getMaintenanceCostData(assetLogs);
+        // Pass the pre-initialized object to the function
+        const costData = getMaintenanceCostData(assetLogs, initialCostByMonth);
         
         return {
             asset,
