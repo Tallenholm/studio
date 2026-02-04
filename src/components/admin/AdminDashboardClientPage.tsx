@@ -224,8 +224,8 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     const calculatedStats = {
       activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
       totalAssets: dashboardData.assets.length,
-      pendingRequests: dashboardData.timeOffRequests.filter(r => r.status === 'pending').length,
-      failedReports: dashboardData.reports.filter(r => r.overallStatus === 'fail').length,
+      pendingRequests: dashboardData.pendingTimeOffRequests.length,
+      failedReports: dashboardData.recentReports.filter(r => r.overallStatus === 'fail').length,
     };
 
     return { eventDates, jobRanges, stats: calculatedStats };
@@ -296,7 +296,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
             <StatCard title="Active Jobs" value={stats.activeJobs} icon={Briefcase} link="/admin/manage-jobs" />
             <StatCard title="Fleet Assets" value={stats.totalAssets} icon={Truck} link="/admin/manage-fleet" />
             <StatCard title="Pending Requests" value={stats.pendingRequests} icon={ClipboardCheck} link="/admin/manage-requests" />
-            <StatCard title="Failed Reports" value={stats.failedReports} icon={AlertTriangle} link="/reports" />
+            <StatCard title="Failed Reports (30d)" value={stats.failedReports} icon={AlertTriangle} link="/reports" />
       </div>
       
       <div id="tour-step-ai-briefing">

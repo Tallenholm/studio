@@ -5,6 +5,7 @@ import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, ad
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
+import { format, startOfDay } from 'date-fns';
 
 
 let dbInstance: Firestore | null = null;
@@ -179,6 +180,23 @@ export const getInspectionReportsInDateRange = async (startDate: string, endDate
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
 };
 
+export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
+    const db = getFirestoreInstance();
+    const requestsRef = collection(db, 'timeOffRequests');
+    const q = query(requestsRef, where('status', '==', 'pending'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+};
+
+export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
+    const db = getFirestoreInstance();
+    const jobsRef = collection(db, 'jobs');
+    // Format today's date as YYYY-MM-DD for string comparison
+    const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
+    const q = query(jobsRef, where('endDate', '>=', todayStr));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+};
 
 // Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {

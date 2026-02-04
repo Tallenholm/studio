@@ -1,10 +1,16 @@
 
 'use server';
 
-import { getJobs, getCalendarEvents, getFleetAssets, getTimeOffRequests, getInspectionReports, getUsers } from '@/lib/firestoreService';
+import { 
+  getCalendarEvents, 
+  getFleetAssets, 
+  getInspectionReportsInDateRange,
+  getPendingTimeOffRequests,
+  getActiveAndUpcomingJobs
+} from '@/lib/firestoreService';
 import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { DailyBriefingOutput, BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
-import type { Job, CalendarEvent, User, InspectionReport, TimeOffRequest, FleetAsset } from '@/lib/types';
+import type { Job, CalendarEvent, TimeOffRequest, InspectionReport, FleetAsset } from '@/lib/types';
 import { getJobStatus } from '@/lib/job-utils';
 import { isToday, isAfter, subDays, parseISO, format } from 'date-fns';
 
@@ -13,36 +19,37 @@ export interface AdminDashboardData {
   jobs: Job[];
   events: CalendarEvent[];
   assets: FleetAsset[];
-  timeOffRequests: TimeOffRequest[];
-  reports: InspectionReport[];
-  users: User[];
+  pendingTimeOffRequests: TimeOffRequest[];
+  recentReports: InspectionReport[];
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
-  const [
-    allJobs = [],
-    allEvents = [],
-    allAssets = [],
-    allTimeOffRequests = [],
-    allReports = [],
-    allUsers = []
-  ] = await Promise.all([
-    getJobs().catch(() => []),
-    getCalendarEvents().catch(() => []),
-    getFleetAssets().catch(() => []),
-    getTimeOffRequests().catch(() => []),
-    getInspectionReports().catch(() => []),
-    getUsers().catch(() => [])
-  ]).catch(err => {
-    console.error("Critical error fetching dashboard data:", err);
-    return [[], [], [], [], [], []];
-  });
+    const today = new Date();
+    const twoDaysAgo = subDays(today, 2);
+    const thirtyDaysAgo = subDays(today, 30);
+    const thirtyDaysAgoStr = format(thirtyDaysAgo, 'yyyy-MM-dd');
+    const todayStr = format(today, 'yyyy-MM-dd');
+
+    const [
+        activeAndUpcomingJobs = [],
+        allEvents = [],
+        allAssets = [],
+        pendingTimeOffRequests = [],
+        recentReports = [],
+    ] = await Promise.all([
+        getActiveAndUpcomingJobs(),
+        getCalendarEvents(),
+        getFleetAssets(),
+        getPendingTimeOffRequests(),
+        getInspectionReportsInDateRange(thirtyDaysAgoStr, todayStr),
+    ]).catch(err => {
+        console.error("Critical error fetching dashboard data:", err);
+        return [[], [], [], [], []];
+    });
   
   let briefing: DailyBriefingOutput | null = null;
   try {
-    const twoDaysAgo = subDays(new Date(), 2);
-    
-    const attentionItems: BriefingData['attentionItems'] = allReports
+    const attentionItems: BriefingData['attentionItems'] = recentReports
       .filter(r => r.overallStatus === 'fail' && isAfter(parseISO(r.date), twoDaysAgo))
       .map(r => {
         const assetVin = r.truckVin || r.trailerVin || r.heavyEquipmentVin || 'Unknown';
@@ -57,7 +64,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       });
 
     const todaysAgenda: BriefingData['todaysAgenda'] = [
-      ...allJobs
+      ...activeAndUpcomingJobs
         .filter(j => getJobStatus(j) === 'active')
         .map(j => ({
           id: j.id,
@@ -77,8 +84,7 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         }))
     ];
     
-    const pendingActions: BriefingData['pendingActions'] = allTimeOffRequests
-      .filter(r => r.status === 'pending')
+    const pendingActions: BriefingData['pendingActions'] = pendingTimeOffRequests
       .map(r => ({
         id: r.id,
         type: 'request',
@@ -105,10 +111,9 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   return {
       briefing,
       events: allEvents,
-      jobs: allJobs,
+      jobs: activeAndUpcomingJobs,
       assets: allAssets,
-      timeOffRequests: allTimeOffRequests,
-      reports: allReports,
-      users: allUsers
+      pendingTimeOffRequests: pendingTimeOffRequests,
+      recentReports: recentReports,
   };
 }
