@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useEffect, useState } from 'react';
@@ -20,13 +19,11 @@ export default function CommandPalette() {
 
   useEffect(() => {
     setIsMounted(true);
-    // Load data when the palette is opened to ensure it's fresh
-    if (isOpen) {
-        getJobs().then(setJobs);
-        getClients().then(setClients);
-        getFleetAssets().then(setAssets);
-    }
-  }, [isOpen]);
+    // Fetch data once and cache it in state
+    getJobs().then(setJobs);
+    getClients().then(setClients);
+    getFleetAssets().then(setAssets);
+  }, []);
 
   const runCommand = (command: () => unknown) => {
     close();
