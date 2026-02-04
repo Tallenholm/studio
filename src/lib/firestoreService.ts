@@ -171,6 +171,14 @@ export const getExpenseReportsInDateRange = async (startDate: string, endDate: s
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
 };
 
+export const getInspectionReportsInDateRange = async (startDate: string, endDate: string): Promise<InspectionReport[]> => {
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'inspectionReports');
+    const q = query(reportsRef, where('date', '>=', startDate), where('date', '<=', endDate));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+};
+
 
 // Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
