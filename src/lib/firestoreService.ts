@@ -261,3 +261,19 @@ export const getReportsForUser = async (userId: string): Promise<InspectionRepor
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
 };
+
+export const getTasksInDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
+    const db = getFirestoreInstance();
+    const tasksRef = collection(db, 'tasks');
+    const q = query(tasksRef, where('dateAssigned', '>=', startDate), where('dateAssigned', '<=', endDate));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+};
+
+export const getViolationsInDateRange = async (startDate: string, endDate: string): Promise<Violation[]> => {
+    const db = getFirestoreInstance();
+    const violationsRef = collection(db, 'violations');
+    const q = query(violationsRef, where('date', '>=', startDate), where('date', '<=', endDate));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
+};

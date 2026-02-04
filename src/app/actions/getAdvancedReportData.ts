@@ -1,9 +1,21 @@
 
 'use server';
 
-import { getInspectionReports, getMaintenanceLogs, getTasks, getViolations, getFleetAssets, getExpenseReports } from '@/lib/firestoreService';
+import { 
+    getInspectionReports, 
+    getMaintenanceLogs, 
+    getTasks, 
+    getViolations, 
+    getFleetAssets, 
+    getExpenseReports,
+    getInspectionReportsInDateRange,
+    getMaintenanceLogsInDateRange,
+    getTasksInDateRange,
+    getViolationsInDateRange,
+    getExpenseReportsInDateRange
+} from '@/lib/firestoreService';
 import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, FleetAsset, VehicleType, ExpenseCategory } from '@/lib/types';
-import { subDays, isWithinInterval, parseISO } from 'date-fns';
+import { subDays, isWithinInterval, parseISO, format } from 'date-fns';
 
 interface ChartDataPoint {
     name: string;
@@ -26,14 +38,23 @@ export async function getAdvancedReportData(
   dateRangeFilter: 'all_time' | 'last_30_days' | 'last_quarter', 
   vehicleTypeFilter: VehicleType | 'all'
 ): Promise<AdvancedReportData> {
-  // Load data from Firestore
+  const now = new Date();
+  const dateRange = 
+    dateRangeFilter === 'last_30_days' ? { start: subDays(now, 30), end: now }
+    : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
+    : null;
+    
+  const startDateStr = dateRange ? format(dateRange.start, 'yyyy-MM-dd') : null;
+  const endDateStr = dateRange ? format(dateRange.end, 'yyyy-MM-dd') : null;
+
+  // Fetch data from Firestore, using filtered queries where possible
   const [reports, logs, tasks, violations, expenses, fleetAssets] = await Promise.all([
-    getInspectionReports(),
-    getMaintenanceLogs(),
-    getTasks(),
-    getViolations(),
-    getExpenseReports(),
-    getFleetAssets()
+    dateRange && startDateStr && endDateStr ? getInspectionReportsInDateRange(startDateStr, endDateStr) : getInspectionReports(),
+    dateRange && startDateStr && endDateStr ? getMaintenanceLogsInDateRange(startDateStr, endDateStr) : getMaintenanceLogs(),
+    dateRange && startDateStr && endDateStr ? getTasksInDateRange(startDateStr, endDateStr) : getTasks(),
+    dateRange && startDateStr && endDateStr ? getViolationsInDateRange(startDateStr, endDateStr) : getViolations(),
+    dateRange && startDateStr && endDateStr ? getExpenseReportsInDateRange(startDateStr, endDateStr) : getExpenseReports(),
+    getFleetAssets() // Always get all assets for filtering
   ]);
   
   const hasAnyData = reports.length > 0 || logs.length > 0 || tasks.length > 0 || violations.length > 0 || expenses.length > 0;
@@ -50,27 +71,7 @@ export async function getAdvancedReportData(
     };
   }
 
-  // Date Filtering Logic
-  const now = new Date();
-  const dateFilterRange = dateRangeFilter === 'last_30_days' ? { start: subDays(now, 30), end: now }
-                        : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
-                        : null;
-
-  const filterByDate = <T extends { date?: string | null, dateAssigned?: string }>(items: T[]) => {
-    if (!dateFilterRange) return items;
-    return items.filter(item => {
-        const itemDateStr = item.date || item.dateAssigned;
-        if (!itemDateStr) return false;
-        try {
-            const itemDate = parseISO(itemDateStr);
-            return isWithinInterval(itemDate, dateFilterRange);
-        } catch (e) {
-            return false;
-        }
-    });
-  };
-  
-  // Vehicle Type Filtering Logic
+  // Vehicle Type Filtering Logic (remains in-memory)
   const filterByVehicleType = <T extends { assetId?: string; truckVin?: string; trailerVin?: string; heavyEquipmentVin?: string }>(items: T[]) => {
     if (vehicleTypeFilter === 'all') return items;
     const assetVinsOfType = new Set(fleetAssets.filter(a => a.type === vehicleTypeFilter).map(a => a.vin));
@@ -88,12 +89,12 @@ export async function getAdvancedReportData(
     });
   };
 
-  // Apply filters
-  const filteredReports = filterByVehicleType(filterByDate(reports));
-  const filteredLogs = filterByVehicleType(filterByDate(logs));
-  const filteredTasks = filterByDate(tasks);
-  const filteredViolations = filterByDate(violations);
-  const filteredExpenses = filterByDate(expenses);
+  // Apply vehicle type filter to already date-filtered collections
+  const filteredReports = filterByVehicleType(reports);
+  const filteredLogs = filterByVehicleType(logs);
+  const filteredTasks = tasks;
+  const filteredViolations = violations;
+  const filteredExpenses = expenses;
 
   // Perform aggregations
   const inspectionOutcomes = [
