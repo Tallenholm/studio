@@ -1,23 +1,23 @@
-
 'use server';
 
-import { getMaintenanceLogs, getExpenseReports, getUsers } from '@/lib/firestoreService';
+import { getMaintenanceLogsInDateRange, getExpenseReportsInDateRange, getUsersByIds } from '@/lib/firestoreService';
 import type { Job, User } from '@/lib/types';
 import { isWithinInterval, parseISO, differenceInBusinessDays, addDays } from 'date-fns';
 
 export async function getJobCost(job: Job | null) {
     if (!job) return { maintenanceCost: 0, expenseCost: 0, laborCost: 0, totalCost: 0, estimatedProfit: 0 };
     
-    const [maintenanceLogs, expenseReports, allUsers] = await Promise.all([
-        getMaintenanceLogs(),
-        getExpenseReports(),
-        getUsers(),
-    ]);
+    // Get all assigned user IDs from the job object first
+    const assignedMainCrewIds = new Set(job.assignedEmployeeIds || []);
+    const assignedSidewalkCrewIds = new Set(job.assignedSidewalkCrewIds || []);
+    const allAssignedEmployeeIds = Array.from(new Set([...assignedMainCrewIds, ...assignedSidewalkCrewIds]));
 
-    const jobInterval = {
-      start: parseISO(job.startDate),
-      end: parseISO(job.endDate),
-    };
+    // Fetch only the necessary data using filtered queries
+    const [maintenanceLogs, expenseReports, assignedEmployees] = await Promise.all([
+        getMaintenanceLogsInDateRange(job.startDate, job.endDate),
+        getExpenseReportsInDateRange(job.startDate, job.endDate),
+        allAssignedEmployeeIds.length > 0 ? getUsersByIds(allAssignedEmployeeIds) : Promise.resolve([]),
+    ]);
 
     const assignedAssetIds = new Set([
       ...(job.assignedTruckIds || []),
@@ -25,27 +25,24 @@ export async function getJobCost(job: Job | null) {
       ...(job.assignedHeavyEquipmentIds || []),
     ]);
 
+    // Now filter the already date-filtered logs by asset ID in memory
     const maintenanceCost = maintenanceLogs
-      .filter(log => 
-        log.assetId && assignedAssetIds.has(log.assetId) && isWithinInterval(parseISO(log.date), jobInterval)
-      )
+      .filter(log => log.assetId && assignedAssetIds.has(log.assetId))
       .reduce((acc, log) => acc + (log.cost || 0), 0);
       
-    const expenseCost = expenseReports
-        .filter(report => isWithinInterval(parseISO(report.date), jobInterval))
-        .reduce((acc, report) => acc + report.amount, 0);
+    // Expense reports are already correctly filtered by date
+    const expenseCost = expenseReports.reduce((acc, report) => acc + report.amount, 0);
 
+    const jobInterval = {
+      start: parseISO(job.startDate),
+      end: parseISO(job.endDate),
+    };
     // Refined job duration calculation
     const jobDurationDays = differenceInBusinessDays(addDays(jobInterval.end, 1), jobInterval.start);
     // Ensure a minimum of 1 day (8 hours) for jobs that start and end on the same day or over a weekend.
     const jobDurationHours = Math.max(1, jobDurationDays) * 8; 
 
-    const assignedMainCrewIds = new Set(job.assignedEmployeeIds || []);
-    const assignedSidewalkCrewIds = new Set(job.assignedSidewalkCrewIds || []);
-    const allAssignedEmployeeIds = new Set([...assignedMainCrewIds, ...assignedSidewalkCrewIds]);
-    
-    const assignedEmployees = allUsers.filter(u => allAssignedEmployeeIds.has(u.id));
-
+    // assignedEmployees is now the pre-filtered list
     const laborCost = assignedEmployees.reduce((acc, employee) => {
         if (employee.hourlyRate) {
             return acc + (employee.hourlyRate * jobDurationHours);

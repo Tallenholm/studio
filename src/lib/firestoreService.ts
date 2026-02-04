@@ -1,7 +1,7 @@
 
 
 import { initializeFirebase } from '@/firebase';
-import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where } from 'firebase/firestore';
+import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
@@ -144,6 +144,32 @@ export const { getAll: getSnowRoutes, getById: getSnowRouteById, add: addSnowRou
 export const { getAll: getRentals, getById: getRentalById, add: addRental, update: updateRental, delete: deleteRental } = createCrudService<Rental>('rentals');
 export const { getAll: getCalendarEvents, getById: getCalendarEventById, add: addCalendarEvent, update: updateCalendarEvent, delete: deleteCalendarEvent } = createCrudService<CalendarEvent>('calendarEvents');
 export const { getAll: getNotifications, getById: getNotificationById, add: addNotification, update: updateNotification, delete: deleteNotification } = createCrudService<NotificationMessage>('notifications');
+
+
+export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
+    if (userIds.length === 0) return [];
+    const db = getFirestoreInstance();
+    const usersRef = collection(db, 'users');
+    const q = query(usersRef, where(documentId(), 'in', userIds));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+};
+
+export const getMaintenanceLogsInDateRange = async (startDate: string, endDate: string): Promise<MaintenanceLog[]> => {
+    const db = getFirestoreInstance();
+    const logsRef = collection(db, 'maintenanceLogs');
+    const q = query(logsRef, where('date', '>=', startDate), where('date', '<=', endDate));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaintenanceLog));
+};
+
+export const getExpenseReportsInDateRange = async (startDate: string, endDate: string): Promise<ExpenseReport[]> => {
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'expenseReports');
+    const q = query(reportsRef, where('date', '>=', startDate), where('date', '<=', endDate));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
+};
 
 
 // Special case functions
