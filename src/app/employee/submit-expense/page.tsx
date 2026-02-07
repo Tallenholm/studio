@@ -4,7 +4,7 @@ import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { addExpenseReport, getExpenseReports } from '@/lib/firestoreService';
+import { addExpenseReport, getExpenseReportsForUser } from '@/lib/firestoreService';
 import type { ExpenseReport } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -56,11 +56,8 @@ export default function SubmitExpensePage() {
     setIsLoading(true);
     async function fetchReports() {
         try {
-            const allReports = await getExpenseReports();
-            const userReports = allReports
-                .filter(r => r.employeeId === user.uid)
-                .sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setReports(userReports);
+            const userReports = await getExpenseReportsForUser(user.uid);
+            setReports(userReports.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your expense history.' });
         } finally {

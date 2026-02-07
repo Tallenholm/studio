@@ -6,7 +6,7 @@ import { Download, FileText, FileBadge, Loader2 } from 'lucide-react';
 import Link from 'next/link';
 import Image from 'next/image';
 import type { ManagedDocument } from '@/lib/types';
-import { getDocuments } from '@/lib/firestoreService';
+import { getDocumentsForUser } from '@/lib/firestoreService';
 import { useUser } from '@/firebase';
 import { useToast } from '@/hooks/use-toast';
 
@@ -21,8 +21,7 @@ export default function PersonalDocumentsPage() {
     setIsLoading(true);
     async function fetchData() {
         try {
-            const allDocs = await getDocuments();
-            const userDocs = allDocs.filter(d => d.employeeId === user.uid);
+            const userDocs = await getDocumentsForUser(user.uid);
             setDocuments(userDocs);
         } catch (error) {
              toast({ variant: 'destructive', title: 'Error', description: 'Could not load your documents.' });

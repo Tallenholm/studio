@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useEffect, useState, useMemo } from 'react';
 import Link from 'next/link';
-import { getInspectionReports, getFleetAssets } from '@/lib/firestoreService';
+import { getInspectionReports, getFleetAssets, getReportsForUser } from '@/lib/firestoreService';
 import type { InspectionReport, FleetAsset } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,19 +30,19 @@ export default function ReportsListPage() {
   useEffect(() => {
     async function fetchData() {
         setIsLoading(true);
+        
+        const fetchReportsPromise = (role === 'employee' && user) 
+            ? getReportsForUser(user.uid) 
+            : getInspectionReports();
+
         const [loadedReports, loadedAssets] = await Promise.all([
-            getInspectionReports(),
+            fetchReportsPromise,
             getFleetAssets()
         ]);
         
         const sortedReports = loadedReports.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
         
-        if (role === 'employee' && user) {
-            setReports(sortedReports.filter(report => report.employeeId === user.uid));
-        } else {
-            setReports(sortedReports);
-        }
-        
+        setReports(sortedReports);
         setFleetAssets(loadedAssets);
         setIsLoading(false);
     }

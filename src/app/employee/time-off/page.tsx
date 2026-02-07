@@ -20,7 +20,7 @@ import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
-import { addTimeOffRequest, getTimeOffRequests } from '@/lib/firestoreService';
+import { addTimeOffRequest, getTimeOffRequestsForUser } from '@/lib/firestoreService';
 
 const requestSchema = z.object({
   dateRange: z.object({
@@ -49,11 +49,8 @@ export default function TimeOffPage() {
     setIsLoading(true);
     async function fetchRequests() {
         try {
-            const allRequests = await getTimeOffRequests();
-            const userRequests = allRequests
-                .filter(r => r.employeeId === user.uid)
-                .sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime());
-            setRequests(userRequests);
+            const userRequests = await getTimeOffRequestsForUser(user.uid);
+            setRequests(userRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your time off requests.' });
         } finally {

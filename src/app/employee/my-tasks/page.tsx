@@ -1,11 +1,12 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { updateTask, getTasks } from '@/lib/firestoreService';
+import { updateTask, getTasksForUser } from '@/lib/firestoreService';
 import type { Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -68,11 +69,8 @@ export default function MyTasksPage() {
         if (!user) return;
         setIsLoading(true);
         try {
-            const allTasks = await getTasks();
-            const userTasks = allTasks
-                .filter(t => t.assignedToEmployeeId === user.uid)
-                .sort((a, b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime());
-            setTasks(userTasks);
+            const userTasks = await getTasksForUser(user.uid);
+            setTasks(userTasks.sort((a, b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your tasks.' });
         } finally {

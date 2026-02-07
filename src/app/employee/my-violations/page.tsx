@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { ShieldAlert, Loader2 } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { useUser } from '@/firebase';
-import { getViolations } from '@/lib/firestoreService';
+import { getViolationsForUser } from '@/lib/firestoreService';
 import { useToast } from '@/hooks/use-toast';
 
 export default function MyViolationsPage() {
@@ -20,11 +20,8 @@ export default function MyViolationsPage() {
     setIsLoading(true);
     async function fetchViolations() {
         try {
-            const allViolations = await getViolations();
-            const userViolations = allViolations
-                .filter(v => v.employeeId === user.uid)
-                .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime());
-            setViolations(userViolations);
+            const userViolations = await getViolationsForUser(user.uid);
+            setViolations(userViolations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
         } catch (error) {
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your violation records.' });
         } finally {

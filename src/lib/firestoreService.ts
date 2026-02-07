@@ -304,3 +304,35 @@ export const getViolationsInDateRange = async (startDate: string, endDate: strin
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
 };
+
+export const getViolationsForUser = async (userId: string): Promise<Violation[]> => {
+    const db = getFirestoreInstance();
+    const violationsRef = collection(db, 'violations');
+    const q = query(violationsRef, where('employeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
+};
+
+export const getDocumentsForUser = async (userId: string): Promise<ManagedDocument[]> => {
+    const db = getFirestoreInstance();
+    const docsRef = collection(db, 'documents');
+    const q = query(docsRef, where('employeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManagedDocument));
+};
+
+export const getExpenseReportsForUser = async (userId: string): Promise<ExpenseReport[]> => {
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'expenseReports');
+    const q = query(reportsRef, where('employeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
+};
+
+export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOffRequest[]> => {
+    const db = getFirestoreInstance();
+    const requestsRef = collection(db, 'timeOffRequests');
+    const q = query(requestsRef, where('employeeId', '==', userId));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+};
