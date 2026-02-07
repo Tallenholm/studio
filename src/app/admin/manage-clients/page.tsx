@@ -2,7 +2,7 @@
 
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -37,7 +37,7 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2 } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2, Search } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 const clientSchema = z.object({
@@ -55,16 +55,7 @@ export default function ManageClientsPage() {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
-
-  const form = useForm<z.infer<typeof clientSchema>>({
-    resolver: zodResolver(clientSchema),
-    defaultValues: {
-      name: '',
-      contactPerson: '',
-      contactEmail: '',
-      contactPhone: '',
-    },
-  });
+  const [searchTerm, setSearchTerm] = useState('');
 
    useEffect(() => {
     async function fetchData() {
@@ -84,6 +75,18 @@ export default function ManageClientsPage() {
     }
     fetchData();
   }, [toast]);
+
+  const filteredClients = useMemo(() => {
+    return clients.filter(client => {
+      const search = searchTerm.toLowerCase();
+      return (
+        client.name.toLowerCase().includes(search) ||
+        (client.contactPerson && client.contactPerson.toLowerCase().includes(search)) ||
+        (client.contactEmail && client.contactEmail.toLowerCase().includes(search)) ||
+        (client.contactPhone && client.contactPhone.toLowerCase().includes(search))
+      );
+    });
+  }, [clients, searchTerm]);
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -241,7 +244,16 @@ export default function ManageClientsPage() {
           </div>
         </CardHeader>
         <CardContent>
-          {clients.length > 0 ? (
+          <div className="relative mb-4">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Search clients by name, contact, email, or phone..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          {filteredClients.length > 0 ? (
               <div className="border rounded-md">
                   <Table>
                       <TableHeader>
@@ -255,7 +267,7 @@ export default function ManageClientsPage() {
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {clients.map(client => (
+                          {filteredClients.map(client => (
                           <TableRow key={client.id}>
                               <TableCell className="font-medium">{client.name}</TableCell>
                               <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
@@ -288,11 +300,11 @@ export default function ManageClientsPage() {
                   </Table>
               </div>
           ) : (
-              <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
-                <h3 className="text-xl font-semibold text-foreground">No Clients Found</h3>
-                <p className="mt-2">Click "Add New Client" to get started.</p>
-              </div>
+            <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
+              <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+              <h3 className="text-xl font-semibold text-foreground">{searchTerm ? 'No Matching Clients' : 'No Clients Found'}</h3>
+              <p className="mt-2">{searchTerm ? 'Try a different search term.' : 'Click "Add New Client" to get started.'}</p>
+            </div>
           )}
         </CardContent>
       </Card>
