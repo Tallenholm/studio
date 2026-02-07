@@ -6,7 +6,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { useForm } from 'react-hook-form';
 import Image from 'next/image';
-import { getJobs, updateJob, getUsers, getFleetAssets, getSnowRoutes } from '@/lib/firestoreService';
+import { getJobs, updateJob, getUsers, getFleetAssets, getSnowRoutes, getSnowJobs } from '@/lib/firestoreService';
 import type { Job, User, FleetAsset, SnowRoute, SnowServiceLog } from '@/lib/types';
 import { useUser } from '@/firebase/provider';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -66,11 +66,11 @@ export default function SnowRoutesPage() {
 
     const fetchData = async () => {
         const [loadedJobs, loadedUsers, loadedAssets] = await Promise.all([
-            getJobs(),
+            getSnowJobs(), // Optimized to fetch only snow jobs
             getUsers(),
             getFleetAssets()
         ]);
-        setJobs(loadedJobs.filter(j => j.jobType === 'snow_removal'));
+        setJobs(loadedJobs);
         setUsers(loadedUsers);
         setFleetAssets(loadedAssets);
     };
