@@ -37,8 +37,9 @@ import {
   TableRow,
 } from '@/components/ui/table';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2, Search } from 'lucide-react';
+import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2, Search, DollarSign } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import Link from 'next/link';
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
@@ -76,17 +77,28 @@ export default function ManageClientsPage() {
     fetchData();
   }, [toast]);
 
-  const filteredClients = useMemo(() => {
-    return clients.filter(client => {
-      const search = searchTerm.toLowerCase();
-      return (
-        client.name.toLowerCase().includes(search) ||
-        (client.contactPerson && client.contactPerson.toLowerCase().includes(search)) ||
-        (client.contactEmail && client.contactEmail.toLowerCase().includes(search)) ||
-        (client.contactPhone && client.contactPhone.toLowerCase().includes(search))
-      );
-    });
-  }, [clients, searchTerm]);
+  const clientsWithStats = useMemo(() => {
+    return clients
+      .map(client => {
+        const clientJobs = jobs.filter(job => job.clientId === client.id);
+        const totalValue = clientJobs.reduce((sum, job) => sum + (job.jobValue || 0), 0);
+        return {
+          ...client,
+          jobCount: clientJobs.length,
+          totalValue: totalValue,
+        };
+      })
+      .filter(client => {
+        const search = searchTerm.toLowerCase();
+        return (
+          client.name.toLowerCase().includes(search) ||
+          (client.contactPerson && client.contactPerson.toLowerCase().includes(search)) ||
+          (client.contactEmail && client.contactEmail.toLowerCase().includes(search)) ||
+          (client.contactPhone && client.contactPhone.toLowerCase().includes(search))
+        );
+      });
+  }, [clients, jobs, searchTerm]);
+
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -141,6 +153,13 @@ export default function ManageClientsPage() {
     });
   }
   
+  const formatCurrency = (value: number) => {
+    return new Intl.NumberFormat('en-US', {
+        style: 'currency',
+        currency: 'USD',
+    }).format(value);
+  };
+
   if (isLoading) {
     return (
         <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -253,7 +272,7 @@ export default function ManageClientsPage() {
               className="pl-10"
             />
           </div>
-          {filteredClients.length > 0 ? (
+          {clientsWithStats.length > 0 ? (
               <div className="border rounded-md">
                   <Table>
                       <TableHeader>
@@ -263,17 +282,27 @@ export default function ManageClientsPage() {
                           <TableHead>Email</TableHead>
                           <TableHead>Phone</TableHead>
                           <TableHead>Jobs</TableHead>
+                          <TableHead>Total Billed</TableHead>
                           <TableHead className="text-right w-[100px]">Actions</TableHead>
                           </TableRow>
                       </TableHeader>
                       <TableBody>
-                          {filteredClients.map(client => (
+                          {clientsWithStats.map(client => (
                           <TableRow key={client.id}>
                               <TableCell className="font-medium">{client.name}</TableCell>
                               <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
-                              <TableCell className="text-muted-foreground">{client.contactEmail || 'N/A'}</TableCell>
-                              <TableCell className="text-muted-foreground">{client.contactPhone || 'N/A'}</TableCell>
-                              <TableCell className="text-muted-foreground">{jobs.filter(j => j.clientId === client.id).length}</TableCell>
+                              <TableCell className="text-muted-foreground">
+                                {client.contactEmail ? (
+                                  <Link href={`mailto:${client.contactEmail}`} className="hover:underline">{client.contactEmail}</Link>
+                                ) : 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">
+                                 {client.contactPhone ? (
+                                  <Link href={`tel:${client.contactPhone}`} className="hover:underline">{client.contactPhone}</Link>
+                                ) : 'N/A'}
+                              </TableCell>
+                              <TableCell className="text-muted-foreground">{client.jobCount}</TableCell>
+                              <TableCell className="text-muted-foreground">{formatCurrency(client.totalValue)}</TableCell>
                               <TableCell className="text-right">
                                   <DropdownMenu>
                                       <DropdownMenuTrigger asChild>
