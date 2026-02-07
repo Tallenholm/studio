@@ -1,7 +1,7 @@
 
 'use server';
 
-import { getJobs, getCalendarEvents, getTasksForUser, getReportsForUser } from '@/lib/firestoreService';
+import { getCalendarEvents, getTasksForUser, getReportsForUser, getJobsForUser } from '@/lib/firestoreService';
 import type { Job, CalendarEvent, Task, InspectionReport } from '@/lib/types';
 
 export interface EmployeeDashboardData {
@@ -17,12 +17,12 @@ export interface EmployeeDashboardData {
  */
 export async function getEmployeeDashboardData({ userId }: { userId: string }): Promise<EmployeeDashboardData> {
   const [
-    allJobs = [],
+    userJobs = [],
     allEvents = [],
     userTasks = [],
     userReports = []
   ] = await Promise.all([
-    getJobs(), // Still get all jobs, as filtering by array-contains is complex and better done on client for this app's scale
+    getJobsForUser(userId),
     getCalendarEvents(),
     getTasksForUser(userId),
     getReportsForUser(userId),
@@ -33,7 +33,7 @@ export async function getEmployeeDashboardData({ userId }: { userId: string }): 
 
   // Data is now efficiently pre-filtered on the server.
   return {
-    jobs: allJobs,
+    jobs: userJobs,
     events: allEvents,
     tasks: userTasks,
     reports: userReports,

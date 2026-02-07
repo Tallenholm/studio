@@ -206,6 +206,25 @@ export const getSnowJobs = async (): Promise<Job[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 };
 
+export const getJobsForUser = async (userId: string): Promise<Job[]> => {
+    const db = getFirestoreInstance();
+    const jobsRef = collection(db, 'jobs');
+    
+    const q1 = query(jobsRef, where('assignedEmployeeIds', 'array-contains', userId));
+    const q2 = query(jobsRef, where('assignedSidewalkCrewIds', 'array-contains', userId));
+
+    const [snapshot1, snapshot2] = await Promise.all([
+        getDocs(q1),
+        getDocs(q2),
+    ]);
+
+    const resultsMap = new Map<string, Job>();
+    snapshot1.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    snapshot2.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+
+    return Array.from(resultsMap.values());
+};
+
 // Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
   const db = getFirestoreInstance();
