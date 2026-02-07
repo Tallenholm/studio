@@ -198,6 +198,14 @@ export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 };
 
+export const getSnowJobs = async (): Promise<Job[]> => {
+    const db = getFirestoreInstance();
+    const jobsRef = collection(db, 'jobs');
+    const q = query(jobsRef, where('jobType', '==', 'snow_removal'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+};
+
 // Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
   const db = getFirestoreInstance();

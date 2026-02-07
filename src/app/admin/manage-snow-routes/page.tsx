@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getJobs, getUsers, getFleetAssets, getSnowRoutes, addSnowRoute, updateSnowRoute, deleteSnowRoute, addNotification } from '@/lib/firestoreService';
+import { getSnowJobs, getUsers, getFleetAssets, getSnowRoutes, addSnowRoute, updateSnowRoute, deleteSnowRoute, addNotification } from '@/lib/firestoreService';
 import type { SnowRoute, Job, User, FleetAsset, NotificationMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -88,15 +88,14 @@ export default function ManageSnowRoutesPage() {
     const fetchData = async () => {
         setIsLoading(true);
         try {
-            const [loadedRoutes, allJobs, loadedUsers, loadedAssets] = await Promise.all([
+            const [loadedRoutes, snowJobs, loadedUsers, loadedAssets] = await Promise.all([
                 getSnowRoutes(),
-                getJobs(),
+                getSnowJobs(),
                 getUsers(),
                 getFleetAssets()
             ]);
             setRoutes(loadedRoutes);
-            // Correctly filter for snow removal jobs for the assignment dropdown
-            setJobs(allJobs.filter(j => j.jobType === 'snow_removal'));
+            setJobs(snowJobs);
             setUsers(loadedUsers);
             setFleetAssets(loadedAssets.filter(a => a.type === 'truck' || a.type === 'heavyEquipment'));
         } catch (error) {
