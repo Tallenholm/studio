@@ -205,6 +205,8 @@ export interface Job {
   clientId: string;
   clientName: string;
   address: string;
+  latitude?: number;
+  longitude?: number;
   jobValue?: number;
   jobType: JobType;
   startDate: string; // YYYY-MM-DD
