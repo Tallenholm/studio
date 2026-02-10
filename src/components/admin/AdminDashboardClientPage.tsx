@@ -226,7 +226,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
       activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
       totalAssets: dashboardData.assets.length,
       pendingRequests: dashboardData.pendingTimeOffRequests.length,
-      failedReports: dashboardData.recentReports.filter(r => r.overallStatus === 'fail').length,
+      failedReports: dashboardData.recentFailedReports.length, // Now this is just the length of the pre-filtered array
     };
 
     return { eventDates, jobRanges, stats: calculatedStats };

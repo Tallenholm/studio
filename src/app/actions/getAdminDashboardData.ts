@@ -1,4 +1,5 @@
 
+
 'use server';
 
 import { 
@@ -20,7 +21,7 @@ export interface AdminDashboardData {
   events: CalendarEvent[];
   assets: FleetAsset[];
   pendingTimeOffRequests: TimeOffRequest[];
-  recentReports: InspectionReport[];
+  recentFailedReports: InspectionReport[];
 }
 
 export async function getAdminDashboardData(): Promise<AdminDashboardData> {
@@ -35,13 +36,13 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         allEvents = [],
         allAssets = [],
         pendingTimeOffRequests = [],
-        recentReports = [],
+        recentFailedReports = [],
     ] = await Promise.all([
         getActiveAndUpcomingJobs(),
         getCalendarEvents(),
         getFleetAssets(),
         getPendingTimeOffRequests(),
-        getInspectionReportsInDateRange(thirtyDaysAgoStr, todayStr),
+        getInspectionReportsInDateRange(thirtyDaysAgoStr, todayStr, 'fail'),
     ]).catch(err => {
         console.error("Critical error fetching dashboard data:", err);
         return [[], [], [], [], []];
@@ -49,8 +50,8 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
   
   let briefing: DailyBriefingOutput | null = null;
   try {
-    const attentionItems: BriefingData['attentionItems'] = recentReports
-      .filter(r => r.overallStatus === 'fail' && isAfter(parseISO(r.date), twoDaysAgo))
+    const attentionItems: BriefingData['attentionItems'] = recentFailedReports
+      .filter(r => isAfter(parseISO(r.date), twoDaysAgo))
       .map(r => {
         const assetVin = r.truckVin || r.trailerVin || r.heavyEquipmentVin || 'Unknown';
         const assetName = allAssets.find(a => a.vin === assetVin)?.name || assetVin;
@@ -114,6 +115,6 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
       jobs: activeAndUpcomingJobs,
       assets: allAssets,
       pendingTimeOffRequests: pendingTimeOffRequests,
-      recentReports: recentReports,
+      recentFailedReports: recentFailedReports,
   };
 }

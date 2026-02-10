@@ -2,7 +2,7 @@
 
 import { initializeFirebase } from '@/firebase';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage } from './types';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { format, startOfDay } from 'date-fns';
@@ -209,12 +209,26 @@ export const getExpenseReportsInDateRange = async (startDate: string, endDate: s
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
 };
 
-export const getInspectionReportsInDateRange = async (startDate: string, endDate: string): Promise<InspectionReport[]> => {
-    const db = getFirestoreInstance();
-    const reportsRef = collection(db, 'inspectionReports');
-    const q = query(reportsRef, where('date', '>=', startDate), where('date', '<=', endDate));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+export const getInspectionReportsInDateRange = async (
+  startDate: string,
+  endDate: string,
+  status?: InspectionStatus
+): Promise<InspectionReport[]> => {
+  const db = getFirestoreInstance();
+  const reportsRef = collection(db, 'inspectionReports');
+  
+  const queryConstraints = [
+    where('date', '>=', startDate),
+    where('date', '<=', endDate),
+  ];
+
+  if (status && status !== 'pending') {
+    queryConstraints.push(where('overallStatus', '==', status));
+  }
+
+  const q = query(reportsRef, ...queryConstraints);
+  const snapshot = await getDocs(q);
+  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
 };
 
 export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
