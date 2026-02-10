@@ -6,7 +6,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getUsers, getTasks, addTask, deleteTask } from '@/lib/firestoreService';
+import { getUsers, getPendingTasks, getCompletedTasks, addTask, deleteTask } from '@/lib/firestoreService';
 import type { User, Task } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -75,12 +75,14 @@ export default function ManageTasksPage() {
     async function fetchData() {
         setIsLoading(true);
         try {
-            const [usersData, tasksData] = await Promise.all([
+            const [usersData, pendingTasks, completedTasks] = await Promise.all([
                 getUsers(),
-                getTasks(),
+                getPendingTasks(),
+                getCompletedTasks(),
             ]);
             setUsers(usersData);
-            setTasks(tasksData.sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+            const allTasks = [...pendingTasks, ...completedTasks];
+            setTasks(allTasks.sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
         } catch (error) {
             console.error("Failed to fetch data:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load task data.' });

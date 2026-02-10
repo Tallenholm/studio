@@ -5,7 +5,7 @@ import { useState, useEffect } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getWorkOrders, updateWorkOrder, addMaintenanceLog } from '@/lib/firestoreService';
+import { getOpenWorkOrders, getCompletedWorkOrders, updateWorkOrder, addMaintenanceLog } from '@/lib/firestoreService';
 import type { WorkOrder, MaintenanceLog } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -52,8 +52,12 @@ export default function ManageWorkOrdersPage() {
     async function fetchData() {
         setIsLoading(true);
         try {
-            const loadedOrders = await getWorkOrders();
-            setWorkOrders(loadedOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
+            const [openOrders, completedOrders] = await Promise.all([
+              getOpenWorkOrders(),
+              getCompletedWorkOrders()
+            ]);
+            const allOrders = [...openOrders, ...completedOrders];
+            setWorkOrders(allOrders.sort((a, b) => new Date(b.dateCreated).getTime() - new Date(a.dateCreated).getTime()));
         } catch (error) {
             console.error("Failed to fetch work orders:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load work orders.' });

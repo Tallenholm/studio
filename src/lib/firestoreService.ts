@@ -239,6 +239,47 @@ export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => 
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
 };
 
+export const getReviewedTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
+    const db = getFirestoreInstance();
+    const requestsRef = collection(db, 'timeOffRequests');
+    const q = query(requestsRef, where('status', 'in', ['approved', 'denied']));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+}
+
+export const getOpenWorkOrders = async (): Promise<WorkOrder[]> => {
+    const db = getFirestoreInstance();
+    const ordersRef = collection(db, 'workOrders');
+    const q = query(ordersRef, where('status', '!=', 'completed'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkOrder));
+}
+
+export const getCompletedWorkOrders = async (): Promise<WorkOrder[]> => {
+    const db = getFirestoreInstance();
+    const ordersRef = collection(db, 'workOrders');
+    const q = query(ordersRef, where('status', '==', 'completed'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkOrder));
+}
+
+export const getPendingTasks = async (): Promise<Task[]> => {
+    const db = getFirestoreInstance();
+    const tasksRef = collection(db, 'tasks');
+    const q = query(tasksRef, where('status', '==', 'pending'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+}
+
+export const getCompletedTasks = async (): Promise<Task[]> => {
+    const db = getFirestoreInstance();
+    const tasksRef = collection(db, 'tasks');
+    const q = query(tasksRef, where('status', '==', 'completed'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+}
+
+
 export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
     const db = getFirestoreInstance();
     const jobsRef = collection(db, 'jobs');

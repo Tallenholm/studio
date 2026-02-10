@@ -1,8 +1,9 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getTimeOffRequests, updateTimeOffRequest, addCalendarEvent } from '@/lib/firestoreService';
+import { getPendingTimeOffRequests, getReviewedTimeOffRequests, updateTimeOffRequest, addCalendarEvent } from '@/lib/firestoreService';
 import type { TimeOffRequest, CalendarEvent } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -29,8 +30,12 @@ export default function ManageRequestsPage() {
     async function fetchRequests() {
         setIsLoading(true);
         try {
-            const loadedRequests = await getTimeOffRequests();
-            setRequests(loadedRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
+            const [pending, reviewed] = await Promise.all([
+              getPendingTimeOffRequests(),
+              getReviewedTimeOffRequests(),
+            ]);
+            const allRequests = [...pending, ...reviewed];
+            setRequests(allRequests.sort((a,b) => new Date(b.startDate).getTime() - new Date(a.startDate).getTime()));
         } catch (error) {
             console.error("Error fetching requests:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load time off requests.' });
