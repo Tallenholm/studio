@@ -1,9 +1,10 @@
 
+
 'use client';
 
 import { useEffect, useState } from 'react';
 import { useParams } from 'next/navigation';
-import { getJobById, addNoteToJob, getClients, getFleetAssets, getUsers } from '@/lib/firestoreService';
+import { getJobById, addNoteToJob, getClientById, getAssetsByIds, getUsersByIds } from '@/lib/firestoreService';
 import type { Job, Client, FleetAsset, User, SnowServiceLog } from '@/lib/types';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -29,8 +30,8 @@ export default function JobDetailsPage() {
 
   const [job, setJob] = useState<Job | null | undefined>(undefined);
   const [client, setClient] = useState<Client | null | undefined>(undefined);
-  const [assets, setAssets] = useState<FleetAsset[]>([]);
-  const [allUsers, setAllUsers] = useState<User[]>([]);
+  const [assignedAssets, setAssignedAssets] = useState<FleetAsset[]>([]);
+  const [assignedUsers, setAssignedUsers] = useState<User[]>([]);
   const [newNote, setNewNote] = useState('');
 
   // New state for cost analysis
@@ -39,32 +40,58 @@ export default function JobDetailsPage() {
 
   useEffect(() => {
     if (jobId) {
-      const fetchJobData = async () => {
+      const fetchJob = async () => {
         try {
-            const [jobData, assetsData, usersData, allClients] = await Promise.all([
-                getJobById(jobId),
-                getFleetAssets(),
-                getUsers(),
-                getClients(),
-            ]);
-
+            const jobData = await getJobById(jobId);
             setJob(jobData);
-            setAssets(assetsData);
-            setAllUsers(usersData);
-            
-            if (jobData) {
-                setClient(allClients.find(c => c.id === jobData.clientId));
-            }
         } catch (error) {
-            console.error("Error fetching job details:", error);
+            console.error("Error fetching job:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load job data.' });
+            setJob(null);
         }
       };
-      fetchJobData();
+      fetchJob();
     }
   }, [jobId, toast]);
 
-  // New useEffect to fetch costs from server action
+  useEffect(() => {
+    if (job) {
+      const fetchRelatedData = async () => {
+        try {
+          const allAssetIds = [
+            ...(job.assignedTruckIds || []),
+            ...(job.assignedTrailerIds || []),
+            ...(job.assignedHeavyEquipmentIds || []),
+          ];
+
+          const allUserIds = [
+            ...(job.assignedEmployeeIds || []),
+            ...(job.assignedSidewalkCrewIds || []),
+          ];
+          
+          const uniqueUserIds = [...new Set(allUserIds)];
+          const uniqueAssetIds = [...new Set(allAssetIds)];
+
+          const [clientData, assetsData, usersData] = await Promise.all([
+            job.clientId ? getClientById(job.clientId) : Promise.resolve(null),
+            uniqueAssetIds.length > 0 ? getAssetsByIds(uniqueAssetIds) : Promise.resolve([]),
+            uniqueUserIds.length > 0 ? getUsersByIds(uniqueUserIds) : Promise.resolve([]),
+          ]);
+
+          setClient(clientData);
+          setAssignedAssets(assetsData);
+          setAssignedUsers(usersData);
+
+        } catch (error) {
+          console.error("Error fetching related job details:", error);
+          toast({ variant: 'destructive', title: 'Error', description: 'Could not load related assets and personnel.' });
+        }
+      };
+      fetchRelatedData();
+    }
+  }, [job, toast]);
+
+  // useEffect to fetch costs from server action
   useEffect(() => {
     if (job) {
       setIsLoadingCosts(true);
@@ -159,10 +186,10 @@ export default function JobDetailsPage() {
       }
   }
 
-  const assignedEmployees = allUsers.filter(u => job?.assignedEmployeeIds?.includes(u.id));
-  const assignedTrucks = assets.filter(a => job?.assignedTruckIds?.includes(a.id));
-  const assignedTrailers = assets.filter(a => job?.assignedTrailerIds?.includes(a.id));
-  const assignedHeavyEquipment = assets.filter(a => job?.assignedHeavyEquipmentIds?.includes(a.id));
+  const assignedEmployees = assignedUsers.filter(u => job?.assignedEmployeeIds?.includes(u.id));
+  const assignedTrucks = assignedAssets.filter(a => job?.assignedTruckIds?.includes(a.id));
+  const assignedTrailers = assignedAssets.filter(a => job?.assignedTrailerIds?.includes(a.id));
+  const assignedHeavyEquipment = assignedAssets.filter(a => job?.assignedHeavyEquipmentIds?.includes(a.id));
 
   const formatCurrency = (value: number | undefined) => {
     if (value === undefined || value === null) return 'N/A';

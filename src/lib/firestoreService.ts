@@ -148,12 +148,49 @@ export const { getAll: getNotifications, getById: getNotificationById, add: addN
 
 
 export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
-    if (userIds.length === 0) return [];
+    if (!userIds || userIds.length === 0) return [];
     const db = getFirestoreInstance();
     const usersRef = collection(db, 'users');
-    const q = query(usersRef, where(documentId(), 'in', userIds));
-    const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as User));
+    const promises = [];
+    // Firestore 'in' query is limited to 30 items per query. Batch if necessary.
+    for (let i = 0; i < userIds.length; i += 30) {
+        const batchIds = userIds.slice(i, i + 30);
+        if (batchIds.length > 0) {
+            const q = query(usersRef, where(documentId(), 'in', batchIds));
+            promises.push(getDocs(q));
+        }
+    }
+    const snapshots = await Promise.all(promises);
+    const results: User[] = [];
+    snapshots.forEach(snapshot => {
+        snapshot.docs.forEach(doc => {
+            results.push({ id: doc.id, ...doc.data() } as User);
+        });
+    });
+    return results;
+};
+
+export const getAssetsByIds = async (assetIds: string[]): Promise<FleetAsset[]> => {
+    if (!assetIds || assetIds.length === 0) return [];
+    const db = getFirestoreInstance();
+    const assetsRef = collection(db, 'fleetAssets');
+    const promises = [];
+    // Firestore 'in' query is limited to 30 items per query. Batch if necessary.
+    for (let i = 0; i < assetIds.length; i += 30) {
+        const batchIds = assetIds.slice(i, i + 30);
+        if (batchIds.length > 0) {
+            const q = query(assetsRef, where(documentId(), 'in', batchIds));
+            promises.push(getDocs(q));
+        }
+    }
+    const snapshots = await Promise.all(promises);
+    const results: FleetAsset[] = [];
+    snapshots.forEach(snapshot => {
+        snapshot.docs.forEach(doc => {
+            results.push({ id: doc.id, ...doc.data() } as FleetAsset);
+        });
+    });
+    return results;
 };
 
 export const getMaintenanceLogsInDateRange = async (startDate: string, endDate: string): Promise<MaintenanceLog[]> => {
