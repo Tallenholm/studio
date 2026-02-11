@@ -1,5 +1,4 @@
 
-
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
 
@@ -131,11 +130,13 @@ export interface ManagedDocument {
   title: string;
   description: string;
   category: string;
-  documentType: 'general' | 'tax' | 'employment' | 'maintenance' | 'registration' | 'insurance';
+  documentType: 'general' | 'tax' | 'employment' | 'maintenance' | 'registration' | 'insurance' | 'contract';
   documentUrl: string; // URL from Firebase Storage
   employeeId?: string;
   assetId?: string;
+  clientId?: string;
   employeeName?: string;
+  clientName?: string;
 }
 
 export interface MaintenanceLog {
@@ -297,3 +298,5 @@ export interface Rental {
   rateType: RentalRateType;
   notes?: string;
 }
+
+    

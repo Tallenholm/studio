@@ -5,8 +5,8 @@ import { useState, useEffect, useRef, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getDocuments, addDocument, deleteDocument, getFleetAssets, getUsers } from '@/lib/firestoreService';
-import type { ManagedDocument, User, FleetAsset } from '@/lib/types';
+import { getDocuments, addDocument, deleteDocument, getFleetAssets, getUsers, getClients } from '@/lib/firestoreService';
+import type { ManagedDocument, User, FleetAsset, Client } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -36,7 +36,7 @@ import {
 import { Input } from '@/components/ui/input';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Wrench, FileBadge } from 'lucide-react';
+import { PlusCircle, Trash2, BookOpen, Loader2, Download, FileUp, Files, User as UserIcon, Wrench, FileBadge, Building2 } from 'lucide-react';
 import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
@@ -48,7 +48,8 @@ const documentSchema = z.object({
   category: z.string().optional(),
   employeeId: z.string().optional(),
   assetId: z.string().optional(),
-  documentType: z.enum(['general', 'tax', 'employment', 'maintenance', 'registration', 'insurance'], { required_error: 'Document type is required.' }),
+  clientId: z.string().optional(),
+  documentType: z.enum(['general', 'tax', 'employment', 'maintenance', 'registration', 'insurance', 'contract'], { required_error: 'Document type is required.' }),
   description: z.string().min(1, 'Description is required.'),
   documentUrl: z.string().url({ message: 'A document file upload is required.' }),
 }).superRefine((data, ctx) => {
@@ -73,12 +74,20 @@ const documentSchema = z.object({
             path: ['assetId'],
         });
     }
+    if (data.documentType === 'contract' && !data.clientId) {
+        ctx.addIssue({
+            code: z.ZodIssueCode.custom,
+            message: 'A client must be selected for contracts.',
+            path: ['clientId'],
+        });
+    }
 });
 
 export default function ManageDocumentsPage() {
   const [documents, setDocuments] = useState<ManagedDocument[]>([]);
   const [users, setUsers] = useState<User[]>([]);
   const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isProcessingFile, setIsProcessingFile] = useState(false);
@@ -103,14 +112,16 @@ export default function ManageDocumentsPage() {
     async function fetchData() {
         setIsLoading(true);
         try {
-            const [docs, assets, usersData] = await Promise.all([
+            const [docs, assets, usersData, clientsData] = await Promise.all([
                 getDocuments(),
                 getFleetAssets(),
                 getUsers(),
+                getClients(),
             ]);
             setDocuments(docs);
             setFleetAssets(assets);
             setUsers(usersData);
+            setClients(clientsData);
         } catch (error) {
             console.error("Error fetching data:", error);
             toast({ variant: 'destructive', title: 'Error', description: 'Could not load document data.' });
@@ -163,6 +174,7 @@ export default function ManageDocumentsPage() {
   async function onSubmit(values: z.infer<typeof documentSchema>) {
     let docCategory = '';
     let employeeName: string | undefined = undefined;
+    let clientName: string | undefined = undefined;
 
     if (['maintenance', 'registration', 'insurance'].includes(values.documentType) && values.assetId) {
         const asset = fleetAssets.find(a => a.id === values.assetId);
@@ -174,6 +186,15 @@ export default function ManageDocumentsPage() {
             employeeName = employee.name;
         } else {
             toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
+            return;
+        }
+    } else if (values.documentType === 'contract' && values.clientId) {
+        const client = clients.find(c => c.id === values.clientId);
+         if (client) {
+            docCategory = client.name;
+            clientName = client.name;
+        } else {
+            toast({ variant: 'destructive', title: 'Error', description: 'Selected client not found.' });
             return;
         }
     } else {
@@ -188,7 +209,9 @@ export default function ManageDocumentsPage() {
       category: docCategory,
       employeeId: values.employeeId,
       assetId: values.assetId,
+      clientId: values.clientId,
       employeeName: employeeName,
+      clientName: clientName,
     };
 
     const newDocId = await addDocument(newDocumentData);
@@ -197,7 +220,7 @@ export default function ManageDocumentsPage() {
     setIsDialogOpen(false);
     form.reset({
         title: '', category: '', documentType: 'general',
-        description: '', documentUrl: '', assetId: undefined, employeeId: undefined,
+        description: '', documentUrl: '', assetId: undefined, employeeId: undefined, clientId: undefined
     });
   }
 
@@ -212,7 +235,7 @@ export default function ManageDocumentsPage() {
     });
   }
 
-  const { generalDocuments, assetDocuments, personalDocuments } = useMemo(() => {
+  const { generalDocuments, assetDocuments, personalDocuments, contractDocuments } = useMemo(() => {
     return documents
         .reduce((acc, doc) => {
             if (doc.documentType === 'general') {
@@ -221,12 +244,15 @@ export default function ManageDocumentsPage() {
                  (acc.assetDocuments[doc.category] = acc.assetDocuments[doc.category] || []).push(doc);
             } else if (['tax', 'employment'].includes(doc.documentType)) {
                  (acc.personalDocuments[doc.employeeName || 'Unassigned'] = acc.personalDocuments[doc.employeeName || 'Unassigned'] || []).push(doc);
+            } else if (doc.documentType === 'contract') {
+                (acc.contractDocuments[doc.clientName || 'Unassigned'] = acc.contractDocuments[doc.clientName || 'Unassigned'] || []).push(doc);
             }
             return acc;
         }, { 
             generalDocuments: {} as Record<string, ManagedDocument[]>,
             assetDocuments: {} as Record<string, ManagedDocument[]>,
-            personalDocuments: {} as Record<string, ManagedDocument[]>
+            personalDocuments: {} as Record<string, ManagedDocument[]>,
+            contractDocuments: {} as Record<string, ManagedDocument[]>,
         });
   }, [documents]);
 
@@ -319,7 +345,7 @@ export default function ManageDocumentsPage() {
                 Manage Policies & Documents
               </CardTitle>
               <CardDescription className="mt-2">
-                Upload and manage company-wide documents, policies, and sensitive employee forms.
+                Upload and manage company-wide documents, policies, contracts, and sensitive employee forms.
               </CardDescription>
             </div>
             <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
@@ -351,6 +377,7 @@ export default function ManageDocumentsPage() {
                                 </SelectTrigger>
                                 </FormControl>
                                 <SelectContent>
+                                <SelectItem value="contract">Client Contract</SelectItem>
                                 <SelectItem value="general">Policy or General Document</SelectItem>
                                 <SelectItem value="registration">Vehicle Registration</SelectItem>
                                 <SelectItem value="insurance">Vehicle Insurance</SelectItem>
@@ -408,6 +435,32 @@ export default function ManageDocumentsPage() {
                         </FormItem>
                       )}
                     />
+                    {watchedDocType === 'contract' ? (
+                       <FormField
+                          control={form.control}
+                          name="clientId"
+                          render={({ field }) => (
+                              <FormItem>
+                              <FormLabel>Assign to Client</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
+                                  <FormControl>
+                                  <SelectTrigger>
+                                      <SelectValue placeholder="Select a client" />
+                                  </SelectTrigger>
+                                  </FormControl>
+                                  <SelectContent>
+                                  {clients.map(client => (
+                                      <SelectItem key={client.id} value={client.id}>
+                                          {client.name}
+                                      </SelectItem>
+                                  ))}
+                                  </SelectContent>
+                              </Select>
+                              <FormMessage />
+                              </FormItem>
+                          )}
+                      />
+                    ) : null}
                     {watchedDocType === 'tax' || watchedDocType === 'employment' ? (
                        <FormField
                           control={form.control}
@@ -508,6 +561,7 @@ export default function ManageDocumentsPage() {
           </div>
         </CardHeader>
         <CardContent className="space-y-6">
+            {renderGroupedDocumentSection("Client Contracts", Building2, contractDocuments, "No client contracts have been uploaded.")}
             {renderGroupedDocumentSection("General Documents", Files, generalDocuments, "No general company documents have been uploaded.")}
             {renderGroupedDocumentSection("Asset-Specific Documents", Wrench, assetDocuments, "No documents have been assigned to specific assets.")}
             {renderGroupedDocumentSection("Personal Employee Documents", FileBadge, personalDocuments, "No sensitive documents have been assigned to employees.")}
@@ -516,3 +570,5 @@ export default function ManageDocumentsPage() {
     </div>
   );
 }
+
+    

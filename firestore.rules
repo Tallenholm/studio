@@ -112,8 +112,13 @@ service cloud.firestore {
     }
 
     match /documents/{docId} {
-        allow read: if isSignedIn();
         allow write: if isAdmin();
+        // Admins can read all. 
+        // Any signed-in user can read 'general' docs.
+        // An employee can read a doc if their ID is on it.
+        allow read: if isAdmin() || 
+                     (resource.data.documentType == 'general') ||
+                     (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
     }
     
     match /workOrders/{orderId} {
@@ -150,3 +155,5 @@ service cloud.firestore {
     }
   }
 }
+
+    
