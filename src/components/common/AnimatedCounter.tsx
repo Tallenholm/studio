@@ -1,7 +1,6 @@
-
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useInView } from 'react-intersection-observer';
 
 interface AnimatedCounterProps {
@@ -10,37 +9,47 @@ interface AnimatedCounterProps {
   duration?: number;
 }
 
-export default function AnimatedCounter({ value, type = 'number', duration = 1000 }: AnimatedCounterProps) {
+// Ease-out function: starts fast, then slows down
+const easeOutCubic = (t: number) => 1 - Math.pow(1 - t, 3);
+
+export default function AnimatedCounter({ value, type = 'number', duration = 1500 }: AnimatedCounterProps) {
   const [count, setCount] = useState(0);
   const { ref, inView } = useInView({
     triggerOnce: true,
     threshold: 0.1,
   });
+  const animationFrameId = useRef<number>();
 
   useEffect(() => {
     if (!inView) return;
 
-    let start = 0;
-    const end = value;
-    if (start === end) return;
-
-    const totalFrames = Math.round(duration / (1000 / 60));
-    let frame = 0;
-
-    const counter = setInterval(() => {
-      frame++;
-      const progress = frame / totalFrames;
-      const currentVal = start + (end - start) * progress;
-
-      setCount(currentVal);
-
-      if (frame === totalFrames) {
-        clearInterval(counter);
-        setCount(end); // Ensure it ends on the exact value
+    let startTimestamp: number | null = null;
+    
+    const step = (timestamp: number) => {
+      if (!startTimestamp) {
+        startTimestamp = timestamp;
       }
-    }, duration / totalFrames);
+      
+      const progress = Math.min((timestamp - startTimestamp) / duration, 1);
+      const easedProgress = easeOutCubic(progress);
+      
+      setCount(easedProgress * value);
 
-    return () => clearInterval(counter);
+      if (progress < 1) {
+        animationFrameId.current = requestAnimationFrame(step);
+      } else {
+        // Ensure final value is exact
+        setCount(value);
+      }
+    };
+    
+    animationFrameId.current = requestAnimationFrame(step);
+
+    return () => {
+      if (animationFrameId.current) {
+        cancelAnimationFrame(animationFrameId.current);
+      }
+    };
   }, [inView, value, duration]);
   
   const formatValue = (val: number) => {
