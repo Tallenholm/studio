@@ -56,6 +56,14 @@ export default function SnowRoutesPage() {
     defaultValues: { photoDataUri: '' },
   });
 
+  const { jobMap, userMap, assetMap } = useMemo(() => {
+    return {
+      jobMap: new Map(jobs.map(j => [j.id, j])),
+      userMap: new Map(users.map(u => [u.id, u])),
+      assetMap: new Map(fleetAssets.map(a => [a.id, a])),
+    };
+  }, [jobs, users, fleetAssets]);
+
   useEffect(() => {
     if (!user?.uid) { // Guard against user object existing but uid being null
         setIsLoading(false);
@@ -189,7 +197,7 @@ export default function SnowRoutesPage() {
   const handleOptimizeRoute = async (route: SnowRoute) => {
     setOptimizingRouteId(route.id);
     const routeJobs = (route.assignedJobIds || [])
-      .map(id => jobs.find(j => j.id === id))
+      .map(id => jobMap.get(id))
       .filter((j): j is Job => !!j);
       
     if (routeJobs.length < 2) {
@@ -241,10 +249,10 @@ export default function SnowRoutesPage() {
     <div className="space-y-8">
       <h2 className="text-2xl font-headline font-semibold print-only">{title}</h2>
       {routesToRender.map(route => {
-         const routeCrew = users.filter(u => route.assignedEmployeeIds?.includes(u.id));
-         const routeFleet = fleetAssets.filter(a => route.assignedVehicleIds?.includes(a.id));
+         const routeCrew = (route.assignedEmployeeIds || []).map(id => userMap.get(id)).filter((u): u is User => !!u);
+         const routeFleet = (route.assignedVehicleIds || []).map(id => assetMap.get(id)).filter((a): a is FleetAsset => !!a);
          
-         let routeJobs = (route.assignedJobIds || []).map(id => jobs.find(j => j.id === id)).filter((j): j is Job => !!j);
+         let routeJobs = (route.assignedJobIds || []).map(id => jobMap.get(id)).filter((j): j is Job => !!j);
          
          // INTELLIGENT FILTERING FOR SALTING ROUTES
          if (route.type === 'salting') {
