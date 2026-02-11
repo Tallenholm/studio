@@ -88,7 +88,7 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow create: if isAdmin();
       allow read: if isSignedIn();
-      allow update: if isSignedIn(); // Employee updates to complete, Admin updates to assign
+      allow update: if isAdmin() || get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedToEmployeeId == request.auth.uid;
       allow delete: if isAdmin();
     }
 
@@ -116,6 +116,7 @@ service cloud.firestore {
         // Admins can read all. 
         // Any signed-in user can read 'general' docs.
         // An employee can read a doc if their ID is on it.
+        // A client cannot read a contract, only admins.
         allow read: if isAdmin() || 
                      (resource.data.documentType == 'general') ||
                      (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
@@ -155,5 +156,3 @@ service cloud.firestore {
     }
   }
 }
-
-    
