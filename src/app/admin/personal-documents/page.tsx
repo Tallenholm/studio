@@ -85,7 +85,7 @@ export default function PersonalDocumentsPage() {
                         <CardContent className="flex-grow flex items-center justify-center pt-0">
                             <Link href={doc.documentUrl} target="_blank" rel="noopener noreferrer" className="block relative group w-32 h-40 rounded-md overflow-hidden border">
                                 <Image
-                                src={'https://placehold.co/850x1100.png'}
+                                src={doc.documentUrl || 'https://placehold.co/850x1100.png'}
                                 alt={`Preview of ${doc.title}`}
                                 fill
                                 className="object-cover object-top transition-transform group-hover:scale-105"

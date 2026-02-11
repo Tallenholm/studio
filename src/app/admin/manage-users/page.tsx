@@ -170,18 +170,7 @@ export default function UserManagementPage() {
                                         <TableCell className="font-medium">{user.name}</TableCell>
                                         <TableCell className="text-muted-foreground">{user.email}</TableCell>
                                         <TableCell>
-                                            <DropdownMenu>
-                                                <DropdownMenuTrigger asChild disabled={currentUser?.role !== 'owner' || isSaving === user.id || currentUser?.id === user.id}>
-                                                     <Button variant="ghost" className="h-auto p-1 disabled:opacity-70 disabled:cursor-not-allowed">
-                                                        <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge>
-                                                     </Button>
-                                                </DropdownMenuTrigger>
-                                                <DropdownMenuContent>
-                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'owner')} disabled={user.role === 'owner'}>Owner</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'manager')} disabled={user.role === 'manager'}>Manager</DropdownMenuItem>
-                                                    <DropdownMenuItem onClick={() => handleRoleChange(user.id, 'employee')} disabled={user.role === 'employee'}>Employee</DropdownMenuItem>
-                                                </DropdownMenuContent>
-                                            </DropdownMenu>
+                                            <Badge variant={user.role === 'owner' ? 'default' : 'secondary'}>{getRoleLabel(user.role)}</Badge>
                                         </TableCell>
                                         <TableCell className="text-muted-foreground">{formatCurrency(user.hourlyRate)}</TableCell>
                                         <TableCell className="text-right">
@@ -242,7 +231,12 @@ export default function UserManagementPage() {
       </Card>
     </div>
 
-    <AlertDialog open={!!rateUser} onOpenChange={(open) => !open && setRateUser(null)}>
+    <AlertDialog open={!!rateUser} onOpenChange={(open) => {
+        if (!open) {
+            setRateUser(null);
+            setNewRate('');
+        }
+    }}>
         <AlertDialogContent>
         <AlertDialogHeader>
             <AlertDialogTitle>Set Hourly Rate for {rateUser?.name}</AlertDialogTitle>
@@ -270,3 +264,4 @@ export default function UserManagementPage() {
     </>
   );
 }
+
