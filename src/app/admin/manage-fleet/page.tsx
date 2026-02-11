@@ -324,12 +324,12 @@ export default function FleetManagementPage() {
         }
     };
     
-    const newDocIds: string[] = [];
-    const regDocId = await processDocument(values.registrationDocument, 'registration', savedAsset);
-    if(regDocId) newDocIds.push(regDocId);
-    
-    const insDocId = await processDocument(values.insuranceDocument, 'insurance', savedAsset);
-    if(insDocId) newDocIds.push(insDocId);
+    const docProcessingPromises = [
+      processDocument(values.registrationDocument, 'registration', savedAsset),
+      processDocument(values.insuranceDocument, 'insurance', savedAsset)
+    ];
+
+    const newDocIds = (await Promise.all(docProcessingPromises)).filter((id): id is string => !!id);
     
     if (newDocIds.length > 0) {
       const updatedIds = [...(savedAsset.documentIds || []), ...newDocIds];
