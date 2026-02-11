@@ -65,9 +65,22 @@
         "trailerVin": { "type": "string" },
         "heavyEquipmentVin": { "type": "string" },
         "sections": { "type": "array", "items": { "$ref": "#/entities/InspectionSection" } },
-        "overallStatus": { "type": "string", "enum": ["pass", "fail"] }
+        "overallStatus": { "type": "string", "enum": ["pass", "fail"] },
+        "anomalyReport": { "$ref": "#/entities/AnomalyReport" }
       },
-      "required": ["id", "type", "date", "sections", "overallStatus"]
+      "required": ["id", "type", "date", "sections"]
+    },
+    "AnomalyReport": {
+        "title": "AnomalyReport",
+        "type": "object",
+        "description": "Represents the output of an AI-powered inspection report analysis.",
+        "properties": {
+            "anomaliesDetected": { "type": "boolean", "description": "Whether any unusual patterns or anomalies were detected." },
+            "anomalySummary": { "type": "string", "description": "A concise, one-sentence summary of the findings." },
+            "requiresIntervention": { "type": "boolean", "description": "True if the detected anomalies suggest immediate mechanical attention is required." },
+            "requiresProcedureChange": { "type": "boolean", "description": "True if the findings suggest a potential issue with operator procedures or training." }
+        },
+        "required": ["anomaliesDetected", "anomalySummary", "requiresIntervention", "requiresProcedureChange"]
     },
     "InspectionSection": {
         "title": "InspectionSection",
@@ -438,5 +451,3 @@
     }
   }
 }
-
-    

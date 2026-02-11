@@ -73,6 +73,7 @@ The central hub for managing all business operations.
 #### **Operations & Analytics**
 - **Manage Clients:** (Owner only) Maintain a central list of all clients.
 - **Job Management (Excavation, Snow, Concrete, Misc.):** (Owner only) Create, edit, and manage all jobs, separated by type. Assign personnel and fleet, track job value, and view job-specific notes.
+- **Job Cost Analysis:** On the details page for any job, you'll find the 'Job Cost Analysis' section. It provides an estimated profit or loss by automatically calculating and subtracting operational costs (labor for all assigned crew, maintenance for assigned vehicles during the job's timeframe, and other expenses) from the total job value. This gives you a clear financial picture for each project.
 - **Manage Rentals:** (Owner only) Create and track equipment rentals to third parties.
 - **Manage Snow Routes:** (Admin) Group snow contracts, personnel, and vehicles into efficient routes for plowing, salting, and sidewalks.
 - **View Inspection Reports:** A list of all submitted pre-trip and post-trip inspection reports.
