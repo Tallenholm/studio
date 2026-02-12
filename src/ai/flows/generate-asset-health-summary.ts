@@ -3,7 +3,7 @@
 
 import {ai} from '@/ai/genkit';
 import {z} from 'zod';
-import {getInspectionReports, getMaintenanceLogs, getFleetAssetById} from '@/lib/firestoreService';
+import {getReportsByVin, getMaintenanceLogsByAssetIds, getFleetAssetById} from '@/lib/firestoreService';
 import type {InspectionReport, MaintenanceLog, FleetAsset} from '@/lib/types';
 import {subMonths, isAfter, parseISO} from 'date-fns';
 
@@ -24,24 +24,18 @@ const fetchAssetDataTool = ai.defineTool(
       throw new Error('Asset not found');
     }
     
-    // Fetch all and then filter, as there's no direct query for VIN across all report types
-    const allReports = await getInspectionReports();
-    const assetReports = allReports.filter(r => 
-        r.truckVin === asset.vin || 
-        r.trailerVin === asset.vin || 
-        r.heavyEquipmentVin === asset.vin
-    );
+    // Fetch only the data relevant to this asset.
+    const [assetReports, assetLogs] = await Promise.all([
+      getReportsByVin(asset.vin), // Fetches reports for this VIN from the last 6 months.
+      getMaintenanceLogsByAssetIds([assetId]), // Fetches all logs for this asset ID.
+    ]);
     
-    // Fetch all logs and filter by assetId
-    const allLogs = await getMaintenanceLogs();
-    const assetLogs = allLogs.filter(l => l.assetId === assetId);
-
-    // Filter for last 6 months to keep context smaller
+    // The getReportsByVin function now handles the 6-month filtering.
+    // We still need to filter maintenance logs for the last 6 months.
     const sixMonthsAgo = subMonths(new Date(), 6);
-    const recentReports = assetReports.filter(r => isAfter(parseISO(r.date), sixMonthsAgo));
     const recentLogs = assetLogs.filter(l => isAfter(parseISO(l.date), sixMonthsAgo));
 
-    return { asset, reports: recentReports, logs: recentLogs };
+    return { asset, reports: assetReports, logs: recentLogs };
   }
 );
 

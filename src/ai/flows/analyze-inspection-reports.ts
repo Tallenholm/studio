@@ -1,11 +1,9 @@
-
 'use server';
 
 import { ai } from '@/ai/genkit';
 import { z } from 'zod';
-import { getReportsByVin, getFleetAssetById } from '@/lib/firestoreService';
-import type { InspectionReport, FleetAsset } from '@/lib/types';
-import { subMonths, isAfter, parseISO } from 'date-fns';
+import { getReportsByVin } from '@/lib/firestoreService';
+import type { InspectionReport } from '@/lib/types';
 
 export const AnalyzeInspectionReportsInputSchema = z.object({
   report: z.custom<InspectionReport>(),
@@ -33,12 +31,8 @@ const fetchAssetHistoryTool = ai.defineTool(
     }),
   },
   async ({ vin }) => {
-    // Use the new, efficient query function
-    const assetReports = await getReportsByVin(vin);
-    
-    const sixMonthsAgo = subMonths(new Date(), 6);
-    const recentReports = assetReports.filter(r => isAfter(parseISO(r.date), sixMonthsAgo));
-    
+    // Use the efficient query function that now automatically filters for the last 6 months.
+    const recentReports = await getReportsByVin(vin);
     return { historicalReports: recentReports };
   }
 );

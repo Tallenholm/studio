@@ -5,7 +5,7 @@ import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, ad
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
-import { format, startOfDay } from 'date-fns';
+import { format, startOfDay, subMonths } from 'date-fns';
 
 
 let dbInstance: Firestore | null = null;
@@ -380,7 +380,8 @@ export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) =>
 };
 
 /**
- * Efficiently fetches inspection reports by a vehicle's VIN.
+ * Efficiently fetches inspection reports by a vehicle's VIN for the last 6 months.
+ * This function is optimized for use in AI analysis flows.
  * @param vin The Vehicle Identification Number to query for.
  * @returns A promise that resolves to an array of InspectionReport objects.
  */
@@ -388,10 +389,14 @@ export const getReportsByVin = async (vin: string): Promise<InspectionReport[]> 
     const db = getFirestoreInstance();
     const reportsRef = collection(db, 'inspectionReports');
     
-    // Create three separate queries for each possible VIN field
-    const q1 = query(reportsRef, where('truckVin', '==', vin));
-    const q2 = query(reportsRef, where('trailerVin', '==', vin));
-    const q3 = query(reportsRef, where('heavyEquipmentVin', '==', vin));
+    const sixMonthsAgo = subMonths(new Date(), 6);
+    const sixMonthsAgoStr = format(sixMonthsAgo, 'yyyy-MM-dd');
+
+    // Create three separate queries for each possible VIN field, now with a date range
+    // Firestore requires a composite index for this query. The platform should handle this.
+    const q1 = query(reportsRef, where('truckVin', '==', vin), where('date', '>=', sixMonthsAgoStr));
+    const q2 = query(reportsRef, where('trailerVin', '==', vin), where('date', '>=', sixMonthsAgoStr));
+    const q3 = query(reportsRef, where('heavyEquipmentVin', '==', vin), where('date', '>=', sixMonthsAgoStr));
 
     // Execute all queries in parallel
     const [snapshot1, snapshot2, snapshot3] = await Promise.all([
