@@ -201,6 +201,50 @@ export const getMaintenanceLogsInDateRange = async (startDate: string, endDate: 
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaintenanceLog));
 };
 
+export const getMaintenanceLogsByAssetIds = async (assetIds: string[]): Promise<MaintenanceLog[]> => {
+    if (!assetIds || assetIds.length === 0) return [];
+    const db = getFirestoreInstance();
+    const logsRef = collection(db, 'maintenanceLogs');
+    const promises = [];
+    for (let i = 0; i < assetIds.length; i += 30) {
+        const batchIds = assetIds.slice(i, i + 30);
+        if (batchIds.length > 0) {
+            const q = query(logsRef, where('assetId', 'in', batchIds));
+            promises.push(getDocs(q));
+        }
+    }
+    const snapshots = await Promise.all(promises);
+    const results: MaintenanceLog[] = [];
+    snapshots.forEach(snapshot => {
+        snapshot.docs.forEach(doc => {
+            results.push({ id: doc.id, ...doc.data() } as MaintenanceLog);
+        });
+    });
+    return results;
+};
+
+export const getExpenseReportsByEmployeeIds = async (employeeIds: string[]): Promise<ExpenseReport[]> => {
+    if (!employeeIds || employeeIds.length === 0) return [];
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'expenseReports');
+    const promises = [];
+    for (let i = 0; i < employeeIds.length; i += 30) {
+        const batchIds = employeeIds.slice(i, i + 30);
+        if (batchIds.length > 0) {
+            const q = query(reportsRef, where('employeeId', 'in', batchIds));
+            promises.push(getDocs(q));
+        }
+    }
+    const snapshots = await Promise.all(promises);
+    const results: ExpenseReport[] = [];
+    snapshots.forEach(snapshot => {
+        snapshot.docs.forEach(doc => {
+            results.push({ id: doc.id, ...doc.data() } as ExpenseReport);
+        });
+    });
+    return results;
+};
+
 export const getExpenseReportsInDateRange = async (startDate: string, endDate: string): Promise<ExpenseReport[]> => {
     const db = getFirestoreInstance();
     const reportsRef = collection(db, 'expenseReports');
@@ -428,3 +472,4 @@ export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOff
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
 };
+
