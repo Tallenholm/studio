@@ -48,13 +48,22 @@ export async function getAdminDashboardData(): Promise<AdminDashboardData> {
         return [[], [], [], [], []];
     });
   
+  // Create a VIN-to-name map for efficient lookups.
+  const assetVinMap = new Map<string, string>();
+  for (const asset of allAssets) {
+    if (asset.vin) {
+      assetVinMap.set(asset.vin, asset.name);
+    }
+  }
+
   let briefing: DailyBriefingOutput | null = null;
   try {
     const attentionItems: BriefingData['attentionItems'] = recentFailedReports
       .filter(r => isAfter(parseISO(r.date), twoDaysAgo))
       .map(r => {
         const assetVin = r.truckVin || r.trailerVin || r.heavyEquipmentVin || 'Unknown';
-        const assetName = allAssets.find(a => a.vin === assetVin)?.name || assetVin;
+        // Use the efficient map lookup instead of a slow .find() in a loop.
+        const assetName = assetVinMap.get(assetVin) || assetVin;
         return {
           id: r.id,
           type: 'report',
