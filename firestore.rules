@@ -44,9 +44,9 @@ service cloud.firestore {
     // ======== COLLECTION RULES ========
 
     // --- Users ---
-    // Only owners can manage user roles and data. All users can read the list.
+    // Only owners can manage user roles and data. Admins or the user themselves can read.
     match /users/{userId} {
-      allow read: if isSignedIn();
+      allow read: if isAdmin() || isOwnerOf(userId);
       allow write: if isOwner();
     }
 
