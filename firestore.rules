@@ -61,7 +61,7 @@ service cloud.firestore {
       allow write: if isOwner();
     }
     match /rentals/{rentalId} {
-        allow read: if isSignedIn();
+        allow read: if isOwner();
         allow write: if isOwner();
     }
     match /snowRoutes/{routeId} {
