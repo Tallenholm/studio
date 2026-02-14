@@ -10,61 +10,21 @@ import { weatherDescriptions } from './weather-utils';
 
 const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 95, 96, 99];
 
-async function fetchFromOpenMeteo(lat: number, lon: number, hourlyParams: string, dailyParams: string): Promise<WeatherData> {
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
-    const response = await fetch(url, { next: { revalidate: 3600 } });
-    if (!response.ok) {
-        throw new Error(`Failed to fetch weather data from fallback service (status: ${response.status}).`);
-    }
-    return await response.json();
-}
-
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
     const hourlyParams = "temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m";
     const dailyParams = "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,uv_index_max";
-    const apiKey = process.env.NEXT_PUBLIC_ECMWF_API_KEY;
-
-    if (!apiKey) {
-        console.warn("ECMWF API key not found. Using free Open-Meteo API as fallback.");
-        return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
-    }
     
-    const url = `https://api.ecmwf.int/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
+
     try {
-        const response = await fetch(url, {
-            headers: { 'Authorization': `ApiKey ${apiKey}` },
-            next: { revalidate: 3600 }
-        });
-
+        const response = await fetch(url, { next: { revalidate: 3600 } });
         if (!response.ok) {
-            const contentType = response.headers.get("content-type");
-            let errorMessage = 'An unknown API error occurred.';
-            let errorJson: any = null;
-            
-            try {
-                if (contentType && contentType.includes("application/json")) {
-                    errorJson = await response.json();
-                    errorMessage = errorJson.reason || errorJson.error_description || JSON.stringify(errorJson);
-                } else {
-                    errorMessage = await response.text();
-                }
-            } catch {
-                 errorMessage = await response.text();
-            }
-
-            if (response.status === 403 || (errorJson && (errorJson.reason?.includes("Invalid API key") || errorJson.reason?.includes("Missing access token")))) {
-                console.warn(`ECMWF API key is invalid or unauthorized. Falling back to free Open-Meteo API.`);
-                return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
-            }
-            
-            throw new Error(`Failed to fetch weather data (status: ${response.status}). ${errorMessage}`);
+            throw new Error(`Failed to fetch weather data from Open-Meteo (status: ${response.status}).`);
         }
-        
         return await response.json();
-
     } catch (error) {
-        console.error("Error during weather fetch, attempting fallback:", error);
-        return fetchFromOpenMeteo(lat, lon, hourlyParams, dailyParams);
+        console.error("Error during weather fetch:", error);
+        throw new Error("Could not retrieve weather data. Please try again later.");
     }
 };
 
