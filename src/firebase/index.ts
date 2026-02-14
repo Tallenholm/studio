@@ -37,42 +37,45 @@ export function initializeFirebase() {
             db = getFirestore(app);
             storage = getStorage(app);
 
-            if (typeof window !== 'undefined' && db) {
-                if (!persistenceEnabled) {
-                    try {
-                        enableIndexedDbPersistence(db)
-                            .then(() => {
-                                persistenceEnabled = true;
-                                console.log("Firestore offline persistence enabled.");
-                            })
-                            .catch((err) => {
-                                if (err.code == 'failed-precondition') {
-                                    console.warn("Firestore persistence failed-precondition. This can happen with multiple tabs open.");
-                                } else if (err.code == 'unimplemented') {
-                                    console.warn("Firestore persistence is not available in this browser.");
-                                }
-                            });
-                    } catch (e) {
-                         console.error("Failed to enable Firestore on-disk persistence", e);
-                    }
-                }
-                
+            if (typeof window !== 'undefined' && db && !persistenceEnabled) {
+                // Asynchronously enable persistence. The app will function immediately
+                // and persistence will be active for subsequent sessions.
+                enableIndexedDbPersistence(db)
+                    .then(() => {
+                        persistenceEnabled = true;
+                        console.log("Firestore offline persistence has been enabled.");
+                    })
+                    .catch((err) => {
+                        if (err.code === 'failed-precondition') {
+                            // This is a normal scenario when multiple tabs are open.
+                            // Persistence will be enabled in one tab only.
+                            console.warn("Firestore persistence could not be enabled in this tab, likely because it's already active in another.");
+                        } else if (err.code === 'unimplemented') {
+                            console.warn("This browser does not support Firestore offline persistence.");
+                        }
+                    });
+            }
+
+            if (typeof window !== 'undefined') {
                 try {
                     messaging = getMessaging(app);
                 } catch (e) {
-                    console.error("Failed to initialize Firebase Messaging", e);
+                     console.error("Failed to initialize Firebase Messaging", e);
                 }
             }
+
         } catch (e) {
             console.error("Failed to initialize Firebase", e);
         }
     } else if (getApps().length) {
+        // This block handles cases like Hot Module Replacement in development
+        // where the app might already be initialized.
         app = getApp();
         auth = getAuth(app);
         db = getFirestore(app);
         storage = getStorage(app);
         if (typeof window !== 'undefined' && !messaging) {
-            try {
+             try {
                 messaging = getMessaging(app);
             } catch (e) {
                 console.error("Failed to re-initialize Firebase Messaging", e);
@@ -81,7 +84,7 @@ export function initializeFirebase() {
     }
 
     if (!isFirebaseConfigured) {
-        console.warn("Firebase config is not fully provided in environment variables. Firebase services are disabled.");
+        console.warn("Firebase config is not fully provided. Firebase services are disabled.");
     }
     
     return { app, auth, db, storage, messaging };
