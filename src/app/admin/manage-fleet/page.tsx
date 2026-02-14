@@ -54,6 +54,7 @@ import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getN
 import { useUser } from '@/firebase';
 import Link from 'next/link';
 import { suggestMaintenanceSchedule } from '@/ai/flows/suggest-maintenance-schedule';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const maintenanceScheduleItemSchema = z.object({
   intervalMonths: z.coerce.number().positive().optional(),
@@ -125,6 +126,7 @@ export default function FleetManagementPage() {
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
   const { toast } = useToast();
   const { user: adminUser } = useUser();
+  const [assetToDelete, setAssetToDelete] = useState<FleetAsset | null>(null);
 
   const [isUploadingReg, setIsUploadingReg] = useState(false);
   const [isUploadingIns, setIsUploadingIns] = useState(false);
@@ -420,7 +422,7 @@ export default function FleetManagementPage() {
                                             <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /><span className="sr-only">Actions</span></Button></DropdownMenuTrigger>
                                             <DropdownMenuContent align="end">
                                                 <DropdownMenuItem onClick={() => handleEditClick(asset)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                                                <DropdownMenuItem onClick={() => removeAsset(asset.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                                                <DropdownMenuItem onClick={() => setAssetToDelete(asset)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                                             </DropdownMenuContent>
                                         </DropdownMenu>
                                     </TableCell>
@@ -519,6 +521,31 @@ export default function FleetManagementPage() {
           </CardContent>
         </Card>
       </div>
+      <AlertDialog open={!!assetToDelete} onOpenChange={(open) => !open && setAssetToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the asset
+                    <span className="font-bold"> {assetToDelete?.name} </span>
+                    and all associated data.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (assetToDelete) {
+                            removeAsset(assetToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
     </>
   );
 }
