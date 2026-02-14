@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getClients, addClient, updateClient, deleteClient, getJobs } from '@/lib/firestoreService';
 import type { Client, Job } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -40,6 +40,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Building2, Pencil, MoreHorizontal, Loader2, Search, DollarSign } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import Link from 'next/link';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 const clientSchema = z.object({
   name: z.string().min(1, 'Client name is required.'),
@@ -57,6 +59,8 @@ export default function ManageClientsPage() {
   const [editingClient, setEditingClient] = useState<Client | null>(null);
   const { toast } = useToast();
   const [searchTerm, setSearchTerm] = useState('');
+  const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
+
 
    useEffect(() => {
     async function fetchData() {
@@ -170,6 +174,7 @@ export default function ManageClientsPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -312,11 +317,11 @@ export default function ManageClientsPage() {
                                       </Button>
                                       </DropdownMenuTrigger>
                                       <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onClick={() => handleEditClick(client)}>
+                                      <DropdownMenuItem onSelect={() => handleEditClick(client)}>
                                           <Pencil className="mr-2 h-4 w-4" />
                                           Edit
                                       </DropdownMenuItem>
-                                      <DropdownMenuItem onClick={() => removeClient(client.id)} className="text-destructive">
+                                      <DropdownMenuItem onSelect={() => setClientToDelete(client)} className="text-destructive">
                                           <Trash2 className="mr-2 h-4 w-4" />
                                           Delete
                                       </DropdownMenuItem>
@@ -338,5 +343,31 @@ export default function ManageClientsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the client
+                    <span className="font-bold"> {clientToDelete?.name} </span>
+                    and all associated data. Deleting a client is only possible if they have no associated jobs.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (clientToDelete) {
+                            removeClient(clientToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

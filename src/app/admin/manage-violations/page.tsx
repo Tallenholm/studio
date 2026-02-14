@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { User, Violation } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -50,6 +50,8 @@ import { PlusCircle, Trash2, ShieldAlert, Calendar as CalendarIcon, Loader2 } fr
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
 import { getUsers, getViolations, addViolation, deleteViolation } from '@/lib/firestoreService';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 const violationSchema = z.object({
   employeeId: z.string({ required_error: 'Please select an employee.' }),
@@ -64,6 +66,7 @@ export default function ManageViolationsPage() {
   const [violations, setViolations] = useState<Violation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [violationToDelete, setViolationToDelete] = useState<Violation | null>(null);
   const { toast } = useToast();
 
   const form = useForm<z.infer<typeof violationSchema>>({
@@ -144,6 +147,7 @@ export default function ManageViolationsPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -319,7 +323,7 @@ export default function ManageViolationsPage() {
                               <TableCell className="max-w-sm">{v.description}</TableCell>
                               <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
                               <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => removeViolation(v.id)} aria-label={`Remove violation for ${v.employeeName}`}>
+                              <Button variant="ghost" size="icon" onClick={() => setViolationToDelete(v)} aria-label={`Remove violation for ${v.employeeName}`}>
                                   <Trash2 className="h-4 w-4 text-destructive" />
                               </Button>
                               </TableCell>
@@ -338,5 +342,30 @@ export default function ManageViolationsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!violationToDelete} onOpenChange={(open) => !open && setViolationToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the violation record for
+                    <span className="font-bold"> {violationToDelete?.employeeName}</span> on <span className="font-bold">{violationToDelete?.date ? format(parseISO(violationToDelete.date), 'PPP') : ''}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (violationToDelete) {
+                            removeViolation(violationToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

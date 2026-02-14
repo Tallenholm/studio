@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -6,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { InventoryItem, User, Job, FleetAsset, InventoryItemType, InventoryItemStatus, AssignmentType } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -20,6 +21,7 @@ import { Badge } from '@/components/ui/badge';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { getInventory, addInventoryItem, updateInventoryItem, deleteInventoryItem, getUsers, getJobs, getFleetAssets } from '@/lib/firestoreService';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 const itemSchema = z.object({
@@ -45,6 +47,7 @@ export default function ManageInventoryPage() {
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [editingItem, setEditingItem] = useState<InventoryItem | null>(null);
   const [assigningItem, setAssigningItem] = useState<InventoryItem | null>(null);
+  const [itemToDelete, setItemToDelete] = useState<InventoryItem | null>(null);
   
   const { toast } = useToast();
 
@@ -231,6 +234,7 @@ export default function ManageInventoryPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -386,7 +390,7 @@ export default function ManageInventoryPage() {
                                     {item.status !== 'lost' && <DropdownMenuItem onSelect={() => updateItemStatus(item.id, 'lost')}>Mark as Lost</DropdownMenuItem>}
                                     
                                     <DropdownMenuSeparator />
-                                    <DropdownMenuItem onSelect={() => removeItem(item.id)} className="text-destructive focus:text-destructive">
+                                    <DropdownMenuItem onSelect={() => setItemToDelete(item)} className="text-destructive focus:text-destructive">
                                         Delete
                                     </DropdownMenuItem>
                                 </DropdownMenuContent>
@@ -453,5 +457,30 @@ export default function ManageInventoryPage() {
         </DialogContent>
       </Dialog>
     </div>
+    <AlertDialog open={!!itemToDelete} onOpenChange={(open) => !open && setItemToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the item
+                    <span className="font-bold"> {itemToDelete?.name}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (itemToDelete) {
+                            removeItem(itemToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useMemo } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getSnowJobs, getUsers, getFleetAssets, getSnowRoutes, addSnowRoute, updateSnowRoute, deleteSnowRoute, addNotification } from '@/lib/firestoreService';
 import type { SnowRoute, Job, User, FleetAsset, NotificationMessage } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form';
@@ -19,6 +20,7 @@ import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigge
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useUser } from '@/firebase/provider';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 const routeSchema = z.object({
   name: z.string().min(1, 'Route name is required.'),
@@ -72,6 +74,7 @@ export default function ManageSnowRoutesPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingRoute, setEditingRoute] = useState<SnowRoute | null>(null);
+  const [routeToDelete, setRouteToDelete] = useState<SnowRoute | null>(null);
   const { toast } = useToast();
   const { user: adminUser } = useUser();
 
@@ -198,11 +201,11 @@ export default function ManageSnowRoutesPage() {
                           </Button>
                       </DropdownMenuTrigger>
                       <DropdownMenuContent align="end">
-                          <DropdownMenuItem onClick={() => handleEditClick(route)}>
+                          <DropdownMenuItem onSelect={() => handleEditClick(route)}>
                               <Pencil className="mr-2 h-4 w-4" />
                               Edit
                           </DropdownMenuItem>
-                          <DropdownMenuItem onClick={() => removeRoute(route.id)} className="text-destructive">
+                          <DropdownMenuItem onSelect={() => setRouteToDelete(route)} className="text-destructive">
                               <Trash2 className="mr-2 h-4 w-4" />
                               Delete
                           </DropdownMenuItem>
@@ -249,6 +252,7 @@ export default function ManageSnowRoutesPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -351,5 +355,30 @@ export default function ManageSnowRoutesPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!routeToDelete} onOpenChange={(open) => !open && setRouteToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the route
+                    <span className="font-bold"> {routeToDelete?.name}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (routeToDelete) {
+                            removeRoute(routeToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

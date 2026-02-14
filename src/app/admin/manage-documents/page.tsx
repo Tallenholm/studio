@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect, useRef, useMemo } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getDocuments, addDocument, deleteDocument, getFleetAssets, getUsers, getClients } from '@/lib/firestoreService';
 import type { ManagedDocument, User, FleetAsset, Client } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -41,6 +42,7 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { uploadFile, useUser } from '@/firebase';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 const documentSchema = z.object({
@@ -94,6 +96,7 @@ export default function ManageDocumentsPage() {
   const { toast } = useToast();
   const { user: adminUser } = useUser();
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [docToDelete, setDocToDelete] = useState<ManagedDocument | null>(null);
 
   const form = useForm<z.infer<typeof documentSchema>>({
     resolver: zodResolver(documentSchema),
@@ -297,7 +300,7 @@ export default function ManageDocumentsPage() {
                                         <CardTitle className="text-lg truncate">{doc.title}</CardTitle>
                                         <CardDescription>{doc.description}</CardDescription>
                                     </div>
-                                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => removeDocument(doc.id)} aria-label={`Delete ${doc.title}`}>
+                                    <Button variant="ghost" size="icon" className="shrink-0" onClick={() => setDocToDelete(doc)} aria-label={`Delete ${doc.title}`}>
                                         <Trash2 className="h-4 w-4 text-destructive" />
                                     </Button>
                                </CardHeader>
@@ -335,6 +338,7 @@ export default function ManageDocumentsPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -568,6 +572,31 @@ export default function ManageDocumentsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!docToDelete} onOpenChange={(open) => !open && setDocToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the document
+                    <span className="font-bold"> {docToDelete?.title}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (docToDelete) {
+                            removeDocument(docToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
 

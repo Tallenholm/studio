@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getUsers, getPendingTasks, getCompletedTasks, addTask, deleteTask } from '@/lib/firestoreService';
 import type { User, Task } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Checkbox } from '@/components/ui/checkbox';
 import {
@@ -46,6 +46,8 @@ import Image from 'next/image';
 import Link from 'next/link';
 import { cn } from '@/lib/utils';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 const taskSchema = z.object({
   assignedToEmployeeId: z.string({ required_error: 'Please select an employee.' }),
@@ -59,6 +61,7 @@ export default function ManageTasksPage() {
   const [tasks, setTasks] = useState<Task[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+  const [taskToDelete, setTaskToDelete] = useState<Task | null>(null);
   const { toast } = useToast();
   const { user: adminUser } = useUser();
 
@@ -168,7 +171,7 @@ export default function ManageTasksPage() {
                   </div>
                   <div className="flex items-center gap-2">
                       <Badge variant={getStatusBadgeVariant(task.status)} className={cn(task.status === 'completed' && 'bg-green-600')}>{task.status}</Badge>
-                      <Button variant="ghost" size="icon" onClick={() => removeTask(task.id)} aria-label={`Remove task`}>
+                      <Button variant="ghost" size="icon" onClick={() => setTaskToDelete(task)} aria-label={`Remove task`}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                       </Button>
                   </div>
@@ -206,6 +209,7 @@ export default function ManageTasksPage() {
   );
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -330,5 +334,30 @@ export default function ManageTasksPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!taskToDelete} onOpenChange={(open) => !open && setTaskToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the task
+                    <span className="font-bold"> {taskToDelete?.title}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (taskToDelete) {
+                            removeTask(taskToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

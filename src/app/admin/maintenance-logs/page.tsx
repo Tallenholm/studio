@@ -1,4 +1,5 @@
 
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -7,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getFleetAssets, getMaintenanceLogs, addMaintenanceLog, deleteMaintenanceLog, updateFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
 import type { FleetAsset, MaintenanceLog, VehicleType, NotificationMessage } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -49,6 +50,8 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Wrench, Calendar as CalendarIcon, Loader2, Truck, Box, Shovel } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
+
 
 const logSchema = z.object({
   assetId: z.string({ required_error: 'Please select an asset.' }),
@@ -74,6 +77,7 @@ export default function MaintenanceLogsPage() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const { toast } = useToast();
+  const [logToDelete, setLogToDelete] = useState<MaintenanceLog | null>(null);
 
   const form = useForm<z.infer<typeof logSchema>>({
     resolver: zodResolver(logSchema),
@@ -223,7 +227,7 @@ export default function MaintenanceLogsPage() {
                       <TableCell>{log.cost ? `$${log.cost.toFixed(2)}` : 'N/A'}</TableCell>
                       <TableCell>{log.mechanic || 'N/A'}</TableCell>
                       <TableCell className="text-right">
-                        <Button variant="ghost" size="icon" onClick={() => removeLog(log.id)} aria-label={`Remove log for ${log.assetName}`}>
+                        <Button variant="ghost" size="icon" onClick={() => setLogToDelete(log)} aria-label={`Remove log for ${log.assetName}`}>
                           <Trash2 className="h-4 w-4 text-destructive" />
                         </Button>
                       </TableCell>
@@ -254,6 +258,7 @@ export default function MaintenanceLogsPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -453,5 +458,30 @@ export default function MaintenanceLogsPage() {
         </CardContent>
       </Card>
     </div>
+    <AlertDialog open={!!logToDelete} onOpenChange={(open) => !open && setLogToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the maintenance log for
+                    <span className="font-bold"> {logToDelete?.assetName}</span> on <span className="font-bold">{logToDelete?.date ? format(parseISO(logToDelete.date), 'PPP') : ''}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (logToDelete) {
+                            removeLog(logToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }

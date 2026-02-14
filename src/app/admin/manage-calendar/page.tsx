@@ -8,7 +8,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getCalendarEvents, addCalendarEvent, deleteCalendarEvent } from '@/lib/firestoreService';
 import type { CalendarEvent } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Form,
@@ -40,6 +40,7 @@ import { useToast } from '@/hooks/use-toast';
 import { PlusCircle, Trash2, Calendar as CalendarIcon, CalendarPlus, Loader2 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { format, parseISO } from 'date-fns';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 const eventSchema = z.object({
@@ -54,6 +55,7 @@ export default function ManageCalendarPage() {
   const [events, setEvents] = useState<CalendarEvent[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const { toast } = useToast();
+  const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
 
   const form = useForm<z.infer<typeof eventSchema>>({
     resolver: zodResolver(eventSchema),
@@ -122,6 +124,7 @@ export default function ManageCalendarPage() {
   }
   
   return (
+    <>
     <div className="container mx-auto py-8 space-y-8">
        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
         <CardHeader>
@@ -263,7 +266,7 @@ export default function ManageCalendarPage() {
                                 <TableCell>{getEventTypeLabel(event.type)}</TableCell>
                                 <TableCell className="text-muted-foreground">{event.description || 'N/A'}</TableCell>
                                 <TableCell className="text-right">
-                                <Button variant="ghost" size="icon" onClick={() => removeEvent(event.id)} aria-label={`Remove ${event.title}`}>
+                                <Button variant="ghost" size="icon" onClick={() => setEventToDelete(event)} aria-label={`Remove ${event.title}`}>
                                     <Trash2 className="h-4 w-4 text-destructive" />
                                 </Button>
                                 </TableCell>
@@ -282,5 +285,30 @@ export default function ManageCalendarPage() {
         </CardContent>
       </Card>
     </div>
+     <AlertDialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
+        <AlertDialogContent>
+            <AlertDialogHeader>
+                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+                <AlertDialogDescription>
+                    This action cannot be undone. This will permanently delete the event
+                    <span className="font-bold"> {eventToDelete?.title}</span>.
+                </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                    onClick={() => {
+                        if (eventToDelete) {
+                            removeEvent(eventToDelete.id);
+                        }
+                    }}
+                    className={buttonVariants({ variant: "destructive" })}
+                >
+                    Delete
+                </AlertDialogAction>
+            </AlertDialogFooter>
+        </AlertDialogContent>
+    </AlertDialog>
+    </>
   );
 }
