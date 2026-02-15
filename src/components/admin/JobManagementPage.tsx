@@ -8,7 +8,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { getClients, getFleetAssets, getUsers, addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
 import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
 import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import PageHeader from '@/components/common/PageHeader';
+import PageSkeleton from '@/components/common/PageSkeleton';
+import EmptyState from '@/components/common/EmptyState';
 import { Dialog, DialogContent, DialogDescription, DialogFooter, DialogHeader, DialogTitle, DialogTrigger } from '@/components/ui/dialog';
 import { Form } from '@/components/ui/form';
 import { Input } from '@/components/ui/input';
@@ -95,36 +98,36 @@ export default function JobManagementPage() {
 
   useEffect(() => {
     async function fetchData() {
-        setIsLoading(true);
-        try {
-            const [loadedJobs, loadedClients, loadedAssets, loadedUsers] = await Promise.all([
-                getJobs(),
-                getClients(),
-                getFleetAssets(),
-                getUsers(),
-            ]);
-            setJobs(loadedJobs);
-            setClients(loadedClients);
-            setFleetAssets(loadedAssets);
-            setUsers(loadedUsers.filter(u => u.role === 'employee'));
-        } catch (error) {
-            console.error("Failed to fetch initial data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load page data.' });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const [loadedJobs, loadedClients, loadedAssets, loadedUsers] = await Promise.all([
+          getJobs(),
+          getClients(),
+          getFleetAssets(),
+          getUsers(),
+        ]);
+        setJobs(loadedJobs);
+        setClients(loadedClients);
+        setFleetAssets(loadedAssets);
+        setUsers(loadedUsers.filter(u => u.role === 'employee'));
+      } catch (error) {
+        console.error("Failed to fetch initial data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load page data.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, [toast]);
-  
+
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
     if (!open) {
-      form.reset({ 
-          name: '', address: '', jobType: 'excavation',
-          assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedSidewalkCrewIds: [],
-          snowServices: { plowing: false, salting: false, sidewalks: false },
-          concreteYards: undefined, jobValue: undefined,
+      form.reset({
+        name: '', address: '', jobType: 'excavation',
+        assignedEmployeeIds: [], assignedTruckIds: [], assignedTrailerIds: [], assignedHeavyEquipmentIds: [], assignedSidewalkCrewIds: [],
+        snowServices: { plowing: false, salting: false, sidewalks: false },
+        concreteYards: undefined, jobValue: undefined,
       });
       setEditingJob(null);
     }
@@ -133,9 +136,9 @@ export default function JobManagementPage() {
   const handleAiDialogOpenChange = (open: boolean) => {
     setIsAiDialogOpen(open);
     if (!open) {
-        setAiPrompt('');
-        setAiError(null);
-        setIsGeneratingJob(false);
+      setAiPrompt('');
+      setAiError(null);
+      setIsGeneratingJob(false);
     }
   }
 
@@ -155,7 +158,7 @@ export default function JobManagementPage() {
         setIsGeneratingJob(false);
         return;
       }
-      
+
       form.reset({
         name: result.name,
         clientId: client?.id,
@@ -184,8 +187,8 @@ export default function JobManagementPage() {
   async function onSubmit(values: z.infer<typeof jobSchema>) {
     const client = clients.find(c => c.id === values.clientId);
     if (!client) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected client not found.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Selected client not found.' });
+      return;
     }
 
     const jobData = {
@@ -196,44 +199,44 @@ export default function JobManagementPage() {
     };
 
     try {
-        if (editingJob) {
-            const updatedJob: Job = { ...editingJob, ...jobData };
-            await updateJob(editingJob.id, updatedJob);
-            setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
-            toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
-        } else {
-            const newJob: Omit<Job, 'id'> = {
-                ...jobData,
-                notes: [],
-                snowLog: values.jobType === 'snow_removal' ? { plowing: [], salting: [], sidewalks: [] } : undefined,
-            };
-            const newId = await addJob(newJob);
-            setJobs(prev => [...prev, {id: newId, ...newJob}]);
-            toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
-        }
-        handleDialogOpenChange(false);
+      if (editingJob) {
+        const updatedJob: Job = { ...editingJob, ...jobData };
+        await updateJob(editingJob.id, updatedJob);
+        setJobs(prev => prev.map(j => j.id === editingJob.id ? updatedJob : j));
+        toast({ title: 'Job Updated', description: `Job "${values.name}" has been updated.` });
+      } else {
+        const newJob: Omit<Job, 'id'> = {
+          ...jobData,
+          notes: [],
+          snowLog: values.jobType === 'snow_removal' ? { plowing: [], salting: [], sidewalks: [] } : undefined,
+        };
+        const newId = await addJob(newJob);
+        setJobs(prev => [...prev, { id: newId, ...newJob }]);
+        toast({ title: 'Job Added', description: `Job "${values.name}" has been created.` });
+      }
+      handleDialogOpenChange(false);
     } catch (error) {
-        console.error("Firestore Error:", error);
-        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not save job.' });
+      console.error("Firestore Error:", error);
+      toast({ variant: 'destructive', title: 'Database Error', description: 'Could not save job.' });
     }
   }
 
   async function removeJob(jobId: string) {
     const jobToRemove = jobs.find(j => j.id === jobId);
     try {
-        await deleteJob(jobId);
-        setJobs(prev => prev.filter(j => j.id !== jobId));
-        toast({
-            title: 'Job Removed',
-            description: `Job "${jobToRemove?.name}" has been removed.`,
-            variant: 'destructive',
-        });
+      await deleteJob(jobId);
+      setJobs(prev => prev.filter(j => j.id !== jobId));
+      toast({
+        title: 'Job Removed',
+        description: `Job "${jobToRemove?.name}" has been removed.`,
+        variant: 'destructive',
+      });
     } catch (error) {
-        console.error("Firestore Error:", error);
-        toast({ variant: 'destructive', title: 'Database Error', description: 'Could not remove job.' });
+      console.error("Firestore Error:", error);
+      toast({ variant: 'destructive', title: 'Database Error', description: 'Could not remove job.' });
     }
   }
-  
+
   const getStatusBadgeVariant = (status: JobStatus) => {
     switch (status) {
       case 'active': return 'default';
@@ -242,29 +245,29 @@ export default function JobManagementPage() {
       default: return 'outline';
     }
   };
-  
+
   const jobsWithStatus = useMemo(() => {
     return jobs.map(job => ({
-        ...job,
-        status: getJobStatus(job)
+      ...job,
+      status: getJobStatus(job)
     })).sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
   }, [jobs]);
 
   const filteredJobs = useMemo(() => {
     return jobsWithStatus.filter(job => {
-        const searchMatch = searchTerm === '' || 
-                            job.name.toLowerCase().includes(searchTerm.toLowerCase()) || 
-                            job.address.toLowerCase().includes(searchTerm.toLowerCase());
-        const clientMatch = clientFilter === 'all' || job.clientId === clientFilter;
-        const typeMatch = typeFilter === 'all' || job.jobType === typeFilter;
-        return searchMatch && clientMatch && typeMatch;
+      const searchMatch = searchTerm === '' ||
+        job.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        job.address.toLowerCase().includes(searchTerm.toLowerCase());
+      const clientMatch = clientFilter === 'all' || job.clientId === clientFilter;
+      const typeMatch = typeFilter === 'all' || job.jobType === typeFilter;
+      return searchMatch && clientMatch && typeMatch;
     });
   }, [jobsWithStatus, searchTerm, clientFilter, typeFilter]);
 
   const upcomingJobs = filteredJobs.filter(j => j.status === 'upcoming');
   const activeJobs = filteredJobs.filter(j => j.status === 'active');
   const completedJobs = filteredJobs.filter(j => j.status === 'completed');
-  
+
   const totalActiveValue = useMemo(() => {
     return activeJobs.reduce((acc, job) => acc + (job.jobValue || 0), 0);
   }, [activeJobs]);
@@ -273,145 +276,144 @@ export default function JobManagementPage() {
     if (value === undefined || value === null) return 'N/A';
     return new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(value);
   }
-  
+
   const getServicesString = (services?: { plowing?: boolean, salting?: boolean, sidewalks?: boolean }) => {
     if (!services) return 'N/A';
     const enabledServices = Object.entries(services)
-        .filter(([, enabled]) => enabled)
-        .map(([service]) => service.charAt(0).toUpperCase() + service.slice(1));
+      .filter(([, enabled]) => enabled)
+      .map(([service]) => service.charAt(0).toUpperCase() + service.slice(1));
     return enabledServices.length > 0 ? enabledServices.join(', ') : 'None';
   }
 
   const renderJobsTable = (jobList: (Job & { status: JobStatus })[]) => (
     <div className="border rounded-md">
-        <Table>
-            <TableHeader>
-            <TableRow>
-                <TableHead>Status</TableHead>
-                <TableHead>Job Name</TableHead>
-                <TableHead>Client</TableHead>
-                <TableHead>Value</TableHead>
-                <TableHead>Dates</TableHead>
-                <TableHead className="text-right w-[80px]">Actions</TableHead>
+      <Table>
+        <TableHeader>
+          <TableRow>
+            <TableHead>Status</TableHead>
+            <TableHead>Job Name</TableHead>
+            <TableHead>Client</TableHead>
+            <TableHead>Value</TableHead>
+            <TableHead>Dates</TableHead>
+            <TableHead className="text-right w-[80px]">Actions</TableHead>
+          </TableRow>
+        </TableHeader>
+        <TableBody>
+          {jobList.length > 0 ? jobList.map(job => (
+            <TableRow key={job.id}>
+              <TableCell>
+                <Badge variant={getStatusBadgeVariant(job.status)}>{job.status}</Badge>
+              </TableCell>
+              <TableCell className="font-medium">{job.name}</TableCell>
+              <TableCell>{job.clientName}</TableCell>
+              <TableCell>{formatCurrency(job.jobValue)}</TableCell>
+              <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
+              <TableCell className="text-right">
+                <DropdownMenu>
+                  <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
+                  <DropdownMenuContent align="end">
+                    <DropdownMenuItem asChild><Link href={`/admin/jobs/${job.id}`}><Eye className="mr-2 h-4 w-4" />View Details</Link></DropdownMenuItem>
+                    <DropdownMenuItem onClick={() => handleEditClick(job)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                    <DropdownMenuSeparator />
+                    <DropdownMenuItem onClick={() => removeJob(job.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                  </DropdownMenuContent>
+                </DropdownMenu>
+              </TableCell>
             </TableRow>
-            </TableHeader>
-            <TableBody>
-            {jobList.length > 0 ? jobList.map(job => (
-                <TableRow key={job.id}>
-                <TableCell>
-                    <Badge variant={getStatusBadgeVariant(job.status)}>{job.status}</Badge>
-                </TableCell>
-                <TableCell className="font-medium">{job.name}</TableCell>
-                <TableCell>{job.clientName}</TableCell>
-                <TableCell>{formatCurrency(job.jobValue)}</TableCell>
-                <TableCell>{format(new Date(job.startDate), 'PPP')} - {format(new Date(job.endDate), 'PPP')}</TableCell>
-                <TableCell className="text-right">
-                    <DropdownMenu>
-                        <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
-                        <DropdownMenuContent align="end">
-                        <DropdownMenuItem asChild><Link href={`/admin/jobs/${job.id}`}><Eye className="mr-2 h-4 w-4" />View Details</Link></DropdownMenuItem>
-                        <DropdownMenuItem onClick={() => handleEditClick(job)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
-                        <DropdownMenuSeparator />
-                        <DropdownMenuItem onClick={() => removeJob(job.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
-                        </DropdownMenuContent>
-                    </DropdownMenu>
-                </TableCell>
-                </TableRow>
-            )) : (
-                <TableRow>
-                <TableCell colSpan={6} className="h-24 text-center">No jobs found with current filters.</TableCell>
-                </TableRow>
-            )}
-            </TableBody>
-        </Table>
+          )) : (
+            <TableRow>
+              <TableCell colSpan={6} className="h-24 text-center">No jobs found with current filters.</TableCell>
+            </TableRow>
+          )}
+        </TableBody>
+      </Table>
     </div>
   );
 
   if (isLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Jobs...</p>
-      </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
     <div className="container mx-auto py-8">
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Briefcase className="h-8 w-8 text-primary" />
-                Manage Jobs
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Create, assign, and track all company jobs and contracts from a single, unified interface.
-              </CardDescription>
-            </div>
-            <div className="flex gap-2">
-              <Dialog open={isAiDialogOpen} onOpenChange={handleAiDialogOpenChange}>
-                  <DialogTrigger asChild><Button variant="outline"><Brain className="mr-2 h-5 w-5" /> Create with AI</Button></DialogTrigger>
-                  <DialogContent className="sm:max-w-xl">
-                      <DialogHeader><DialogTitle>Create Job with AI</DialogTitle><DialogDescription>Describe the job in plain English. The AI will populate the form for you.</DialogDescription></DialogHeader>
-                      <div className="py-4 space-y-4">
-                          <Textarea placeholder="e.g., Excavate the foundation for Main Street Properties at 456 Central Ave. Start tomorrow and finish in two weeks. The job is worth $75,000." value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} className="min-h-[120px]" />
-                           {aiError && (<div className="flex items-start gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md"><AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" /><p>{aiError}</p></div>)}
-                      </div>
-                      <DialogFooter>
-                          <Button onClick={handleGenerateJob} disabled={isGeneratingJob}>
-                              {isGeneratingJob ? <Loader2 className="mr-2 h-4 w-4 animate-spin"/> : <Brain className="mr-2 h-4 w-4" />}
-                              {isGeneratingJob ? 'Generating...' : 'Generate Job'}
-                          </Button>
-                      </DialogFooter>
-                  </DialogContent>
-              </Dialog>
-              <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-                <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-5 w-5" /> Add New Job</Button></DialogTrigger>
-                <DialogContent className="sm:max-w-4xl">
-                  <DialogHeader><DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle></DialogHeader>
-                  <Form {...form}>
-                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
-                        <JobFormFields form={form} clients={clients} fleetAssets={fleetAssets} users={users} />
-                        <DialogFooter><Button type="submit">Save Job</Button></DialogFooter>
-                    </form>
-                  </Form>
-                </DialogContent>
-              </Dialog>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
-          <Card className="bg-muted/30">
-            <CardHeader className="flex-row items-center justify-between pb-2">
-                <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Filters</CardTitle>
+      <PageHeader
+        title="Manage Jobs"
+        description="Create, assign, and track all company jobs and contracts from a single, unified interface."
+        icon={Briefcase}
+      >
+        <div className="flex gap-2">
+          <Dialog open={isAiDialogOpen} onOpenChange={handleAiDialogOpenChange}>
+            <DialogTrigger asChild><Button variant="outline"><Brain className="mr-2 h-5 w-5" /> Create with AI</Button></DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader><DialogTitle>Create Job with AI</DialogTitle><DialogDescription>Describe the job in plain English. The AI will populate the form for you.</DialogDescription></DialogHeader>
+              <div className="py-4 space-y-4">
+                <Textarea placeholder="e.g., Excavate the foundation for Main Street Properties at 456 Central Ave. Start tomorrow and finish in two weeks. The job is worth $75,000." value={aiPrompt} onChange={(e) => setAiPrompt(e.target.value)} className="min-h-[120px]" />
+                {aiError && (<div className="flex items-start gap-2 text-sm text-destructive p-3 bg-destructive/10 border border-destructive/50 rounded-md"><AlertCircle className="h-4 w-4 mt-0.5 flex-shrink-0" /><p>{aiError}</p></div>)}
+              </div>
+              <DialogFooter>
+                <Button onClick={handleGenerateJob} disabled={isGeneratingJob}>
+                  {isGeneratingJob ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <Brain className="mr-2 h-4 w-4" />}
+                  {isGeneratingJob ? 'Generating...' : 'Generate Job'}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild><Button><PlusCircle className="mr-2 h-5 w-5" /> Add New Job</Button></DialogTrigger>
+            <DialogContent className="sm:max-w-4xl">
+              <DialogHeader><DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle></DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
+                  <JobFormFields form={form} clients={clients} fleetAssets={fleetAssets} users={users} />
+                  <DialogFooter><Button type="submit">Save Job</Button></DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </div>
+      </PageHeader>
+
+      <div className="mt-8 animate-fade-in-up space-y-6">
+        {jobs.length > 0 ? (
+          <>
+            <Card className="bg-muted/30">
+              <CardHeader className="flex-row items-center justify-between pb-2">
+                <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5" />Filters</CardTitle>
                 <div className="flex items-center gap-2"><p className="text-sm text-muted-foreground">Total Active Value:</p><p className="text-xl font-bold text-primary"><AnimatedCounter value={totalActiveValue} type="currency" /></p></div>
-            </CardHeader>
-            <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              </CardHeader>
+              <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Input placeholder="Search by name or address..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} />
-                 <Select value={clientFilter} onValueChange={setClientFilter}>
-                    <SelectTrigger><SelectValue placeholder="Filter by client..." /></SelectTrigger>
-                    <SelectContent><SelectItem value="all">All Clients</SelectItem>{clients.map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent>
+                <Select value={clientFilter} onValueChange={setClientFilter}>
+                  <SelectTrigger><SelectValue placeholder="Filter by client..." /></SelectTrigger>
+                  <SelectContent><SelectItem value="all">All Clients</SelectItem>{clients.map(client => (<SelectItem key={client.id} value={client.id}>{client.name}</SelectItem>))}</SelectContent>
                 </Select>
-            </CardContent>
-          </Card>
-          <Tabs defaultValue="active" className="w-full" onValueChange={(value) => setTypeFilter(value as JobType | 'all')}>
-            <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto">
-              <TabsTrigger value="all">All</TabsTrigger>
-              <TabsTrigger value="active">Active</TabsTrigger>
-              <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
-              <TabsTrigger value="completed">Completed</TabsTrigger>
-            </TabsList>
-            <TabsContent value="all" className="mt-4">{renderJobsTable(filteredJobs)}</TabsContent>
-            <TabsContent value="active" className="mt-4">{renderJobsTable(activeJobs)}</TabsContent>
-            <TabsContent value="upcoming" className="mt-4">{renderJobsTable(upcomingJobs)}</TabsContent>
-            <TabsContent value="completed" className="mt-4">{renderJobsTable(completedJobs)}</TabsContent>
-          </Tabs>
-        </CardContent>
-      </Card>
+              </CardContent>
+            </Card>
+            <Tabs defaultValue="active" className="w-full" onValueChange={(value) => setTypeFilter(value as JobType | 'all')}>
+              <TabsList className="grid w-full grid-cols-3 md:grid-cols-6 h-auto">
+                <TabsTrigger value="all">All</TabsTrigger>
+                <TabsTrigger value="active">Active</TabsTrigger>
+                <TabsTrigger value="upcoming">Upcoming</TabsTrigger>
+                <TabsTrigger value="completed">Completed</TabsTrigger>
+              </TabsList>
+              <TabsContent value="all" className="mt-4">{renderJobsTable(filteredJobs)}</TabsContent>
+              <TabsContent value="active" className="mt-4">{renderJobsTable(activeJobs)}</TabsContent>
+              <TabsContent value="upcoming" className="mt-4">{renderJobsTable(upcomingJobs)}</TabsContent>
+              <TabsContent value="completed" className="mt-4">{renderJobsTable(completedJobs)}</TabsContent>
+            </Tabs>
+          </>
+        ) : (
+          <EmptyState
+            icon={Briefcase}
+            title="No Jobs Found"
+            message="Get started by creating a new job manually or using AI."
+            actionLabel="Create with AI"
+            onAction={() => setIsAiDialogOpen(true)}
+          />
+        )}
+      </div>
     </div>
   );
 }
 
-    
+

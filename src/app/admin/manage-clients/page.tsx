@@ -10,6 +10,9 @@ import { getClients, addClient, updateClient, deleteClient, getJobs } from '@/li
 import type { Client, Job } from '@/lib/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import PageHeader from '@/components/common/PageHeader';
+import PageSkeleton from '@/components/common/PageSkeleton';
+import EmptyState from '@/components/common/EmptyState';
 import {
   Dialog,
   DialogContent,
@@ -61,22 +64,31 @@ export default function ManageClientsPage() {
   const [searchTerm, setSearchTerm] = useState('');
   const [clientToDelete, setClientToDelete] = useState<Client | null>(null);
 
+  const form = useForm<z.infer<typeof clientSchema>>({
+    resolver: zodResolver(clientSchema),
+    defaultValues: {
+      name: '',
+      contactPerson: '',
+      contactEmail: '',
+      contactPhone: '',
+    },
+  });
 
-   useEffect(() => {
+  useEffect(() => {
     async function fetchData() {
-        setIsLoading(true);
-        try {
-            const [initialClients, initialJobs] = await Promise.all([
-                getClients(),
-                getJobs()
-            ]);
-            setClients(initialClients.sort((a,b) => a.name.localeCompare(b.name)));
-            setJobs(initialJobs);
-        } catch (error) {
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load client data.' });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const [initialClients, initialJobs] = await Promise.all([
+          getClients(),
+          getJobs()
+        ]);
+        setClients(initialClients.sort((a, b) => a.name.localeCompare(b.name)));
+        setJobs(initialJobs);
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load client data.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, [toast]);
@@ -121,16 +133,16 @@ export default function ManageClientsPage() {
   async function onSubmit(values: z.infer<typeof clientSchema>) {
     if (editingClient) {
       await updateClient(editingClient.id, values);
-      setClients(prevClients => 
-        prevClients.map(c => 
+      setClients(prevClients =>
+        prevClients.map(c =>
           c.id === editingClient.id ? { ...c, ...values } : c
-        ).sort((a,b) => a.name.localeCompare(b.name))
+        ).sort((a, b) => a.name.localeCompare(b.name))
       );
       toast({ title: 'Client Updated', description: `Client "${values.name}" has been updated.` });
     } else {
       const newClientId = await addClient(values);
       const newClient = { id: newClientId, ...values };
-      setClients(prev => [...prev, newClient].sort((a,b) => a.name.localeCompare(b.name)));
+      setClients(prev => [...prev, newClient].sort((a, b) => a.name.localeCompare(b.name)));
       toast({ title: 'Client Added', description: `Client "${values.name}" has been added.` });
     }
     handleDialogOpenChange(false);
@@ -156,119 +168,107 @@ export default function ManageClientsPage() {
       variant: 'destructive',
     });
   }
-  
+
   const formatCurrency = (value: number) => {
     return new Intl.NumberFormat('en-US', {
-        style: 'currency',
-        currency: 'USD',
+      style: 'currency',
+      currency: 'USD',
     }).format(value);
   };
 
   if (isLoading) {
-    return (
-        <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-            <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-            <p className="text-lg text-muted-foreground">Loading Clients...</p>
-        </div>
-    );
+    return <PageSkeleton />;
   }
 
   return (
     <>
-    <div className="container mx-auto py-8">
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Building2 className="h-8 w-8 text-primary" />
-                Manage Clients
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Add, view, and remove client information.
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
-              <DialogTrigger asChild>
-                <Button onClick={() => setIsDialogOpen(true)}>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Add New Client
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-xl">
-                <DialogHeader>
-                  <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
-                  <DialogDescription>
-                    {editingClient ? 'Update the details for this client.' : 'Enter the details for a new client.'}
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+      <div className="container mx-auto py-8">
+        <PageHeader
+          title="Manage Clients"
+          description="Add, view, and remove client information."
+          icon={Building2}
+        >
+          <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
+            <DialogTrigger asChild>
+              <Button onClick={() => setIsDialogOpen(true)}>
+                <PlusCircle className="mr-2 h-5 w-5" />
+                Add New Client
+              </Button>
+            </DialogTrigger>
+            <DialogContent className="sm:max-w-xl">
+              <DialogHeader>
+                <DialogTitle>{editingClient ? 'Edit Client' : 'Add New Client'}</DialogTitle>
+                <DialogDescription>
+                  {editingClient ? 'Update the details for this client.' : 'Enter the details for a new client.'}
+                </DialogDescription>
+              </DialogHeader>
+              <Form {...form}>
+                <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                  <FormField
+                    control={form.control}
+                    name="name"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Client Name</FormLabel>
+                        <FormControl>
+                          <Input placeholder="e.g., Main Street Properties" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                     <FormField
                       control={form.control}
-                      name="name"
+                      name="contactPerson"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Client Name</FormLabel>
+                          <FormLabel>Contact Person (Optional)</FormLabel>
                           <FormControl>
-                            <Input placeholder="e.g., Main Street Properties" {...field} />
+                            <Input placeholder="e.g., Bob Vance" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                        control={form.control}
-                        name="contactPerson"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Contact Person (Optional)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g., Bob Vance" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                        <FormField
-                        control={form.control}
-                        name="contactPhone"
-                        render={({ field }) => (
-                            <FormItem>
-                            <FormLabel>Contact Phone (Optional)</FormLabel>
-                            <FormControl>
-                                <Input placeholder="e.g., 555-123-4567" {...field} />
-                            </FormControl>
-                            <FormMessage />
-                            </FormItem>
-                        )}
-                        />
-                    </div>
-                     <FormField
+                    <FormField
                       control={form.control}
-                      name="contactEmail"
+                      name="contactPhone"
                       render={({ field }) => (
                         <FormItem>
-                          <FormLabel>Contact Email (Optional)</FormLabel>
+                          <FormLabel>Contact Phone (Optional)</FormLabel>
                           <FormControl>
-                            <Input type="email" placeholder="e.g., contact@example.com" {...field} />
+                            <Input placeholder="e.g., 555-123-4567" {...field} />
                           </FormControl>
                           <FormMessage />
                         </FormItem>
                       )}
                     />
-                    <DialogFooter>
-                      <Button type="submit">Save Client</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          <div className="relative mb-4">
+                  </div>
+                  <FormField
+                    control={form.control}
+                    name="contactEmail"
+                    render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Contact Email (Optional)</FormLabel>
+                        <FormControl>
+                          <Input type="email" placeholder="e.g., contact@example.com" {...field} />
+                        </FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )}
+                  />
+                  <DialogFooter>
+                    <Button type="submit">Save Client</Button>
+                  </DialogFooter>
+                </form>
+              </Form>
+            </DialogContent>
+          </Dialog>
+        </PageHeader>
+
+        <div className="mt-8 animate-fade-in-up space-y-4">
+          <div className="relative">
             <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
             <Input
               placeholder="Search clients by name, contact, email, or phone..."
@@ -277,97 +277,99 @@ export default function ManageClientsPage() {
               className="pl-10"
             />
           </div>
+
           {clientsWithStats.length > 0 ? (
-              <div className="border rounded-md">
-                  <Table>
-                      <TableHeader>
-                          <TableRow>
-                          <TableHead>Client Name</TableHead>
-                          <TableHead>Contact Person</TableHead>
-                          <TableHead>Email</TableHead>
-                          <TableHead>Phone</TableHead>
-                          <TableHead>Jobs</TableHead>
-                          <TableHead>Total Billed</TableHead>
-                          <TableHead className="text-right w-[100px]">Actions</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {clientsWithStats.map(client => (
-                          <TableRow key={client.id}>
-                              <TableCell className="font-medium">{client.name}</TableCell>
-                              <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
-                              <TableCell className="text-muted-foreground">
-                                {client.contactEmail ? (
-                                  <Link href={`mailto:${client.contactEmail}`} className="hover:underline">{client.contactEmail}</Link>
-                                ) : 'N/A'}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">
-                                 {client.contactPhone ? (
-                                  <Link href={`tel:${client.contactPhone}`} className="hover:underline">{client.contactPhone}</Link>
-                                ) : 'N/A'}
-                              </TableCell>
-                              <TableCell className="text-muted-foreground">{client.jobCount}</TableCell>
-                              <TableCell className="text-muted-foreground">{formatCurrency(client.totalValue)}</TableCell>
-                              <TableCell className="text-right">
-                                  <DropdownMenu>
-                                      <DropdownMenuTrigger asChild>
-                                      <Button variant="ghost" size="icon">
-                                          <MoreHorizontal className="h-4 w-4" />
-                                          <span className="sr-only">Actions</span>
-                                      </Button>
-                                      </DropdownMenuTrigger>
-                                      <DropdownMenuContent align="end">
-                                      <DropdownMenuItem onSelect={() => handleEditClick(client)}>
-                                          <Pencil className="mr-2 h-4 w-4" />
-                                          Edit
-                                      </DropdownMenuItem>
-                                      <DropdownMenuItem onSelect={() => setClientToDelete(client)} className="text-destructive">
-                                          <Trash2 className="mr-2 h-4 w-4" />
-                                          Delete
-                                      </DropdownMenuItem>
-                                      </DropdownMenuContent>
-                                  </DropdownMenu>
-                              </TableCell>
-                          </TableRow>
-                          ))}
-                      </TableBody>
-                  </Table>
-              </div>
-          ) : (
-            <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-              <Building2 className="h-12 w-12 mx-auto mb-4 text-primary/70" />
-              <h3 className="text-xl font-semibold text-foreground">{searchTerm ? 'No Matching Clients' : 'No Clients Found'}</h3>
-              <p className="mt-2">{searchTerm ? 'Try a different search term.' : 'Click "Add New Client" to get started.'}</p>
+            <div className="border rounded-md bg-card">
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Client Name</TableHead>
+                    <TableHead>Contact Person</TableHead>
+                    <TableHead>Email</TableHead>
+                    <TableHead>Phone</TableHead>
+                    <TableHead>Jobs</TableHead>
+                    <TableHead>Total Billed</TableHead>
+                    <TableHead className="text-right w-[100px]">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {clientsWithStats.map(client => (
+                    <TableRow key={client.id}>
+                      <TableCell className="font-medium">{client.name}</TableCell>
+                      <TableCell className="text-muted-foreground">{client.contactPerson || 'N/A'}</TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {client.contactEmail ? (
+                          <Link href={`mailto:${client.contactEmail}`} className="hover:underline">{client.contactEmail}</Link>
+                        ) : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">
+                        {client.contactPhone ? (
+                          <Link href={`tel:${client.contactPhone}`} className="hover:underline">{client.contactPhone}</Link>
+                        ) : 'N/A'}
+                      </TableCell>
+                      <TableCell className="text-muted-foreground">{client.jobCount}</TableCell>
+                      <TableCell className="text-muted-foreground">{formatCurrency(client.totalValue)}</TableCell>
+                      <TableCell className="text-right">
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <MoreHorizontal className="h-4 w-4" />
+                              <span className="sr-only">Actions</span>
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onSelect={() => handleEditClick(client)}>
+                              <Pencil className="mr-2 h-4 w-4" />
+                              Edit
+                            </DropdownMenuItem>
+                            <DropdownMenuItem onSelect={() => setClientToDelete(client)} className="text-destructive">
+                              <Trash2 className="mr-2 h-4 w-4" />
+                              Delete
+                            </DropdownMenuItem>
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
             </div>
+          ) : (
+            <EmptyState
+              icon={Building2}
+              title={searchTerm ? 'No Matching Clients' : 'No Clients Found'}
+              message={searchTerm ? 'Try a different search term.' : 'Click "Add New Client" to get started.'}
+              actionLabel={!searchTerm ? "Add New Client" : undefined}
+              onAction={!searchTerm ? () => setIsDialogOpen(true) : undefined}
+            />
           )}
-        </CardContent>
-      </Card>
-    </div>
-    <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
+        </div>
+      </div>
+      <AlertDialog open={!!clientToDelete} onOpenChange={(open) => !open && setClientToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the client
-                    <span className="font-bold"> {clientToDelete?.name} </span>
-                    and all associated data. Deleting a client is only possible if they have no associated jobs.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                    onClick={() => {
-                        if (clientToDelete) {
-                            removeClient(clientToDelete.id);
-                        }
-                    }}
-                    className={buttonVariants({ variant: "destructive" })}
-                >
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the client
+              <span className="font-bold"> {clientToDelete?.name} </span>
+              and all associated data. Deleting a client is only possible if they have no associated jobs.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (clientToDelete) {
+                  removeClient(clientToDelete.id);
+                }
+              }}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
     </>
   );
 }
