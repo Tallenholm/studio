@@ -7,7 +7,7 @@ import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getClients, getFleetAssets, getUsers, addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
 import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import PageHeader from '@/components/common/PageHeader';
 import PageSkeleton from '@/components/common/PageSkeleton';
@@ -30,6 +30,7 @@ import { Textarea } from '@/components/ui/textarea';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import JobFormFields from '@/components/admin/JobFormFields';
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
 
 
 export const jobSchema = z.object({
@@ -77,6 +78,7 @@ export default function JobManagementPage() {
   const [isGeneratingJob, setIsGeneratingJob] = useState(false);
   const [aiError, setAiError] = useState<string | null>(null);
   const [editingJob, setEditingJob] = useState<Job | null>(null);
+  const [jobToDelete, setJobToDelete] = useState<Job | null>(null);
   const { toast } = useToast();
 
   const [searchTerm, setSearchTerm] = useState('');
@@ -339,9 +341,9 @@ export default function JobManagementPage() {
                   <DropdownMenuTrigger asChild><Button variant="ghost" size="icon"><MoreHorizontal className="h-4 w-4" /></Button></DropdownMenuTrigger>
                   <DropdownMenuContent align="end">
                     <DropdownMenuItem asChild><Link href={`/admin/jobs/${job.id}`}><Eye className="mr-2 h-4 w-4" />View Details</Link></DropdownMenuItem>
-                    <DropdownMenuItem onClick={() => handleEditClick(job)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => handleEditClick(job)}><Pencil className="mr-2 h-4 w-4" />Edit</DropdownMenuItem>
                     <DropdownMenuSeparator />
-                    <DropdownMenuItem onClick={() => removeJob(job.id)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
+                    <DropdownMenuItem onSelect={() => setJobToDelete(job)} className="text-destructive"><Trash2 className="mr-2 h-4 w-4" />Delete</DropdownMenuItem>
                   </DropdownMenuContent>
                 </DropdownMenu>
               </TableCell>
@@ -361,6 +363,7 @@ export default function JobManagementPage() {
   }
 
   return (
+    <>
     <div className="container mx-auto py-8">
       <PageHeader
         title="Manage Jobs"
@@ -439,7 +442,30 @@ export default function JobManagementPage() {
         )}
       </div>
     </div>
+     <AlertDialog open={!!jobToDelete} onOpenChange={(open) => !open && setJobToDelete(null)}>
+        <AlertDialogContent>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the job
+              <span className="font-bold"> {jobToDelete?.name}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (jobToDelete) {
+                  removeJob(jobToDelete.id);
+                }
+              }}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
+        </AlertDialogContent>
+      </AlertDialog>
+    </>
   );
 }
-
-

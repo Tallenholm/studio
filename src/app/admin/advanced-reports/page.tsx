@@ -1,4 +1,3 @@
-
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
@@ -7,7 +6,7 @@ import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/com
 import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { Loader2, LineChartIcon, Filter, AlertTriangle } from "lucide-react";
-import { getAdvancedReportData, type AdvancedReportData as AdvancedReportState } from '@/app/actions/getAdvancedReportData';
+import { getAdvancedReportData, type AdvancedReportData } from '@/app/actions/getAdvancedReportData';
 import type { VehicleType } from '@/lib/types';
 
 const InspectionOutcomesChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.InspectionOutcomesChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
@@ -21,7 +20,7 @@ const ExpensesByCategoryChart = dynamic(() => import('@/components/analytics/Adv
 // ... (keep interface definitions if they are used elsewhere, but they seem local to this file? No, they define the state)
 
 export default function AdvancedReportsPage() {
-  const [reportData, setReportData] = useState<AdvancedReportState | null>(null);
+  const [reportData, setReportData] = useState<AdvancedReportData | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
   const [dateRangeFilter, setDateRangeFilter] = useState<'all_time' | 'last_30_days' | 'last_quarter'>('all_time');

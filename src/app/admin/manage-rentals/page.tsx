@@ -117,12 +117,12 @@ export default function ManageRentalsPage() {
     };
 
     if (editingRental) {
-      const updatedRental = { ...rentalData, startDate: rentalData.startDate, endDate: rentalData.endDate, dateRange: undefined } as unknown as Omit<Rental, 'id'>;
+      const updatedRental: Omit<Rental, 'id'> = { ...rentalData };
       await updateRental(editingRental.id, updatedRental);
       setRentals(prev => prev.map(r => r.id === editingRental.id ? { id: editingRental.id, ...updatedRental } : r));
       toast({ title: 'Rental Updated', description: `Rental for ${asset.name} has been updated.` });
     } else {
-      const newRentalData = { ...rentalData, dateRange: undefined } as unknown as Omit<Rental, 'id'>;
+      const newRentalData: Omit<Rental, 'id'> = { ...rentalData };
       const newId = await addRental(newRentalData);
       const newRental = { id: newId, ...newRentalData };
       setRentals(prev => [...prev, newRental]);

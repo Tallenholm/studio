@@ -9,7 +9,7 @@ import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAl
 import { useUser } from '@/firebase/provider';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
-import type { Job, CalendarEvent, Task, InspectionReport, JobStatus } from '@/lib/types';
+import type { Job, CalendarEvent, Task, InspectionReport, JobStatus, JobType } from '@/lib/types';
 import { isSameDay, format, parseISO, isWithinInterval } from 'date-fns';
 import dynamic from 'next/dynamic';
 
@@ -118,8 +118,8 @@ export default function EmployeeHubClientPage() {
     }
   }
 
-  const renderJobBoard = (jobs: (Job & { status: JobStatus })[], jobType: Job['jobType']) => {
-    const icons = {
+  const renderJobBoard = (jobs: (Job & { status: JobStatus })[], jobType: JobType) => {
+    const icons: Record<JobType, React.ElementType> = {
       excavation: Briefcase,
       snow_removal: Snowflake,
       concrete: Droplets,
@@ -145,7 +145,7 @@ export default function EmployeeHubClientPage() {
                       Sidewalk Crew
                     </Badge>
                   )}
-                  {job.jobType === 'snow_removal' && job.assignedTruckIds?.includes(user!.uid) && (
+                  {job.jobType === 'snow_removal' && job.assignedEmployeeIds?.includes(user!.uid) && (
                     <Badge variant="outline" className="mt-2 text-primary border-primary ml-2">
                       <Truck className="mr-1.5 h-3 w-3" />
                       Plow Crew

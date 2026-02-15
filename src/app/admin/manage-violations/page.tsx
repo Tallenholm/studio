@@ -105,11 +105,13 @@ export default function ManageViolationsPage() {
       return;
     }
 
-    const { date, ...otherValues } = values;
     const newViolationData: Omit<Violation, 'id'> = {
-      employeeName: employee.name,
-      date: date.toISOString().split('T')[0],
-      ...otherValues,
+        employeeId: values.employeeId,
+        employeeName: employee.name,
+        date: values.date.toISOString().split('T')[0],
+        type: values.type,
+        description: values.description,
+        actionTaken: values.actionTaken,
     };
     const newId = await addViolation(newViolationData);
     setViolations(prev => [{ id: newId, ...newViolationData }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));

@@ -21,7 +21,7 @@ export interface User {
 }
 
 export type MaintenanceScheduleItem = {
-  intervalMonths: number;
+  intervalMonths?: number;
   lastServiceDate?: string; // YYYY-MM-DD
 };
 
@@ -203,6 +203,12 @@ export interface SnowServiceLog {
   photoDataUri?: string;
 }
 
+export interface JobNote {
+  timestamp: string; // ISO string
+  content: string;
+  author: string;
+}
+
 export interface Job {
   id: string;
   name: string;
@@ -238,11 +244,7 @@ export interface Job {
   // Concrete Job Details
   concreteYards?: number;
   // General Notes
-  notes?: {
-    timestamp: string; // ISO string
-    content: string;
-    author: string;
-  }[];
+  notes?: JobNote[];
 }
 
 export type WorkOrderStatus = 'open' | 'in-progress' | 'completed' | 'on-hold';
@@ -301,4 +303,3 @@ export interface Rental {
   rateType: RentalRateType;
   notes?: string;
 }
-

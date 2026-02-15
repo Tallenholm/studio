@@ -77,4 +77,3 @@ export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'loca
         console.error("Failed to check weather and send notifications:", error);
     }
 };
-

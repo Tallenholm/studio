@@ -82,10 +82,10 @@ export default function ManageCalendarPage() {
     }, [toast]);
 
     async function onSubmit(values: z.infer<typeof eventSchema>) {
-        const { date, ...otherValues } = values;
         const newEventData: Omit<CalendarEvent, 'id'> = {
-            date: date.toISOString().split('T')[0], // Store date as YYYY-MM-DD
-            ...otherValues,
+            date: values.date.toISOString().split('T')[0], // Store date as YYYY-MM-DD
+            title: values.title,
+            type: values.type,
             description: values.description || '',
         };
 

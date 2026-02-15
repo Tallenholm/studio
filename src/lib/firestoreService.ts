@@ -2,7 +2,7 @@
 
 import { initializeFirebase } from '@/firebase';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus } from './types';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { format, startOfDay, subMonths } from 'date-fns';
@@ -366,7 +366,7 @@ export const getJobsForUser = async (userId: string): Promise<Job[]> => {
 };
 
 // Special case functions
-export const addNoteToJob = async (jobId: string, note: NonNullable<Job['notes']>[number]) => {
+export const addNoteToJob = async (jobId: string, note: JobNote) => {
     const db = getFirestoreInstance();
     const jobDocRef = doc(db, 'jobs', jobId);
     await updateDoc(jobDocRef, {
@@ -482,4 +482,3 @@ export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOff
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
 };
-

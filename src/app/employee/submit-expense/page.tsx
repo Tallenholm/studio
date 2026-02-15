@@ -80,7 +80,7 @@ export default function SubmitExpensePage() {
             });
 
             try {
-                const uploadPromise = uploadFile(file, `receipts/${user?.id || 'unknown'}/${Date.now()}-${file.name}`);
+                const uploadPromise = uploadFile(file, `receipts/${user.id}/${Date.now()}-${file.name}`);
                 const dataUri = await dataUriPromise;
                 const ocrPromise = extractReceiptData({ receiptDataUri: dataUri });
 
