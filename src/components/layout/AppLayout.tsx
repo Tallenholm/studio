@@ -6,21 +6,21 @@ import Link from 'next/link';
 import { usePathname, useRouter } from 'next/navigation';
 import { useEffect, useState } from 'react';
 import {
-  SidebarProvider,
-  Sidebar,
-  SidebarHeader,
-  SidebarTrigger,
-  SidebarContent,
-  SidebarMenu,
-  SidebarMenuItem,
-  SidebarMenuButton,
-  SidebarFooter,
-  SidebarGroup,
-  SidebarGroupLabel,
-  SidebarMenuSub,
-  SidebarMenuSubButton,
-  SidebarInset,
-  SidebarSeparator,
+    SidebarProvider,
+    Sidebar,
+    SidebarHeader,
+    SidebarTrigger,
+    SidebarContent,
+    SidebarMenu,
+    SidebarMenuItem,
+    SidebarMenuButton,
+    SidebarFooter,
+    SidebarGroup,
+    SidebarGroupLabel,
+    SidebarMenuSub,
+    SidebarMenuSubButton,
+    SidebarInset,
+    SidebarSeparator,
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
@@ -36,9 +36,50 @@ import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useAuth, useUser } from '@/firebase/provider';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
 
+const getPageTitle = (pathname: string): string => {
+    if (pathname === '/admin' || pathname === '/employee') return 'Dashboard';
+    if (pathname.startsWith('/my-profile')) return 'My Profile';
+
+    // Specific overrides
+    const titleMap: Record<string, string> = {
+        '/admin/manage-fleet': 'Manage Fleet',
+        '/admin/manage-users': 'Manage Employees',
+        '/admin/manage-clients': 'Manage Clients',
+        '/admin/manage-jobs': 'Job Management',
+        '/admin/manage-tasks': 'Task Management',
+        '/admin/manage-requests': 'Time Off Requests',
+        '/admin/manage-expenses': 'Expense Management',
+        '/admin/manage-violations': 'Violation Management',
+        '/admin/manage-calendar': 'Calendar',
+        '/admin/operations-map': 'Operations Map',
+        '/admin/fleet-health': 'Fleet Health',
+        '/admin/manage-inventory': 'Inventory',
+        '/admin/manage-documents': 'Policies & Documents',
+        '/admin/system-settings': 'System Settings',
+        '/weather': 'Weather Center',
+        '/help': 'Help & Support',
+        '/employee/fleet-check': 'Vehicle Inspection',
+        '/employee/time-off': 'Request Time Off',
+        '/employee/my-tasks': 'My Tasks',
+        '/employee/submit-expense': 'Submit Expense',
+    };
+
+    if (titleMap[pathname]) return titleMap[pathname];
+
+    // Fallback: take the last segment and format it
+    const segments = pathname.split('/').filter(Boolean);
+    if (segments.length === 0) return 'Dashboard';
+
+    const lastSegment = segments[segments.length - 1];
+    return lastSegment
+        .split('-')
+        .map(word => word.charAt(0).toUpperCase() + word.slice(1))
+        .join(' ');
+};
+
 function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
-    
+
     if (isUserLoading) {
         return <FullScreenLoader text="Authenticating..." />;
     }
@@ -72,12 +113,12 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     const [isSidebarDefaultOpen, setIsSidebarDefaultOpen] = useState(true);
 
     const logout = () => {
-      if (auth) {
-        auth.signOut();
-        router.push('/login');
-      }
+        if (auth) {
+            auth.signOut();
+            router.push('/login');
+        }
     }
-    
+
     useEffect(() => {
         if (typeof window !== 'undefined') {
             const savedState = document.cookie.split('; ').find(row => row.startsWith('sidebar_state='));
@@ -90,7 +131,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user || !user.uid) return;
         const db = getFirestoreInstance();
-        
+
         const notificationsRef = collection(db, "notifications");
         const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]));
 
@@ -99,7 +140,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             snapshot.forEach(doc => {
                 liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
             });
-            
+
             // Sort on client side
             liveNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
 
@@ -112,24 +153,24 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
         return () => unsubscribe();
     }, [user]);
-    
+
     useEffect(() => {
-      const down = (e: KeyboardEvent) => {
-        if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          openCommandPalette()
+        const down = (e: KeyboardEvent) => {
+            if (e.key === "k" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                openCommandPalette()
+            }
+            if (e.key === "t" && (e.metaKey || e.ctrlKey)) {
+                e.preventDefault()
+                openTools()
+            }
         }
-        if (e.key === "t" && (e.metaKey || e.ctrlKey)) {
-          e.preventDefault()
-          openTools()
-        }
-      }
-      document.addEventListener("keydown", down)
-      return () => document.removeEventListener("keydown", down)
+        document.addEventListener("keydown", down)
+        return () => document.removeEventListener("keydown", down)
     }, [openCommandPalette, openTools])
 
     const isAdmin = user?.role === 'owner' || user?.role === 'manager';
-    
+
     return (
         <SidebarProvider defaultOpen={isSidebarDefaultOpen}>
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
@@ -150,7 +191,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
-                                 <SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <Link href="/my-profile">
                                         <SidebarMenuButton tooltip="My Profile" isActive={pathname.startsWith('/my-profile')}>
                                             <UserIcon /><span>My Profile</span>
@@ -258,7 +299,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
-                                 <SidebarMenuItem>
+                                <SidebarMenuItem>
                                     <Link href="/admin/operations-map">
                                         <SidebarMenuButton tooltip="Operations Map" isActive={pathname.startsWith('/admin/operations-map')}>
                                             <Map /><span>Operations Map</span>
@@ -266,7 +307,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     </Link>
                                 </SidebarMenuItem>
                             </SidebarMenu>
-                            
+
                             <SidebarMenu>
                                 <SidebarMenuSub>
                                     <SidebarMenuButton>
@@ -310,13 +351,13 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                     </SidebarMenuSub>
                                 </SidebarMenuSub>
                                 {user.role === 'owner' && (
-                                <SidebarMenuItem>
-                                    <Link href="/admin/system-settings">
-                                        <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
-                                            <SlidersHorizontal /><span>System Settings</span>
-                                        </SidebarMenuButton>
-                                    </Link>
-                                </SidebarMenuItem>
+                                    <SidebarMenuItem>
+                                        <Link href="/admin/system-settings">
+                                            <SidebarMenuButton tooltip="System Settings" isActive={pathname.startsWith('/admin/system-settings')}>
+                                                <SlidersHorizontal /><span>System Settings</span>
+                                            </SidebarMenuButton>
+                                        </Link>
+                                    </SidebarMenuItem>
                                 )}
                             </SidebarMenu>
                         </SidebarGroup>
@@ -325,10 +366,10 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 <SidebarFooter className="p-2">
                     <SidebarMenu>
                         <SidebarMenuItem>
-                           <Button variant="ghost" className="w-full justify-start" onClick={openCommandPalette}>
-                             <span className="mr-auto">Search...</span>
-                             <kbd className="ml-4 hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘K</kbd>
-                           </Button>
+                            <Button variant="ghost" className="w-full justify-start" onClick={openCommandPalette}>
+                                <span className="mr-auto">Search...</span>
+                                <kbd className="ml-4 hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘K</kbd>
+                            </Button>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
                             <SidebarMenuButton tooltip="Calculators" onClick={openTools}>
@@ -353,8 +394,11 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 md:justify-end print-hidden">
-                    <SidebarTrigger className="md:hidden" />
+                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 print-hidden">
+                    <div className="flex items-center gap-4">
+                        <SidebarTrigger />
+                        <h1 className="text-xl font-semibold tracking-tight">{getPageTitle(pathname)}</h1>
+                    </div>
                     <Link href="/notifications" passHref>
                         <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
                             <Bell className="h-5 w-5 text-accent-foreground" />
@@ -366,7 +410,9 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                 </header>
                 <main className="flex-1 p-6 overflow-auto app-layout-main">
                     <FirebaseErrorListener />
-                    {children}
+                    <div key={pathname} className="animate-fade-in-up h-full">
+                        {children}
+                    </div>
                 </main>
             </SidebarInset>
             <CommandPalette />
