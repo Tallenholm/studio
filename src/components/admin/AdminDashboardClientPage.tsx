@@ -22,7 +22,6 @@ import { Sprout } from 'lucide-react';
 import { Calculator } from 'lucide-react';
 import { Cloud } from 'lucide-react';
 import { useGlobalTools } from '@/hooks/use-global-tools';
-import WeatherForecast from './WeatherForecast';
 import { getJobStatus } from '@/lib/job-utils';
 import PageSkeleton from '@/components/common/PageSkeleton';
 
@@ -333,7 +332,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
                     <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
                       {item.itemType === 'job' ? getJobTypeIcon((item as Job).jobType) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
                       <div>
-                        <p className="font-semibold">{item.title || (item as Job).name}</p>
+                        <p className="font-semibold">{item.itemType === 'event' ? item.title : item.name}</p>
                         {item.itemType === 'job' ? (
                           <>
                             <p className="text-sm text-muted-foreground">Job for: {(item as Job).clientName}</p>

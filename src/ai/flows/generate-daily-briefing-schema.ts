@@ -18,9 +18,10 @@ export const BriefingDataSchema = z.object({
 export type BriefingData = z.infer<typeof BriefingDataSchema>;
 
 const AiBriefingItemSchema = z.object({
-    id: z.string().describe('The unique ID of the original item.'),
-    summary: z.string().describe('A concise, one-sentence summary of the item for the user.'),
-    link: z.string().describe('The direct URL to view the item in the application.'),
+  id: z.string().describe('The unique ID of the original item.'),
+  type: z.enum(['report', 'job', 'request', 'event']).describe('The original type of the item.'),
+  summary: z.string().describe('A concise, one-sentence summary of the item for the user.'),
+  link: z.string().describe('The direct URL to view the item in the application.'),
 });
 
 export const DailyBriefingOutputSchema = z.object({

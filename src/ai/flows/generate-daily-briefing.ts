@@ -16,11 +16,16 @@ const generateBriefingFlow = ai.defineFlow(
 
     const prompt = `You are an AI assistant for an operations manager. It is currently ${new Date().toDateString()}.
     Your task is to review the following structured data and generate a professional, concise summary for each item.
+    
+    Data:
+    ${JSON.stringify(input, null, 2)}
+
     - For 'attentionItems', the summary should be a direct, actionable alert.
     - For 'todaysAgenda', the summary should be a clear statement of what is scheduled.
     - For 'pendingActions', the summary should describe what needs to be reviewed.
 
     Transform the 'title' and 'details' of each item into a natural language 'summary' field.
+    Preserve the 'id', 'type', and 'link' fields exactly as they are.
     Return the final JSON object with the same structure, but with the 'summary' field populated.
     `;
 
@@ -31,10 +36,9 @@ const generateBriefingFlow = ai.defineFlow(
         format: 'json',
         schema: DailyBriefingOutputSchema,
       },
-      input: input,
     });
 
-    const output = llmResponse.output();
+    const output = llmResponse.output;
     if (!output) {
       throw new Error('AI response did not include a valid briefing object.');
     }

@@ -133,6 +133,32 @@ export default function JobManagementPage() {
     }
   };
 
+  const handleEditClick = (job: Job) => {
+    setEditingJob(job);
+    form.reset({
+      name: job.name,
+      clientId: job.clientId,
+      address: job.address,
+      jobValue: job.jobValue,
+      jobType: job.jobType,
+      dateRange: {
+        from: new Date(job.startDate),
+        to: new Date(job.endDate),
+      },
+      assignedEmployeeIds: job.assignedEmployeeIds || [],
+      assignedTruckIds: job.assignedTruckIds || [],
+      assignedTrailerIds: job.assignedTrailerIds || [],
+      assignedHeavyEquipmentIds: job.assignedHeavyEquipmentIds || [],
+      assignedSidewalkCrewIds: job.assignedSidewalkCrewIds || [],
+      snowServices: job.snowServices || { plowing: false, salting: false, sidewalks: false },
+      concreteYards: job.concreteYards,
+      openingTime: job.openingTime,
+      closingTime: job.closingTime,
+      equipmentNeeds: job.equipmentNeeds,
+    });
+    setIsDialogOpen(true);
+  };
+
   const handleAiDialogOpenChange = (open: boolean) => {
     setIsAiDialogOpen(open);
     if (!open) {

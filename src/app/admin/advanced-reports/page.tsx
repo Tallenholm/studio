@@ -2,35 +2,23 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { Bar, BarChart, Pie, PieChart, ResponsiveContainer, XAxis, YAxis, Tooltip, Legend, Cell, CartesianGrid } from 'recharts';
-import { Button } from '@/components/ui/button';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Label } from '@/components/ui/label';
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { getAdvancedReportData } from '@/app/actions/getAdvancedReportData';
+import dynamic from 'next/dynamic';
+import { Card, CardHeader, CardTitle, CardDescription, CardContent } from "@/components/ui/card";
+import { Select, SelectTrigger, SelectValue, SelectContent, SelectItem } from "@/components/ui/select";
+import { Label } from "@/components/ui/label";
+import { Loader2, LineChartIcon, Filter, AlertTriangle } from "lucide-react";
+import { getAdvancedReportData, type AdvancedReportData as AdvancedReportState } from '@/app/actions/getAdvancedReportData';
 import type { VehicleType } from '@/lib/types';
-import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
-import { LineChart as LineChartIcon, Filter, AlertTriangle, Loader2 } from 'lucide-react';
 
-// Define types for chart data to match server action return type
-interface OutcomeData { name: string; value: number; fill: string; }
-interface ServiceTypeData { name: string; value: number; fill: string; }
-interface FailureData { name: string; total: number; }
-interface CostData { name: string; totalCost: number; }
-interface TaskStatusData { name: string; value: number; fill: string; }
-interface ViolationData { name: string; value: number; fill: string; }
-interface ExpenseData { name: string; totalAmount: number; }
+const InspectionOutcomesChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.InspectionOutcomesChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
+const MaintenanceByTypeChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.MaintenanceByTypeChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
+const FrequentFailuresChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.FrequentFailuresChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
+const TaskStatusChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.TaskStatusChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
+const ViolationsByTypeChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.ViolationsByTypeChart), { ssr: false, loading: () => <div className="h-[250px] w-full animate-pulse bg-muted rounded-md" /> });
+const MaintenanceCostsByAssetChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.MaintenanceCostsByAssetChart), { ssr: false, loading: () => <div className="h-[300px] w-full animate-pulse bg-muted rounded-md" /> });
+const ExpensesByCategoryChart = dynamic(() => import('@/components/analytics/AdvancedReportCharts').then(mod => mod.ExpensesByCategoryChart), { ssr: false, loading: () => <div className="h-[300px] w-full animate-pulse bg-muted rounded-md" /> });
 
-interface AdvancedReportState {
-  inspectionOutcomes: OutcomeData[];
-  maintenanceServicesByType: ServiceTypeData[];
-  frequentFailures: FailureData[];
-  maintenanceCosts: CostData[];
-  taskStatusData: TaskStatusData[];
-  violationsByTypeData: ViolationData[];
-  expensesByCategoryData: ExpenseData[];
-  hasData: boolean;
-}
+// ... (keep interface definitions if they are used elsewhere, but they seem local to this file? No, they define the state)
 
 export default function AdvancedReportsPage() {
   const [reportData, setReportData] = useState<AdvancedReportState | null>(null);
@@ -42,20 +30,19 @@ export default function AdvancedReportsPage() {
   const fetchReportData = useCallback(async () => {
     setIsLoading(true);
     try {
-        const data = await getAdvancedReportData(dateRangeFilter, vehicleTypeFilter);
-        setReportData(data);
+      const data = await getAdvancedReportData(dateRangeFilter, vehicleTypeFilter);
+      setReportData(data);
     } catch (error) {
-        console.error("Failed to fetch advanced report data:", error);
-        // Handle error state if needed
+      console.error("Failed to fetch advanced report data:", error);
     } finally {
-        setIsLoading(false);
+      setIsLoading(false);
     }
   }, [dateRangeFilter, vehicleTypeFilter]);
-  
+
   useEffect(() => {
     fetchReportData();
   }, [fetchReportData]);
-  
+
   const CHART_CONFIG = {
     total: { label: 'Failures', color: 'hsl(var(--chart-1))' },
     totalCost: { label: 'Cost', color: 'hsl(var(--chart-2))' },
@@ -86,12 +73,12 @@ export default function AdvancedReportsPage() {
         <CardContent className="space-y-8">
           <Card className="bg-muted/30">
             <CardHeader>
-              <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5"/>Report Filters</CardTitle>
+              <CardTitle className="text-xl flex items-center gap-2"><Filter className="h-5 w-5" />Report Filters</CardTitle>
             </CardHeader>
             <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <Label htmlFor="date-range">Date Range</Label>
-                 <Select value={dateRangeFilter} onValueChange={(val) => setDateRangeFilter(val as 'all_time' | 'last_30_days' | 'last_quarter')}>
+                <Select value={dateRangeFilter} onValueChange={(val) => setDateRangeFilter(val as 'all_time' | 'last_30_days' | 'last_quarter')}>
                   <SelectTrigger id="date-range">
                     <SelectValue placeholder="All Time" />
                   </SelectTrigger>
@@ -118,136 +105,67 @@ export default function AdvancedReportsPage() {
               </div>
             </CardContent>
           </Card>
-          
+
           {!reportData?.hasData ? (
-             <div className="text-center py-10 border-2 border-dashed rounded-lg">
-                <div className="flex justify-center items-center gap-4 mb-4 text-muted-foreground">
-                    <AlertTriangle className="h-10 w-10" />
-                </div>
-                <p className="text-lg text-muted-foreground">
-                  No data available to generate reports.
-                </p>
-                <p className="text-sm text-muted-foreground mt-2">
-                  Complete some inspections or add maintenance logs to see analytics.
-                </p>
+            <div className="text-center py-10 border-2 border-dashed rounded-lg">
+              <div className="flex justify-center items-center gap-4 mb-4 text-muted-foreground">
+                <AlertTriangle className="h-10 w-10" />
               </div>
+              <p className="text-lg text-muted-foreground">
+                No data available to generate reports.
+              </p>
+              <p className="text-sm text-muted-foreground mt-2">
+                Complete some inspections or add maintenance logs to see analytics.
+              </p>
+            </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
               <Card>
                 <CardHeader><CardTitle>Inspection Outcomes</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={reportData.inspectionOutcomes} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {reportData.inspectionOutcomes.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                            </Pie>
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                   </ChartContainer>
+                  <InspectionOutcomesChart data={reportData.inspectionOutcomes} />
                 </CardContent>
               </Card>
 
-               <Card>
+              <Card>
                 <CardHeader><CardTitle>Maintenance by Type</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={reportData.maintenanceServicesByType} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {reportData.maintenanceServicesByType.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                            </Pie>
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                   </ChartContainer>
+                  <MaintenanceByTypeChart data={reportData.maintenanceServicesByType} />
                 </CardContent>
               </Card>
 
               <Card>
                 <CardHeader><CardTitle>Most Frequent Failures</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={CHART_CONFIG} className="h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reportData.frequentFailures} layout="vertical" margin={{ left: 20 }}>
-                        <XAxis type="number" hide />
-                        <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={10} width={120} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                        <Bar dataKey="total" fill="hsl(var(--chart-1))" radius={4} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  <FrequentFailuresChart data={reportData.frequentFailures} config={CHART_CONFIG} />
                 </CardContent>
               </Card>
 
-               <Card>
+              <Card>
                 <CardHeader><CardTitle>Task Status</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={reportData.taskStatusData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {reportData.taskStatusData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                            </Pie>
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                   </ChartContainer>
+                  <TaskStatusChart data={reportData.taskStatusData} />
                 </CardContent>
               </Card>
 
-               <Card>
+              <Card>
                 <CardHeader><CardTitle>Violations by Type</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={{}} className="aspect-square h-[250px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                        <PieChart>
-                            <ChartTooltip content={<ChartTooltipContent nameKey="name" hideLabel />} />
-                            <Pie data={reportData.violationsByTypeData} dataKey="value" nameKey="name" cx="50%" cy="50%" outerRadius={80} label>
-                                {reportData.violationsByTypeData.map((entry, index) => <Cell key={`cell-${index}`} fill={entry.fill} />)}
-                            </Pie>
-                            <Legend />
-                        </PieChart>
-                    </ResponsiveContainer>
-                   </ChartContainer>
+                  <ViolationsByTypeChart data={reportData.violationsByTypeData} />
                 </CardContent>
               </Card>
-              
+
               <Card className="lg:col-span-2">
                 <CardHeader><CardTitle>Maintenance Costs by Asset</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={CHART_CONFIG} className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reportData.maintenanceCosts}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                        <YAxis tickFormatter={(value) => `$${value}`} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                        <Bar dataKey="totalCost" fill="hsl(var(--chart-2))" radius={4} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  <MaintenanceCostsByAssetChart data={reportData.maintenanceCosts} config={CHART_CONFIG} />
                 </CardContent>
               </Card>
 
               <Card className="lg:col-span-2">
                 <CardHeader><CardTitle>Expenses by Category</CardTitle></CardHeader>
                 <CardContent>
-                  <ChartContainer config={CHART_CONFIG} className="h-[300px] w-full">
-                    <ResponsiveContainer width="100%" height="100%">
-                      <BarChart data={reportData.expensesByCategoryData}>
-                        <CartesianGrid vertical={false} />
-                        <XAxis dataKey="name" tickLine={false} tickMargin={10} axisLine={false} />
-                        <YAxis tickFormatter={(value) => `$${value}`} />
-                        <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                        <Bar dataKey="totalAmount" fill="hsl(var(--chart-3))" radius={4} />
-                      </BarChart>
-                    </ResponsiveContainer>
-                  </ChartContainer>
+                  <ExpensesByCategoryChart data={reportData.expensesByCategoryData} config={CHART_CONFIG} />
                 </CardContent>
               </Card>
             </div>

@@ -10,35 +10,32 @@ export default function AsphaltCalculator() {
   const [width, setWidth] = useState('');
   const [thickness, setThickness] = useState('3');
   const [density, setDensity] = useState('2.0');
-  const [result, setResult] = useState<{ yards: number; tons: number } | null>(null);
-
-  const calculate = useCallback(() => {
+  const calculate = () => {
     const L = parseFloat(length);
     const W = parseFloat(width);
     const T = parseFloat(thickness);
     const RHO = parseFloat(density);
 
     if (isNaN(L) || isNaN(W) || isNaN(T) || isNaN(RHO) || L <= 0 || W <= 0 || T <= 0 || RHO <= 0) {
-      setResult(null);
-      return;
+      return null;
     }
 
     const cubicFeet = L * W * (T / 12);
     const yards = cubicFeet / 27;
-    setResult({
+
+    return {
       yards: Math.round(yards * 100) / 100,
       tons: Math.round(yards * RHO * 100) / 100,
-    });
-  }, [length, width, thickness, density]);
+    };
+  };
 
-  useEffect(() => { calculate(); }, [calculate]);
+  const result = calculate();
 
   const handleReset = () => {
     setLength('');
     setWidth('');
     setThickness('3');
     setDensity('2.0');
-    setResult(null);
   };
 
   const results = result

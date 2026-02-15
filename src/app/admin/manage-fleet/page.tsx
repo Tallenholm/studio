@@ -6,7 +6,7 @@ import { useForm, type UseFormReturn } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import type { FleetAsset, VehicleType, ManagedDocument, MaintenanceSchedule, NotificationMessage } from '@/lib/types';
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
   Dialog,
@@ -50,8 +50,8 @@ import { format, isBefore, addDays, parseISO, getYear, addMonths } from 'date-fn
 import { summarizeDocument } from '@/ai/flows/summarize-document';
 import { Separator } from '@/components/ui/separator';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification, addDocument, uploadFile } from '@/lib/firestoreService';
-import { useUser } from '@/firebase';
+import { addFleetAsset, getFleetAssets, updateFleetAsset, deleteFleetAsset, getNotifications, deleteNotification, addNotification, addDocument } from '@/lib/firestoreService';
+import { useUser, uploadFile } from '@/firebase';
 import Link from 'next/link';
 import { suggestMaintenanceSchedule } from '@/ai/flows/suggest-maintenance-schedule';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -299,10 +299,10 @@ export default function FleetManagementPage() {
     if (values.insuranceDueDate) assetData.insuranceDueDate = values.insuranceDueDate.toISOString().split('T')[0];
     if (values.maintenanceSchedule) {
       assetData.maintenanceSchedule = {
-        oilChange: values.maintenanceSchedule.oilChange?.intervalMonths ? { ...values.maintenanceSchedule.oilChange, lastServiceDate: values.maintenanceSchedule.oilChange.lastServiceDate?.toISOString().split('T')[0] } : undefined,
-        tireRotation: values.maintenanceSchedule.tireRotation?.intervalMonths ? { ...values.maintenanceSchedule.tireRotation, lastServiceDate: values.maintenanceSchedule.tireRotation.lastServiceDate?.toISOString().split('T')[0] } : undefined,
-        brakeInspection: values.maintenanceSchedule.brakeInspection?.intervalMonths ? { ...values.maintenanceSchedule.brakeInspection, lastServiceDate: values.maintenanceSchedule.brakeInspection.lastServiceDate?.toISOString().split('T')[0] } : undefined,
-        fluidCheck: values.maintenanceSchedule.fluidCheck?.intervalMonths ? { ...values.maintenanceSchedule.fluidCheck, lastServiceDate: values.maintenanceSchedule.fluidCheck.lastServiceDate?.toISOString().split('T')[0] } : undefined,
+        oilChange: values.maintenanceSchedule.oilChange?.intervalMonths ? { intervalMonths: values.maintenanceSchedule.oilChange.intervalMonths!, lastServiceDate: values.maintenanceSchedule.oilChange.lastServiceDate?.toISOString().split('T')[0] } : undefined,
+        tireRotation: values.maintenanceSchedule.tireRotation?.intervalMonths ? { intervalMonths: values.maintenanceSchedule.tireRotation.intervalMonths!, lastServiceDate: values.maintenanceSchedule.tireRotation.lastServiceDate?.toISOString().split('T')[0] } : undefined,
+        brakeInspection: values.maintenanceSchedule.brakeInspection?.intervalMonths ? { intervalMonths: values.maintenanceSchedule.brakeInspection.intervalMonths!, lastServiceDate: values.maintenanceSchedule.brakeInspection.lastServiceDate?.toISOString().split('T')[0] } : undefined,
+        fluidCheck: values.maintenanceSchedule.fluidCheck?.intervalMonths ? { intervalMonths: values.maintenanceSchedule.fluidCheck.intervalMonths!, lastServiceDate: values.maintenanceSchedule.fluidCheck.lastServiceDate?.toISOString().split('T')[0] } : undefined,
       }
     }
 
@@ -489,11 +489,11 @@ export default function FleetManagementPage() {
                   <h3 className="text-lg font-medium">Documents &amp; Expiration</h3>
                   <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div className="space-y-4">
-                      <FormField control={form.control} name="registrationDueDate" render={({ field }) => (<FormItem className="flex flex-col"> <FormLabel>Registration Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus /></PopoverContent> </Popover> <FormMessage /> </FormItem>)} />
+                      <FormField control={form.control} name="registrationDueDate" render={({ field }) => (<FormItem className="flex flex-col"> <FormLabel>Registration Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus /></PopoverContent> </Popover> <FormMessage /> </FormItem>)} />
                       <FormField control={form.control} name="registrationDocument" render={({ field }) => (<FormItem> <FormLabel>Registration Document</FormLabel> <div className="flex items-center gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => regFileInputRef.current?.click()} disabled={isUploadingReg}>{isUploadingReg ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}Upload</Button> <Input type="file" ref={regFileInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'registration')} /> {registrationFile && <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" />{registrationFile.name}</span>} {editingAsset?.documentIds?.length && <Link href={`/admin/manage-documents`}><Button variant="link" size="sm"><LinkIcon />View existing</Button></Link>} </div> </FormItem>)} />
                     </div>
                     <div className="space-y-4">
-                      <FormField control={form.control} name="insuranceDueDate" render={({ field }) => (<FormItem className="flex flex-col"> <FormLabel>Insurance Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown-nav" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus /></PopoverContent> </Popover> <FormMessage /> </FormItem>)} />
+                      <FormField control={form.control} name="insuranceDueDate" render={({ field }) => (<FormItem className="flex flex-col"> <FormLabel>Insurance Due Date</FormLabel> <Popover> <PopoverTrigger asChild><FormControl><Button variant={"outline"} className={cn("pl-3 text-left font-normal", !field.value && "text-muted-foreground")}>{field.value ? format(field.value, "PPP") : (<span>Pick a date</span>)}<CalendarIcon className="ml-auto h-4 w-4 opacity-50" /></Button></FormControl></PopoverTrigger> <PopoverContent className="w-auto p-0" align="start"><Calendar mode="single" selected={field.value ?? undefined} onSelect={field.onChange} captionLayout="dropdown" fromYear={getYear(new Date()) - 10} toYear={getYear(new Date()) + 10} initialFocus /></PopoverContent> </Popover> <FormMessage /> </FormItem>)} />
                       <FormField control={form.control} name="insuranceDocument" render={({ field }) => (<FormItem> <FormLabel>Insurance Document</FormLabel> <div className="flex items-center gap-2"> <Button type="button" variant="outline" size="sm" onClick={() => insFileInputRef.current?.click()} disabled={isUploadingIns}>{isUploadingIns ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <FileUp className="mr-2 h-4 w-4" />}Upload</Button> <Input type="file" ref={insFileInputRef} className="hidden" onChange={(e) => handleFileUpload(e, 'insurance')} /> {insuranceFile && <span className="text-sm text-muted-foreground flex items-center gap-1"><CheckCircle className="h-4 w-4 text-green-500" />{insuranceFile.name}</span>} {editingAsset?.documentIds?.length && <Link href={`/admin/manage-documents`}><Button variant="link" size="sm"><LinkIcon />View existing</Button></Link>} </div> </FormItem>)} />
                     </div>
                   </div>

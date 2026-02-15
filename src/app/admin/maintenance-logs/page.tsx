@@ -7,7 +7,7 @@ import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { getFleetAssets, getMaintenanceLogs, addMaintenanceLog, deleteMaintenanceLog, updateFleetAsset, getNotifications, deleteNotification } from '@/lib/firestoreService';
-import type { FleetAsset, MaintenanceLog, VehicleType, NotificationMessage } from '@/lib/types';
+import type { FleetAsset, MaintenanceLog, VehicleType, NotificationMessage, MaintenanceSchedule } from '@/lib/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import {
@@ -62,13 +62,13 @@ const logSchema = z.object({
   cost: z.coerce.number().optional(),
   mechanic: z.string().optional(),
 }).superRefine((data, ctx) => {
-    if (data.serviceType === 'routine' && !data.routineService) {
-        ctx.addIssue({
-            code: z.ZodIssueCode.custom,
-            message: "Please specify the routine service performed.",
-            path: ["routineService"],
-        });
-    }
+  if (data.serviceType === 'routine' && !data.routineService) {
+    ctx.addIssue({
+      code: z.ZodIssueCode.custom,
+      message: "Please specify the routine service performed.",
+      path: ["routineService"],
+    });
+  }
 });
 
 export default function MaintenanceLogsPage() {
@@ -92,20 +92,20 @@ export default function MaintenanceLogsPage() {
 
   useEffect(() => {
     async function fetchData() {
-        setIsLoading(true);
-        try {
-            const [assetsData, logsData] = await Promise.all([
-                getFleetAssets(),
-                getMaintenanceLogs(),
-            ]);
-            setAssets(assetsData);
-            setLogs(logsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load maintenance data.' });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const [assetsData, logsData] = await Promise.all([
+          getFleetAssets(),
+          getMaintenanceLogs(),
+        ]);
+        setAssets(assetsData);
+        setLogs(logsData.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load maintenance data.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, [toast]);
@@ -113,8 +113,8 @@ export default function MaintenanceLogsPage() {
   async function onSubmit(values: z.infer<typeof logSchema>) {
     const asset = assets.find(a => a.id === values.assetId);
     if (!asset) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected asset not found.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Selected asset not found.' });
+      return;
     }
 
     const newLogData: Omit<MaintenanceLog, 'id'> = {
@@ -127,38 +127,41 @@ export default function MaintenanceLogsPage() {
       serviceType: values.serviceType,
       description: values.description,
     };
-    
+
     const newLogId = await addMaintenanceLog(newLogData);
-    const newLog = {id: newLogId, ...newLogData};
+    const newLog = { id: newLogId, ...newLogData };
     setLogs(prev => [newLog, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-    
+
     let scheduleWasUpdated = false;
     // Update asset's last service date if it was a routine service
     if (newLog.serviceType === 'routine' && newLog.routineService) {
-        const key = newLog.routineService as keyof FleetAsset['maintenanceSchedule'];
-        if (asset.maintenanceSchedule?.[key]) {
-            scheduleWasUpdated = true;
-            const updatedSchedule = { ...asset.maintenanceSchedule };
-            updatedSchedule[key]!.lastServiceDate = newLog.date;
+      const key = newLog.routineService as keyof FleetAsset['maintenanceSchedule'];
+      if (asset.maintenanceSchedule?.[key]) {
+        scheduleWasUpdated = true;
+        const updatedSchedule = { ...asset.maintenanceSchedule } as MaintenanceSchedule;
+        updatedSchedule[key] = {
+          ...updatedSchedule[key]!,
+          lastServiceDate: newLog.date
+        };
 
-            await updateFleetAsset(asset.id, { maintenanceSchedule: updatedSchedule });
-            
-            setAssets(assets.map(a => a.id === asset.id ? { ...a, maintenanceSchedule: updatedSchedule } : a));
+        await updateFleetAsset(asset.id, { maintenanceSchedule: updatedSchedule });
 
-             // Remove the corresponding maintenance notification
-            const notifId = `maint-${key}-${asset.id}`;
-            const notifications = await getNotifications();
-            if (notifications.some(n => n.id === notifId)) {
-                await deleteNotification(notifId);
-            }
+        setAssets(assets.map(a => a.id === asset.id ? { ...a, maintenanceSchedule: updatedSchedule } : a));
+
+        // Remove the corresponding maintenance notification
+        const notifId = `maint-${key}-${asset.id}`;
+        const notifications = await getNotifications();
+        if (notifications.some(n => n.id === notifId)) {
+          await deleteNotification(notifId);
         }
+      }
     }
-    
-    toast({ 
-        title: 'Maintenance Logged', 
-        description: `Service for ${asset.name} has been recorded.${scheduleWasUpdated ? ' The maintenance schedule has also been updated.' : ''}`
+
+    toast({
+      title: 'Maintenance Logged',
+      description: `Service for ${asset.name} has been recorded.${scheduleWasUpdated ? ' The maintenance schedule has also been updated.' : ''}`
     });
-    
+
     setIsDialogOpen(false);
     form.reset({ serviceType: 'routine', description: '', mechanic: 'In-house', cost: undefined, assetId: undefined });
   }
@@ -238,16 +241,16 @@ export default function MaintenanceLogsPage() {
             </div>
           ) : (
             <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
-                <Wrench className="h-12 w-12 mx-auto mb-4 text-primary/70" />
-                <h3 className="text-xl font-semibold text-foreground">No Maintenance Logs Found</h3>
-                <p className="mt-2">No maintenance has been logged for {title.toLowerCase()} yet.</p>
+              <Wrench className="h-12 w-12 mx-auto mb-4 text-primary/70" />
+              <h3 className="text-xl font-semibold text-foreground">No Maintenance Logs Found</h3>
+              <p className="mt-2">No maintenance has been logged for {title.toLowerCase()} yet.</p>
             </div>
           )}
         </CardContent>
       </Card>
     );
   };
-  
+
   if (isLoading) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
@@ -259,229 +262,229 @@ export default function MaintenanceLogsPage() {
 
   return (
     <>
-    <div className="container mx-auto py-8">
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <Wrench className="h-8 w-8 text-primary" />
-                Fleet Maintenance Logs
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Log, view, and manage service history for all fleet assets.
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Log New Service
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Log New Maintenance</DialogTitle>
-                  <DialogDescription>
-                    Fill out the details for the service performed. This record is for internal use.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
+      <div className="container mx-auto py-8">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <CardHeader>
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                  <Wrench className="h-8 w-8 text-primary" />
+                  Fleet Maintenance Logs
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  Log, view, and manage service history for all fleet assets.
+                </CardDescription>
+              </div>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Log New Service
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Log New Maintenance</DialogTitle>
+                    <DialogDescription>
+                      Fill out the details for the service performed. This record is for internal use.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
                           control={form.control}
                           name="assetId"
                           render={({ field }) => (
-                              <FormItem>
+                            <FormItem>
                               <FormLabel>Asset</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
+                                <FormControl>
                                   <SelectTrigger>
-                                      <SelectValue placeholder="Select an asset" />
+                                    <SelectValue placeholder="Select an asset" />
                                   </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
+                                </FormControl>
+                                <SelectContent>
                                   {assets.map(asset => (
-                                      <SelectItem key={asset.id} value={asset.id}>
-                                          {asset.name}
-                                      </SelectItem>
+                                    <SelectItem key={asset.id} value={asset.id}>
+                                      {asset.name}
+                                    </SelectItem>
                                   ))}
-                                  </SelectContent>
+                                </SelectContent>
                               </Select>
                               <FormMessage />
-                              </FormItem>
+                            </FormItem>
                           )}
-                      />
-                      <FormField
+                        />
+                        <FormField
                           control={form.control}
                           name="date"
                           render={({ field }) => (
-                              <FormItem className="flex flex-col">
+                            <FormItem className="flex flex-col">
                               <FormLabel>Date of Service</FormLabel>
                               <Popover>
-                                  <PopoverTrigger asChild>
+                                <PopoverTrigger asChild>
                                   <FormControl>
-                                      <Button
+                                    <Button
                                       variant={"outline"}
                                       className={cn(
-                                          "pl-3 text-left font-normal",
-                                          !field.value && "text-muted-foreground"
+                                        "pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
                                       )}
-                                      >
+                                    >
                                       {field.value ? (
-                                          format(field.value, "PPP")
+                                        format(field.value, "PPP")
                                       ) : (
-                                          <span>Pick a date</span>
+                                        <span>Pick a date</span>
                                       )}
                                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                      </Button>
+                                    </Button>
                                   </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
                                   <Calendar
-                                      mode="single"
-                                      selected={field.value}
-                                      onSelect={field.onChange}
-                                      disabled={(date) => date > new Date()}
-                                      initialFocus
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) => date > new Date()}
+                                    initialFocus
                                   />
-                                  </PopoverContent>
+                                </PopoverContent>
                               </Popover>
                               <FormMessage />
-                              </FormItem>
+                            </FormItem>
                           )}
-                      />
-                    </div>
-                     <FormField
-                      control={form.control}
-                      name="serviceType"
-                      render={({ field }) => (
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="serviceType"
+                        render={({ field }) => (
                           <FormItem>
-                          <FormLabel>Service Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel>Service Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                              <SelectTrigger>
+                                <SelectTrigger>
                                   <SelectValue placeholder="Select a service type" />
-                              </SelectTrigger>
+                                </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                  <SelectItem value="routine">Routine Service</SelectItem>
-                                  <SelectItem value="repair">Repair</SelectItem>
-                                  <SelectItem value="inspection">Inspection</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="routine">Routine Service</SelectItem>
+                                <SelectItem value="repair">Repair</SelectItem>
+                                <SelectItem value="inspection">Inspection</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
-                          </Select>
-                          <FormMessage />
+                            </Select>
+                            <FormMessage />
                           </FormItem>
-                      )}
-                    />
-                    {watchedServiceType === 'routine' && (
+                        )}
+                      />
+                      {watchedServiceType === 'routine' && (
                         <FormField
-                            control={form.control}
-                            name="routineService"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Routine Service Type</FormLabel>
-                                <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                    <FormControl>
-                                    <SelectTrigger>
-                                        <SelectValue placeholder="Select a routine service" />
-                                    </SelectTrigger>
-                                    </FormControl>
-                                    <SelectContent>
-                                        <SelectItem value="oilChange">Oil Change</SelectItem>
-                                        <SelectItem value="tireRotation">Tire Rotation</SelectItem>
-                                        <SelectItem value="brakeInspection">Brake Inspection</SelectItem>
-                                        <SelectItem value="fluidCheck">Fluid Check</SelectItem>
-                                    </SelectContent>
-                                </Select>
-                                <FormMessage />
-                                </FormItem>
-                            )}
-                        />
-                    )}
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description of Service</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Provide a detailed description of the work performed." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <FormField
-                            control={form.control}
-                            name="cost"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Cost (Optional)</FormLabel>
+                          control={form.control}
+                          name="routineService"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Routine Service Type</FormLabel>
+                              <Select onValueChange={field.onChange} defaultValue={field.value}>
                                 <FormControl>
-                                    <Input type="number" placeholder="e.g., 150.50" {...field} />
+                                  <SelectTrigger>
+                                    <SelectValue placeholder="Select a routine service" />
+                                  </SelectTrigger>
                                 </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
+                                <SelectContent>
+                                  <SelectItem value="oilChange">Oil Change</SelectItem>
+                                  <SelectItem value="tireRotation">Tire Rotation</SelectItem>
+                                  <SelectItem value="brakeInspection">Brake Inspection</SelectItem>
+                                  <SelectItem value="fluidCheck">Fluid Check</SelectItem>
+                                </SelectContent>
+                              </Select>
+                              <FormMessage />
+                            </FormItem>
+                          )}
+                        />
+                      )}
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description of Service</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Provide a detailed description of the work performed." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
+                          control={form.control}
+                          name="cost"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Cost (Optional)</FormLabel>
+                              <FormControl>
+                                <Input type="number" placeholder="e.g., 150.50" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
                         <FormField
-                            control={form.control}
-                            name="mechanic"
-                            render={({ field }) => (
-                                <FormItem>
-                                <FormLabel>Mechanic / Service Provider (Optional)</FormLabel>
-                                <FormControl>
-                                    <Input placeholder="e.g., In-house, City Auto" {...field} />
-                                </FormControl>
-                                <FormMessage />
-                                </FormItem>
-                            )}
+                          control={form.control}
+                          name="mechanic"
+                          render={({ field }) => (
+                            <FormItem>
+                              <FormLabel>Mechanic / Service Provider (Optional)</FormLabel>
+                              <FormControl>
+                                <Input placeholder="e.g., In-house, City Auto" {...field} />
+                              </FormControl>
+                              <FormMessage />
+                            </FormItem>
+                          )}
                         />
-                     </div>
-                    <DialogFooter>
-                      <Button type="submit">Save Log</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="space-y-6">
+                      </div>
+                      <DialogFooter>
+                        <Button type="submit">Save Log</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent className="space-y-6">
             {renderLogsTable('truck', 'Trucks')}
             {renderLogsTable('trailer', 'Trailers')}
             {renderLogsTable('heavyEquipment', 'Heavy Equipment')}
-        </CardContent>
-      </Card>
-    </div>
-    <AlertDialog open={!!logToDelete} onOpenChange={(open) => !open && setLogToDelete(null)}>
+          </CardContent>
+        </Card>
+      </div>
+      <AlertDialog open={!!logToDelete} onOpenChange={(open) => !open && setLogToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the maintenance log for
-                    <span className="font-bold"> {logToDelete?.assetName}</span> on <span className="font-bold">{logToDelete?.date ? format(parseISO(logToDelete.date), 'PPP') : ''}</span>.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                    onClick={() => {
-                        if (logToDelete) {
-                            removeLog(logToDelete.id);
-                        }
-                    }}
-                    className={buttonVariants({ variant: "destructive" })}
-                >
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the maintenance log for
+              <span className="font-bold"> {logToDelete?.assetName}</span> on <span className="font-bold">{logToDelete?.date ? format(parseISO(logToDelete.date), 'PPP') : ''}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (logToDelete) {
+                  removeLog(logToDelete.id);
+                }
+              }}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
     </>
   );
 }

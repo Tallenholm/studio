@@ -14,24 +14,27 @@ const ExtractReceiptOutputSchema = z.object({
 });
 
 // Define the prompt at module scope so it's registered once, not on every invocation.
-const extractPrompt = ai.definePrompt({
-  name: 'extractReceiptPrompt',
-  model: DEFAULT_MODEL,
-  inputSchema: ExtractReceiptInputSchema,
-  output: {
-    format: 'json',
-    schema: ExtractReceiptOutputSchema,
-  },
-  prompt: `Analyze the following receipt image. Extract the total amount, the date, and a short description (like the merchant name or key items).
-
-  Receipt:
-  {{media url=receiptDataUri}}
-  
-  Provide the output in the requested JSON format.`,
-});
-
 export async function extractReceiptData(input: z.infer<typeof ExtractReceiptInputSchema>): Promise<z.infer<typeof ExtractReceiptOutputSchema>> {
-  const llmResponse = await extractPrompt.generate({ input });
-  return llmResponse.output()!;
+  const llmResponse = await ai.generate({
+    prompt: [
+      {
+        text: `Analyze the following receipt image. Extract the total amount, the date, and a short description (like the merchant name or key items).
+
+      Receipt:` },
+      { media: { url: input.receiptDataUri } },
+      { text: `Provide the output in the requested JSON format.` }
+    ],
+    model: DEFAULT_MODEL,
+    output: {
+      format: 'json',
+      schema: ExtractReceiptOutputSchema,
+    },
+  });
+
+  const output = llmResponse.output;
+  if (!output) {
+    throw new Error("AI failed to extract data from receipt.");
+  }
+  return output;
 }
 

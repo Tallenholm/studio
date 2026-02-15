@@ -49,6 +49,8 @@ const generateHealthSummaryFlow = ai.defineFlow(
   async ({ assetId }) => {
     const prompt = `You are a fleet maintenance expert. Your task is to provide a concise, natural language summary of a vehicle's health based on its recent inspection reports and maintenance logs.
 
+    Asset ID: ${assetId}
+
     Analyze the provided data for the asset. Look for trends, such as recurring failures, recent repairs, and the overall status of inspections.
     
     - If there are recent failures, highlight them.
@@ -62,10 +64,9 @@ const generateHealthSummaryFlow = ai.defineFlow(
       model: DEFAULT_MODEL,
       tools: [fetchAssetDataTool],
       toolChoice: 'auto',
-      input: { assetId },
     });
 
-    return llmResponse.text();
+    return llmResponse.text;
   }
 );
 

@@ -13,7 +13,7 @@ const SIGNIFICANT_WEATHER_CODES = [61, 63, 65, 71, 73, 75, 80, 81, 82, 85, 86, 9
 export const fetchWeather = async (lat: number, lon: number): Promise<WeatherData> => {
     const hourlyParams = "temperature_2m,relative_humidity_2m,precipitation_probability,weather_code,wind_speed_10m,wind_direction_10m";
     const dailyParams = "weather_code,temperature_2m_max,temperature_2m_min,sunrise,sunset,precipitation_sum,precipitation_probability_max,uv_index_max";
-    
+
     const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&hourly=${hourlyParams}&daily=${dailyParams}&temperature_unit=fahrenheit&wind_speed_unit=mph&precipitation_unit=inch&timezone=auto&models=best_match`;
 
     try {
@@ -60,7 +60,6 @@ export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'loca
 
                 if (!alreadyNotified) {
                     const newNotif: Omit<NotificationMessage, 'id'> = {
-                        id: notifId,
                         recipientId: 'all',
                         title: `Weather Alert: ${weatherType}`,
                         content: `Heads up: The forecast shows ${weatherType.toLowerCase()} starting around ${format(hour.time, 'p')} today. Please prepare accordingly.`,
@@ -70,7 +69,7 @@ export const checkWeatherAndNotify = async (settings: Pick<SystemSettings, 'loca
                     };
                     await addNotification(newNotif, notifId);
                     console.log(`Sent notification for ${weatherType} at ${hour.time}`);
-                    return; 
+                    return;
                 }
             }
         }

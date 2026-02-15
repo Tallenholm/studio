@@ -11,6 +11,9 @@ import { BarChart, Bar, ResponsiveContainer, XAxis, YAxis, Tooltip } from 'recha
 import { ChartContainer, ChartTooltip, ChartTooltipContent } from '@/components/ui/chart';
 import { getFleetHealthData, type FleetHealthData } from '@/app/actions/getFleetHealthData';
 import type { FleetAsset } from '@/lib/types';
+import dynamic from 'next/dynamic';
+
+const MaintenanceCostChart = dynamic(() => import('@/components/analytics/MaintenanceCostChart'), { ssr: false, loading: () => <div className="h-[100px] w-full animate-pulse bg-muted rounded-md" /> });
 
 interface HealthSummary {
   assetId: string;
@@ -52,7 +55,7 @@ export default function FleetHealthPage() {
           acc[result.assetId] = result;
           return acc;
         }, {} as Record<string, HealthSummary>);
-        
+
         setSummaries(summariesMap);
 
       } catch (error) {
@@ -98,21 +101,21 @@ export default function FleetHealthPage() {
 
       {fleetHealthData && fleetHealthData.length === 0 ? (
         <Card className="text-center py-12">
-            <CardHeader>
-                <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-                <CardTitle className="text-2xl font-headline">No Fleet Assets Found</CardTitle>
-            </CardHeader>
-            <CardContent>
-                <CardDescription className="text-lg">
-                Add some vehicles and equipment on the 'Manage Fleet' page to see their health status here.
-                </CardDescription>
-            </CardContent>
+          <CardHeader>
+            <AlertTriangle className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
+            <CardTitle className="text-2xl font-headline">No Fleet Assets Found</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <CardDescription className="text-lg">
+              Add some vehicles and equipment on the 'Manage Fleet' page to see their health status here.
+            </CardDescription>
+          </CardContent>
         </Card>
       ) : (
         <div className="grid grid-cols-1 lg:grid-cols-2 xl:grid-cols-3 gap-8">
           {fleetHealthData?.map(({ asset, healthScore, maintenanceCostData }) => {
             const healthColor = healthScore > 80 ? 'text-green-500' : healthScore > 50 ? 'text-yellow-500' : 'text-red-500';
-            
+
             return (
               <Card key={asset.id} className="flex flex-col">
                 <CardHeader>
@@ -139,17 +142,10 @@ export default function FleetHealthPage() {
                       )}
                     </div>
                   </div>
-                   {maintenanceCostData.length > 0 && (
+                  {maintenanceCostData.length > 0 && (
                     <div>
                       <h4 className="text-sm font-semibold mb-2">Maintenance Costs (Last 6 Months)</h4>
-                      <ChartContainer config={CHART_CONFIG} className="h-[100px] w-full">
-                        <BarChart data={maintenanceCostData} layout="vertical" margin={{ left: 10, right: 10 }}>
-                          <XAxis type="number" hide />
-                          <YAxis dataKey="name" type="category" tickLine={false} axisLine={false} tickMargin={5} fontSize={10} width={40} />
-                          <Tooltip cursor={{ fill: 'hsl(var(--muted))' }} content={<ChartTooltipContent />} />
-                          <Bar dataKey="totalCost" fill="hsl(var(--chart-1))" radius={4} />
-                        </BarChart>
-                      </ChartContainer>
+                      <MaintenanceCostChart data={maintenanceCostData} config={CHART_CONFIG} />
                     </div>
                   )}
                 </CardContent>

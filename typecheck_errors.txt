@@ -1,0 +1,175 @@
+
+> logans-excavating@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/admin/advanced-reports/page.tsx(18,48): error TS2304: Cannot find name 'AdvancedReportState'.
+src/app/admin/advanced-reports/page.tsx(22,62): error TS2304: Cannot find name 'VehicleType'.
+src/app/admin/advanced-reports/page.tsx(27,26): error TS2304: Cannot find name 'getAdvancedReportData'.
+src/app/admin/advanced-reports/page.tsx(49,10): error TS2304: Cannot find name 'Loader2'.
+src/app/admin/advanced-reports/page.tsx(57,8): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(58,10): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(59,12): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(60,14): error TS2304: Cannot find name 'LineChartIcon'.
+src/app/admin/advanced-reports/page.tsx(62,13): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(63,12): error TS2304: Cannot find name 'CardDescription'.
+src/app/admin/advanced-reports/page.tsx(65,13): error TS2304: Cannot find name 'CardDescription'.
+src/app/admin/advanced-reports/page.tsx(66,11): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(67,10): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(68,12): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(69,14): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(70,16): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(70,71): error TS2304: Cannot find name 'Filter'.
+src/app/admin/advanced-reports/page.tsx(70,116): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(71,15): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(72,14): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(74,18): error TS2304: Cannot find name 'Label'.
+src/app/admin/advanced-reports/page.tsx(74,57): error TS2304: Cannot find name 'Label'.
+src/app/admin/advanced-reports/page.tsx(75,18): error TS2304: Cannot find name 'Select'.
+src/app/admin/advanced-reports/page.tsx(75,65): error TS7006: Parameter 'val' implicitly has an 'any' type.
+src/app/admin/advanced-reports/page.tsx(76,20): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/advanced-reports/page.tsx(77,22): error TS2304: Cannot find name 'SelectValue'.
+src/app/admin/advanced-reports/page.tsx(78,21): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/advanced-reports/page.tsx(79,20): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/advanced-reports/page.tsx(80,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(80,60): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(81,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(81,68): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(82,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(82,68): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(83,21): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/advanced-reports/page.tsx(84,19): error TS2304: Cannot find name 'Select'.
+src/app/admin/advanced-reports/page.tsx(87,18): error TS2304: Cannot find name 'Label'.
+src/app/admin/advanced-reports/page.tsx(87,71): error TS2304: Cannot find name 'Label'.
+src/app/admin/advanced-reports/page.tsx(88,18): error TS2304: Cannot find name 'Select'.
+src/app/admin/advanced-reports/page.tsx(88,67): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/app/admin/advanced-reports/page.tsx(88,107): error TS2304: Cannot find name 'VehicleType'.
+src/app/admin/advanced-reports/page.tsx(89,20): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/advanced-reports/page.tsx(90,22): error TS2304: Cannot find name 'SelectValue'.
+src/app/admin/advanced-reports/page.tsx(91,21): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/advanced-reports/page.tsx(92,20): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/advanced-reports/page.tsx(93,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(93,56): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(94,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(94,54): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(95,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(95,58): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(96,22): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(96,73): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/advanced-reports/page.tsx(97,21): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/advanced-reports/page.tsx(98,19): error TS2304: Cannot find name 'Select'.
+src/app/admin/advanced-reports/page.tsx(100,15): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(101,13): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(106,18): error TS2304: Cannot find name 'AlertTriangle'.
+src/app/admin/advanced-reports/page.tsx(117,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(118,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(118,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(118,61): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(118,73): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(119,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(121,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(122,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(124,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(125,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(125,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(125,61): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(125,73): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(126,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(128,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(129,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(131,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(132,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(132,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(132,64): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(132,76): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(133,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(135,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(136,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(138,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(139,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(139,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(139,53): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(139,65): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(140,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(142,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(143,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(145,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(146,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(146,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(146,60): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(146,72): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(147,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(149,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(150,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(152,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(153,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(153,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(153,68): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(153,80): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(154,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(156,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(157,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(159,16): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(160,18): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(160,30): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(160,62): error TS2304: Cannot find name 'CardTitle'.
+src/app/admin/advanced-reports/page.tsx(160,74): error TS2304: Cannot find name 'CardHeader'.
+src/app/admin/advanced-reports/page.tsx(161,18): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(163,19): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(164,17): error TS2304: Cannot find name 'Card'.
+src/app/admin/advanced-reports/page.tsx(167,11): error TS2304: Cannot find name 'CardContent'.
+src/app/admin/advanced-reports/page.tsx(168,9): error TS2304: Cannot find name 'Card'.
+src/app/admin/maintenance-logs/page.tsx(142,35): error TS2339: Property 'lastServiceDate' does not exist on type 'never'.
+src/app/admin/manage-calendar/page.tsx(86,7): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/app/admin/manage-calendar/page.tsx(86,7): error TS2783: 'date' is specified more than once, so this usage will be overwritten.
+src/app/admin/manage-fleet/page.tsx(302,9): error TS2322: Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; } | undefined' is not assignable to type 'MaintenanceScheduleItem | undefined'.
+  Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; }' is not assignable to type 'MaintenanceScheduleItem'.
+    Types of property 'intervalMonths' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/app/admin/manage-fleet/page.tsx(303,9): error TS2322: Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; } | undefined' is not assignable to type 'MaintenanceScheduleItem | undefined'.
+  Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; }' is not assignable to type 'MaintenanceScheduleItem'.
+    Types of property 'intervalMonths' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/app/admin/manage-fleet/page.tsx(304,9): error TS2322: Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; } | undefined' is not assignable to type 'MaintenanceScheduleItem | undefined'.
+  Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; }' is not assignable to type 'MaintenanceScheduleItem'.
+    Types of property 'intervalMonths' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/app/admin/manage-fleet/page.tsx(305,9): error TS2322: Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; } | undefined' is not assignable to type 'MaintenanceScheduleItem | undefined'.
+  Type '{ lastServiceDate: string | undefined; intervalMonths?: number | undefined; }' is not assignable to type 'MaintenanceScheduleItem'.
+    Types of property 'intervalMonths' are incompatible.
+      Type 'number | undefined' is not assignable to type 'number'.
+        Type 'undefined' is not assignable to type 'number'.
+src/app/admin/manage-fleet/page.tsx(492,657): error TS2820: Type '"dropdown-nav"' is not assignable to type 'CaptionLayout | undefined'. Did you mean '"dropdown"'?
+src/app/admin/manage-fleet/page.tsx(496,651): error TS2820: Type '"dropdown-nav"' is not assignable to type 'CaptionLayout | undefined'. Did you mean '"dropdown"'?
+src/app/admin/manage-fleet/page.tsx(547,26): error TS2304: Cannot find name 'buttonVariants'.
+src/app/admin/manage-rentals/page.tsx(119,130): error TS2353: Object literal may only specify known properties, and 'dateRange' does not exist in type 'Omit<Rental, "id">'.
+src/app/admin/manage-rentals/page.tsx(124,80): error TS2353: Object literal may only specify known properties, and 'dateRange' does not exist in type 'Omit<Rental, "id" | "dateRange">'.
+src/app/admin/manage-violations/page.tsx(110,7): error TS2322: Type 'Date' is not assignable to type 'string'.
+src/app/admin/manage-violations/page.tsx(110,7): error TS2783: 'date' is specified more than once, so this usage will be overwritten.
+src/app/employee/my-violations/page.tsx(23,63): error TS18047: 'user' is possibly 'null'.
+src/app/employee/personal-documents/page.tsx(25,56): error TS18047: 'user' is possibly 'null'.
+src/app/employee/submit-expense/page.tsx(59,68): error TS18047: 'user' is possibly 'null'.
+src/app/employee/time-off/page.tsx(52,66): error TS18047: 'user' is possibly 'null'.
+src/components/admin/AdminDashboardClientPage.tsx(113,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/AdminDashboardClientPage.tsx(129,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/AdminDashboardClientPage.tsx(145,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/AdminDashboardClientPage.tsx(336,60): error TS2339: Property 'title' does not exist on type '{ itemType: "job"; id: string; name: string; clientId: string; clientName: string; address: string; latitude?: number | undefined; longitude?: number | undefined; jobValue?: number | undefined; ... 14 more ...; notes?: { ...; }[] | undefined; } | { ...; }'.
+  Property 'title' does not exist on type '{ itemType: "job"; id: string; name: string; clientId: string; clientName: string; address: string; latitude?: number | undefined; longitude?: number | undefined; jobValue?: number | undefined; ... 14 more ...; notes?: { ...; }[] | undefined; }'.
+src/components/admin/JobManagementPage.tsx(316,54): error TS2304: Cannot find name 'handleEditClick'.
+src/components/admin/WeatherForecast.tsx(109,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/WeatherForecast.tsx(125,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/WeatherForecast.tsx(141,47): error TS2339: Property 'type' does not exist on type '{ link: string; id: string; summary: string; }'.
+src/components/admin/WeatherForecast.tsx(280,65): error TS2339: Property 'stats' does not exist on type 'AdminDashboardData'.
+src/components/admin/WeatherForecast.tsx(281,66): error TS2339: Property 'stats' does not exist on type 'AdminDashboardData'.
+src/components/admin/WeatherForecast.tsx(282,70): error TS2339: Property 'stats' does not exist on type 'AdminDashboardData'.
+src/components/admin/WeatherForecast.tsx(283,68): error TS2339: Property 'stats' does not exist on type 'AdminDashboardData'.
+src/components/admin/WeatherForecast.tsx(322,60): error TS2339: Property 'title' does not exist on type '{ itemType: "job"; id: string; name: string; clientId: string; clientName: string; address: string; latitude?: number | undefined; longitude?: number | undefined; jobValue?: number | undefined; ... 14 more ...; notes?: { ...; }[] | undefined; } | { ...; }'.
+  Property 'title' does not exist on type '{ itemType: "job"; id: string; name: string; clientId: string; clientName: string; address: string; latitude?: number | undefined; longitude?: number | undefined; jobValue?: number | undefined; ... 14 more ...; notes?: { ...; }[] | undefined; }'.
+src/components/employee/EmployeeHubClientPage.tsx(121,50): error TS2304: Cannot find name 'JobStatus'.
+src/components/employee/EmployeeHubClientPage.tsx(128,18): error TS7053: Element implicitly has an 'any' type because expression of type 'JobType' can't be used to index type '{ excavation: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; snow_removal: ForwardRefExoticComponent<...>; concrete: ForwardRefExoticComponent<...>; misc: ForwardRefExoticComponent<...>; }'.
+  Property 'utilities' does not exist on type '{ excavation: ForwardRefExoticComponent<Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>>; snow_removal: ForwardRefExoticComponent<...>; concrete: ForwardRefExoticComponent<...>; misc: ForwardRefExoticComponent<...>; }'.
+src/lib/firestoreService.ts(369,70): error TS2537: Type '{ timestamp: string; content: string; author: string; }[] | undefined' has no matching index signature for type 'number'.
+src/lib/types.ts(8,36): error TS2724: '"@/ai/flows/generate-daily-briefing-schema"' has no exported member named 'DailyBriefingInput'. Did you mean 'DailyBriefingOutput'?
+src/lib/weatherService.ts(63,25): error TS2353: Object literal may only specify known properties, and 'id' does not exist in type 'Omit<NotificationMessage, "id">'.

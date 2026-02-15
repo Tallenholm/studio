@@ -10,36 +10,33 @@ export default function SoilVolumeCalculator() {
   const [width, setWidth] = useState('');
   const [depth, setDepth] = useState('');
   const [swell, setSwell] = useState('25');
-  const [result, setResult] = useState<{ bankYards: number; looseYards: number } | null>(null);
-
-  const calculate = useCallback(() => {
+  const calculate = () => {
     const L = parseFloat(length);
     const W = parseFloat(width);
     const D = parseFloat(depth);
     const swellPercent = parseFloat(swell);
 
     if (isNaN(L) || isNaN(W) || isNaN(D) || L <= 0 || W <= 0 || D <= 0 || isNaN(swellPercent) || swellPercent < 0) {
-      setResult(null);
-      return;
+      return null;
     }
 
     const swellFactor = 1 + (swellPercent / 100);
     const cubicFeet = L * W * D;
     const bankYards = cubicFeet / 27;
-    setResult({
+
+    return {
       bankYards: Math.round(bankYards * 100) / 100,
       looseYards: Math.round(bankYards * swellFactor * 100) / 100,
-    });
-  }, [length, width, depth, swell]);
+    };
+  };
 
-  useEffect(() => { calculate(); }, [calculate]);
+  const result = calculate();
 
   const handleReset = () => {
     setLength('');
     setWidth('');
     setDepth('');
     setSwell('25');
-    setResult(null);
   };
 
   const results = result

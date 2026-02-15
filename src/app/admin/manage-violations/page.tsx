@@ -80,20 +80,20 @@ export default function ManageViolationsPage() {
 
   useEffect(() => {
     async function fetchData() {
-        setIsLoading(true);
-        try {
-            const [loadedUsers, loadedViolations] = await Promise.all([
-                getUsers(),
-                getViolations()
-            ]);
-            setUsers(loadedUsers);
-            setViolations(loadedViolations.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
-        } catch (error) {
-            console.error("Failed to fetch data:", error);
-            toast({ variant: 'destructive', title: 'Error', description: 'Could not load violations data.' });
-        } finally {
-            setIsLoading(false);
-        }
+      setIsLoading(true);
+      try {
+        const [loadedUsers, loadedViolations] = await Promise.all([
+          getUsers(),
+          getViolations()
+        ]);
+        setUsers(loadedUsers);
+        setViolations(loadedViolations.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      } catch (error) {
+        console.error("Failed to fetch data:", error);
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load violations data.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, [toast]);
@@ -101,17 +101,18 @@ export default function ManageViolationsPage() {
   async function onSubmit(values: z.infer<typeof violationSchema>) {
     const employee = users.find(u => u.id === values.employeeId);
     if (!employee) {
-        toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
-        return;
+      toast({ variant: 'destructive', title: 'Error', description: 'Selected employee not found.' });
+      return;
     }
 
+    const { date, ...otherValues } = values;
     const newViolationData: Omit<Violation, 'id'> = {
       employeeName: employee.name,
-      date: values.date.toISOString().split('T')[0],
-      ...values,
+      date: date.toISOString().split('T')[0],
+      ...otherValues,
     };
     const newId = await addViolation(newViolationData);
-    setViolations(prev => [{id: newId, ...newViolationData}, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setViolations(prev => [{ id: newId, ...newViolationData }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     toast({ title: 'Violation Logged', description: `Violation for ${employee.name} has been recorded.` });
     setIsDialogOpen(false);
     form.reset({ type: 'safety', description: '', actionTaken: '' });
@@ -127,13 +128,13 @@ export default function ManageViolationsPage() {
       variant: 'destructive',
     });
   }
-  
+
   const getViolationTypeLabel = (type: Violation['type']) => {
-    switch(type) {
-        case 'safety': return 'Safety';
-        case 'conduct': return 'Conduct';
-        case 'performance': return 'Performance';
-        case 'other': return 'Other';
+    switch (type) {
+      case 'safety': return 'Safety';
+      case 'conduct': return 'Conduct';
+      case 'performance': return 'Performance';
+      case 'other': return 'Other';
     }
   }
 
@@ -148,224 +149,224 @@ export default function ManageViolationsPage() {
 
   return (
     <>
-    <div className="container mx-auto py-8">
-      <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
-        <CardHeader>
-          <div className="flex justify-between items-start flex-wrap gap-4">
-            <div>
-              <CardTitle className="text-3xl font-headline flex items-center gap-2">
-                <ShieldAlert className="h-8 w-8 text-primary" />
-                Manage Employee Violations
-              </CardTitle>
-              <CardDescription className="mt-2">
-                Log, view, and manage employee violations for safety, conduct, and performance.
-              </CardDescription>
-            </div>
-            <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
-              <DialogTrigger asChild>
-                <Button>
-                  <PlusCircle className="mr-2 h-5 w-5" />
-                  Log New Violation
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="sm:max-w-2xl">
-                <DialogHeader>
-                  <DialogTitle>Log a New Violation</DialogTitle>
-                  <DialogDescription>
-                    Fill out the details for the incident. This record is for internal use.
-                  </DialogDescription>
-                </DialogHeader>
-                <Form {...form}>
-                  <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                      <FormField
+      <div className="container mx-auto py-8">
+        <Card className="bg-card/90 backdrop-blur-xl border border-white/10 shadow-xl hover:shadow-primary/20 hover:-translate-y-1 transition-all duration-300">
+          <CardHeader>
+            <div className="flex justify-between items-start flex-wrap gap-4">
+              <div>
+                <CardTitle className="text-3xl font-headline flex items-center gap-2">
+                  <ShieldAlert className="h-8 w-8 text-primary" />
+                  Manage Employee Violations
+                </CardTitle>
+                <CardDescription className="mt-2">
+                  Log, view, and manage employee violations for safety, conduct, and performance.
+                </CardDescription>
+              </div>
+              <Dialog open={isDialogOpen} onOpenChange={setIsDialogOpen}>
+                <DialogTrigger asChild>
+                  <Button>
+                    <PlusCircle className="mr-2 h-5 w-5" />
+                    Log New Violation
+                  </Button>
+                </DialogTrigger>
+                <DialogContent className="sm:max-w-2xl">
+                  <DialogHeader>
+                    <DialogTitle>Log a New Violation</DialogTitle>
+                    <DialogDescription>
+                      Fill out the details for the incident. This record is for internal use.
+                    </DialogDescription>
+                  </DialogHeader>
+                  <Form {...form}>
+                    <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <FormField
                           control={form.control}
                           name="employeeId"
                           render={({ field }) => (
-                              <FormItem>
+                            <FormItem>
                               <FormLabel>Employee</FormLabel>
                               <Select onValueChange={field.onChange} defaultValue={field.value}>
-                                  <FormControl>
+                                <FormControl>
                                   <SelectTrigger>
-                                      <SelectValue placeholder="Select an employee" />
+                                    <SelectValue placeholder="Select an employee" />
                                   </SelectTrigger>
-                                  </FormControl>
-                                  <SelectContent>
+                                </FormControl>
+                                <SelectContent>
                                   {users.map(user => (
-                                      <SelectItem key={user.id} value={user.id}>
-                                          {user.name}
-                                      </SelectItem>
+                                    <SelectItem key={user.id} value={user.id}>
+                                      {user.name}
+                                    </SelectItem>
                                   ))}
-                                  </SelectContent>
+                                </SelectContent>
                               </Select>
                               <FormMessage />
-                              </FormItem>
+                            </FormItem>
                           )}
-                      />
-                      <FormField
+                        />
+                        <FormField
                           control={form.control}
                           name="date"
                           render={({ field }) => (
-                              <FormItem className="flex flex-col">
+                            <FormItem className="flex flex-col">
                               <FormLabel>Date of Incident</FormLabel>
                               <Popover>
-                                  <PopoverTrigger asChild>
+                                <PopoverTrigger asChild>
                                   <FormControl>
-                                      <Button
+                                    <Button
                                       variant={"outline"}
                                       className={cn(
-                                          "pl-3 text-left font-normal",
-                                          !field.value && "text-muted-foreground"
+                                        "pl-3 text-left font-normal",
+                                        !field.value && "text-muted-foreground"
                                       )}
-                                      >
+                                    >
                                       {field.value ? (
-                                          format(field.value, "PPP")
+                                        format(field.value, "PPP")
                                       ) : (
-                                          <span>Pick a date</span>
+                                        <span>Pick a date</span>
                                       )}
                                       <CalendarIcon className="ml-auto h-4 w-4 opacity-50" />
-                                      </Button>
+                                    </Button>
                                   </FormControl>
-                                  </PopoverTrigger>
-                                  <PopoverContent className="w-auto p-0" align="start">
+                                </PopoverTrigger>
+                                <PopoverContent className="w-auto p-0" align="start">
                                   <Calendar
-                                      mode="single"
-                                      selected={field.value}
-                                      onSelect={field.onChange}
-                                      disabled={(date) => date > new Date()}
-                                      initialFocus
+                                    mode="single"
+                                    selected={field.value}
+                                    onSelect={field.onChange}
+                                    disabled={(date) => date > new Date()}
+                                    initialFocus
                                   />
-                                  </PopoverContent>
+                                </PopoverContent>
                               </Popover>
                               <FormMessage />
-                              </FormItem>
+                            </FormItem>
                           )}
-                      />
-                    </div>
-                    <FormField
-                      control={form.control}
-                      name="type"
-                      render={({ field }) => (
+                        />
+                      </div>
+                      <FormField
+                        control={form.control}
+                        name="type"
+                        render={({ field }) => (
                           <FormItem>
-                          <FormLabel>Violation Type</FormLabel>
-                          <Select onValueChange={field.onChange} defaultValue={field.value}>
+                            <FormLabel>Violation Type</FormLabel>
+                            <Select onValueChange={field.onChange} defaultValue={field.value}>
                               <FormControl>
-                              <SelectTrigger>
+                                <SelectTrigger>
                                   <SelectValue placeholder="Select a violation type" />
-                              </SelectTrigger>
+                                </SelectTrigger>
                               </FormControl>
                               <SelectContent>
-                                  <SelectItem value="safety">Safety Violation</SelectItem>
-                                  <SelectItem value="conduct">Conduct Issue</SelectItem>
-                                  <SelectItem value="performance">Performance Issue</SelectItem>
-                                  <SelectItem value="other">Other</SelectItem>
+                                <SelectItem value="safety">Safety Violation</SelectItem>
+                                <SelectItem value="conduct">Conduct Issue</SelectItem>
+                                <SelectItem value="performance">Performance Issue</SelectItem>
+                                <SelectItem value="other">Other</SelectItem>
                               </SelectContent>
-                          </Select>
-                          <FormMessage />
+                            </Select>
+                            <FormMessage />
                           </FormItem>
-                      )}
-                    />
-                    <FormField
-                      control={form.control}
-                      name="description"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Description of Incident</FormLabel>
-                          <FormControl>
-                            <Textarea placeholder="Provide a detailed, objective description of the violation." {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                     <FormField
-                      control={form.control}
-                      name="actionTaken"
-                      render={({ field }) => (
-                        <FormItem>
-                          <FormLabel>Action Taken</FormLabel>
-                          <FormControl>
-                            <Input placeholder="e.g., Verbal warning, written warning, retraining scheduled" {...field} />
-                          </FormControl>
-                          <FormMessage />
-                        </FormItem>
-                      )}
-                    />
-                    <DialogFooter>
-                      <Button type="submit">Save Record</Button>
-                    </DialogFooter>
-                  </form>
-                </Form>
-              </DialogContent>
-            </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {violations.length > 0 ? (
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="description"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Description of Incident</FormLabel>
+                            <FormControl>
+                              <Textarea placeholder="Provide a detailed, objective description of the violation." {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <FormField
+                        control={form.control}
+                        name="actionTaken"
+                        render={({ field }) => (
+                          <FormItem>
+                            <FormLabel>Action Taken</FormLabel>
+                            <FormControl>
+                              <Input placeholder="e.g., Verbal warning, written warning, retraining scheduled" {...field} />
+                            </FormControl>
+                            <FormMessage />
+                          </FormItem>
+                        )}
+                      />
+                      <DialogFooter>
+                        <Button type="submit">Save Record</Button>
+                      </DialogFooter>
+                    </form>
+                  </Form>
+                </DialogContent>
+              </Dialog>
+            </div>
+          </CardHeader>
+          <CardContent>
+            {violations.length > 0 ? (
               <div className="border rounded-md">
-                  <Table>
-                      <TableHeader>
-                          <TableRow>
-                          <TableHead>Employee</TableHead>
-                          <TableHead>Date</TableHead>
-                          <TableHead>Type</TableHead>
-                          <TableHead>Description</TableHead>
-                          <TableHead>Action Taken</TableHead>
-                          <TableHead className="text-right w-[100px]">Actions</TableHead>
-                          </TableRow>
-                      </TableHeader>
-                      <TableBody>
-                          {violations.map(v => (
-                          <TableRow key={v.id}>
-                              <TableCell className="font-medium">{v.employeeName}</TableCell>
-                              <TableCell>{format(parseISO(v.date), 'PPP')}</TableCell>
-                              <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
-                              <TableCell className="max-w-sm">{v.description}</TableCell>
-                              <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
-                              <TableCell className="text-right">
-                              <Button variant="ghost" size="icon" onClick={() => setViolationToDelete(v)} aria-label={`Remove violation for ${v.employeeName}`}>
-                                  <Trash2 className="h-4 w-4 text-destructive" />
-                              </Button>
-                              </TableCell>
-                          </TableRow>
-                          ))}
-                      </TableBody>
-                  </Table>
+                <Table>
+                  <TableHeader>
+                    <TableRow>
+                      <TableHead>Employee</TableHead>
+                      <TableHead>Date</TableHead>
+                      <TableHead>Type</TableHead>
+                      <TableHead>Description</TableHead>
+                      <TableHead>Action Taken</TableHead>
+                      <TableHead className="text-right w-[100px]">Actions</TableHead>
+                    </TableRow>
+                  </TableHeader>
+                  <TableBody>
+                    {violations.map(v => (
+                      <TableRow key={v.id}>
+                        <TableCell className="font-medium">{v.employeeName}</TableCell>
+                        <TableCell>{format(parseISO(v.date), 'PPP')}</TableCell>
+                        <TableCell>{getViolationTypeLabel(v.type)}</TableCell>
+                        <TableCell className="max-w-sm">{v.description}</TableCell>
+                        <TableCell className="max-w-xs">{v.actionTaken}</TableCell>
+                        <TableCell className="text-right">
+                          <Button variant="ghost" size="icon" onClick={() => setViolationToDelete(v)} aria-label={`Remove violation for ${v.employeeName}`}>
+                            <Trash2 className="h-4 w-4 text-destructive" />
+                          </Button>
+                        </TableCell>
+                      </TableRow>
+                    ))}
+                  </TableBody>
+                </Table>
               </div>
-          ) : (
+            ) : (
               <div className="text-center text-muted-foreground py-10 border-2 border-dashed rounded-lg">
                 <ShieldAlert className="h-12 w-12 mx-auto mb-4 text-primary/70" />
                 <h3 className="text-xl font-semibold text-foreground">No Violations Found</h3>
                 <p className="mt-2">No violation records have been logged yet.</p>
               </div>
-          )}
-        </CardContent>
-      </Card>
-    </div>
-    <AlertDialog open={!!violationToDelete} onOpenChange={(open) => !open && setViolationToDelete(null)}>
+            )}
+          </CardContent>
+        </Card>
+      </div>
+      <AlertDialog open={!!violationToDelete} onOpenChange={(open) => !open && setViolationToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader>
-                <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
-                <AlertDialogDescription>
-                    This action cannot be undone. This will permanently delete the violation record for
-                    <span className="font-bold"> {violationToDelete?.employeeName}</span> on <span className="font-bold">{violationToDelete?.date ? format(parseISO(violationToDelete.date), 'PPP') : ''}</span>.
-                </AlertDialogDescription>
-            </AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                    onClick={() => {
-                        if (violationToDelete) {
-                            removeViolation(violationToDelete.id);
-                        }
-                    }}
-                    className={buttonVariants({ variant: "destructive" })}
-                >
-                    Delete
-                </AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader>
+            <AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle>
+            <AlertDialogDescription>
+              This action cannot be undone. This will permanently delete the violation record for
+              <span className="font-bold"> {violationToDelete?.employeeName}</span> on <span className="font-bold">{violationToDelete?.date ? format(parseISO(violationToDelete.date), 'PPP') : ''}</span>.
+            </AlertDialogDescription>
+          </AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction
+              onClick={() => {
+                if (violationToDelete) {
+                  removeViolation(violationToDelete.id);
+                }
+              }}
+              className={buttonVariants({ variant: "destructive" })}
+            >
+              Delete
+            </AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
-    </AlertDialog>
+      </AlertDialog>
     </>
   );
 }

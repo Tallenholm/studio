@@ -70,6 +70,7 @@ const analysisFlow = ai.defineFlow(
     Provide a concise summary and set the boolean flags appropriately.
 
     Current Report to Analyze:
+    - VIN: ${vin}
     - Date: ${report.date}
     - Overall Status: ${report.overallStatus}
     - Failed Items: ${report.sections.flatMap(s => s.items).filter(i => i.status === 'fail').map(i => i.name).join(', ') || 'None'}
@@ -84,10 +85,9 @@ const analysisFlow = ai.defineFlow(
         format: 'json',
         schema: AnalyzeInspectionReportsOutputSchema,
       },
-      input: { vin },
     });
 
-    const output = llmResponse.output();
+    const output = llmResponse.output;
     if (!output) {
       throw new Error('AI response did not include a valid analysis object.');
     }

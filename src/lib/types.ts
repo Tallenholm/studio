@@ -5,7 +5,7 @@ import type { LucideIcon } from 'lucide-react';
 /** Utility type that intersects a document type with an `id` field. */
 export type WithId<T> = T & { id: string };
 
-export type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing-schema';
+export type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
 export type { AnalyzeInspectionReportsOutput };
 
 export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';

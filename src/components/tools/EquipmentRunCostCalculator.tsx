@@ -10,22 +10,21 @@ export default function EquipmentRunCostCalculator() {
   const [maintenanceCostPerHour, setMaintenanceCostPerHour] = useState('');
   const [operatorCostPerHour, setOperatorCostPerHour] = useState('');
   const [totalHours, setTotalHours] = useState('');
-  const [result, setResult] = useState<number | null>(null);
-
-  const calculate = useCallback(() => {
+  const calculate = () => {
     const hours = parseFloat(totalHours);
-    if (isNaN(hours) || hours <= 0) { setResult(null); return; }
+    if (isNaN(hours) || hours <= 0) { return null; }
 
     const fuel = parseFloat(fuelCostPerHour) || 0;
     const maint = parseFloat(maintenanceCostPerHour) || 0;
     const operator = parseFloat(operatorCostPerHour) || 0;
-    setResult((fuel + maint + operator) * hours);
-  }, [fuelCostPerHour, maintenanceCostPerHour, operatorCostPerHour, totalHours]);
 
-  useEffect(() => { calculate(); }, [calculate]);
+    return (fuel + maint + operator) * hours;
+  };
+
+  const result = calculate();
 
   const handleReset = () => {
-    setFuelCostPerHour(''); setMaintenanceCostPerHour(''); setOperatorCostPerHour(''); setTotalHours(''); setResult(null);
+    setFuelCostPerHour(''); setMaintenanceCostPerHour(''); setOperatorCostPerHour(''); setTotalHours('');
   };
 
   const formattedResult = result !== null

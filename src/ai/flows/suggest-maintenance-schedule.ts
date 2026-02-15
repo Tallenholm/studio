@@ -26,14 +26,8 @@ export type SuggestMaintenanceScheduleOutput = z.infer<typeof SuggestMaintenance
 export async function suggestMaintenanceSchedule(
   input: z.infer<typeof SuggestMaintenanceScheduleInputSchema>
 ): Promise<SuggestMaintenanceScheduleOutput> {
-  const suggestSchedulePrompt = ai.definePrompt({
-    name: 'suggestMaintenanceSchedulePrompt',
-    inputSchema: SuggestMaintenanceScheduleInputSchema,
-    output: {
-      format: 'json',
-      schema: SuggestMaintenanceScheduleOutputSchema,
-    },
-    prompt: `You are an expert automotive maintenance advisor.
+  /* import DEFAULT_MODEL if not present */
+  const prompt = `You are an expert automotive maintenance advisor.
     
     Based on the vehicle year, make, and model provided, generate a standard preventative maintenance schedule.
     
@@ -58,13 +52,20 @@ export async function suggestMaintenanceSchedule(
     Do not include a 'lastServiceDate'. Only provide the interval in months.
 
     Vehicle: ${input.year} ${input.make} ${input.model}
-    `,
+    `;
+
+  const llmResponse = await ai.generate({
+    prompt,
+    model: 'gemini-1.5-flash',
+    output: {
+      format: 'json',
+      schema: SuggestMaintenanceScheduleOutputSchema,
+    },
   });
 
-  const llmResponse = await suggestSchedulePrompt.generate({ input });
-  const output = llmResponse.output();
+  const output = llmResponse.output;
   if (!output) {
-      throw new Error("AI failed to generate a valid maintenance schedule.");
+    throw new Error("AI failed to generate a valid maintenance schedule.");
   }
   return output;
 }

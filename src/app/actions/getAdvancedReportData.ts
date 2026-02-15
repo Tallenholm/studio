@@ -2,29 +2,29 @@
 
 'use server';
 
-import { 
-    getInspectionReports, 
-    getMaintenanceLogs, 
-    getTasks, 
-    getViolations, 
-    getFleetAssets, 
-    getExpenseReports,
-    getInspectionReportsInDateRange,
-    getMaintenanceLogsInDateRange,
-    getTasksInDateRange,
-    getViolationsInDateRange,
-    getExpenseReportsInDateRange
+import {
+  getInspectionReports,
+  getMaintenanceLogs,
+  getTasks,
+  getViolations,
+  getFleetAssets,
+  getExpenseReports,
+  getInspectionReportsInDateRange,
+  getMaintenanceLogsInDateRange,
+  getTasksInDateRange,
+  getViolationsInDateRange,
+  getExpenseReportsInDateRange
 } from '@/lib/firestoreService';
 import type { InspectionReport, MaintenanceLog, Task, Violation, ExpenseReport, FleetAsset, VehicleType, ExpenseCategory } from '@/lib/types';
 import { subDays, isWithinInterval, parseISO, format } from 'date-fns';
 
 interface ChartDataPoint {
-    name: string;
-    value: number;
-    fill: string;
+  name: string;
+  value: number;
+  fill: string;
 }
 
-interface AdvancedReportData {
+export interface AdvancedReportData {
   inspectionOutcomes: ChartDataPoint[];
   maintenanceServicesByType: ChartDataPoint[];
   frequentFailures: { name: string; total: number }[];
@@ -36,15 +36,15 @@ interface AdvancedReportData {
 }
 
 export async function getAdvancedReportData(
-  dateRangeFilter: 'all_time' | 'last_30_days' | 'last_quarter', 
+  dateRangeFilter: 'all_time' | 'last_30_days' | 'last_quarter',
   vehicleTypeFilter: VehicleType | 'all'
 ): Promise<AdvancedReportData> {
   const now = new Date();
-  const dateRange = 
+  const dateRange =
     dateRangeFilter === 'last_30_days' ? { start: subDays(now, 30), end: now }
-    : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
-    : null;
-    
+      : dateRangeFilter === 'last_quarter' ? { start: subDays(now, 90), end: now }
+        : null;
+
   const startDateStr = dateRange ? format(dateRange.start, 'yyyy-MM-dd') : null;
   const endDateStr = dateRange ? format(dateRange.end, 'yyyy-MM-dd') : null;
 
@@ -57,7 +57,7 @@ export async function getAdvancedReportData(
     dateRange && startDateStr && endDateStr ? getExpenseReportsInDateRange(startDateStr, endDateStr) : getExpenseReports(),
     getFleetAssets() // Always get all assets for filtering
   ]);
-  
+
   const hasAnyData = reports.length > 0 || logs.length > 0 || tasks.length > 0 || violations.length > 0 || expenses.length > 0;
   if (!hasAnyData) {
     return {
@@ -105,13 +105,13 @@ export async function getAdvancedReportData(
 
   const serviceCounts: Record<string, number> = { routine: 0, repair: 0, inspection: 0, other: 0 };
   filteredLogs.forEach(log => {
-      serviceCounts[log.serviceType] = (serviceCounts[log.serviceType] || 0) + 1;
+    serviceCounts[log.serviceType] = (serviceCounts[log.serviceType] || 0) + 1;
   });
   const maintenanceServicesByType = [
-      { name: 'Routine', value: serviceCounts.routine, fill: 'hsl(var(--chart-1))' },
-      { name: 'Repair', value: serviceCounts.repair, fill: 'hsl(var(--chart-2))' },
-      { name: 'Inspection', value: serviceCounts.inspection, fill: 'hsl(var(--chart-3))' },
-      { name: 'Other', value: serviceCounts.other, fill: 'hsl(var(--chart-5))' },
+    { name: 'Routine', value: serviceCounts.routine, fill: 'hsl(var(--chart-1))' },
+    { name: 'Repair', value: serviceCounts.repair, fill: 'hsl(var(--chart-2))' },
+    { name: 'Inspection', value: serviceCounts.inspection, fill: 'hsl(var(--chart-3))' },
+    { name: 'Other', value: serviceCounts.other, fill: 'hsl(var(--chart-5))' },
   ];
 
   const failureCounts: { [key: string]: number } = {};
@@ -131,10 +131,10 @@ export async function getAdvancedReportData(
 
   const costMap: { [key: string]: number } = {};
   filteredLogs.forEach(log => {
-      const asset = fleetAssets.find(a => a.id === log.assetId);
-      if (asset && log.cost) {
-          costMap[asset.name] = (costMap[asset.name] || 0) + log.cost;
-      }
+    const asset = fleetAssets.find(a => a.id === log.assetId);
+    if (asset && log.cost) {
+      costMap[asset.name] = (costMap[asset.name] || 0) + log.cost;
+    }
   });
   const maintenanceCosts = Object.entries(costMap).map(([name, totalCost]) => ({
     name,
@@ -149,7 +149,7 @@ export async function getAdvancedReportData(
   const expenseMap: { [key in ExpenseCategory]?: number } = {};
   filteredExpenses.forEach(expense => {
     if (expense.category) {
-        expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
+      expenseMap[expense.category] = (expenseMap[expense.category] || 0) + expense.amount;
     }
   });
   const expensesByCategoryData = Object.entries(expenseMap)
@@ -158,18 +158,18 @@ export async function getAdvancedReportData(
       totalAmount: totalAmount || 0,
     }))
     .sort((a, b) => b.totalAmount - a.totalAmount);
-    
+
   const violationCounts: Record<string, number> = {};
   filteredViolations.forEach(v => {
-      if(v.type) {
-        violationCounts[v.type] = (violationCounts[v.type] || 0) + 1;
-      }
+    if (v.type) {
+      violationCounts[v.type] = (violationCounts[v.type] || 0) + 1;
+    }
   });
   const violationsByTypeData = [
-    { name: 'Safety', value: violationCounts.safety || 0, fill: 'hsl(var(--chart-2))'},
-    { name: 'Conduct', value: violationCounts.conduct || 0, fill: 'hsl(var(--chart-3))'},
-    { name: 'Performance', value: violationCounts.performance || 0, fill: 'hsl(var(--chart-4))'},
-    { name: 'Other', value: violationCounts.other || 0, fill: 'hsl(var(--chart-5))'},
+    { name: 'Safety', value: violationCounts.safety || 0, fill: 'hsl(var(--chart-2))' },
+    { name: 'Conduct', value: violationCounts.conduct || 0, fill: 'hsl(var(--chart-3))' },
+    { name: 'Performance', value: violationCounts.performance || 0, fill: 'hsl(var(--chart-4))' },
+    { name: 'Other', value: violationCounts.other || 0, fill: 'hsl(var(--chart-5))' },
   ];
 
   return {

@@ -366,7 +366,7 @@ export const getJobsForUser = async (userId: string): Promise<Job[]> => {
 };
 
 // Special case functions
-export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
+export const addNoteToJob = async (jobId: string, note: NonNullable<Job['notes']>[number]) => {
     const db = getFirestoreInstance();
     const jobDocRef = doc(db, 'jobs', jobId);
     await updateDoc(jobDocRef, {

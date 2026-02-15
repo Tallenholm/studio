@@ -20,25 +20,26 @@ export default function PersonalDocumentsPage() {
   useEffect(() => {
     if (!user) return;
     setIsLoading(true);
+    const userId = user.uid;
     async function fetchData() {
-        try {
-            const userDocs = await getDocumentsForUser(user.uid);
-            setDocuments(userDocs);
-        } catch (error) {
-             toast({ variant: 'destructive', title: 'Error', description: 'Could not load your documents.' });
-        } finally {
-            setIsLoading(false);
-        }
+      try {
+        const userDocs = await getDocumentsForUser(userId);
+        setDocuments(userDocs);
+      } catch (error) {
+        toast({ variant: 'destructive', title: 'Error', description: 'Could not load your documents.' });
+      } finally {
+        setIsLoading(false);
+      }
     }
     fetchData();
   }, [user, toast]);
 
   const { taxDocuments, employmentDocuments } = documents.reduce(
     (acc, doc) => {
-        if (doc.documentType === 'tax') acc.taxDocuments.push(doc);
-        if (doc.documentType === 'employment') acc.employmentDocuments.push(doc);
-        return acc;
-    }, 
+      if (doc.documentType === 'tax') acc.taxDocuments.push(doc);
+      if (doc.documentType === 'employment') acc.employmentDocuments.push(doc);
+      return acc;
+    },
     { taxDocuments: [], employmentDocuments: [] } as { taxDocuments: ManagedDocument[], employmentDocuments: ManagedDocument[] }
   );
 
@@ -113,4 +114,4 @@ export default function PersonalDocumentsPage() {
   );
 }
 
-    
+

@@ -5,13 +5,15 @@ import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route, BookOpen } from 'lucide-react';
+import { Truck, CalendarDays, CalendarPlus, Loader2, FileText, Receipt, ShieldAlert, FileBadge, Check, MapPin, Briefcase, Snowflake, Users as UsersIcon, Droplets, Package, ClipboardList, Route, BookOpen, Pickaxe, Shovel } from 'lucide-react';
 import { useUser } from '@/firebase/provider';
 import { useEffect, useMemo, useState } from 'react';
 import { Calendar } from '@/components/ui/calendar';
-import type { CalendarEvent, Job, Task, InspectionReport } from '@/lib/types';
+import type { Job, CalendarEvent, Task, InspectionReport, JobStatus } from '@/lib/types';
 import { isSameDay, format, parseISO, isWithinInterval } from 'date-fns';
-import GuidedTour from '@/components/common/GuidedTour';
+import dynamic from 'next/dynamic';
+
+const GuidedTour = dynamic(() => import('@/components/common/GuidedTour'), { ssr: false });
 import type { TourStep } from '@/components/common/GuidedTour';
 import { getJobStatus } from '@/lib/job-utils';
 import AnimatedCounter from '@/components/common/AnimatedCounter';
@@ -121,7 +123,9 @@ export default function EmployeeHubClientPage() {
       excavation: Briefcase,
       snow_removal: Snowflake,
       concrete: Droplets,
-      misc: Package
+      misc: Package,
+      utilities: Pickaxe,
+      landscaping: Shovel
     };
     const Icon = icons[jobType];
 
