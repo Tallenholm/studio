@@ -154,5 +154,11 @@ service cloud.firestore {
                     isAdmin() // Admins can read all notifications for moderation
                   );
     }
+
+    // User-specific settings (e.g., theme, notifications).
+    // Each user can only read/write their own settings document.
+    match /settings/{userId} {
+      allow read, write: if isSignedIn() && request.auth.uid == userId;
+    }
   }
 }

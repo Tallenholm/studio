@@ -1,36 +1,32 @@
 'use client';
 
-import { useState, useEffect } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 const aggregateTypes = [
-    { value: 'custom', label: 'Custom Density', density: '1.4' },
-    { value: 'pea_gravel', label: 'Pea Gravel / #8 Stone', density: '1.35' },
-    { value: 'driveway_gravel', label: 'Driveway Gravel / #57 Stone', density: '1.45' },
-    { value: 'road_base', label: 'Road Base / Crusher Run', density: '1.55' },
+  { value: 'custom', label: 'Custom Density', density: '1.4' },
+  { value: 'pea_gravel', label: 'Pea Gravel / #8 Stone', density: '1.35' },
+  { value: 'driveway_gravel', label: 'Driveway Gravel / #57 Stone', density: '1.45' },
+  { value: 'road_base', label: 'Road Base / Crusher Run', density: '1.55' },
 ];
 
 export default function GravelCalculator() {
   const [length, setLength] = useState('');
   const [width, setWidth] = useState('');
-  const [depth, setDepth] = useState('4'); // Default to 4 inches
+  const [depth, setDepth] = useState('4');
   const [aggregateType, setAggregateType] = useState('driveway_gravel');
-  const [density, setDensity] = useState('1.45'); // Corresponds to driveway_gravel
+  const [density, setDensity] = useState('1.45');
   const [result, setResult] = useState<{ yards: number; tons: number } | null>(null);
 
   useEffect(() => {
     const selectedAggregate = aggregateTypes.find(agg => agg.value === aggregateType);
-    if (selectedAggregate) {
-      setDensity(selectedAggregate.density);
-    }
+    if (selectedAggregate) setDensity(selectedAggregate.density);
   }, [aggregateType]);
 
-  const calculate = () => {
+  const calculate = useCallback(() => {
     const L = parseFloat(length);
     const W = parseFloat(width);
     const D = parseFloat(depth);
@@ -43,64 +39,67 @@ export default function GravelCalculator() {
 
     const cubicFeet = L * W * (D / 12);
     const yards = cubicFeet / 27;
-    const tons = yards * RHO;
-
     setResult({
-        yards: Math.round(yards * 100) / 100,
-        tons: Math.round(tons * 100) / 100
+      yards: Math.round(yards * 100) / 100,
+      tons: Math.round(yards * RHO * 100) / 100,
     });
+  }, [length, width, depth, density]);
+
+  useEffect(() => { calculate(); }, [calculate]);
+
+  const handleReset = () => {
+    setLength('');
+    setWidth('');
+    setDepth('4');
+    setAggregateType('driveway_gravel');
+    setDensity('1.45');
+    setResult(null);
   };
 
+  const results = result
+    ? [
+      { label: 'Estimated Gravel Needed', value: `${result.yards.toFixed(2)} cubic yards`, isPrimary: true },
+      { label: 'Weight', value: `~ ${result.tons.toFixed(2)} tons` },
+    ]
+    : null;
+
+  const resultString = result ? `${result.yards.toFixed(2)} cubic yards (~${result.tons.toFixed(2)} tons)` : undefined;
+
   return (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-1 gap-4">
-          <div>
-            <Label htmlFor="aggregate-type">Gravel Type</Label>
-            <Select value={aggregateType} onValueChange={setAggregateType}>
-                <SelectTrigger id="aggregate-type">
-                    <SelectValue placeholder="Select gravel type..." />
-                </SelectTrigger>
-                <SelectContent>
-                    {aggregateTypes.map(agg => (
-                        <SelectItem key={agg.value} value={agg.value}>{agg.label}</SelectItem>
-                    ))}
-                </SelectContent>
-            </Select>
-          </div>
+    <CalculatorShell calculatorName="Gravel Calculator" results={results} onReset={handleReset} resultString={resultString}>
+      <div className="space-y-4">
+        <div>
+          <Label htmlFor="aggregate-type">Gravel Type</Label>
+          <Select value={aggregateType} onValueChange={setAggregateType}>
+            <SelectTrigger id="aggregate-type" aria-label="Gravel type">
+              <SelectValue placeholder="Select gravel type..." />
+            </SelectTrigger>
+            <SelectContent>
+              {aggregateTypes.map(agg => (
+                <SelectItem key={agg.value} value={agg.value}>{agg.label}</SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <div className="grid grid-cols-2 sm:grid-cols-2 gap-4">
+        <div className="grid grid-cols-2 gap-4">
           <div>
             <Label htmlFor="gravel-length">Length (ft)</Label>
-            <Input id="gravel-length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 50" />
+            <Input id="gravel-length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 50" aria-label="Area length in feet" />
           </div>
           <div>
             <Label htmlFor="gravel-width">Width (ft)</Label>
-            <Input id="gravel-width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 12" />
+            <Input id="gravel-width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 12" aria-label="Area width in feet" />
           </div>
           <div>
             <Label htmlFor="gravel-depth">Depth (in)</Label>
-            <Input id="gravel-depth" type="number" value={depth} onChange={(e) => setDepth(e.target.value)} placeholder="e.g., 4" />
+            <Input id="gravel-depth" type="number" value={depth} onChange={(e) => setDepth(e.target.value)} placeholder="e.g., 4" aria-label="Gravel depth in inches" />
           </div>
-           <div>
+          <div>
             <Label htmlFor="gravel-density">Density (tons/yd³)</Label>
-            <Input id="gravel-density" type="number" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="e.g., 1.45" />
+            <Input id="gravel-density" type="number" value={density} onChange={(e) => setDensity(e.target.value)} placeholder="e.g., 1.45" aria-label="Material density" />
           </div>
         </div>
-        <Button type="button" onClick={calculate} className="w-full">Calculate Gravel</Button>
-        {result !== null && (
-          <>
-            <div className="text-center pt-2">
-              <p className="text-sm text-muted-foreground">Estimated Gravel Needed</p>
-              <p className="text-2xl font-bold text-primary">{result.yards.toFixed(2)} cubic yards</p>
-              <p className="text-lg text-muted-foreground">~ {result.tons.toFixed(2)} tons</p>
-            </div>
-            <Separator className="my-4" />
-            <SaveToJob 
-              calculatorName="Gravel Calculator" 
-              resultString={`${result.yards.toFixed(2)} cubic yards (~${result.tons.toFixed(2)} tons)`} 
-            />
-          </>
-        )}
-    </div>
+      </div>
+    </CalculatorShell>
   );
 }

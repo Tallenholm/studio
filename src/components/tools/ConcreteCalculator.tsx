@@ -1,19 +1,17 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 export default function ConcreteCalculator() {
   const [length, setLength] = useState('');
   const [width, setWidth] = useState('');
-  const [thickness, setThickness] = useState('4'); // Default to 4 inches
+  const [thickness, setThickness] = useState('4');
   const [cubicYards, setCubicYards] = useState<number | null>(null);
 
-  const calculate = () => {
+  const calculate = useCallback(() => {
     const L = parseFloat(length);
     const W = parseFloat(width);
     const T = parseFloat(thickness);
@@ -24,42 +22,43 @@ export default function ConcreteCalculator() {
     }
 
     const cubicFeet = L * W * (T / 12);
-    const yards = cubicFeet / 27;
-    const roundedYards = Math.round(yards * 100) / 100; // Round to 2 decimal places
+    setCubicYards(Math.round((cubicFeet / 27) * 100) / 100);
+  }, [length, width, thickness]);
 
-    setCubicYards(roundedYards);
+  useEffect(() => { calculate(); }, [calculate]);
+
+  const handleReset = () => {
+    setLength('');
+    setWidth('');
+    setThickness('4');
+    setCubicYards(null);
   };
 
+  const results = cubicYards !== null
+    ? [{ label: 'Required Concrete', value: `${cubicYards.toFixed(2)} cubic yards`, isPrimary: true }]
+    : null;
+
   return (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="length">Length (ft)</Label>
-            <Input id="length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 20" />
-          </div>
-          <div>
-            <Label htmlFor="width">Width (ft)</Label>
-            <Input id="width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 10" />
-          </div>
-          <div>
-            <Label htmlFor="thickness">Thickness (in)</Label>
-            <Input id="thickness" type="number" value={thickness} onChange={(e) => setThickness(e.target.value)} placeholder="e.g., 4" />
-          </div>
+    <CalculatorShell
+      calculatorName="Concrete Calculator"
+      results={results}
+      onReset={handleReset}
+      resultString={cubicYards !== null ? `${cubicYards.toFixed(2)} cubic yards` : undefined}
+    >
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="concrete-length">Length (ft)</Label>
+          <Input id="concrete-length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 20" aria-label="Slab length in feet" />
         </div>
-        <Button type="button" onClick={calculate} className="w-full">Calculate</Button>
-        {cubicYards !== null && (
-          <>
-            <div className="text-center pt-2">
-              <p className="text-sm text-muted-foreground">Required Concrete</p>
-              <p className="text-2xl font-bold text-primary">{cubicYards.toFixed(2)} cubic yards</p>
-            </div>
-            <Separator className="my-4" />
-            <SaveToJob 
-              calculatorName="Concrete Calculator" 
-              resultString={`${cubicYards.toFixed(2)} cubic yards`} 
-            />
-          </>
-        )}
-    </div>
+        <div>
+          <Label htmlFor="concrete-width">Width (ft)</Label>
+          <Input id="concrete-width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 10" aria-label="Slab width in feet" />
+        </div>
+        <div>
+          <Label htmlFor="concrete-thickness">Thickness (in)</Label>
+          <Input id="concrete-thickness" type="number" value={thickness} onChange={(e) => setThickness(e.target.value)} placeholder="e.g., 4" aria-label="Slab thickness in inches" />
+        </div>
+      </div>
+    </CalculatorShell>
   );
 }

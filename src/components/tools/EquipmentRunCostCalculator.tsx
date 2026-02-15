@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 export default function EquipmentRunCostCalculator() {
   const [fuelCostPerHour, setFuelCostPerHour] = useState('');
@@ -14,62 +12,50 @@ export default function EquipmentRunCostCalculator() {
   const [totalHours, setTotalHours] = useState('');
   const [result, setResult] = useState<number | null>(null);
 
-  const calculate = () => {
-    const fuel = parseFloat(fuelCostPerHour);
-    const maint = parseFloat(maintenanceCostPerHour);
-    const operator = parseFloat(operatorCostPerHour);
+  const calculate = useCallback(() => {
     const hours = parseFloat(totalHours);
+    if (isNaN(hours) || hours <= 0) { setResult(null); return; }
 
-    if (isNaN(hours) || hours <= 0) {
-      setResult(null);
-      return;
-    }
-    
-    // Allow costs to be zero
-    const totalHourlyCost = (isNaN(fuel) ? 0 : fuel) + (isNaN(maint) ? 0 : maint) + (isNaN(operator) ? 0 : operator);
-    const totalCost = totalHourlyCost * hours;
+    const fuel = parseFloat(fuelCostPerHour) || 0;
+    const maint = parseFloat(maintenanceCostPerHour) || 0;
+    const operator = parseFloat(operatorCostPerHour) || 0;
+    setResult((fuel + maint + operator) * hours);
+  }, [fuelCostPerHour, maintenanceCostPerHour, operatorCostPerHour, totalHours]);
 
-    setResult(totalCost);
+  useEffect(() => { calculate(); }, [calculate]);
+
+  const handleReset = () => {
+    setFuelCostPerHour(''); setMaintenanceCostPerHour(''); setOperatorCostPerHour(''); setTotalHours(''); setResult(null);
   };
 
-  const formattedResult = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result || 0);
+  const formattedResult = result !== null
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(result)
+    : undefined;
+
+  const results = formattedResult
+    ? [{ label: 'Total Equipment Run Cost', value: formattedResult, isPrimary: true }]
+    : null;
 
   return (
-    <div className="space-y-4">
+    <CalculatorShell calculatorName="Equipment Run Cost" results={results} onReset={handleReset} resultString={formattedResult}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div className="sm:col-span-2">
           <Label htmlFor="equip-hours">Total Operating Hours</Label>
-          <Input id="equip-hours" type="number" value={totalHours} onChange={(e) => setTotalHours(e.target.value)} placeholder="e.g., 80" />
+          <Input id="equip-hours" type="number" value={totalHours} onChange={(e) => setTotalHours(e.target.value)} placeholder="e.g., 80" aria-label="Total operating hours" />
         </div>
         <div>
           <Label htmlFor="equip-fuel">Fuel Cost / hr ($)</Label>
-          <Input id="equip-fuel" type="number" value={fuelCostPerHour} onChange={(e) => setFuelCostPerHour(e.target.value)} placeholder="e.g., 15" />
+          <Input id="equip-fuel" type="number" value={fuelCostPerHour} onChange={(e) => setFuelCostPerHour(e.target.value)} placeholder="e.g., 15" aria-label="Fuel cost per hour" />
         </div>
         <div>
           <Label htmlFor="equip-maint">Maint. Cost / hr ($)</Label>
-          <Input id="equip-maint" type="number" value={maintenanceCostPerHour} onChange={(e) => setMaintenanceCostPerHour(e.target.value)} placeholder="e.g., 5" />
+          <Input id="equip-maint" type="number" value={maintenanceCostPerHour} onChange={(e) => setMaintenanceCostPerHour(e.target.value)} placeholder="e.g., 5" aria-label="Maintenance cost per hour" />
         </div>
         <div className="sm:col-span-2">
           <Label htmlFor="equip-operator">Operator Cost / hr ($)</Label>
-          <Input id="equip-operator" type="number" value={operatorCostPerHour} onChange={(e) => setOperatorCostPerHour(e.target.value)} placeholder="e.g., 30" />
+          <Input id="equip-operator" type="number" value={operatorCostPerHour} onChange={(e) => setOperatorCostPerHour(e.target.value)} placeholder="e.g., 30" aria-label="Operator cost per hour" />
         </div>
       </div>
-      <Button type="button" onClick={calculate} className="w-full">Calculate Run Cost</Button>
-      {result !== null && (
-        <>
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Total Equipment Run Cost</p>
-            <p className="text-2xl font-bold text-primary">
-              {formattedResult}
-            </p>
-          </div>
-          <Separator className="my-4" />
-          <SaveToJob 
-            calculatorName="Equipment Run Cost" 
-            resultString={formattedResult} 
-          />
-        </>
-      )}
-    </div>
+    </CalculatorShell>
   );
 }

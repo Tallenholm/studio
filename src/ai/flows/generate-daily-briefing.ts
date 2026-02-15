@@ -1,7 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, DEFAULT_MODEL } from '@/ai/genkit';
 import { z } from 'zod';
 import { DailyBriefingOutputSchema, BriefingDataSchema } from './generate-daily-briefing-schema';
 import type { DailyBriefingOutput, BriefingData } from './generate-daily-briefing-schema';
@@ -13,7 +13,7 @@ const generateBriefingFlow = ai.defineFlow(
     outputSchema: DailyBriefingOutputSchema,
   },
   async (input) => {
-    
+
     const prompt = `You are an AI assistant for an operations manager. It is currently ${new Date().toDateString()}.
     Your task is to review the following structured data and generate a professional, concise summary for each item.
     - For 'attentionItems', the summary should be a direct, actionable alert.
@@ -26,7 +26,7 @@ const generateBriefingFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt,
-      model: 'gemini-1.5-flash',
+      model: DEFAULT_MODEL,
       output: {
         format: 'json',
         schema: DailyBriefingOutputSchema,

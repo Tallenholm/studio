@@ -1,7 +1,7 @@
 'use server';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'zod';
+import { ai, DEFAULT_MODEL } from '@/ai/genkit';
+import { z } from 'zod';
 
 const ExtractReceiptInputSchema = z.object({
   receiptDataUri: z.string().describe("An image of a receipt as a data URI (e.g., 'data:image/jpeg;base64,...')."),
@@ -13,23 +13,25 @@ const ExtractReceiptOutputSchema = z.object({
   description: z.string().describe('A brief summary of the items or the merchant name from the receipt.'),
 });
 
-export async function extractReceiptData(input: z.infer<typeof ExtractReceiptInputSchema>): Promise<z.infer<typeof ExtractReceiptOutputSchema>> {
+// Define the prompt at module scope so it's registered once, not on every invocation.
+const extractPrompt = ai.definePrompt({
+  name: 'extractReceiptPrompt',
+  model: DEFAULT_MODEL,
+  inputSchema: ExtractReceiptInputSchema,
+  output: {
+    format: 'json',
+    schema: ExtractReceiptOutputSchema,
+  },
+  prompt: `Analyze the following receipt image. Extract the total amount, the date, and a short description (like the merchant name or key items).
+
+  Receipt:
+  {{media url=receiptDataUri}}
   
-    const extractPrompt = ai.definePrompt({
-        name: 'extractReceiptPrompt',
-        inputSchema: ExtractReceiptInputSchema,
-        output: {
-            format: 'json',
-            schema: ExtractReceiptOutputSchema,
-        },
-        prompt: `Analyze the following receipt image. Extract the total amount, the date, and a short description (like the merchant name or key items).
+  Provide the output in the requested JSON format.`,
+});
 
-        Receipt:
-        {{media url=receiptDataUri}}
-        
-        Provide the output in the requested JSON format.`,
-    });
-
+export async function extractReceiptData(input: z.infer<typeof ExtractReceiptInputSchema>): Promise<z.infer<typeof ExtractReceiptOutputSchema>> {
   const llmResponse = await extractPrompt.generate({ input });
   return llmResponse.output()!;
 }
+

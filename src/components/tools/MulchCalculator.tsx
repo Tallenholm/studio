@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 export default function MulchCalculator() {
   const [length, setLength] = useState('');
@@ -13,52 +11,38 @@ export default function MulchCalculator() {
   const [depth, setDepth] = useState('3');
   const [result, setResult] = useState<number | null>(null);
 
-  const calculate = () => {
+  const calculate = useCallback(() => {
     const L = parseFloat(length);
     const W = parseFloat(width);
     const D = parseFloat(depth);
+    if (isNaN(L) || isNaN(W) || isNaN(D) || L <= 0 || W <= 0 || D <= 0) { setResult(null); return; }
+    setResult(Math.round((L * W * (D / 12)) / 27 * 100) / 100);
+  }, [length, width, depth]);
 
-    if (isNaN(L) || isNaN(W) || isNaN(D) || L <= 0 || W <= 0 || D <= 0) {
-      setResult(null);
-      return;
-    }
+  useEffect(() => { calculate(); }, [calculate]);
 
-    const cubicFeet = L * W * (D / 12);
-    const yards = cubicFeet / 27;
+  const handleReset = () => { setLength(''); setWidth(''); setDepth('3'); setResult(null); };
 
-    setResult(Math.round(yards * 100) / 100);
-  };
+  const results = result !== null
+    ? [{ label: 'Estimated Mulch Needed', value: `${result.toFixed(2)} cubic yards`, isPrimary: true }]
+    : null;
 
   return (
-    <div className="space-y-4">
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-          <div>
-            <Label htmlFor="mulch-length">Length (ft)</Label>
-            <Input id="mulch-length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 20" />
-          </div>
-          <div>
-            <Label htmlFor="mulch-width">Width (ft)</Label>
-            <Input id="mulch-width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 10" />
-          </div>
-          <div>
-            <Label htmlFor="mulch-depth">Depth (in)</Label>
-            <Input id="mulch-depth" type="number" value={depth} onChange={(e) => setDepth(e.target.value)} placeholder="e.g., 3" />
-          </div>
+    <CalculatorShell calculatorName="Mulch Calculator" results={results} onReset={handleReset} resultString={result !== null ? `${result.toFixed(2)} cubic yards` : undefined}>
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
+        <div>
+          <Label htmlFor="mulch-length">Length (ft)</Label>
+          <Input id="mulch-length" type="number" value={length} onChange={(e) => setLength(e.target.value)} placeholder="e.g., 20" aria-label="Bed length in feet" />
         </div>
-        <Button type="button" onClick={calculate} className="w-full">Calculate Mulch</Button>
-        {result !== null && (
-          <>
-            <div className="text-center pt-2">
-              <p className="text-sm text-muted-foreground">Estimated Mulch Needed</p>
-              <p className="text-2xl font-bold text-primary">{result.toFixed(2)} cubic yards</p>
-            </div>
-            <Separator className="my-4" />
-            <SaveToJob 
-              calculatorName="Mulch Calculator" 
-              resultString={`${result.toFixed(2)} cubic yards`} 
-            />
-          </>
-        )}
-    </div>
+        <div>
+          <Label htmlFor="mulch-width">Width (ft)</Label>
+          <Input id="mulch-width" type="number" value={width} onChange={(e) => setWidth(e.target.value)} placeholder="e.g., 10" aria-label="Bed width in feet" />
+        </div>
+        <div>
+          <Label htmlFor="mulch-depth">Depth (in)</Label>
+          <Input id="mulch-depth" type="number" value={depth} onChange={(e) => setDepth(e.target.value)} placeholder="e.g., 3" aria-label="Mulch depth in inches" />
+        </div>
+      </div>
+    </CalculatorShell>
   );
 }

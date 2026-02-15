@@ -28,7 +28,7 @@ export function getFirestoreInstance(): Firestore {
 
 // Generic CRUD factory
 const createCrudService = <T extends { id: string }>(collectionName: string) => {
-    
+
     const getCollection = () => {
         const db = getFirestoreInstance();
         return collection(db, collectionName);
@@ -48,10 +48,10 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
         add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
             const db = getFirestoreInstance();
             const colRef = collection(db, collectionName);
-            
+
             if (id) {
                 const docRef = doc(colRef, id);
-                setDoc(docRef, data).catch(error => {
+                await setDoc(docRef, data).catch(error => {
                     errorEmitter.emit(
                         'permission-error',
                         new FirestorePermissionError({
@@ -60,20 +60,21 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                             requestResourceData: data,
                         })
                     );
+                    throw error;
                 });
                 return id;
             }
-            
+
             const docRefPromise = addDoc(colRef, data).catch(error => {
                 errorEmitter.emit(
-                  'permission-error',
-                  new FirestorePermissionError({
-                    path: colRef.path,
-                    operation: 'create',
-                    requestResourceData: data,
-                  })
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: colRef.path,
+                        operation: 'create',
+                        requestResourceData: data,
+                    })
                 );
-                return Promise.reject(error);
+                throw error;
             });
 
             return (await docRefPromise).id;
@@ -81,28 +82,30 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
         update: async (id: string, data: Partial<Omit<T, 'id'>>): Promise<void> => {
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
-            updateDoc(docRef, data).catch(error => {
+            await updateDoc(docRef, data).catch(error => {
                 errorEmitter.emit(
-                  'permission-error',
-                  new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: data,
-                  })
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: docRef.path,
+                        operation: 'update',
+                        requestResourceData: data,
+                    })
                 );
+                throw error;
             });
         },
         delete: async (id: string): Promise<void> => {
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
-            deleteDoc(docRef).catch(error => {
+            await deleteDoc(docRef).catch(error => {
                 errorEmitter.emit(
-                  'permission-error',
-                  new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                  })
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: docRef.path,
+                        operation: 'delete',
+                    })
                 );
+                throw error;
             });
         },
         batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
@@ -113,16 +116,17 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 const docRef = doc(col);
                 batch.set(docRef, item);
             });
-            batch.commit().catch(error => {
-                 errorEmitter.emit(
-                  'permission-error',
-                  new FirestorePermissionError({
-                    path: col.path,
-                    operation: 'write',
-                    requestResourceData: data,
-                  })
+            await batch.commit().catch(error => {
+                errorEmitter.emit(
+                    'permission-error',
+                    new FirestorePermissionError({
+                        path: col.path,
+                        operation: 'write',
+                        requestResourceData: data,
+                    })
                 );
-            })
+                throw error;
+            });
         }
     };
 };
@@ -254,25 +258,25 @@ export const getExpenseReportsInDateRange = async (startDate: string, endDate: s
 };
 
 export const getInspectionReportsInDateRange = async (
-  startDate: string,
-  endDate: string,
-  status?: InspectionStatus
+    startDate: string,
+    endDate: string,
+    status?: InspectionStatus
 ): Promise<InspectionReport[]> => {
-  const db = getFirestoreInstance();
-  const reportsRef = collection(db, 'inspectionReports');
-  
-  const queryConstraints = [
-    where('date', '>=', startDate),
-    where('date', '<=', endDate),
-  ];
+    const db = getFirestoreInstance();
+    const reportsRef = collection(db, 'inspectionReports');
 
-  if (status && status !== 'pending') {
-    queryConstraints.push(where('overallStatus', '==', status));
-  }
+    const queryConstraints = [
+        where('date', '>=', startDate),
+        where('date', '<=', endDate),
+    ];
 
-  const q = query(reportsRef, ...queryConstraints);
-  const snapshot = await getDocs(q);
-  return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+    if (status && status !== 'pending') {
+        queryConstraints.push(where('overallStatus', '==', status));
+    }
+
+    const q = query(reportsRef, ...queryConstraints);
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
 };
 
 export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
@@ -345,7 +349,7 @@ export const getSnowJobs = async (): Promise<Job[]> => {
 export const getJobsForUser = async (userId: string): Promise<Job[]> => {
     const db = getFirestoreInstance();
     const jobsRef = collection(db, 'jobs');
-    
+
     const q1 = query(jobsRef, where('assignedEmployeeIds', 'array-contains', userId));
     const q2 = query(jobsRef, where('assignedSidewalkCrewIds', 'array-contains', userId));
 
@@ -363,20 +367,21 @@ export const getJobsForUser = async (userId: string): Promise<Job[]> => {
 
 // Special case functions
 export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) => {
-  const db = getFirestoreInstance();
-  const jobDocRef = doc(db, 'jobs', jobId);
-  updateDoc(jobDocRef, {
-    notes: arrayUnion(note)
-  }).catch(error => {
-      errorEmitter.emit(
-        'permission-error',
-        new FirestorePermissionError({
-          path: jobDocRef.path,
-          operation: 'update',
-          requestResourceData: { notes: arrayUnion(note) },
-        })
-      );
-  });
+    const db = getFirestoreInstance();
+    const jobDocRef = doc(db, 'jobs', jobId);
+    await updateDoc(jobDocRef, {
+        notes: arrayUnion(note)
+    }).catch(error => {
+        errorEmitter.emit(
+            'permission-error',
+            new FirestorePermissionError({
+                path: jobDocRef.path,
+                operation: 'update',
+                requestResourceData: { notes: arrayUnion(note) },
+            })
+        );
+        throw error;
+    });
 };
 
 /**
@@ -388,7 +393,7 @@ export const addNoteToJob = async (jobId: string, note: Job['notes'][number]) =>
 export const getReportsByVin = async (vin: string): Promise<InspectionReport[]> => {
     const db = getFirestoreInstance();
     const reportsRef = collection(db, 'inspectionReports');
-    
+
     const sixMonthsAgo = subMonths(new Date(), 6);
     const sixMonthsAgoStr = format(sixMonthsAgo, 'yyyy-MM-dd');
 

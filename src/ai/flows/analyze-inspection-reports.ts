@@ -1,6 +1,6 @@
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, DEFAULT_MODEL } from '@/ai/genkit';
 import { z } from 'zod';
 import { getReportsByVin } from '@/lib/firestoreService';
 import type { InspectionReport } from '@/lib/types';
@@ -23,7 +23,7 @@ const fetchAssetHistoryTool = ai.defineTool(
   {
     name: 'fetchAssetHistory',
     description: 'Fetches historical inspection reports for the asset mentioned in the current report.',
-    inputSchema: z.object({ 
+    inputSchema: z.object({
       vin: z.string().describe("The VIN of the asset to fetch history for.")
     }),
     outputSchema: z.object({
@@ -77,7 +77,7 @@ const analysisFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt,
-      model: 'gemini-1.5-flash',
+      model: DEFAULT_MODEL,
       tools: [fetchAssetHistoryTool],
       toolChoice: 'auto',
       output: {

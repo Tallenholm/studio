@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 export default function RetainingWallCalculator() {
   const [wallLength, setWallLength] = useState('');
@@ -15,7 +13,7 @@ export default function RetainingWallCalculator() {
   const [waste, setWaste] = useState('5');
   const [result, setResult] = useState<number | null>(null);
 
-  const calculate = () => {
+  const calculate = useCallback(() => {
     const WL = parseFloat(wallLength);
     const WH = parseFloat(wallHeight);
     const BL = parseFloat(blockLength);
@@ -23,57 +21,50 @@ export default function RetainingWallCalculator() {
     const wastePercent = parseFloat(waste);
 
     if (isNaN(WL) || isNaN(WH) || isNaN(BL) || isNaN(BH) || WL <= 0 || WH <= 0 || BL <= 0 || BH <= 0 || isNaN(wastePercent) || wastePercent < 0) {
-      setResult(null);
-      return;
+      setResult(null); return;
     }
-    
-    const wasteFactor = 1 + (wastePercent / 100);
-    const wallAreaSqInches = (WL * 12) * (WH * 12);
-    const blockAreaSqInches = BL * BH;
-    const numBlocks = (wallAreaSqInches / blockAreaSqInches) * wasteFactor;
 
+    const numBlocks = ((WL * 12) * (WH * 12)) / (BL * BH) * (1 + wastePercent / 100);
     setResult(Math.ceil(numBlocks));
+  }, [wallLength, wallHeight, blockLength, blockHeight, waste]);
+
+  useEffect(() => { calculate(); }, [calculate]);
+
+  const handleReset = () => {
+    setWallLength(''); setWallHeight(''); setBlockLength('16'); setBlockHeight('6'); setWaste('5'); setResult(null);
   };
 
+  const results = result !== null
+    ? [
+      { label: 'Estimated Blocks Needed', value: `${result.toLocaleString()} blocks`, isPrimary: true },
+      { label: 'Waste', value: `includes ${waste}%` },
+    ]
+    : null;
+
   return (
-    <div className="space-y-4">
+    <CalculatorShell calculatorName="Retaining Wall Blocks" results={results} onReset={handleReset} resultString={result !== null ? `${result.toLocaleString()} blocks (with ${waste}% waste)` : undefined}>
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
         <div>
           <Label htmlFor="wall-length">Wall Length (ft)</Label>
-          <Input id="wall-length" type="number" value={wallLength} onChange={(e) => setWallLength(e.target.value)} placeholder="e.g., 50" />
+          <Input id="wall-length" type="number" value={wallLength} onChange={(e) => setWallLength(e.target.value)} placeholder="e.g., 50" aria-label="Wall length in feet" />
         </div>
         <div>
           <Label htmlFor="wall-height">Wall Height (ft)</Label>
-          <Input id="wall-height" type="number" value={wallHeight} onChange={(e) => setWallHeight(e.target.value)} placeholder="e.g., 4" />
+          <Input id="wall-height" type="number" value={wallHeight} onChange={(e) => setWallHeight(e.target.value)} placeholder="e.g., 4" aria-label="Wall height in feet" />
         </div>
         <div>
           <Label htmlFor="block-length">Block Length (in)</Label>
-          <Input id="block-length" type="number" value={blockLength} onChange={(e) => setBlockLength(e.target.value)} placeholder="e.g., 16" />
+          <Input id="block-length" type="number" value={blockLength} onChange={(e) => setBlockLength(e.target.value)} placeholder="e.g., 16" aria-label="Block length in inches" />
         </div>
         <div>
           <Label htmlFor="block-height">Block Height (in)</Label>
-          <Input id="block-height" type="number" value={blockHeight} onChange={(e) => setBlockHeight(e.target.value)} placeholder="e.g., 6" />
+          <Input id="block-height" type="number" value={blockHeight} onChange={(e) => setBlockHeight(e.target.value)} placeholder="e.g., 6" aria-label="Block height in inches" />
         </div>
         <div className="sm:col-span-2">
-            <Label htmlFor="wall-waste">Waste Factor (%)</Label>
-            <Input id="wall-waste" type="number" value={waste} onChange={(e) => setWaste(e.target.value)} placeholder="e.g., 5" />
+          <Label htmlFor="wall-waste">Waste Factor (%)</Label>
+          <Input id="wall-waste" type="number" value={waste} onChange={(e) => setWaste(e.target.value)} placeholder="e.g., 5" aria-label="Waste factor percentage" />
         </div>
       </div>
-      <Button type="button" onClick={calculate} className="w-full">Calculate Blocks</Button>
-      {result !== null && (
-        <>
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Blocks Needed</p>
-            <p className="text-2xl font-bold text-primary">{result.toLocaleString()} blocks</p>
-            <p className="text-xs text-muted-foreground">(includes {waste}% waste)</p>
-          </div>
-          <Separator className="my-4" />
-          <SaveToJob 
-            calculatorName="Retaining Wall Blocks" 
-            resultString={`${result.toLocaleString()} blocks (with ${waste}% waste)`} 
-          />
-        </>
-      )}
-    </div>
+    </CalculatorShell>
   );
 }

@@ -1,11 +1,9 @@
 'use client';
 
-import { useState } from 'react';
-import { Button } from '@/components/ui/button';
+import { useState, useCallback, useEffect } from 'react';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
-import { Separator } from '@/components/ui/separator';
-import SaveToJob from '@/components/tools/SaveToJob';
+import CalculatorShell from '@/components/tools/CalculatorShell';
 
 export default function FuelCostEstimator() {
   const [distance, setDistance] = useState('');
@@ -13,7 +11,7 @@ export default function FuelCostEstimator() {
   const [pricePerGallon, setPricePerGallon] = useState('');
   const [totalCost, setTotalCost] = useState<number | null>(null);
 
-  const calculate = () => {
+  const calculate = useCallback(() => {
     const dist = parseFloat(distance);
     const efficiency = parseFloat(mpg);
     const price = parseFloat(pricePerGallon);
@@ -23,46 +21,42 @@ export default function FuelCostEstimator() {
       return;
     }
 
-    const gallonsNeeded = dist / efficiency;
-    const cost = gallonsNeeded * price;
+    setTotalCost((dist / efficiency) * price);
+  }, [distance, mpg, pricePerGallon]);
 
-    setTotalCost(cost);
+  useEffect(() => { calculate(); }, [calculate]);
+
+  const handleReset = () => {
+    setDistance('');
+    setMpg('');
+    setPricePerGallon('');
+    setTotalCost(null);
   };
-  
-  const formattedResult = new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalCost || 0);
+
+  const formattedResult = totalCost !== null
+    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(totalCost)
+    : undefined;
+
+  const results = formattedResult
+    ? [{ label: 'Estimated Fuel Cost', value: formattedResult, isPrimary: true }]
+    : null;
 
   return (
-    <div className="space-y-4">
+    <CalculatorShell calculatorName="Fuel Cost Estimator" results={results} onReset={handleReset} resultString={formattedResult}>
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         <div>
-          <Label htmlFor="distance">Distance (miles)</Label>
-          <Input id="distance" type="number" value={distance} onChange={(e) => setDistance(e.target.value)} placeholder="e.g., 300" />
+          <Label htmlFor="fuel-distance">Distance (miles)</Label>
+          <Input id="fuel-distance" type="number" value={distance} onChange={(e) => setDistance(e.target.value)} placeholder="e.g., 300" aria-label="Trip distance in miles" />
         </div>
         <div>
-          <Label htmlFor="mpg">Fuel Efficiency (MPG)</Label>
-          <Input id="mpg" type="number" value={mpg} onChange={(e) => setMpg(e.target.value)} placeholder="e.g., 8" />
+          <Label htmlFor="fuel-mpg">Fuel Efficiency (MPG)</Label>
+          <Input id="fuel-mpg" type="number" value={mpg} onChange={(e) => setMpg(e.target.value)} placeholder="e.g., 8" aria-label="Miles per gallon" />
         </div>
         <div>
-          <Label htmlFor="price">Price per Gallon ($)</Label>
-          <Input id="price" type="number" value={pricePerGallon} onChange={(e) => setPricePerGallon(e.target.value)} placeholder="e.g., 3.50" />
+          <Label htmlFor="fuel-price">Price per Gallon ($)</Label>
+          <Input id="fuel-price" type="number" value={pricePerGallon} onChange={(e) => setPricePerGallon(e.target.value)} placeholder="e.g., 3.50" aria-label="Fuel price per gallon" />
         </div>
       </div>
-      <Button type="button" onClick={calculate} className="w-full">Calculate Cost</Button>
-      {totalCost !== null && (
-        <>
-          <div className="text-center pt-2">
-            <p className="text-sm text-muted-foreground">Estimated Fuel Cost</p>
-            <p className="text-2xl font-bold text-primary">
-              {formattedResult}
-            </p>
-          </div>
-          <Separator className="my-4" />
-          <SaveToJob 
-            calculatorName="Fuel Cost Estimator" 
-            resultString={formattedResult} 
-          />
-        </>
-      )}
-    </div>
+    </CalculatorShell>
   );
 }

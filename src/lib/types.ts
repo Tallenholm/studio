@@ -2,6 +2,9 @@
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
 
+/** Utility type that intersects a document type with an `id` field. */
+export type WithId<T> = T & { id: string };
+
 export type { DailyBriefingOutput, DailyBriefingInput } from '@/ai/flows/generate-daily-briefing-schema';
 export type { AnalyzeInspectionReportsOutput };
 
@@ -18,8 +21,8 @@ export interface User {
 }
 
 export type MaintenanceScheduleItem = {
-    intervalMonths: number;
-    lastServiceDate?: string; // YYYY-MM-DD
+  intervalMonths: number;
+  lastServiceDate?: string; // YYYY-MM-DD
 };
 
 export type MaintenanceSchedule = {
@@ -96,13 +99,13 @@ export interface CalendarEvent {
 export type RequestStatus = 'pending' | 'approved' | 'denied';
 
 export interface TimeOffRequest {
-    id: string;
-    employeeId: string;
-    employeeName: string;
-    startDate: string; // YYYY-MM-DD
-    endDate: string; // YYYY-MM-DD
-    reason: string;
-    status: RequestStatus;
+  id: string;
+  employeeId: string;
+  employeeName: string;
+  startDate: string; // YYYY-MM-DD
+  endDate: string; // YYYY-MM-DD
+  reason: string;
+  status: RequestStatus;
 }
 
 export interface NotificationMessage {
@@ -201,7 +204,7 @@ export interface SnowServiceLog {
 }
 
 export interface Job {
-  id:string;
+  id: string;
   name: string;
   clientId: string;
   clientName: string;
@@ -299,4 +302,3 @@ export interface Rental {
   notes?: string;
 }
 
-    

@@ -14,7 +14,8 @@ import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError } from '@/firebase/errors';
 
 /** Utility type to add an 'id' field to a given type T. */
-export type WithId<T> = T & { id: string };
+import type { WithId } from '@/lib/types';
+export type { WithId };
 
 /**
  * Interface for the return value of the useCollection hook.
@@ -52,7 +53,7 @@ export interface InternalQuery extends Query<DocumentData> {
  * @returns {UseCollectionResult<T>} Object with data, isLoading, error.
  */
 export function useCollection<T = any>(
-    memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & {__memo?: boolean})  | null | undefined,
+  memoizedTargetRefOrQuery: ((CollectionReference<DocumentData> | Query<DocumentData>) & { __memo?: boolean }) | null | undefined,
 ): UseCollectionResult<T> {
   type ResultItemType = WithId<T>;
   type StateDataType = ResultItemType[] | null;
@@ -107,7 +108,7 @@ export function useCollection<T = any>(
 
     return () => unsubscribe();
   }, [memoizedTargetRefOrQuery]); // Re-run if the target query/reference changes.
-  
+
   if (process.env.NODE_ENV === 'development' && memoizedTargetRefOrQuery && !memoizedTargetRefOrQuery.__memo) {
     console.warn('The query/reference passed to useCollection was not created with useMemoFirebase. This can cause infinite re-renders.');
   }

@@ -1,11 +1,11 @@
 
 'use server';
 
-import {ai} from '@/ai/genkit';
-import {z} from 'zod';
-import {getReportsByVin, getMaintenanceLogsByAssetIds, getFleetAssetById} from '@/lib/firestoreService';
-import type {InspectionReport, MaintenanceLog, FleetAsset} from '@/lib/types';
-import {subMonths, isAfter, parseISO} from 'date-fns';
+import { ai, DEFAULT_MODEL } from '@/ai/genkit';
+import { z } from 'zod';
+import { getReportsByVin, getMaintenanceLogsByAssetIds, getFleetAssetById } from '@/lib/firestoreService';
+import type { InspectionReport, MaintenanceLog, FleetAsset } from '@/lib/types';
+import { subMonths, isAfter, parseISO } from 'date-fns';
 
 const fetchAssetDataTool = ai.defineTool(
   {
@@ -23,13 +23,13 @@ const fetchAssetDataTool = ai.defineTool(
     if (!asset) {
       throw new Error('Asset not found');
     }
-    
+
     // Fetch only the data relevant to this asset.
     const [assetReports, assetLogs] = await Promise.all([
       getReportsByVin(asset.vin), // Fetches reports for this VIN from the last 6 months.
       getMaintenanceLogsByAssetIds([assetId]), // Fetches all logs for this asset ID.
     ]);
-    
+
     // The getReportsByVin function now handles the 6-month filtering.
     // We still need to filter maintenance logs for the last 6 months.
     const sixMonthsAgo = subMonths(new Date(), 6);
@@ -59,7 +59,7 @@ const generateHealthSummaryFlow = ai.defineFlow(
 
     const llmResponse = await ai.generate({
       prompt,
-      model: 'gemini-1.5-flash',
+      model: DEFAULT_MODEL,
       tools: [fetchAssetDataTool],
       toolChoice: 'auto',
       input: { assetId },
