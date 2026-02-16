@@ -22,6 +22,7 @@ import { Badge } from '@/components/ui/badge';
 import React from 'react';
 import { getEmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
 import type { EmployeeDashboardData } from '@/app/actions/getEmployeeDashboardData';
+import PageSkeleton from '@/components/common/PageSkeleton';
 
 const employeeTourSteps: TourStep[] = [
   { element: '#tour-step-employee-welcome', title: "Welcome to the Employee Hub!", content: "This is your one-stop shop for daily tasks and company resources. Let's take a quick tour.", side: 'bottom' },
@@ -43,6 +44,7 @@ export default function EmployeeHubClientPage() {
 
   useEffect(() => {
     if (user) {
+      setIsLoading(true);
       getEmployeeDashboardData({ userId: user.uid })
         .then(data => {
           setDashboardData(data);
@@ -53,8 +55,11 @@ export default function EmployeeHubClientPage() {
         .finally(() => {
           setIsLoading(false);
         });
+    } else if (!isUserLoading) {
+        // If user is not loading and there is no user, stop loading.
+        setIsLoading(false);
     }
-  }, [user]);
+  }, [user, isUserLoading]);
 
   useEffect(() => {
     const hasViewedTour = localStorage.getItem('hasViewedTour_employee');
@@ -171,20 +176,15 @@ export default function EmployeeHubClientPage() {
     );
   }
 
-  if (isLoading || isUserLoading) {
-    return (
-      <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
-        <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Your Hub...</p>
-      </div>
-    );
+  if (isLoading || (isUserLoading && !dashboardData)) {
+    return <PageSkeleton variant="dashboard" />;
   }
 
   if (!dashboardData) {
     return (
       <div className="flex flex-col justify-center items-center min-h-[calc(100vh-10rem)]">
         <Loader2 className="h-12 w-12 animate-spin text-primary mb-4" />
-        <p className="text-lg text-muted-foreground">Loading Data...</p>
+        <p className="text-lg text-muted-foreground">Loading Your Data...</p>
       </div>
     );
   }

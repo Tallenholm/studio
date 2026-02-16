@@ -85,58 +85,31 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
     // This is the outer listener for Firebase Auth user (FirebaseUser)
     const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
+      setUserState(prevState => ({ ...prevState, isUserLoading: false, firebaseUser: fbUser }));
+
       if (fbUser) {
         // User is signed in, now listen for their profile document in real-time
         const db = getFirestoreInstance();
         const userDocRef = doc(db, 'users', fbUser.uid);
 
-        // Immediately set a temporary user state. This allows the app to proceed
-        // with routing while the profile data is being fetched.
-        setUserState(prevState => ({
-          ...prevState,
-          firebaseUser: fbUser,
-          isUserLoading: true, // Keep loading until profile is fetched
-          appUser: prevState.appUser || { // Use existing profile if available, otherwise create temp
-            id: fbUser.uid,
-            uid: fbUser.uid,
-            email: fbUser.email || '',
-            name: fbUser.displayName || 'Loading...',
-            role: 'employee', // Default role, will be updated
-          }
-        }));
-
         const unsubscribeProfile = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             // Profile exists, update the full state
-            setUserState({
-              firebaseUser: fbUser,
+            setUserState(prevState => ({
+              ...prevState,
               appUser: { id: userDocSnap.id, ...userDocSnap.data() } as AppUser,
-              isUserLoading: false,
               userError: null,
-            });
+            }));
           } else {
-            // This can happen during sign-up. The user is authenticated but the profile doc isn't created yet.
-            // We create a temporary profile. The RouteGuard and other components should handle this state gracefully.
-            setUserState({
-              firebaseUser: fbUser,
-              appUser: {
-                id: fbUser.uid,
-                uid: fbUser.uid,
-                email: fbUser.email || '',
-                name: fbUser.displayName || 'New User',
-                role: 'employee', // Sensible default
-              },
-              isUserLoading: false,
-              userError: null,
-            });
+            // This can happen during sign-up.
+            setUserState(prevState => ({ ...prevState, appUser: null, userError: new Error("User profile not found.") }));
           }
         }, (error) => {
           // Error fetching the user's profile document
           console.error("FirebaseProvider: Firestore profile listener error:", error);
-          setUserState({ firebaseUser: fbUser, appUser: null, isUserLoading: false, userError: error });
+          setUserState(prevState => ({ ...prevState, appUser: null, userError: error }));
         });
-
-        // Return the cleanup function for the inner (profile) listener
+        
         return () => unsubscribeProfile();
 
       } else {
