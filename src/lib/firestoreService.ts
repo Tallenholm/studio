@@ -1,5 +1,3 @@
-
-
 import { initializeFirebase } from '@/firebase';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote } from './types';
@@ -457,6 +455,14 @@ export const getViolationsForUser = async (userId: string): Promise<Violation[]>
     const q = query(violationsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
+};
+
+export const getGeneralDocuments = async (): Promise<ManagedDocument[]> => {
+    const db = getFirestoreInstance();
+    const docsRef = collection(db, 'documents');
+    const q = query(docsRef, where('documentType', '==', 'general'));
+    const snapshot = await getDocs(q);
+    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManagedDocument));
 };
 
 export const getDocumentsForUser = async (userId: string): Promise<ManagedDocument[]> => {
