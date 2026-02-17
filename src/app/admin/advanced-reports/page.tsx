@@ -1,5 +1,5 @@
 import { getAdvancedReportData } from '@/app/actions/getAdvancedReportData';
-import AdvancedReportsClientPage from '@/components/admin/AdvancedReportsClientPage';
+import AdvancedReportsClientPage from './AdvancedReportsClientPage';
 import PageSkeleton from '@/components/common/PageSkeleton';
 import { Suspense } from 'react';
 
