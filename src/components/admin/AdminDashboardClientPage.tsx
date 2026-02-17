@@ -8,7 +8,7 @@ import { Button } from '@/components/ui/button';
 import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, Route, ArrowRightLeft, BookOpen, Wrench, FileText, ShieldAlert, HeartPulse } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent, Job } from '@/lib/types';
+import type { CalendarEvent, Job, JobType } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
 import type { AdminDashboardData } from '@/app/actions/getAdminDashboardData';
 import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
@@ -332,7 +332,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
                     <li key={item.id} className="p-3 rounded-md border bg-muted/50 flex items-start gap-3">
                       {item.itemType === 'job' ? getJobTypeIcon((item as Job).jobType) : <CalendarIcon className="h-5 w-5 text-primary mt-1" />}
                       <div>
-                        <p className="font-semibold">{item.itemType === 'event' ? item.title : item.name}</p>
+                        <p className="font-semibold">{item.itemType === 'event' ? (item as CalendarEvent).title : (item as Job).name}</p>
                         {item.itemType === 'job' ? (
                           <>
                             <p className="text-sm text-muted-foreground">Job for: {(item as Job).clientName}</p>
@@ -340,8 +340,8 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
                           </>
                         ) : (
                           <>
-                            <p className="text-sm text-muted-foreground">{getEventTypeLabel(item.type)}</p>
-                            {item.description && <p className="text-sm text-muted-foreground mt-1">{item.description}</p>}
+                            <p className="text-sm text-muted-foreground">{getEventTypeLabel((item as CalendarEvent).type)}</p>
+                            {(item as CalendarEvent).description && <p className="text-sm text-muted-foreground mt-1">{(item as CalendarEvent).description}</p>}
                           </>
                         )}
                       </div>

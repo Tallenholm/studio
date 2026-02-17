@@ -90,7 +90,7 @@ export default function EmployeeHubClientPage() {
     // The dashboardData.jobs now only contains jobs assigned to the user,
     // so we no longer need to filter by user ID on the client.
     const assignedJobs = dashboardData.jobs
-      .map(job => ({ ...job, status: getJobStatus(job) }))
+      .map(job => ({ ...job, status: getJobStatus(job) as JobStatus }))
       .filter(job => job.status === 'active' || job.status === 'upcoming')
       .sort((a, b) => new Date(a.startDate).getTime() - new Date(b.startDate).getTime());
 

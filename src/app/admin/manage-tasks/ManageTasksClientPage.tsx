@@ -91,15 +91,12 @@ export default function ManageTasksClientPage({ initialUsers, initialPendingTask
         return;
     }
     
-    const newTaskData: Omit<Task, 'id' | 'dateCompleted' | 'status'> = {
+    const newTaskData: Omit<Task, 'id' | 'dateCompleted' | 'status'| 'assignedToEmployeeName' | 'createdByAdminName' | 'dateAssigned'> = {
         ...values,
-        assignedToEmployeeName: assignedEmployee.name,
-        createdByAdminName: user.name,
-        dateAssigned: new Date().toISOString(),
     };
 
-    const newId = await addTask({ ...newTaskData, status: 'pending', dateCompleted: null });
-    setPendingTasks(prev => [{ id: newId, ...newTaskData, status: 'pending', dateCompleted: null }, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
+    const newId = await addTask({ ...newTaskData, status: 'pending', dateCompleted: null, assignedToEmployeeName: assignedEmployee.name, createdByAdminName: user.name, dateAssigned: new Date().toISOString() });
+    setPendingTasks(prev => [{ id: newId, ...newTaskData, status: 'pending', dateCompleted: null, assignedToEmployeeName: assignedEmployee.name, createdByAdminName: user.name, dateAssigned: new Date().toISOString() }, ...prev].sort((a,b) => new Date(b.dateAssigned).getTime() - new Date(a.dateAssigned).getTime()));
     
     toast({ title: 'Task Created', description: `Task "${values.title}" assigned to ${assignedEmployee.name}.` });
     setIsDialogOpen(false);

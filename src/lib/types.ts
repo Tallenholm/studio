@@ -21,7 +21,7 @@ export interface User {
 }
 
 export type MaintenanceScheduleItem = {
-  intervalMonths?: number;
+  intervalMonths: number;
   lastServiceDate?: string; // YYYY-MM-DD
 };
 

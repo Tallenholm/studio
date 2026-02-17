@@ -3,7 +3,6 @@ import MyTasksClientPage from './MyTasksClientPage';
 import { Suspense } from 'react';
 import PageSkeleton from '@/components/common/PageSkeleton';
 import { cookies } from 'next/headers';
-import type { UserRole } from '@/lib/types';
 
 
 // This is a placeholder. In a real app, this would be handled by your auth provider.
