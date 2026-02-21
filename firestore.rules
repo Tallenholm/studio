@@ -6,39 +6,32 @@ service cloud.firestore {
     
     // ======== HELPER FUNCTIONS ========
     
-    // Get the user's role from their document in the /users collection
     function getUserRole(userId) {
       return get(/databases/$(database)/documents/users/$(userId)).data.role;
     }
     
-    // Check if the requesting user is an Owner
     function isOwner() {
-      return getUserRole(request.auth.uid) == 'owner';
+      return request.auth != null && getUserRole(request.auth.uid) == 'owner';
     }
     
-    // Check if the requesting user is a Manager
     function isManager() {
-      return getUserRole(request.auth.uid) == 'manager';
+      return request.auth != null && getUserRole(request.auth.uid) == 'manager';
     }
     
-    // Check if the requesting user is an Employee
     function isEmployee() {
-      return getUserRole(request.auth.uid) == 'employee';
+      return request.auth != null && getUserRole(request.auth.uid) == 'employee';
     }
 
-    // Check if the user is an admin (Manager or Owner)
     function isAdmin() {
       return isOwner() || isManager();
     }
     
-    // Check if the user is authenticated
     function isSignedIn() {
       return request.auth != null;
     }
     
-    // Check if the user is the owner of the document
     function isOwnerOf(userId) {
-      return request.auth.uid == userId;
+      return request.auth != null && request.auth.uid == userId;
     }
 
     // ======== COLLECTION RULES ========
@@ -58,7 +51,8 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /clients/{clientId} {
-      allow read: if isAdmin();
+      allow get: if isAdmin();
+      allow list: if isAdmin();
       allow write: if isOwner();
     }
     match /rentals/{rentalId} {
@@ -71,31 +65,35 @@ service cloud.firestore {
     }
 
     // --- Employee Submissions (Inspections, Expenses, Tasks, Time Off) ---
-    // Employees can create. Admins can read/update. Employees can only read their own.
+    // Employees can create. Admins can read/update. Employees can only read/list their own.
     match /inspectionReports/{reportId} {
       allow create: if isSignedIn();
-      allow read: if isAdmin() || get(/databases/$(database)/documents/inspectionReports/$(reportId)).data.employeeId == request.auth.uid;
+      allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
+      allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
     
     match /expenseReports/{reportId} {
       allow create: if isSignedIn();
-      allow read: if isAdmin() || get(/databases/$(database)/documents/expenseReports/$(reportId)).data.employeeId == request.auth.uid;
+      allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
+      allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isOwner();
     }
 
     match /tasks/{taskId} {
       allow create: if isAdmin();
-      allow read: if isSignedIn();
-      allow update: if isAdmin() || get(/databases/$(database)/documents/tasks/$(taskId)).data.assignedToEmployeeId == request.auth.uid;
+      allow get: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
+      allow list: if isAdmin() || (isEmployee() && request.query.assignedToEmployeeId == request.auth.uid);
+      allow update: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
       allow delete: if isAdmin();
     }
 
     match /timeOffRequests/{requestId} {
        allow create: if isSignedIn();
-       allow read: if isAdmin() || get(/databases/$(database)/documents/timeOffRequests/$(requestId)).data.employeeId == request.auth.uid;
+       allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
+       allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
        allow update: if isAdmin();
        allow delete: if isAdmin();
     }
@@ -114,13 +112,8 @@ service cloud.firestore {
 
     match /documents/{docId} {
         allow write: if isAdmin();
-        // Admins can read all. 
-        // Any signed-in user can read 'general' docs.
-        // An employee can read a doc if their ID is on it.
-        // A client cannot read a contract, only admins.
-        allow read: if isAdmin() || 
-                     (resource.data.documentType == 'general') ||
-                     (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
+        allow get: if isAdmin() || (resource.data.documentType == 'general' && isSignedIn()) || (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
+        allow list: if isAdmin() || (request.query.documentType == 'general' && isSignedIn()) || (isEmployee() && request.query.employeeId == request.auth.uid);
     }
     
     match /workOrders/{orderId} {
@@ -135,7 +128,8 @@ service cloud.firestore {
     
     match /violations/{violationId} {
         allow create: if isAdmin();
-        allow read: if isAdmin() || get(/databases/$(database)/documents/violations/$(violationId)).data.employeeId == request.auth.uid;
+        allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
+        allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
         allow delete: if isAdmin();
     }
 
@@ -148,12 +142,9 @@ service cloud.firestore {
     }
     
     match /notifications/{notificationId} {
-      allow write: if isAdmin(); // Only admins can create/update notifications
-      allow read: if isSignedIn() && (
-                    resource.data.recipientId == 'all' || 
-                    resource.data.recipientId == request.auth.uid ||
-                    isAdmin() // Admins can read all notifications for moderation
-                  );
+      allow write: if isAdmin();
+      allow get: if isSignedIn() && (resource.data.recipientId == 'all' || resource.data.recipientId == request.auth.uid || isAdmin());
+      allow list: if isAdmin() || (request.query.recipientId == 'all') || (isSignedIn() && request.query.recipientId == request.auth.uid);
     }
 
     // User-specific settings (e.g., theme, notifications).

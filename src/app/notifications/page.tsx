@@ -1,3 +1,4 @@
+
 'use client';
 
 import { useState, useEffect } from 'react';
@@ -18,33 +19,60 @@ export default function NotificationsPage() {
   const { user } = useUser();
   
   useEffect(() => {
-    if (!user) {
+    if (!user || !user.uid) {
         setIsLoading(false);
         return;
     }
     const db = getFirestoreInstance();
-
     const notificationsRef = collection(db, "notifications");
-    const q = query(
-        notificationsRef, 
-        where('recipientId', 'in', ['all', user.id]),
-    );
 
-    const unsubscribe = onSnapshot(q, (snapshot) => {
-        const liveNotifications: NotificationMessage[] = [];
-        snapshot.forEach(doc => {
-            liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
+    // Query for notifications sent to 'all'
+    const publicQuery = query(notificationsRef, where('recipientId', '==', 'all'));
+    
+    // Query for notifications sent specifically to the current user
+    const privateQuery = query(notificationsRef, where('recipientId', '==', user.uid));
+
+    const allNotifications = new Map<string, NotificationMessage>();
+    let publicLoaded = false;
+    let privateLoaded = false;
+
+    const updateState = () => {
+        if (publicLoaded && privateLoaded) {
+            const combined = Array.from(allNotifications.values()).sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
+            setNotifications(combined);
+            setIsLoading(false);
+        }
+    };
+
+    const unsubscribePublic = onSnapshot(publicQuery, (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            allNotifications.set(doc.id, { id: doc.id, ...doc.data() } as NotificationMessage);
         });
-        // Sort on the client side
-        liveNotifications.sort((a,b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-        setNotifications(liveNotifications);
-        setIsLoading(false);
+        publicLoaded = true;
+        updateState();
     }, (error) => {
-        console.error("Error fetching real-time notifications:", error);
-        setIsLoading(false);
+        console.error("Error fetching public notifications:", error);
+        publicLoaded = true;
+        updateState();
     });
 
-    return () => unsubscribe();
+    const unsubscribePrivate = onSnapshot(privateQuery, (snapshot) => {
+        snapshot.docs.forEach(doc => {
+            allNotifications.set(doc.id, { id: doc.id, ...doc.data() } as NotificationMessage);
+        });
+        privateLoaded = true;
+        updateState();
+    }, (error) => {
+        console.error("Error fetching private notifications:", error);
+        privateLoaded = true;
+        updateState();
+    });
+
+
+    return () => {
+        unsubscribePublic();
+        unsubscribePrivate();
+    };
   }, [user]);
 
   const handleMarkAsRead = async (notificationId: string) => {
