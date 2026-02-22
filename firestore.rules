@@ -47,7 +47,7 @@ service cloud.firestore {
     // --- Jobs, Clients, Rentals, Routes ---
     // Core operational data managed by admins. All employees can read jobs and routes.
     match /jobs/{jobId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
     match /clients/{clientId} {
@@ -56,11 +56,11 @@ service cloud.firestore {
       allow write: if isOwner();
     }
     match /rentals/{rentalId} {
-        allow read: if isOwner();
+        allow get, list: if isOwner();
         allow write: if isOwner();
     }
     match /snowRoutes/{routeId} {
-        allow read: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
 
@@ -101,12 +101,12 @@ service cloud.firestore {
     // --- Fleet, Inventory, Documents, Work Orders, Maintenance ---
     // Managed by Admins, viewable by all.
     match /fleetAssets/{assetId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
     
     match /inventory/{itemId} {
-      allow read: if isSignedIn();
+      allow get, list: if isSignedIn();
       allow write: if isAdmin();
     }
 
@@ -117,12 +117,12 @@ service cloud.firestore {
     }
     
     match /workOrders/{orderId} {
-        allow read: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
 
     match /maintenanceLogs/{logId} {
-        allow read: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
     
@@ -136,14 +136,14 @@ service cloud.firestore {
     // --- AI Cache ---
     // Writable by server-side flows (admins), readable by admins for debugging.
     match /maintenanceScheduleSuggestions/{cacheKey} {
-        allow read, write: if isAdmin();
+        allow get, list, write: if isAdmin();
     }
 
     // --- Notifications & Calendar ---
     // Calendar events are public reads for all signed-in users.
     // Notifications are readable by their recipient or 'all'.
     match /calendarEvents/{eventId} {
-        allow read: if isSignedIn();
+        allow get, list: if isSignedIn();
         allow write: if isAdmin();
     }
     
