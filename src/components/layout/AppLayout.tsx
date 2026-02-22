@@ -1,5 +1,4 @@
 
-
 'use client';
 
 import Link from 'next/link';
@@ -131,27 +130,45 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     useEffect(() => {
         if (!user || !user.uid) return;
         const db = getFirestoreInstance();
-
         const notificationsRef = collection(db, "notifications");
-        const q = query(notificationsRef, where('recipientId', 'in', ['all', user.uid]));
 
-        const unsubscribe = onSnapshot(q, (snapshot) => {
-            const liveNotifications: NotificationMessage[] = [];
-            snapshot.forEach(doc => {
-                liveNotifications.push({ id: doc.id, ...doc.data() } as NotificationMessage);
-            });
+        // Use a map to store notifications from both queries and avoid duplicates
+        const allNotifications = new Map<string, NotificationMessage>();
 
-            // Sort on client side
-            liveNotifications.sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime());
-
-            const count = liveNotifications.filter(notif => !notif.readBy.includes(user.uid)).length;
+        const updateUnreadCount = () => {
+            if (!user) return;
+            const count = Array.from(allNotifications.values())
+                               .filter(notif => !notif.readBy.includes(user.id))
+                               .length;
             setUnreadCount(count);
+        };
 
+        // Query for notifications sent to 'all'
+        const publicQuery = query(notificationsRef, where('recipientId', '==', 'all'));
+        const unsubscribePublic = onSnapshot(publicQuery, (snapshot) => {
+            snapshot.docs.forEach(doc => {
+                allNotifications.set(doc.id, { id: doc.id, ...doc.data() } as NotificationMessage);
+            });
+            updateUnreadCount();
         }, (error) => {
-            console.error("Error fetching real-time notifications:", error);
+            console.error("Error fetching public notifications for badge:", error);
         });
 
-        return () => unsubscribe();
+        // Query for notifications sent specifically to the current user
+        const privateQuery = query(notificationsRef, where('recipientId', '==', user.uid));
+        const unsubscribePrivate = onSnapshot(privateQuery, (snapshot) => {
+            snapshot.docs.forEach(doc => {
+                allNotifications.set(doc.id, { id: doc.id, ...doc.data() } as NotificationMessage);
+            });
+            updateUnreadCount();
+        }, (error) => {
+            console.error("Error fetching private notifications for badge:", error);
+        });
+
+        return () => {
+            unsubscribePublic();
+            unsubscribePrivate();
+        };
     }, [user]);
 
     useEffect(() => {
@@ -423,3 +440,5 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
+
+    
