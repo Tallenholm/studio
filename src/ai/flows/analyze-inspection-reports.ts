@@ -1,9 +1,11 @@
+
 'use server';
 
 import { ai, DEFAULT_MODEL } from '@/ai/genkit';
 import { z } from 'zod';
 import { getReportsByVin } from '@/lib/firestoreService';
 import type { InspectionReport } from '@/lib/types';
+import { format } from 'date-fns';
 
 export const AnalyzeInspectionReportsInputSchema = z.object({
   report: z.custom<InspectionReport>(),
@@ -17,25 +19,6 @@ export const AnalyzeInspectionReportsOutputSchema = z.object({
   requiresProcedureChange: z.boolean().describe('True if the findings suggest a potential issue with operator procedures or training.'),
 });
 export type AnalyzeInspectionReportsOutput = z.infer<typeof AnalyzeInspectionReportsOutputSchema>;
-
-
-const fetchAssetHistoryTool = ai.defineTool(
-  {
-    name: 'fetchAssetHistory',
-    description: 'Fetches historical inspection reports for the asset mentioned in the current report.',
-    inputSchema: z.object({
-      vin: z.string().describe("The VIN of the asset to fetch history for.")
-    }),
-    outputSchema: z.object({
-      historicalReports: z.array(z.custom<InspectionReport>()),
-    }),
-  },
-  async ({ vin }) => {
-    // Use the efficient query function that now automatically filters for the last 6 months.
-    const recentReports = await getReportsByVin(vin);
-    return { historicalReports: recentReports };
-  }
-);
 
 
 const analysisFlow = ai.defineFlow(
@@ -54,6 +37,13 @@ const analysisFlow = ai.defineFlow(
         requiresProcedureChange: false,
       }
     }
+    
+    // Fetch historical reports programmatically instead of using a tool
+    const historicalReports = await getReportsByVin(vin);
+    const historicalReportsText = historicalReports
+      .map(r => `- Date: ${format(new Date(r.date), 'yyyy-MM-dd')}, Status: ${r.overallStatus}, Failed Items: ${r.sections.flatMap(s => s.items).filter(i => i.status === 'fail').map(i => i.name).join(', ') || 'None'}`)
+      .join('\n');
+
 
     const prompt = `You are an expert fleet maintenance analyst. Your task is to analyze a new vehicle inspection report in the context of its recent history to detect anomalies.
 
@@ -71,16 +61,17 @@ const analysisFlow = ai.defineFlow(
 
     Current Report to Analyze:
     - VIN: ${vin}
-    - Date: ${report.date}
+    - Date: ${format(new Date(report.date), 'yyyy-MM-dd')}
     - Overall Status: ${report.overallStatus}
     - Failed Items: ${report.sections.flatMap(s => s.items).filter(i => i.status === 'fail').map(i => i.name).join(', ') || 'None'}
+
+    Historical Reports (Last 6 Months):
+    ${historicalReportsText || "No historical reports found."}
     `;
 
     const llmResponse = await ai.generate({
       prompt,
       model: DEFAULT_MODEL,
-      tools: [fetchAssetHistoryTool],
-      toolChoice: 'auto',
       output: {
         format: 'json',
         schema: AnalyzeInspectionReportsOutputSchema,

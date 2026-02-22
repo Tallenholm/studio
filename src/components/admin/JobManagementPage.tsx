@@ -5,7 +5,7 @@ import { useState, useEffect, useMemo } from 'react';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
-import { getClients, getFleetAssets, getUsers, addJob, getJobs, updateJob, deleteJob } from '@/lib/firestoreService';
+import { getJobs, addJob, updateJob, deleteJob, getClients, getFleetAssets, getUsers } from '@/lib/firestoreService';
 import type { Client, Job, JobStatus, FleetAsset, User, JobType } from '@/lib/types';
 import { Button, buttonVariants } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -67,10 +67,10 @@ export const jobSchema = z.object({
 
 
 export default function JobManagementPage() {
-  const [clients, setClients] = useState<Client[]>([]);
   const [jobs, setJobs] = useState<Job[]>([]);
-  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
+  const [clients, setClients] = useState<Client[]>([]);
   const [users, setUsers] = useState<User[]>([]);
+  const [fleetAssets, setFleetAssets] = useState<FleetAsset[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [isAiDialogOpen, setIsAiDialogOpen] = useState(false);
@@ -102,18 +102,18 @@ export default function JobManagementPage() {
     async function fetchData() {
       setIsLoading(true);
       try {
-        const [loadedJobs, loadedClients, loadedAssets, loadedUsers] = await Promise.all([
-          getJobs(),
+        const [loadedClients, loadedUsers, loadedFleetAssets, loadedJobs] = await Promise.all([
           getClients(),
-          getFleetAssets(),
           getUsers(),
+          getFleetAssets(),
+          getJobs(),
         ]);
-        setJobs(loadedJobs);
         setClients(loadedClients);
-        setFleetAssets(loadedAssets);
-        setUsers(loadedUsers.filter(u => u.role === 'employee'));
+        setUsers(loadedUsers);
+        setFleetAssets(loadedFleetAssets);
+        setJobs(loadedJobs);
       } catch (error) {
-        console.error("Failed to fetch initial data:", error);
+        console.error("Failed to fetch page data:", error);
         toast({ variant: 'destructive', title: 'Error', description: 'Could not load page data.' });
       } finally {
         setIsLoading(false);
@@ -121,6 +121,9 @@ export default function JobManagementPage() {
     }
     fetchData();
   }, [toast]);
+
+  const employeeUsers = useMemo(() => users.filter(u => u.role === 'employee'), [users]);
+
 
   const handleDialogOpenChange = (open: boolean) => {
     setIsDialogOpen(open);
@@ -393,7 +396,7 @@ export default function JobManagementPage() {
               <DialogHeader><DialogTitle>{editingJob ? 'Edit Job' : 'Add New Job'}</DialogTitle></DialogHeader>
               <Form {...form}>
                 <form onSubmit={form.handleSubmit(onSubmit)} className="space-y-4 py-4 max-h-[80vh] overflow-y-auto pr-4">
-                  <JobFormFields form={form} clients={clients} fleetAssets={fleetAssets} users={users} />
+                  <JobFormFields form={form} clients={clients} fleetAssets={fleetAssets} users={employeeUsers} />
                   <DialogFooter><Button type="submit">Save Job</Button></DialogFooter>
                 </form>
               </Form>

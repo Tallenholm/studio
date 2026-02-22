@@ -196,7 +196,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
   const [date, setDate] = useState<Date | undefined>(new Date());
 
   const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(initialData);
-  const [isLoading, setIsLoading] = useState(initialData === null);
+  const [isLoading, setIsLoading] = useState(initialData === null && !initialData?.error);
 
   const [isTourOpen, setIsTourOpen] = useState(false);
   const { user } = useUser();
@@ -227,7 +227,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
       activeJobs: jobsForStats.filter(j => getJobStatus(j) === 'active').length,
       totalAssets: dashboardData.assets.length,
       pendingRequests: dashboardData.pendingTimeOffRequests.length,
-      failedReports: dashboardData.recentFailedReports.length, // Now this is just the length of the pre-filtered array
+      failedReports: dashboardData.recentFailedReports.length,
     };
 
     return { eventDates, jobRanges, stats: calculatedStats };
@@ -271,6 +271,22 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
 
   if (!isMounted) {
     return <PageSkeleton variant="dashboard" />;
+  }
+
+  if (dashboardData?.error) {
+    return (
+        <div className="container mx-auto py-8">
+            <Card className="m-8 border-destructive/50 bg-destructive/10">
+                <CardHeader>
+                    <CardTitle className="flex items-center gap-2 font-headline text-destructive"><AlertTriangle /> Dashboard Error</CardTitle>
+                </CardHeader>
+                <CardContent>
+                    <p>Could not load dashboard data. The server returned the following error:</p>
+                    <p className="mt-2 font-mono bg-background p-2 rounded-md text-sm">{dashboardData.error}</p>
+                </CardContent>
+            </Card>
+        </div>
+    );
   }
 
   return (
