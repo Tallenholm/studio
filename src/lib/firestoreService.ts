@@ -1,6 +1,6 @@
 import { initializeFirebase } from '@/firebase/init';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
-import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote } from './types';
+import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote, SuggestMaintenanceScheduleOutput } from './types';
 import { errorEmitter } from '@/firebase/error-emitter';
 import { FirestorePermissionError, type SecurityRuleContext } from '@/firebase/errors';
 import { format, startOfDay, subMonths } from 'date-fns';
@@ -487,4 +487,26 @@ export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOff
     const q = query(requestsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+};
+
+const scheduleCacheService = createCrudService<{ id: string, schedule: SuggestMaintenanceScheduleOutput }>('maintenanceScheduleSuggestions');
+
+export const getCachedMaintenanceSchedule = async (cacheKey: string): Promise<SuggestMaintenanceScheduleOutput | null> => {
+    try {
+        const cachedData = await scheduleCacheService.getById(cacheKey);
+        return cachedData ? cachedData.schedule : null;
+    } catch (error) {
+        // Permissions errors might happen if rules aren't set up yet, but we shouldn't crash.
+        console.warn('Could not read from maintenance schedule cache.', error);
+        return null;
+    }
+};
+
+export const setCachedMaintenanceSchedule = async (cacheKey: string, schedule: SuggestMaintenanceScheduleOutput): Promise<void> => {
+    try {
+        await scheduleCacheService.add({ schedule }, cacheKey);
+    } catch (error) {
+        // Fail silently. Caching is an optimization, not a critical path.
+        console.warn(`Could not write to maintenance schedule cache for key: ${cacheKey}`, error);
+    }
 };

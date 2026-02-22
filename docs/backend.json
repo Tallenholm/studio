@@ -372,6 +372,26 @@
             "workOrderId": { "type": "string" }
         },
         "required": ["id", "assetId", "assetName", "date", "serviceType", "description"]
+    },
+    "MaintenanceScheduleSuggestion": {
+      "title": "Maintenance Schedule Suggestion",
+      "type": "object",
+      "description": "Represents an AI-generated maintenance schedule suggestion, containing only intervals.",
+      "properties": {
+          "oilChange": { "type": "object", "properties": { "intervalMonths": { "type": "number" } } },
+          "tireRotation": { "type": "object", "properties": { "intervalMonths": { "type": "number" } } },
+          "brakeInspection": { "type": "object", "properties": { "intervalMonths": { "type": "number" } } },
+          "fluidCheck": { "type": "object", "properties": { "intervalMonths": { "type": "number" } } }
+      }
+    },
+    "CachedMaintenanceSchedule": {
+        "title": "Cached Maintenance Schedule",
+        "type": "object",
+        "description": "Wrapper for a cached AI schedule suggestion.",
+        "properties": {
+            "schedule": { "$ref": "#/entities/MaintenanceScheduleSuggestion" }
+        },
+        "required": ["schedule"]
     }
   },
   "auth": {
@@ -448,6 +468,10 @@
      "/maintenanceLogs/{logId}": {
       "schema": { "$ref": "#/entities/MaintenanceLog" },
       "description": "A complete service history for all fleet assets."
+    },
+    "/maintenanceScheduleSuggestions/{cacheKey}": {
+      "schema": { "$ref": "#/entities/CachedMaintenanceSchedule" },
+      "description": "Caches AI-generated maintenance schedules. The document ID is a composite key like 'year-make-model'."
     }
   }
 }

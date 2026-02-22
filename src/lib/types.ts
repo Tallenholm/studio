@@ -1,12 +1,13 @@
 
 import type { AnalyzeInspectionReportsOutput } from '@/ai/flows/analyze-inspection-reports';
 import type { LucideIcon } from 'lucide-react';
+import type { SuggestMaintenanceScheduleOutput } from '@/ai/flows/suggest-maintenance-schedule';
 
 /** Utility type that intersects a document type with an `id` field. */
 export type WithId<T> = T & { id: string };
 
 export type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
-export type { AnalyzeInspectionReportsOutput };
+export type { AnalyzeInspectionReportsOutput, SuggestMaintenanceScheduleOutput };
 
 export type VehicleType = 'truck' | 'trailer' | 'heavyEquipment';
 export type UserRole = 'owner' | 'manager' | 'employee' | 'guest';

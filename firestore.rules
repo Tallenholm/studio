@@ -133,6 +133,12 @@ service cloud.firestore {
         allow delete: if isAdmin();
     }
 
+    // --- AI Cache ---
+    // Writable by server-side flows (admins), readable by admins for debugging.
+    match /maintenanceScheduleSuggestions/{cacheKey} {
+        allow read, write: if isAdmin();
+    }
+
     // --- Notifications & Calendar ---
     // Calendar events are public reads for all signed-in users.
     // Notifications are readable by their recipient or 'all'.
