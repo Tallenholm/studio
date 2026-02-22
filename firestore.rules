@@ -51,8 +51,7 @@ service cloud.firestore {
       allow write: if isAdmin();
     }
     match /clients/{clientId} {
-      allow get: if isAdmin();
-      allow list: if isAdmin();
+      allow get, list: if isAdmin();
       allow write: if isOwner();
     }
     match /rentals/{rentalId} {
@@ -69,7 +68,6 @@ service cloud.firestore {
     match /inspectionReports/{reportId} {
       allow create: if isSignedIn();
       allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-      allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -77,7 +75,6 @@ service cloud.firestore {
     match /expenseReports/{reportId} {
       allow create: if isSignedIn();
       allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-      allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isOwner();
     }
@@ -85,7 +82,6 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow create: if isAdmin();
       allow get: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
-      allow list: if isAdmin() || (isEmployee() && request.query.assignedToEmployeeId == request.auth.uid);
       allow update: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
       allow delete: if isAdmin();
     }
@@ -93,7 +89,6 @@ service cloud.firestore {
     match /timeOffRequests/{requestId} {
        allow create: if isSignedIn();
        allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-       allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
        allow update: if isAdmin();
        allow delete: if isAdmin();
     }
@@ -113,7 +108,6 @@ service cloud.firestore {
     match /documents/{docId} {
         allow write: if isAdmin();
         allow get: if isAdmin() || (resource.data.documentType == 'general' && isSignedIn()) || (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
-        allow list: if isAdmin() || (request.query.documentType == 'general' && isSignedIn()) || (isEmployee() && request.query.employeeId == request.auth.uid);
     }
     
     match /workOrders/{orderId} {
@@ -129,7 +123,6 @@ service cloud.firestore {
     match /violations/{violationId} {
         allow create: if isAdmin();
         allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-        allow list: if isAdmin() || (isEmployee() && request.query.employeeId == request.auth.uid);
         allow delete: if isAdmin();
     }
 
@@ -150,7 +143,6 @@ service cloud.firestore {
     match /notifications/{notificationId} {
       allow write: if isAdmin();
       allow get: if isSignedIn() && (resource.data.recipientId == 'all' || resource.data.recipientId == request.auth.uid || isAdmin());
-      allow list: if isAdmin() || (request.query.recipientId == 'all') || (isSignedIn() && request.query.recipientId == request.auth.uid);
     }
 
     // User-specific settings (e.g., theme, notifications).
