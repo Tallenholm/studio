@@ -2,7 +2,7 @@
 'use client';
 
 import { useState, useMemo } from 'react';
-import type { FleetAsset, MaintenanceSchedule, NotificationMessage } from '@/lib/types';
+import type { FleetAsset, MaintenanceSchedule } from '@/lib/types';
 import { useForm } from 'react-hook-form';
 import * as z from 'zod';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -51,7 +51,6 @@ const assetSchema = z.object({
 
 interface FleetManagementClientPageProps {
   initialAssets: FleetAsset[];
-  initialNotifications: NotificationMessage[];
 }
 
 const DatePicker = ({ field, placeholder }: { field: any, placeholder: string }) => (
@@ -70,7 +69,7 @@ const DatePicker = ({ field, placeholder }: { field: any, placeholder: string })
   </Popover>
 );
 
-export default function FleetManagementClientPage({ initialAssets, initialNotifications }: FleetManagementClientPageProps) {
+export default function FleetManagementClientPage({ initialAssets }: FleetManagementClientPageProps) {
   const [assets, setAssets] = useState<FleetAsset[]>(initialAssets);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingAsset, setEditingAsset] = useState<FleetAsset | null>(null);
