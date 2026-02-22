@@ -67,7 +67,7 @@ export default function ManageViolationsClientPage({ initialUsers, initialViolat
     };
     
     const newId = await addViolation(violationData);
-    setViolations(prev => [{ id: newId, ...violationData }, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+    setViolations(prev => [{ id: newId, ...violationData } as Violation, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
     toast({ title: 'Violation Logged', description: `A violation for ${employee.name} has been recorded.` });
     handleDialogOpenChange(false);
   }

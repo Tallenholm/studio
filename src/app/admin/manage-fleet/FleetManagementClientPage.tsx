@@ -137,10 +137,10 @@ export default function FleetManagementClientPage({ initialAssets }: FleetManage
       registrationDueDate: values.registrationDueDate ? format(values.registrationDueDate, 'yyyy-MM-dd') : undefined,
       insuranceDueDate: values.insuranceDueDate ? format(values.insuranceDueDate, 'yyyy-MM-dd') : undefined,
       maintenanceSchedule: {
-        oilChange: values.maintenanceSchedule?.oilChange ? { ...values.maintenanceSchedule.oilChange, lastServiceDate: values.maintenanceSchedule.oilChange.lastServiceDate ? format(values.maintenanceSchedule.oilChange.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
-        tireRotation: values.maintenanceSchedule?.tireRotation ? { ...values.maintenanceSchedule.tireRotation, lastServiceDate: values.maintenanceSchedule.tireRotation.lastServiceDate ? format(values.maintenanceSchedule.tireRotation.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
-        brakeInspection: values.maintenanceSchedule?.brakeInspection ? { ...values.maintenanceSchedule.brakeInspection, lastServiceDate: values.maintenanceSchedule.brakeInspection.lastServiceDate ? format(values.maintenanceSchedule.brakeInspection.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
-        fluidCheck: values.maintenanceSchedule?.fluidCheck ? { ...values.maintenanceSchedule.fluidCheck, lastServiceDate: values.maintenanceSchedule.fluidCheck.lastServiceDate ? format(values.maintenanceSchedule.fluidCheck.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
+        oilChange: values.maintenanceSchedule?.oilChange ? { ...values.maintenanceSchedule.oilChange, intervalMonths: values.maintenanceSchedule.oilChange.intervalMonths, lastServiceDate: values.maintenanceSchedule.oilChange.lastServiceDate ? format(values.maintenanceSchedule.oilChange.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
+        tireRotation: values.maintenanceSchedule?.tireRotation ? { ...values.maintenanceSchedule.tireRotation, intervalMonths: values.maintenanceSchedule.tireRotation.intervalMonths, lastServiceDate: values.maintenanceSchedule.tireRotation.lastServiceDate ? format(values.maintenanceSchedule.tireRotation.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
+        brakeInspection: values.maintenanceSchedule?.brakeInspection ? { ...values.maintenanceSchedule.brakeInspection, intervalMonths: values.maintenanceSchedule.brakeInspection.intervalMonths, lastServiceDate: values.maintenanceSchedule.brakeInspection.lastServiceDate ? format(values.maintenanceSchedule.brakeInspection.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
+        fluidCheck: values.maintenanceSchedule?.fluidCheck ? { ...values.maintenanceSchedule.fluidCheck, intervalMonths: values.maintenanceSchedule.fluidCheck.intervalMonths, lastServiceDate: values.maintenanceSchedule.fluidCheck.lastServiceDate ? format(values.maintenanceSchedule.fluidCheck.lastServiceDate, 'yyyy-MM-dd') : undefined } : undefined,
       }
     };
 

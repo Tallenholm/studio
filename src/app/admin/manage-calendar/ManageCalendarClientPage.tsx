@@ -14,7 +14,7 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Pencil, Calendar, MoreHorizontal } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil, Calendar } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -71,12 +71,13 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
     };
 
     if (editingEvent) {
-      await updateCalendarEvent(editingEvent.id, eventData);
-      setEvents(prev => prev.map(e => (e.id === editingEvent.id ? { ...e, ...eventData } : e)));
+      const updatedEvent = { ...editingEvent, ...eventData };
+      await updateCalendarEvent(editingEvent.id, updatedEvent);
+      setEvents(prev => prev.map(e => (e.id === editingEvent.id ? updatedEvent : e)));
       toast({ title: 'Event Updated', description: `Event "${values.title}" has been updated.` });
     } else {
       const newId = await addCalendarEvent(eventData);
-      setEvents(prev => [{ id: newId, ...eventData }, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setEvents(prev => [{ id: newId, ...eventData } as CalendarEvent, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       toast({ title: 'Event Added', description: `Event "${values.title}" has been added to the calendar.` });
     }
     handleDialogOpenChange(false);
