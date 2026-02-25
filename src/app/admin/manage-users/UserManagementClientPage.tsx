@@ -2,7 +2,8 @@
 
 import { useState, useMemo } from 'react';
 import type { User, UserRole } from '@/lib/types';
-import { updateUser } from '@/lib/firestoreService';
+import { getFirestoreInstance } from '@/lib/firestoreService';
+import { doc, writeBatch } from 'firebase/firestore';
 import { useToast } from '@/hooks/use-toast';
 import { useUser, useAuth } from '@/firebase';
 import { sendPasswordResetEmail } from 'firebase/auth';
@@ -43,10 +44,35 @@ export default function UserManagementClientPage({ initialUsers }: UserManagemen
       toast({ variant: 'destructive', title: 'Action Not Allowed', description: 'You cannot demote your own account.' });
       return;
     }
+    
+    try {
+        const db = getFirestoreInstance();
+        const userDocRef = doc(db, 'users', userId);
+        const adminDocRef = doc(db, 'admins', userId);
+        
+        const batch = writeBatch(db);
 
-    await updateUser(userId, { role: newRole });
-    setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, role: newRole } : u));
-    toast({ title: 'Role Updated', description: `User role has been changed to ${newRole}.` });
+        // 1. Update the role in the /users/{userId} document
+        batch.update(userDocRef, { role: newRole });
+
+        // 2. Synchronize the /admins collection
+        if (newRole === 'owner' || newRole === 'manager') {
+          // If user is promoted to an admin role, create/update their document in /admins
+          batch.set(adminDocRef, { role: newRole });
+        } else {
+          // If user is demoted from an admin role, delete their document from /admins
+          batch.delete(adminDocRef);
+        }
+        
+        await batch.commit();
+
+        setUsers(prevUsers => prevUsers.map(u => u.id === userId ? { ...u, role: newRole } : u));
+        toast({ title: 'Role Updated', description: `User role has been changed to ${newRole}.` });
+
+    } catch (error) {
+        console.error("Failed to update user role:", error);
+        toast({ variant: 'destructive', title: 'Update Failed', description: 'Could not update user role due to a database error.' });
+    }
   };
 
   const handlePasswordReset = async (email: string) => {
