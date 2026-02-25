@@ -14,6 +14,15 @@
       },
       "required": ["uid", "email", "name", "role"]
     },
+    "AdminUser": {
+      "title": "AdminUser",
+      "type": "object",
+      "description": "A record indicating that a user has administrative privileges.",
+      "properties": {
+        "role": { "type": "string", "enum": ["owner", "manager"] }
+      },
+      "required": ["role"]
+    },
     "FleetAsset": {
       "title": "FleetAsset",
       "type": "object",
@@ -404,6 +413,10 @@
     "/users/{userId}": {
       "schema": { "$ref": "#/entities/UserProfile" },
       "description": "Stores user profile information, including their role for access control."
+    },
+    "/admins/{userId}": {
+      "schema": { "$ref": "#/entities/AdminUser" },
+      "description": "A collection where the document ID is the user's UID, indicating they have admin privileges. Used for fast security rule checks."
     },
     "/fleetAssets/{assetId}": {
       "schema": { "$ref": "#/entities/FleetAsset" },

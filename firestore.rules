@@ -6,24 +6,17 @@ service cloud.firestore {
     
     // ======== HELPER FUNCTIONS ========
     
-    function getUserRole(userId) {
-      return get(/databases/$(database)/documents/users/$(userId)).data.role;
-    }
-    
     function isOwner() {
-      return request.auth != null && getUserRole(request.auth.uid) == 'owner';
+      // The owner's role is still stored in their user profile.
+      // This function is now only used for rules that don't involve `list` queries.
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data.role == 'owner';
     }
     
-    function isManager() {
-      return request.auth != null && getUserRole(request.auth.uid) == 'manager';
-    }
-    
-    function isEmployee() {
-      return request.auth != null && getUserRole(request.auth.uid) == 'employee';
-    }
-
     function isAdmin() {
-      return isOwner() || isManager();
+      // This is the new, fast, and secure way to check for admin privileges.
+      // It checks for the existence of a document in the /admins collection,
+      // which is allowed in `list` queries.
+      return exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
     
     function isSignedIn() {
@@ -36,44 +29,79 @@ service cloud.firestore {
 
     // ======== COLLECTION RULES ========
 
+    // --- Admins ---
+    // The list of admins is highly sensitive and should only be managed by the owner.
+    match /admins/{userId} {
+      allow read, write: if isOwner();
+    }
+
     // --- Users ---
-    // Any signed-in user can list users, but this is a necessary tradeoff
-    // to allow admin functionality without custom claims.
-    // Get is secure, write is secure.
+    // Any signed-in user can read their own profile. Admins can read any profile.
+    // Listing all users is restricted to admins only.
     match /users/{userId} {
-      allow get: if isAdmin() || isOwnerOf(userId);
-      allow list: if isSignedIn();
+      allow get: if isOwnerOf(userId) || isAdmin();
+      allow list: if isAdmin();
       allow write: if isOwner();
     }
 
-    // --- Jobs, Clients, Rentals, Routes ---
-    // List operations are open to signed-in users.
-    // Write operations remain restricted to admins/owners.
+    // --- Jobs, Clients, Fleet, etc. (Admin-managed collections) ---
+    // Admins can read and write. Employees can read single documents if they have a link
+    // but cannot list the entire collection.
     match /jobs/{jobId} {
       allow get: if isSignedIn();
-      allow list: if isSignedIn();
+      allow list: if isAdmin();
       allow write: if isAdmin();
     }
     match /clients/{clientId} {
-      allow get, list: if isSignedIn();
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
       allow write: if isOwner();
     }
-    match /rentals/{rentalId} {
-        allow get, list: if isSignedIn();
+     match /rentals/{rentalId} {
+        allow get: if isSignedIn();
+        allow list: if isAdmin();
         allow write: if isOwner();
     }
     match /snowRoutes/{routeId} {
-        allow get, list: if isSignedIn();
+        allow get: if isSignedIn();
+        allow list: if isAdmin();
         allow write: if isAdmin();
+    }
+    match /fleetAssets/{assetId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+    match /inventory/{itemId} {
+      allow get: if isSignedIn();
+      allow list: if isAdmin();
+      allow write: if isAdmin();
+    }
+     match /workOrders/{orderId} {
+        allow get: if isSignedIn();
+        allow list: if isAdmin();
+        allow write: if isAdmin();
+    }
+    match /maintenanceLogs/{logId} {
+        allow get: if isSignedIn();
+        allow list: if isAdmin();
+        allow write: if isAdmin();
+    }
+    match /violations/{violationId} {
+      // Employees can only see their own violations. Admins can see all.
+      allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
+      allow list: if isAdmin() || (request.query.where.employeeId == request.auth.uid);
+      allow create: if isAdmin();
+      allow delete: if isAdmin();
     }
 
     // --- Employee Submissions (Inspections, Expenses, Tasks, Time Off) ---
-    // Employees can create. Get is scoped. List is open to all signed-in users.
-    // Client-side code is responsible for filtering to the current user.
+    // Employees can create their own documents and can only list their own documents.
+    // Admins can manage all documents.
     match /inspectionReports/{reportId} {
       allow create: if isSignedIn();
       allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-      allow list: if isSignedIn();
+      allow list: if isAdmin() || (request.query.where.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isAdmin();
     }
@@ -81,7 +109,7 @@ service cloud.firestore {
     match /expenseReports/{reportId} {
       allow create: if isSignedIn();
       allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-      allow list: if isSignedIn();
+      allow list: if isAdmin() || (request.query.where.employeeId == request.auth.uid);
       allow update: if isAdmin();
       allow delete: if isOwner();
     }
@@ -89,7 +117,7 @@ service cloud.firestore {
     match /tasks/{taskId} {
       allow create: if isAdmin();
       allow get: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
-      allow list: if isSignedIn();
+      allow list: if isAdmin() || (request.query.where.assignedToEmployeeId == request.auth.uid);
       allow update: if isAdmin() || resource.data.assignedToEmployeeId == request.auth.uid;
       allow delete: if isAdmin();
     }
@@ -97,47 +125,22 @@ service cloud.firestore {
     match /timeOffRequests/{requestId} {
        allow create: if isSignedIn();
        allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-       allow list: if isSignedIn();
+       allow list: if isAdmin() || (request.query.where.employeeId == request.auth.uid);
        allow update: if isAdmin();
        allow delete: if isAdmin();
     }
     
-    // --- Fleet, Inventory, Documents, Work Orders, Maintenance ---
-    // Viewable by all signed in users. Managed by Admins.
-    match /fleetAssets/{assetId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-    
-    match /inventory/{itemId} {
-      allow get, list: if isSignedIn();
-      allow write: if isAdmin();
-    }
-
+    // --- Documents ---
+    // General documents are public to signed-in users.
+    // Employee-specific documents are private.
     match /documents/{docId} {
         allow write: if isAdmin();
         allow get: if isAdmin() || (resource.data.documentType == 'general') || (resource.data.employeeId != null && resource.data.employeeId == request.auth.uid);
-        allow list: if isSignedIn();
-    }
-    
-    match /workOrders/{orderId} {
-        allow get, list: if isSignedIn();
-        allow write: if isAdmin();
-    }
-
-    match /maintenanceLogs/{logId} {
-        allow get, list: if isSignedIn();
-        allow write: if isAdmin();
-    }
-    
-    match /violations/{violationId} {
-        allow create: if isAdmin();
-        allow get: if isAdmin() || resource.data.employeeId == request.auth.uid;
-        allow list: if isSignedIn();
-        allow delete: if isAdmin();
+        allow list: if isAdmin() || (request.query.where.documentType == 'general') || (request.query.where.employeeId == request.auth.uid);
     }
 
     // --- AI Cache ---
+    // Any signed-in user can read/write to the cache. This is a low-risk collection.
     match /maintenanceScheduleSuggestions/{cacheKey} {
         allow get, list, write: if isSignedIn();
     }
@@ -150,8 +153,11 @@ service cloud.firestore {
     
     match /notifications/{notificationId} {
       allow write: if isAdmin();
-      // Get/List is now more permissive. Client-side queries separate public/private.
-      allow get, list: if isSignedIn();
+      // Allow users to list notifications meant for 'all' or for their specific UID.
+      allow list: if isSignedIn() && (request.query.where.recipientId == 'all' || request.query.where.recipientId == request.auth.uid);
+      // Allow users to get a specific notification if it's for them or for 'all'.
+      allow get: if isSignedIn() && (resource.data.recipientId == 'all' || resource.data.recipientId == request.auth.uid);
+      allow update: if isSignedIn(); // To mark as read
     }
 
     // User-specific settings (e.g., theme, notifications).
