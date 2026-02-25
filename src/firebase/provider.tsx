@@ -3,7 +3,7 @@
 
 import React, { DependencyList, createContext, useContext, ReactNode, useMemo, useState, useEffect } from 'react';
 import { FirebaseApp } from 'firebase/app';
-import { Firestore, doc, onSnapshot } from 'firebase/firestore';
+import { Firestore, doc, onSnapshot, getDoc, setDoc } from 'firebase/firestore';
 import { Auth, User as FirebaseUser, onAuthStateChanged } from 'firebase/auth';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import type { User as AppUser } from '@/lib/types';
@@ -94,10 +94,25 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
 
         const unsubscribeProfile = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
+            const appUser = { id: userDocSnap.id, ...userDocSnap.data() } as AppUser;
+
+            // Self-healing logic for admins
+            if (appUser.role === 'owner' || appUser.role === 'manager') {
+              const adminDocRef = doc(db, 'admins', fbUser.uid);
+              getDoc(adminDocRef).then(adminDocSnap => {
+                if (!adminDocSnap.exists()) {
+                  console.log(`Self-healing: Adding user ${fbUser.uid} to /admins collection.`);
+                  setDoc(adminDocRef, { role: appUser.role }).catch(err => {
+                    console.error("Failed to self-heal admin document:", err);
+                  });
+                }
+              });
+            }
+            
             // Profile exists, update the full state
             setUserState(prevState => ({
               ...prevState,
-              appUser: { id: userDocSnap.id, ...userDocSnap.data() } as AppUser,
+              appUser,
               userError: null,
             }));
           } else {
