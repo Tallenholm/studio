@@ -1,4 +1,5 @@
 
+
 import { initializeFirebase } from '@/firebase/init';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote, SuggestMaintenanceScheduleOutput } from './types';
@@ -330,7 +331,13 @@ export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
     // Format today's date as YYYY-MM-DD for string comparison
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
     const q = query(jobsRef, where('endDate', '>=', todayStr));
-    const snapshot = await getDocs(q);
+    const snapshot = await getDocs(q).catch(error => {
+        errorEmitter.emit('permission-error', new FirestorePermissionError({
+            path: jobsRef.path,
+            operation: 'list',
+        }));
+        throw error;
+    });
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 };
 
