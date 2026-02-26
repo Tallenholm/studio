@@ -8,10 +8,12 @@ import { Button } from '@/components/ui/button';
 import { Users, LineChart, Truck, CalendarDays, Loader2, Calendar as CalendarIcon, Cog, ClipboardList, Coins, AlertTriangle, Briefcase, Building2, ClipboardEdit, Brain, Sparkles, ThumbsUp, ListTodo, SlidersHorizontal, FileBadge, Snowflake, Users as UsersIcon, Droplets, Package, Hammer, Route, ArrowRightLeft, BookOpen, Wrench, FileText, ShieldAlert, HeartPulse } from 'lucide-react';
 import { Calendar } from '@/components/ui/calendar';
 import { useEffect, useMemo, useState } from 'react';
-import type { CalendarEvent, Job, JobType } from '@/lib/types';
+import { getCalendarEvents, getFleetAssets, getInspectionReportsInDateRange, getPendingTimeOffRequests, getActiveAndUpcomingJobs } from '@/lib/firestoreService';
+import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
+import type { BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
+import type { CalendarEvent, Job, JobType, FleetAsset, TimeOffRequest, InspectionReport } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
-import type { AdminDashboardData } from '@/app/actions/getAdminDashboardData';
-import { isSameDay, format, isWithinInterval, parseISO } from 'date-fns';
+import { isSameDay, format, isWithinInterval, parseISO, subDays } from 'date-fns';
 import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
@@ -185,22 +187,149 @@ const StatCard = ({ title, value, icon: Icon, link }: { title: string, value: nu
   );
 };
 
-
-interface AdminDashboardClientPageProps {
-  initialData: AdminDashboardData | null;
+interface AdminDashboardData {
+  briefing: DailyBriefingOutput | null;
+  jobs: Job[];
+  events: CalendarEvent[];
+  assets: FleetAsset[];
+  pendingTimeOffRequests: TimeOffRequest[];
+  recentFailedReports: InspectionReport[];
+  error?: string;
 }
 
-export default function AdminDashboardClientPage({ initialData }: AdminDashboardClientPageProps) {
+export default function AdminDashboardClientPage() {
   const searchParams = useSearchParams();
   const [isMounted, setIsMounted] = useState(false);
   const [date, setDate] = useState<Date | undefined>(new Date());
 
-  const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(initialData);
-  const [isLoading, setIsLoading] = useState(initialData === null && !initialData?.error);
+  const [dashboardData, setDashboardData] = useState<AdminDashboardData | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
 
   const [isTourOpen, setIsTourOpen] = useState(false);
-  const { user } = useUser();
+  const { user, isUserLoading } = useUser();
   const { open: openTools } = useGlobalTools();
+
+  useEffect(() => {
+    if (isUserLoading || !user) {
+      return;
+    }
+
+    const fetchData = async () => {
+      setIsLoading(true);
+      const today = new Date();
+      const thirtyDaysAgo = subDays(today, 30);
+
+      try {
+        const [
+            activeAndUpcomingJobs = [],
+            allEvents = [],
+            allAssets = [],
+            pendingTimeOffRequests = [],
+            recentFailedReports = [],
+        ] = await Promise.all([
+            getActiveAndUpcomingJobs(),
+            getCalendarEvents(),
+            getFleetAssets(),
+            getPendingTimeOffRequests(),
+            getInspectionReportsInDateRange(format(thirtyDaysAgo, 'yyyy-MM-dd'), format(today, 'yyyy-MM-dd'), 'fail'),
+        ]);
+
+        const assetVinMap = new Map<string, string>();
+        for (const asset of allAssets) {
+            if (asset.vin) {
+                assetVinMap.set(asset.vin, asset.name);
+            }
+        }
+
+        let briefing: DailyBriefingOutput | null = null;
+        try {
+          const twoDaysAgo = subDays(today, 2);
+          const attentionItems: BriefingData['attentionItems'] = recentFailedReports
+            .filter(r => isAfter(parseISO(r.date), twoDaysAgo))
+            .map(r => {
+              const assetVin = r.truckVin || r.trailerVin || r.heavyEquipmentVin || 'Unknown';
+              const assetName = assetVinMap.get(assetVin) || assetVin;
+              return {
+                id: r.id,
+                type: 'report',
+                title: `Failed report for ${assetName}`,
+                details: `By ${r.employeeName}`,
+                link: `/reports/${r.id}`
+              };
+            });
+
+          const todaysAgenda: BriefingData['todaysAgenda'] = [
+            ...activeAndUpcomingJobs
+              .filter(j => getJobStatus(j) === 'active')
+              .map(j => ({
+                id: j.id,
+                type: 'job' as const,
+                title: `Job: ${j.name}`,
+                details: `For ${j.clientName}`,
+                link: `/admin/jobs/${j.id}`
+              })),
+            ...allEvents
+              .filter(e => isToday(parseISO(e.date)))
+              .map(e => ({
+                id: e.id,
+                type: 'event' as const,
+                title: `Event: ${e.title}`,
+                details: e.description,
+                link: '/admin/manage-calendar'
+              }))
+          ];
+          
+          const pendingActions: BriefingData['pendingActions'] = pendingTimeOffRequests
+            .map(r => ({
+              id: r.id,
+              type: 'request',
+              title: `${r.employeeName} requested time off`,
+              details: `From ${format(parseISO(r.startDate), 'MMM d')} to ${format(parseISO(r.endDate), 'MMM d')}`,
+              link: '/admin/manage-requests'
+            }));
+            
+          if (attentionItems.length > 0 || todaysAgenda.length > 0 || pendingActions.length > 0) {
+              briefing = await generateDailyBriefing({
+                  attentionItems,
+                  todaysAgenda,
+                  pendingActions,
+              });
+          } else {
+              briefing = { attentionItems: [], todaysAgenda: [], pendingActions: [] };
+          }
+
+        } catch (error) {
+          console.error("Failed to generate AI daily briefing:", error);
+          briefing = null;
+        }
+        
+        setDashboardData({
+            briefing,
+            events: allEvents,
+            jobs: activeAndUpcomingJobs,
+            assets: allAssets,
+            pendingTimeOffRequests: pendingTimeOffRequests,
+            recentFailedReports: recentFailedReports,
+        });
+      } catch (err) {
+          console.error("Critical error fetching dashboard data:", err);
+          const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+          setDashboardData({
+              briefing: null,
+              jobs: [],
+              events: [],
+              assets: [],
+              pendingTimeOffRequests: [],
+              recentFailedReports: [],
+              error: `Failed to load dashboard data: ${errorMessage}`
+          });
+      } finally {
+          setIsLoading(false);
+      }
+    };
+
+    fetchData();
+  }, [user, isUserLoading]);
 
 
   useEffect(() => {
@@ -269,7 +398,7 @@ export default function AdminDashboardClientPage({ initialData }: AdminDashboard
     }
   }
 
-  if (!isMounted) {
+  if (!isMounted || isLoading) {
     return <PageSkeleton variant="dashboard" />;
   }
 
