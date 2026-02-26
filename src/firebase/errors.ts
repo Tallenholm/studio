@@ -1,5 +1,4 @@
 
-'use client';
 import { getAuth, type User } from 'firebase/auth';
 
 export type SecurityRuleContext = {
