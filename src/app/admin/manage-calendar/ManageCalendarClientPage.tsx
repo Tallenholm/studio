@@ -14,10 +14,11 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Pencil, Calendar } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil } from 'lucide-react';
 import { format, parseISO } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
+import { Calendar } from '@/components/ui/calendar';
 import { cn } from '@/lib/utils';
 import { Calendar as CalendarIcon } from 'lucide-react';
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from '@/components/ui/alert-dialog';
@@ -93,7 +94,7 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
   return (
     <>
       <div className="container mx-auto py-8">
-        <PageHeader title="Manage Calendar" description="Add, edit, or remove company-wide events." icon={Calendar}>
+        <PageHeader title="Manage Calendar" description="Add, edit, or remove company-wide events." icon={CalendarIcon}>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button><PlusCircle className="mr-2 h-5 w-5" />Add New Event</Button>
@@ -144,7 +145,7 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
                     </Table>
                 </div>
             ) : (
-                <EmptyState icon={Calendar} title="No Company Events" message="Click 'Add New Event' to get started." actionLabel="Add New Event" onAction={() => setIsDialogOpen(true)} />
+                <EmptyState icon={CalendarIcon} title="No Company Events" message="Click 'Add New Event' to get started." actionLabel="Add New Event" onAction={() => setIsDialogOpen(true)} />
             )}
         </div>
       </div>

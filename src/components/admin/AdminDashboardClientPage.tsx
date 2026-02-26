@@ -13,7 +13,7 @@ import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
 import type { CalendarEvent, Job, JobType, FleetAsset, TimeOffRequest, InspectionReport } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
-import { isSameDay, format, isWithinInterval, parseISO, subDays } from 'date-fns';
+import { isSameDay, format, isWithinInterval, parseISO, subDays, isAfter, isToday } from 'date-fns';
 import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
@@ -274,7 +274,7 @@ export default function AdminDashboardClientPage() {
                 id: e.id,
                 type: 'event' as const,
                 title: `Event: ${e.title}`,
-                details: e.description,
+                details: e.description || '',
                 link: '/admin/manage-calendar'
               }))
           ];

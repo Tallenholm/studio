@@ -1,5 +1,4 @@
 
-
 import { initializeFirebase } from '@/firebase/init';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote, SuggestMaintenanceScheduleOutput } from './types';
@@ -38,7 +37,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const snapshot = await getDocs(colRef).catch(error => {
                 throw new Error(`Failed to list documents from ${collectionName}: ${error.message}`);
             });
-            return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
+            return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as T));
         },
         getById: async (id: string): Promise<T | null> => {
             const db = getFirestoreInstance();
@@ -46,7 +45,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const docSnap = await getDoc(docRef).catch(error => {
                  throw new Error(`Failed to get document ${id} from ${collectionName}: ${error.message}`);
             });
-            return docSnap.exists() ? { id: docSnap.id, ...doc.data() } as T : null;
+            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
         },
         add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
             const db = getFirestoreInstance();
@@ -130,8 +129,8 @@ export const getUsersByIds = async (userIds: string[]): Promise<User[]> => {
     const snapshots = await Promise.all(promises);
     const results: User[] = [];
     snapshots.forEach(snapshot => {
-        snapshot.docs.forEach(doc => {
-            results.push({ id: doc.id, ...doc.data() } as User);
+        snapshot.docs.forEach(snapDoc => {
+            results.push({ id: snapDoc.id, ...snapDoc.data() } as User);
         });
     });
     return results;
@@ -153,8 +152,8 @@ export const getAssetsByIds = async (assetIds: string[]): Promise<FleetAsset[]> 
     const snapshots = await Promise.all(promises);
     const results: FleetAsset[] = [];
     snapshots.forEach(snapshot => {
-        snapshot.docs.forEach(doc => {
-            results.push({ id: doc.id, ...doc.data() } as FleetAsset);
+        snapshot.docs.forEach(snapDoc => {
+            results.push({ id: snapDoc.id, ...snapDoc.data() } as FleetAsset);
         });
     });
     return results;
@@ -165,7 +164,7 @@ export const getMaintenanceLogsInDateRange = async (startDate: string, endDate: 
     const logsRef = collection(db, 'maintenanceLogs');
     const q = query(logsRef, where('date', '>=', startDate), where('date', '<=', endDate));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as MaintenanceLog));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as MaintenanceLog));
 };
 
 export const getMaintenanceLogsByAssetIds = async (assetIds: string[]): Promise<MaintenanceLog[]> => {
@@ -183,8 +182,8 @@ export const getMaintenanceLogsByAssetIds = async (assetIds: string[]): Promise<
     const snapshots = await Promise.all(promises);
     const results: MaintenanceLog[] = [];
     snapshots.forEach(snapshot => {
-        snapshot.docs.forEach(doc => {
-            results.push({ id: doc.id, ...doc.data() } as MaintenanceLog);
+        snapshot.docs.forEach(snapDoc => {
+            results.push({ id: snapDoc.id, ...snapDoc.data() } as MaintenanceLog);
         });
     });
     return results;
@@ -205,8 +204,8 @@ export const getExpenseReportsByEmployeeIds = async (employeeIds: string[]): Pro
     const snapshots = await Promise.all(promises);
     const results: ExpenseReport[] = [];
     snapshots.forEach(snapshot => {
-        snapshot.docs.forEach(doc => {
-            results.push({ id: doc.id, ...doc.data() } as ExpenseReport);
+        snapshot.docs.forEach(snapDoc => {
+            results.push({ id: snapDoc.id, ...snapDoc.data() } as ExpenseReport);
         });
     });
     return results;
@@ -217,7 +216,7 @@ export const getExpenseReportsInDateRange = async (startDate: string, endDate: s
     const reportsRef = collection(db, 'expenseReports');
     const q = query(reportsRef, where('date', '>=', startDate), where('date', '<=', endDate));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as ExpenseReport));
 };
 
 export const getInspectionReportsInDateRange = async (
@@ -238,7 +237,7 @@ export const getInspectionReportsInDateRange = async (
     const q = query(reportsRef, ...queryConstraints);
     const snapshot = await getDocs(q);
 
-    let reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+    let reports = snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as InspectionReport));
     
     // Apply status filter in memory if provided.
     if (status && status !== 'pending') {
@@ -253,7 +252,7 @@ export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => 
     const requestsRef = collection(db, 'timeOffRequests');
     const q = query(requestsRef, where('status', '==', 'pending'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as TimeOffRequest));
 };
 
 export const getReviewedTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
@@ -261,7 +260,7 @@ export const getReviewedTimeOffRequests = async (): Promise<TimeOffRequest[]> =>
     const requestsRef = collection(db, 'timeOffRequests');
     const q = query(requestsRef, where('status', 'in', ['approved', 'denied']));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as TimeOffRequest));
 }
 
 export const getOpenWorkOrders = async (): Promise<WorkOrder[]> => {
@@ -269,7 +268,7 @@ export const getOpenWorkOrders = async (): Promise<WorkOrder[]> => {
     const ordersRef = collection(db, 'workOrders');
     const q = query(ordersRef, where('status', '!=', 'completed'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkOrder));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as WorkOrder));
 }
 
 export const getCompletedWorkOrders = async (): Promise<WorkOrder[]> => {
@@ -277,7 +276,7 @@ export const getCompletedWorkOrders = async (): Promise<WorkOrder[]> => {
     const ordersRef = collection(db, 'workOrders');
     const q = query(ordersRef, where('status', '==', 'completed'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as WorkOrder));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as WorkOrder));
 }
 
 export const getPendingTasks = async (): Promise<Task[]> => {
@@ -285,7 +284,7 @@ export const getPendingTasks = async (): Promise<Task[]> => {
     const tasksRef = collection(db, 'tasks');
     const q = query(tasksRef, where('status', '==', 'pending'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Task));
 }
 
 export const getCompletedTasks = async (): Promise<Task[]> => {
@@ -293,7 +292,7 @@ export const getCompletedTasks = async (): Promise<Task[]> => {
     const tasksRef = collection(db, 'tasks');
     const q = query(tasksRef, where('status', '==', 'completed'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Task));
 }
 
 
@@ -306,7 +305,7 @@ export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
     const snapshot = await getDocs(q).catch(error => {
         throw error;
     });
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Job));
 };
 
 export const getSnowJobs = async (): Promise<Job[]> => {
@@ -314,7 +313,7 @@ export const getSnowJobs = async (): Promise<Job[]> => {
     const jobsRef = collection(db, 'jobs');
     const q = query(jobsRef, where('jobType', '==', 'snow_removal'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Job));
 };
 
 export const getJobsForUser = async (userId: string): Promise<Job[]> => {
@@ -330,8 +329,8 @@ export const getJobsForUser = async (userId: string): Promise<Job[]> => {
     ]);
 
     const resultsMap = new Map<string, Job>();
-    snapshot1.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
-    snapshot2.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as Job));
+    snapshot1.docs.forEach(snapDoc => resultsMap.set(snapDoc.id, { id: snapDoc.id, ...snapDoc.data() } as Job));
+    snapshot2.docs.forEach(snapDoc => resultsMap.set(snapDoc.id, { id: snapDoc.id, ...snapDoc.data() } as Job));
 
     return Array.from(resultsMap.values());
 };
@@ -375,9 +374,9 @@ export const getReportsByVin = async (vin: string): Promise<InspectionReport[]> 
 
     // Use a map to merge results and avoid duplicates
     const resultsMap = new Map<string, InspectionReport>();
-    snapshot1.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
-    snapshot2.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
-    snapshot3.docs.forEach(doc => resultsMap.set(doc.id, { id: doc.id, ...doc.data() } as InspectionReport));
+    snapshot1.docs.forEach(snapDoc => resultsMap.set(snapDoc.id, { id: snapDoc.id, ...snapDoc.data() } as InspectionReport));
+    snapshot2.docs.forEach(snapDoc => resultsMap.set(snapDoc.id, { id: snapDoc.id, ...snapDoc.data() } as InspectionReport));
+    snapshot3.docs.forEach(snapDoc => resultsMap.set(snapDoc.id, { id: snapDoc.id, ...snapDoc.data() } as InspectionReport));
 
     return Array.from(resultsMap.values());
 };
@@ -387,7 +386,7 @@ export const getTasksForUser = async (userId: string): Promise<Task[]> => {
     const tasksRef = collection(db, 'tasks');
     const q = query(tasksRef, where('assignedToEmployeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Task));
 };
 
 export const getReportsForUser = async (userId: string): Promise<InspectionReport[]> => {
@@ -395,7 +394,7 @@ export const getReportsForUser = async (userId: string): Promise<InspectionRepor
     const reportsRef = collection(db, 'inspectionReports');
     const q = query(reportsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as InspectionReport));
 };
 
 export const getTasksInDateRange = async (startDate: string, endDate: string): Promise<Task[]> => {
@@ -403,7 +402,7 @@ export const getTasksInDateRange = async (startDate: string, endDate: string): P
     const tasksRef = collection(db, 'tasks');
     const q = query(tasksRef, where('dateAssigned', '>=', startDate), where('dateAssigned', '<=', endDate));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Task));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Task));
 };
 
 export const getViolationsInDateRange = async (startDate: string, endDate: string): Promise<Violation[]> => {
@@ -411,7 +410,7 @@ export const getViolationsInDateRange = async (startDate: string, endDate: strin
     const violationsRef = collection(db, 'violations');
     const q = query(violationsRef, where('date', '>=', startDate), where('date', '<=', endDate));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Violation));
 };
 
 export const getViolationsForUser = async (userId: string): Promise<Violation[]> => {
@@ -419,7 +418,7 @@ export const getViolationsForUser = async (userId: string): Promise<Violation[]>
     const violationsRef = collection(db, 'violations');
     const q = query(violationsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Violation));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as Violation));
 };
 
 export const getGeneralDocuments = async (): Promise<ManagedDocument[]> => {
@@ -427,7 +426,7 @@ export const getGeneralDocuments = async (): Promise<ManagedDocument[]> => {
     const docsRef = collection(db, 'documents');
     const q = query(docsRef, where('documentType', '==', 'general'));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManagedDocument));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as ManagedDocument));
 };
 
 export const getDocumentsForUser = async (userId: string): Promise<ManagedDocument[]> => {
@@ -435,7 +434,7 @@ export const getDocumentsForUser = async (userId: string): Promise<ManagedDocume
     const docsRef = collection(db, 'documents');
     const q = query(docsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ManagedDocument));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as ManagedDocument));
 };
 
 export const getExpenseReportsForUser = async (userId: string): Promise<ExpenseReport[]> => {
@@ -443,7 +442,7 @@ export const getExpenseReportsForUser = async (userId: string): Promise<ExpenseR
     const reportsRef = collection(db, 'expenseReports');
     const q = query(reportsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as ExpenseReport));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as ExpenseReport));
 };
 
 export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOffRequest[]> => {
@@ -451,7 +450,7 @@ export const getTimeOffRequestsForUser = async (userId: string): Promise<TimeOff
     const requestsRef = collection(db, 'timeOffRequests');
     const q = query(requestsRef, where('employeeId', '==', userId));
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as TimeOffRequest));
+    return snapshot.docs.map(snapDoc => ({ id: snapDoc.id, ...snapDoc.data() } as TimeOffRequest));
 };
 
 const scheduleCacheService = createCrudService<{ id: string, schedule: SuggestMaintenanceScheduleOutput }>('maintenanceScheduleSuggestions');
@@ -475,5 +474,3 @@ export const setCachedMaintenanceSchedule = async (cacheKey: string, schedule: S
         console.warn(`Could not write to maintenance schedule cache for key: ${cacheKey}`, error);
     }
 };
-
-    
