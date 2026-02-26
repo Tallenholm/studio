@@ -94,7 +94,7 @@ export interface CalendarEvent {
   date: string; // YYYY-MM-DD
   title: string;
   type: 'time-off' | 'company-event' | 'maintenance';
-  description: string;
+  description?: string;
 }
 
 export type RequestStatus = 'pending' | 'approved' | 'denied';
