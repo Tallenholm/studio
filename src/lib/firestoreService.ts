@@ -3,7 +3,6 @@
 import { initializeFirebase } from '@/firebase/init';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote, SuggestMaintenanceScheduleOutput } from './types';
-import { FirestorePermissionError } from '@/firebase/errors';
 import { format, startOfDay, subMonths } from 'date-fns';
 
 
@@ -37,10 +36,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
         getAll: async (): Promise<T[]> => {
             const colRef = getCollection();
             const snapshot = await getDocs(colRef).catch(error => {
-                throw new FirestorePermissionError({
-                    path: colRef.path,
-                    operation: 'list',
-                });
+                throw new Error(`Failed to list documents from ${collectionName}: ${error.message}`);
             });
             return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as T));
         },
@@ -48,10 +44,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
             const docSnap = await getDoc(docRef).catch(error => {
-                throw new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'get',
-                });
+                 throw new Error(`Failed to get document ${id} from ${collectionName}: ${error.message}`);
             });
             return docSnap.exists() ? { id: docSnap.id, ...doc.data() } as T : null;
         },
@@ -62,21 +55,13 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             if (id) {
                 const docRef = doc(colRef, id);
                 await setDoc(docRef, data).catch(error => {
-                    throw new FirestorePermissionError({
-                        path: docRef.path,
-                        operation: 'create',
-                        requestResourceData: data,
-                    });
+                    throw new Error(`Failed to create document in ${collectionName}: ${error.message}`);
                 });
                 return id;
             }
 
             const docRef = await addDoc(colRef, data).catch(error => {
-                throw new FirestorePermissionError({
-                    path: colRef.path,
-                    operation: 'create',
-                    requestResourceData: data,
-                });
+                throw new Error(`Failed to create document in ${collectionName}: ${error.message}`);
             });
             return docRef.id;
         },
@@ -84,21 +69,14 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
             await updateDoc(docRef, data).catch(error => {
-                throw new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'update',
-                    requestResourceData: data,
-                });
+                throw new Error(`Failed to update document ${id} in ${collectionName}: ${error.message}`);
             });
         },
         delete: async (id: string): Promise<void> => {
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
             await deleteDoc(docRef).catch(error => {
-                throw new FirestorePermissionError({
-                    path: docRef.path,
-                    operation: 'delete',
-                });
+                throw new Error(`Failed to delete document ${id} from ${collectionName}: ${error.message}`);
             });
         },
         batchAdd: async (data: Omit<T, 'id'>[]): Promise<void> => {
@@ -110,11 +88,7 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
                 batch.set(docRef, item);
             });
             await batch.commit().catch(error => {
-                throw new FirestorePermissionError({
-                    path: col.path,
-                    operation: 'write',
-                    requestResourceData: data,
-                });
+                throw new Error(`Failed to batch write to ${collectionName}: ${error.message}`);
             });
         }
     };
@@ -258,14 +232,20 @@ export const getInspectionReportsInDateRange = async (
         where('date', '>=', startDate),
         where('date', '<=', endDate),
     ];
-
-    if (status && status !== 'pending') {
-        queryConstraints.push(where('overallStatus', '==', status));
-    }
-
+    
+    // This query is intentionally simple to avoid needing a composite index.
+    // The status filter is applied after fetching.
     const q = query(reportsRef, ...queryConstraints);
     const snapshot = await getDocs(q);
-    return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+
+    let reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
+    
+    // Apply status filter in memory if provided.
+    if (status && status !== 'pending') {
+        reports = reports.filter(report => report.overallStatus === status);
+    }
+    
+    return reports;
 };
 
 export const getPendingTimeOffRequests = async (): Promise<TimeOffRequest[]> => {
@@ -324,10 +304,7 @@ export const getActiveAndUpcomingJobs = async (): Promise<Job[]> => {
     const todayStr = format(startOfDay(new Date()), 'yyyy-MM-dd');
     const q = query(jobsRef, where('endDate', '>=', todayStr));
     const snapshot = await getDocs(q).catch(error => {
-        throw new FirestorePermissionError({
-            path: jobsRef.path,
-            operation: 'list',
-        });
+        throw error;
     });
     return snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as Job));
 };
@@ -366,11 +343,7 @@ export const addNoteToJob = async (jobId: string, note: JobNote) => {
     await updateDoc(jobDocRef, {
         notes: arrayUnion(note)
     }).catch(error => {
-        throw new FirestorePermissionError({
-            path: jobDocRef.path,
-            operation: 'update',
-            requestResourceData: { note },
-        });
+        throw new Error(`Failed to add note to job ${jobId}: ${error.message}`);
     });
 };
 
