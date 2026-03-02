@@ -1,7 +1,7 @@
 
 'use server';
 
-import { ai } from '@/ai/genkit';
+import { ai, DEFAULT_MODEL } from '@/ai/genkit';
 import { z } from 'zod';
 import { getCachedMaintenanceSchedule, setCachedMaintenanceSchedule } from '@/lib/firestoreService';
 
@@ -27,17 +27,17 @@ export type SuggestMaintenanceScheduleOutput = z.infer<typeof SuggestMaintenance
 export async function suggestMaintenanceSchedule(
   input: z.infer<typeof SuggestMaintenanceScheduleInputSchema>
 ): Promise<SuggestMaintenanceScheduleOutput> {
-  
+
   // Create a unique, URL-safe cache key from the input
   const cacheKey = `${input.year}-${input.make}-${input.model}`.toLowerCase().replace(/[^a-z0-9-]/g, '');
-  
+
   // 1. Check cache first
   const cachedSchedule = await getCachedMaintenanceSchedule(cacheKey);
   if (cachedSchedule) {
     console.log(`[Cache HIT] Returning cached maintenance schedule for ${cacheKey}`);
     return cachedSchedule;
   }
-  
+
   console.log(`[Cache MISS] Generating new maintenance schedule for ${cacheKey}`);
 
   // 2. If not in cache, call the AI model
@@ -70,7 +70,7 @@ export async function suggestMaintenanceSchedule(
 
   const llmResponse = await ai.generate({
     prompt,
-    model: 'gemini-1.5-flash',
+    model: DEFAULT_MODEL,
     output: {
       format: 'json',
       schema: SuggestMaintenanceScheduleOutputSchema,
@@ -81,7 +81,7 @@ export async function suggestMaintenanceSchedule(
   if (!output) {
     throw new Error("AI failed to generate a valid maintenance schedule.");
   }
-  
+
   // 3. Save the new response to the cache before returning
   await setCachedMaintenanceSchedule(cacheKey, output);
 

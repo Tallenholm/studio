@@ -14,7 +14,8 @@ import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '
 import { Input } from '@/components/ui/input';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { useToast } from '@/hooks/use-toast';
-import { PlusCircle, Trash2, Pencil, Calendar } from 'lucide-react';
+import { PlusCircle, Trash2, Pencil } from 'lucide-react';
+import { Calendar } from '@/components/ui/calendar';
 import { format, parseISO } from 'date-fns';
 import { Textarea } from '@/components/ui/textarea';
 import { Popover, PopoverContent, PopoverTrigger } from '@/components/ui/popover';
@@ -36,7 +37,7 @@ interface ManageCalendarClientPageProps {
 }
 
 export default function ManageCalendarClientPage({ initialEvents }: ManageCalendarClientPageProps) {
-  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents.sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+  const [events, setEvents] = useState<CalendarEvent[]>(initialEvents.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
   const [isDialogOpen, setIsDialogOpen] = useState(false);
   const [editingEvent, setEditingEvent] = useState<CalendarEvent | null>(null);
   const [eventToDelete, setEventToDelete] = useState<CalendarEvent | null>(null);
@@ -68,6 +69,7 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
     const eventData = {
       ...values,
       date: format(values.date, 'yyyy-MM-dd'),
+      description: values.description || '',
     };
 
     if (editingEvent) {
@@ -77,12 +79,12 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
       toast({ title: 'Event Updated', description: `Event "${values.title}" has been updated.` });
     } else {
       const newId = await addCalendarEvent(eventData);
-      setEvents(prev => [{ id: newId, ...eventData } as CalendarEvent, ...prev].sort((a,b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
+      setEvents(prev => [{ id: newId, ...eventData } as CalendarEvent, ...prev].sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime()));
       toast({ title: 'Event Added', description: `Event "${values.title}" has been added to the calendar.` });
     }
     handleDialogOpenChange(false);
   }
-  
+
   async function removeEvent(eventId: string) {
     const eventToRemove = events.find(e => e.id === eventId);
     await deleteCalendarEvent(eventId);
@@ -93,7 +95,7 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
   return (
     <>
       <div className="container mx-auto py-8">
-        <PageHeader title="Manage Calendar" description="Add, edit, or remove company-wide events." icon={Calendar}>
+        <PageHeader title="Manage Calendar" description="Add, edit, or remove company-wide events." icon={CalendarIcon}>
           <Dialog open={isDialogOpen} onOpenChange={handleDialogOpenChange}>
             <DialogTrigger asChild>
               <Button><PlusCircle className="mr-2 h-5 w-5" />Add New Event</Button>
@@ -124,37 +126,37 @@ export default function ManageCalendarClientPage({ initialEvents }: ManageCalend
         </PageHeader>
 
         <div className="mt-8 animate-fade-in-up">
-            {events.filter(e => e.type !== 'time-off').length > 0 ? (
-                 <div className="border rounded-md bg-card">
-                    <Table>
-                        <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
-                        <TableBody>
-                        {events.filter(e => e.type !== 'time-off').map(event => (
-                            <TableRow key={event.id}>
-                                <TableCell className="font-medium">{event.title}</TableCell>
-                                <TableCell>{format(parseISO(event.date), 'PPP')}</TableCell>
-                                <TableCell className="capitalize">{event.type.replace('-', ' ')}</TableCell>
-                                <TableCell className="text-right">
-                                     <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}><Pencil className="h-4 w-4"/></Button>
-                                     <Button variant="ghost" size="icon" onClick={() => setEventToDelete(event)}><Trash2 className="h-4 w-4 text-destructive"/></Button>
-                                </TableCell>
-                            </TableRow>
-                        ))}
-                        </TableBody>
-                    </Table>
-                </div>
-            ) : (
-                <EmptyState icon={Calendar} title="No Company Events" message="Click 'Add New Event' to get started." actionLabel="Add New Event" onAction={() => setIsDialogOpen(true)} />
-            )}
+          {events.filter(e => e.type !== 'time-off').length > 0 ? (
+            <div className="border rounded-md bg-card">
+              <Table>
+                <TableHeader><TableRow><TableHead>Event</TableHead><TableHead>Date</TableHead><TableHead>Type</TableHead><TableHead className="text-right">Actions</TableHead></TableRow></TableHeader>
+                <TableBody>
+                  {events.filter(e => e.type !== 'time-off').map(event => (
+                    <TableRow key={event.id}>
+                      <TableCell className="font-medium">{event.title}</TableCell>
+                      <TableCell>{format(parseISO(event.date), 'PPP')}</TableCell>
+                      <TableCell className="capitalize">{event.type.replace('-', ' ')}</TableCell>
+                      <TableCell className="text-right">
+                        <Button variant="ghost" size="icon" onClick={() => handleEditClick(event)}><Pencil className="h-4 w-4" /></Button>
+                        <Button variant="ghost" size="icon" onClick={() => setEventToDelete(event)}><Trash2 className="h-4 w-4 text-destructive" /></Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            </div>
+          ) : (
+            <EmptyState icon={CalendarIcon} title="No Company Events" message="Click 'Add New Event' to get started." actionLabel="Add New Event" onAction={() => setIsDialogOpen(true)} />
+          )}
         </div>
       </div>
       <AlertDialog open={!!eventToDelete} onOpenChange={(open) => !open && setEventToDelete(null)}>
         <AlertDialogContent>
-            <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the event "{eventToDelete?.title}".</AlertDialogDescription></AlertDialogHeader>
-            <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => { if(eventToDelete) removeEvent(eventToDelete.id) }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
-            </AlertDialogFooter>
+          <AlertDialogHeader><AlertDialogTitle>Are you absolutely sure?</AlertDialogTitle><AlertDialogDescription>This action will permanently delete the event "{eventToDelete?.title}".</AlertDialogDescription></AlertDialogHeader>
+          <AlertDialogFooter>
+            <AlertDialogCancel>Cancel</AlertDialogCancel>
+            <AlertDialogAction onClick={() => { if (eventToDelete) removeEvent(eventToDelete.id) }} className={buttonVariants({ variant: "destructive" })}>Delete</AlertDialogAction>
+          </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
     </>

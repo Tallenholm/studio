@@ -1,5 +1,3 @@
-
-
 import { initializeFirebase } from '@/firebase/init';
 import { collection, getDocs, doc, getDoc, writeBatch, arrayUnion, Firestore, addDoc, setDoc, updateDoc, deleteDoc, query, where, documentId } from 'firebase/firestore';
 import type { Job, Client, ExpenseReport, FleetAsset, InspectionReport, MaintenanceLog, WorkOrder, Task, TimeOffRequest, Violation, ManagedDocument, InventoryItem, SnowRoute, Rental, CalendarEvent, User, NotificationMessage, InspectionStatus, JobNote, SuggestMaintenanceScheduleOutput } from './types';
@@ -44,9 +42,9 @@ const createCrudService = <T extends { id: string }>(collectionName: string) => 
             const db = getFirestoreInstance();
             const docRef = doc(db, collectionName, id);
             const docSnap = await getDoc(docRef).catch(error => {
-                 throw new Error(`Failed to get document ${id} from ${collectionName}: ${error.message}`);
+                throw new Error(`Failed to get document ${id} from ${collectionName}: ${error.message}`);
             });
-            return docSnap.exists() ? { id: docSnap.id, ...doc.data() } as T : null;
+            return docSnap.exists() ? { id: docSnap.id, ...docSnap.data() } as T : null;
         },
         add: async (data: Omit<T, 'id'>, id?: string): Promise<string> => {
             const db = getFirestoreInstance();
@@ -232,19 +230,19 @@ export const getInspectionReportsInDateRange = async (
         where('date', '>=', startDate),
         where('date', '<=', endDate),
     ];
-    
+
     // This query is intentionally simple to avoid needing a composite index.
     // The status filter is applied after fetching.
     const q = query(reportsRef, ...queryConstraints);
     const snapshot = await getDocs(q);
 
     let reports = snapshot.docs.map(doc => ({ id: doc.id, ...doc.data() } as InspectionReport));
-    
+
     // Apply status filter in memory if provided.
     if (status && status !== 'pending') {
         reports = reports.filter(report => report.overallStatus === status);
     }
-    
+
     return reports;
 };
 
@@ -476,4 +474,3 @@ export const setCachedMaintenanceSchedule = async (cacheKey: string, schedule: S
     }
 };
 
-    

@@ -30,25 +30,30 @@ const defaultSettings: SystemSettings = {
   locationLon: -87.8612,
 };
 
-const applyTheme = (theme: string) => {
+const applyTheme = (settings: SystemSettings) => {
+  if (typeof document === 'undefined') return;
+
   document.documentElement.classList.forEach(c => {
     if (c.startsWith('theme-') || c === 'default') {
       document.documentElement.classList.remove(c);
     }
   });
-  if (theme !== 'default') {
-    document.documentElement.classList.add(theme);
+  if (settings.theme !== 'default') {
+    document.documentElement.classList.add(settings.theme);
   }
-  // Ensure dark is always applied if that's the mode
-  document.documentElement.classList.add('dark'); 
-};
 
+  if (settings.enableDarkMode) {
+    document.documentElement.classList.add('dark');
+  } else {
+    document.documentElement.classList.remove('dark');
+  }
+};
 
 export const saveSystemSettings = (settings: SystemSettings): void => {
   if (typeof window !== 'undefined') {
     try {
       localStorage.setItem(SETTINGS_KEY, JSON.stringify(settings));
-      applyTheme(settings.theme);
+      applyTheme(settings);
     } catch (error) {
       console.error('Failed to save system settings:', error);
     }
@@ -60,11 +65,11 @@ export const loadSystemSettings = (): SystemSettings => {
     try {
       const data = localStorage.getItem(SETTINGS_KEY);
       const settings = data ? { ...defaultSettings, ...JSON.parse(data) } : defaultSettings;
-      applyTheme(settings.theme);
+      applyTheme(settings);
       return settings;
     } catch (error) {
       console.error('Failed to load system settings:', error);
-      applyTheme(defaultSettings.theme);
+      applyTheme(defaultSettings);
       return defaultSettings;
     }
   }

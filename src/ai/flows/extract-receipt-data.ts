@@ -9,7 +9,7 @@ const ExtractReceiptInputSchema = z.object({
 
 const ExtractReceiptOutputSchema = z.object({
   amount: z.number().describe('The total amount found on the receipt.'),
-  date: z.string().describe('The date found on the receipt in YYYY-MM-DD format. Today is ' + new Date().toLocaleDateString('en-CA')),
+  date: z.string().describe('The date on the receipt (e.g., YYYY-MM-DD format).'),
   description: z.string().describe('A brief summary of the items or the merchant name from the receipt.'),
 });
 

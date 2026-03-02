@@ -13,7 +13,7 @@ import { generateDailyBriefing } from '@/ai/flows/generate-daily-briefing';
 import type { BriefingData } from '@/ai/flows/generate-daily-briefing-schema';
 import type { CalendarEvent, Job, JobType, FleetAsset, TimeOffRequest, InspectionReport } from '@/lib/types';
 import type { DailyBriefingOutput } from '@/ai/flows/generate-daily-briefing-schema';
-import { isSameDay, format, isWithinInterval, parseISO, subDays } from 'date-fns';
+import { isSameDay, format, isWithinInterval, parseISO, subDays, isAfter, isToday } from 'date-fns';
 import { useUser } from '@/firebase/provider';
 import { Badge } from '@/components/ui/badge';
 import { ClipboardCheck, Send } from 'lucide-react';
@@ -221,24 +221,24 @@ export default function AdminDashboardClientPage() {
 
       try {
         const [
-            activeAndUpcomingJobs = [],
-            allEvents = [],
-            allAssets = [],
-            pendingTimeOffRequests = [],
-            recentFailedReports = [],
+          activeAndUpcomingJobs = [],
+          allEvents = [],
+          allAssets = [],
+          pendingTimeOffRequests = [],
+          recentFailedReports = [],
         ] = await Promise.all([
-            getActiveAndUpcomingJobs(),
-            getCalendarEvents(),
-            getFleetAssets(),
-            getPendingTimeOffRequests(),
-            getInspectionReportsInDateRange(format(thirtyDaysAgo, 'yyyy-MM-dd'), format(today, 'yyyy-MM-dd'), 'fail'),
+          getActiveAndUpcomingJobs(),
+          getCalendarEvents(),
+          getFleetAssets(),
+          getPendingTimeOffRequests(),
+          getInspectionReportsInDateRange(format(thirtyDaysAgo, 'yyyy-MM-dd'), format(today, 'yyyy-MM-dd'), 'fail'),
         ]);
 
         const assetVinMap = new Map<string, string>();
         for (const asset of allAssets) {
-            if (asset.vin) {
-                assetVinMap.set(asset.vin, asset.name);
-            }
+          if (asset.vin) {
+            assetVinMap.set(asset.vin, asset.name);
+          }
         }
 
         let briefing: DailyBriefingOutput | null = null;
@@ -278,7 +278,7 @@ export default function AdminDashboardClientPage() {
                 link: '/admin/manage-calendar'
               }))
           ];
-          
+
           const pendingActions: BriefingData['pendingActions'] = pendingTimeOffRequests
             .map(r => ({
               id: r.id,
@@ -287,44 +287,44 @@ export default function AdminDashboardClientPage() {
               details: `From ${format(parseISO(r.startDate), 'MMM d')} to ${format(parseISO(r.endDate), 'MMM d')}`,
               link: '/admin/manage-requests'
             }));
-            
+
           if (attentionItems.length > 0 || todaysAgenda.length > 0 || pendingActions.length > 0) {
-              briefing = await generateDailyBriefing({
-                  attentionItems,
-                  todaysAgenda,
-                  pendingActions,
-              });
+            briefing = await generateDailyBriefing({
+              attentionItems,
+              todaysAgenda,
+              pendingActions,
+            });
           } else {
-              briefing = { attentionItems: [], todaysAgenda: [], pendingActions: [] };
+            briefing = { attentionItems: [], todaysAgenda: [], pendingActions: [] };
           }
 
         } catch (error) {
           console.error("Failed to generate AI daily briefing:", error);
           briefing = null;
         }
-        
+
         setDashboardData({
-            briefing,
-            events: allEvents,
-            jobs: activeAndUpcomingJobs,
-            assets: allAssets,
-            pendingTimeOffRequests: pendingTimeOffRequests,
-            recentFailedReports: recentFailedReports,
+          briefing,
+          events: allEvents,
+          jobs: activeAndUpcomingJobs,
+          assets: allAssets,
+          pendingTimeOffRequests: pendingTimeOffRequests,
+          recentFailedReports: recentFailedReports,
         });
       } catch (err) {
-          console.error("Critical error fetching dashboard data:", err);
-          const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
-          setDashboardData({
-              briefing: null,
-              jobs: [],
-              events: [],
-              assets: [],
-              pendingTimeOffRequests: [],
-              recentFailedReports: [],
-              error: `Failed to load dashboard data: ${errorMessage}`
-          });
+        console.error("Critical error fetching dashboard data:", err);
+        const errorMessage = err instanceof Error ? err.message : "An unknown error occurred.";
+        setDashboardData({
+          briefing: null,
+          jobs: [],
+          events: [],
+          assets: [],
+          pendingTimeOffRequests: [],
+          recentFailedReports: [],
+          error: `Failed to load dashboard data: ${errorMessage}`
+        });
       } finally {
-          setIsLoading(false);
+        setIsLoading(false);
       }
     };
 
@@ -404,17 +404,17 @@ export default function AdminDashboardClientPage() {
 
   if (dashboardData?.error) {
     return (
-        <div className="container mx-auto py-8">
-            <Card className="m-8 border-destructive/50 bg-destructive/10">
-                <CardHeader>
-                    <CardTitle className="flex items-center gap-2 font-headline text-destructive"><AlertTriangle /> Dashboard Error</CardTitle>
-                </CardHeader>
-                <CardContent>
-                    <p>Could not load dashboard data. The server returned the following error:</p>
-                    <p className="mt-2 font-mono bg-background p-2 rounded-md text-sm">{dashboardData.error}</p>
-                </CardContent>
-            </Card>
-        </div>
+      <div className="container mx-auto py-8">
+        <Card className="m-8 border-destructive/50 bg-destructive/10">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2 font-headline text-destructive"><AlertTriangle /> Dashboard Error</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>Could not load dashboard data. The server returned the following error:</p>
+            <p className="mt-2 font-mono bg-background p-2 rounded-md text-sm">{dashboardData.error}</p>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 

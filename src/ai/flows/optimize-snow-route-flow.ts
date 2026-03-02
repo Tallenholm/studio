@@ -70,10 +70,20 @@ export async function optimizeSnowRoute(input: OptimizeSnowRouteInput): Promise<
   const originalIds = new Set(input.jobs.map(j => j.id));
   const optimizedIds = new Set(output.optimizedJobs.map(j => j.id));
   if (originalIds.size !== optimizedIds.size) {
-    console.warn("AI output is missing jobs, returning original order.");
+    console.warn("AI output has incorrect number of jobs, returning original order.");
     return {
       optimizedJobs: input.jobs,
-      rationale: "AI could not produce a valid route. Displaying original order."
+      rationale: "AI could not produce a valid route (length mismatch). Displaying original order."
+    }
+  }
+
+  for (const id of originalIds) {
+    if (!optimizedIds.has(id)) {
+      console.warn(`AI output is missing job ID ${id}, returning original order.`);
+      return {
+        optimizedJobs: input.jobs,
+        rationale: "AI omitted a required job in its route. Displaying original order."
+      }
     }
   }
 

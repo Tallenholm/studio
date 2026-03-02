@@ -31,7 +31,7 @@ export interface FirebaseContextState {
   firebaseApp: FirebaseApp | null;
   firestore: Firestore | null;
   auth: Auth | null; // The Auth service instance
-  
+
   // User state
   user: AppUser | null;
   firebaseUser: FirebaseUser | null;
@@ -83,16 +83,23 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
       return;
     }
 
+    let unsubscribeProfile: (() => void) | null = null;
+
     // This is the outer listener for Firebase Auth user (FirebaseUser)
     const unsubscribeAuth = onAuthStateChanged(auth, (fbUser) => {
       setUserState(prevState => ({ ...prevState, isUserLoading: false, firebaseUser: fbUser }));
+
+      if (unsubscribeProfile) {
+        unsubscribeProfile();
+        unsubscribeProfile = null;
+      }
 
       if (fbUser) {
         // User is signed in, now listen for their profile document in real-time
         const db = getFirestoreInstance();
         const userDocRef = doc(db, 'users', fbUser.uid);
 
-        const unsubscribeProfile = onSnapshot(userDocRef, (userDocSnap) => {
+        unsubscribeProfile = onSnapshot(userDocRef, (userDocSnap) => {
           if (userDocSnap.exists()) {
             const appUser = { id: userDocSnap.id, ...userDocSnap.data() } as AppUser;
 
@@ -108,7 +115,7 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
                 }
               });
             }
-            
+
             // Profile exists, update the full state
             setUserState(prevState => ({
               ...prevState,
@@ -124,8 +131,6 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
           console.error("FirebaseProvider: Firestore profile listener error:", error);
           setUserState(prevState => ({ ...prevState, appUser: null, userError: error }));
         });
-        
-        return () => unsubscribeProfile();
 
       } else {
         // User is signed out
@@ -138,7 +143,10 @@ export const FirebaseProvider: React.FC<FirebaseProviderProps> = ({
     });
 
     // Return the cleanup function for the outer (auth) listener
-    return () => unsubscribeAuth();
+    return () => {
+      if (unsubscribeProfile) unsubscribeProfile();
+      unsubscribeAuth();
+    };
   }, [auth]); // Re-run effect if the auth service instance changes
 
   // Memoize the context value
@@ -193,7 +201,7 @@ export const useFirebase = (): FirebaseServicesAndUser => {
 /** Hook to access Firebase Auth instance. */
 export const useAuth = (): Auth => {
   const context = useContext(FirebaseContext);
-   if (context === undefined) {
+  if (context === undefined) {
     throw new Error("useAuth must be used within a FirebaseProvider");
   }
   if (!context.auth) {
@@ -235,7 +243,7 @@ export const useFirebaseApp = (): FirebaseApp => {
  */
 export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
   const memoized = useMemo(factory, deps);
-  
+
   if (memoized && typeof memoized === 'object') {
     // Add the __memo flag to the object without changing its type signature for the consumer.
     Object.defineProperty(memoized, '__memo', {
@@ -244,7 +252,7 @@ export function useMemoFirebase<T>(factory: () => T, deps: DependencyList): T {
       enumerable: false,
     });
   }
-  
+
   return memoized;
 }
 
@@ -260,10 +268,10 @@ export const useUser = (): UserHookResult => {
   if (context === undefined) {
     throw new Error('useUser must be used within a FirebaseProvider.');
   }
-  return { 
-    user: context.user, 
-    firebaseUser: context.firebaseUser, 
-    isUserLoading: context.isUserLoading, 
-    userError: context.userError 
+  return {
+    user: context.user,
+    firebaseUser: context.firebaseUser,
+    isUserLoading: context.isUserLoading,
+    userError: context.userError
   };
 };

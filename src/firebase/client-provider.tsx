@@ -15,11 +15,15 @@ export function FirebaseClientProvider({ children }: FirebaseClientProviderProps
     return initializeFirebase();
   }, []); // Empty dependency array ensures this runs only once on mount
 
+  if (!firebaseServices.app || !firebaseServices.auth || !firebaseServices.db) {
+    return <div className="flex items-center justify-center h-screen">Loading application services...</div>;
+  }
+
   return (
     <FirebaseProvider
-      firebaseApp={firebaseServices.app!}
-      auth={firebaseServices.auth!}
-      firestore={firebaseServices.db!}
+      firebaseApp={firebaseServices.app}
+      auth={firebaseServices.auth}
+      firestore={firebaseServices.db}
     >
       {children}
     </FirebaseProvider>

@@ -13,7 +13,7 @@ import { AnswerHelpQuestionInputSchema } from './answer-help-question-schema';
 import type { AnswerHelpQuestionInput } from './answer-help-question-schema';
 
 
-/* import DEFAULT_MODEL if not present */
+
 const answerHelpQuestionFlow = ai.defineFlow(
   {
     name: 'answerHelpQuestionFlow',

@@ -1,0 +1,52 @@
+
+> logans-excavating@0.1.0 typecheck
+> tsc --noEmit
+
+src/app/admin/advanced-reports/page.tsx(2,39): error TS2307: Cannot find module './AdvancedReportsClientPage' or its corresponding type declarations.
+src/app/admin/manage-calendar/ManageCalendarClientPage.tsx(79,44): error TS2345: Argument of type '{ date: string; type: "company-event" | "maintenance"; title: string; description?: string | undefined; }' is not assignable to parameter of type 'Omit<CalendarEvent, "id">'.
+  Types of property 'description' are incompatible.
+    Type 'string | undefined' is not assignable to type 'string'.
+      Type 'undefined' is not assignable to type 'string'.
+src/app/admin/manage-calendar/ManageCalendarClientPage.tsx(111,489): error TS2322: Type '{ mode: string; selected: Date; onSelect: (...event: any[]) => void; initialFocus: true; }' is not assignable to type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+  Property 'selected' does not exist on type 'IntrinsicAttributes & Omit<LucideProps, "ref"> & RefAttributes<SVGSVGElement>'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(165,26): error TS2304: Cannot find name 'DropdownMenu'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(166,28): error TS2304: Cannot find name 'DropdownMenuTrigger'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(166,120): error TS2304: Cannot find name 'DropdownMenuTrigger'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(167,28): error TS2304: Cannot find name 'DropdownMenuContent'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(168,32): error TS2304: Cannot find name 'DropdownMenuItem'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(168,130): error TS2304: Cannot find name 'DropdownMenuItem'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(169,32): error TS2304: Cannot find name 'DropdownMenuItem'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(169,163): error TS2304: Cannot find name 'DropdownMenuItem'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(170,29): error TS2304: Cannot find name 'DropdownMenuContent'.
+src/app/admin/manage-rentals/ManageRentalsClientPage.tsx(171,27): error TS2304: Cannot find name 'DropdownMenu'.
+src/app/admin/manage-tasks/ManageTasksClientPage.tsx(99,21): error TS2345: Argument of type '(prev: Task[]) => (Task | { status: string; dateCompleted: null; assignedToEmployeeName: string; createdByAdminName: string; dateAssigned: string; description: string; title: string; ... 4 more ...; id: string; })[]' is not assignable to parameter of type 'SetStateAction<Task[]>'.
+  Type '(prev: Task[]) => (Task | { status: string; dateCompleted: null; assignedToEmployeeName: string; createdByAdminName: string; dateAssigned: string; description: string; title: string; ... 4 more ...; id: string; })[]' is not assignable to type '(prevState: Task[]) => Task[]'.
+    Type '(Task | { status: string; dateCompleted: null; assignedToEmployeeName: string; createdByAdminName: string; dateAssigned: string; description: string; title: string; assignedToEmployeeId: string; requiresPhoto: boolean; completionNotes?: string | undefined; completionPhotoUrl?: string | undefined; id: string; })[]' is not assignable to type 'Task[]'.
+      Type 'Task | { status: string; dateCompleted: null; assignedToEmployeeName: string; createdByAdminName: string; dateAssigned: string; description: string; title: string; assignedToEmployeeId: string; requiresPhoto: boolean; completionNotes?: string | undefined; completionPhotoUrl?: string | undefined; id: string; }' is not assignable to type 'Task'.
+        Type '{ status: string; dateCompleted: null; assignedToEmployeeName: string; createdByAdminName: string; dateAssigned: string; description: string; title: string; assignedToEmployeeId: string; requiresPhoto: boolean; completionNotes?: string | undefined; completionPhotoUrl?: string | undefined; id: string; }' is not assignable to type 'Task'.
+          Types of property 'status' are incompatible.
+            Type 'string' is not assignable to type '"pending" | "completed"'.
+src/app/admin/manage-tasks/ManageTasksClientPage.tsx(184,123): error TS2304: Cannot find name 'FormDescription'.
+src/app/admin/manage-tasks/ManageTasksClientPage.tsx(184,207): error TS2304: Cannot find name 'FormDescription'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(152,22): error TS2304: Cannot find name 'Select'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(152,73): error TS7006: Parameter 'value' implicitly has an 'any' type.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(153,26): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(153,60): error TS2304: Cannot find name 'SelectValue'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(153,75): error TS2304: Cannot find name 'SelectTrigger'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(154,26): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(155,30): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(155,60): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(156,30): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(156,74): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(157,30): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(157,66): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(158,30): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(158,70): error TS2304: Cannot find name 'SelectItem'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(159,27): error TS2304: Cannot find name 'SelectContent'.
+src/app/admin/manage-work-orders/ManageWorkOrdersClientPage.tsx(160,23): error TS2304: Cannot find name 'Select'.
+src/components/admin/AdminDashboardClientPage.tsx(248,26): error TS2304: Cannot find name 'isAfter'.
+src/components/admin/AdminDashboardClientPage.tsx(272,28): error TS2552: Cannot find name 'isToday'. Did you mean 'today'?
+src/components/layout/AppLayout.tsx(136,34): error TS7009: 'new' expression, whose target lacks a construct signature, implicitly has an 'any' type.
+src/components/layout/AppLayout.tsx(136,42): error TS2558: Expected 0 type arguments, but got 2.
+src/components/layout/AppLayout.tsx(141,50): error TS18046: 'notif' is of type 'unknown'.
+src/lib/firestoreService.ts(49,64): error TS2339: Property 'data' does not exist on type '{ (firestore: Firestore, path: string, ...pathSegments: string[]): DocumentReference<DocumentData, DocumentData>; <AppModelType, DbModelType extends DocumentData>(reference: CollectionReference<...>, path?: string | undefined, ...pathSegments: string[]): DocumentReference<...>; <AppModelType, DbModelType extends Doc...'.

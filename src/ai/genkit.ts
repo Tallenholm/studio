@@ -6,7 +6,7 @@ import { genkit } from 'genkit';
 import { googleAI } from '@genkit-ai/google-genai';
 
 /** Centralized model reference — change here to update all AI flows. */
-export const DEFAULT_MODEL = 'gemini-1.5-flash';
+export const DEFAULT_MODEL = 'gemini-2.5-flash';
 
 export const ai = genkit({
   plugins: [
