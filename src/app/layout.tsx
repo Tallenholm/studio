@@ -1,13 +1,14 @@
 import type { Metadata } from "next";
-import { PT_Sans } from "next/font/google";
+import { Inter } from "next/font/google";
 import "./globals.css";
 import { Toaster } from "@/components/ui/toaster";
 import RouteGuard from "@/components/layout/RouteGuard";
 import { FirebaseClientProvider } from "@/firebase/client-provider";
+import { ThemeProvider } from "next-themes";
 
-const ptSans = PT_Sans({
+const inter = Inter({
   subsets: ['latin'],
-  weight: ['400', '700'],
+  weight: ['300', '400', '500', '600', '700'],
   variable: '--font-body',
 });
 
@@ -22,14 +23,21 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en" className="dark">
-      <body className={`${ptSans.variable}`}>
-        <FirebaseClientProvider>
-          <RouteGuard>
-            {children}
-          </RouteGuard>
-        </FirebaseClientProvider>
-        <Toaster />
+    <html lang="en" suppressHydrationWarning>
+      <body className={`${inter.variable}`}>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="dark"
+          enableSystem={false}
+          disableTransitionOnChange
+        >
+          <FirebaseClientProvider>
+            <RouteGuard>
+              {children}
+            </RouteGuard>
+          </FirebaseClientProvider>
+          <Toaster />
+        </ThemeProvider>
       </body>
     </html>
   );
