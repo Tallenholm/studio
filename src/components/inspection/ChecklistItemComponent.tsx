@@ -220,6 +220,7 @@ export default function ChecklistItemComponent({ item, control, fieldNamePrefix,
                             src={field.value}
                             alt={`Preview for ${item.name}`}
                             fill
+                            sizes="128px"
                             className="object-cover rounded-md border"
                           />
                           <Button
