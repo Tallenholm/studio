@@ -41,10 +41,12 @@ const getBriefingItemIcon = (type: string) => {
 const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOutput | null, isLoading: boolean }) => {
   if (isLoading) {
     return (
-      <Card className="mb-8 border-primary/30 shadow-lg bg-primary/5 hover:shadow-primary/10 transition-all duration-300">
+      <Card className="mb-8 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300">
         <CardHeader>
-          <CardTitle className="flex items-center gap-2 font-headline text-primary">
-            <Brain />
+          <CardTitle className="flex items-center gap-2 text-primary">
+            <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
+              <Brain className="h-4 w-4" />
+            </div>
             AI Daily Briefing
           </CardTitle>
           <CardDescription>
@@ -52,7 +54,10 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
           </CardDescription>
         </CardHeader>
         <CardContent className="flex justify-center items-center py-10">
-          <Loader2 className="h-10 w-10 text-primary animate-spin" />
+          <div className="relative">
+            <div className="absolute inset-0 rounded-full bg-primary/20 blur-lg animate-pulse" />
+            <Loader2 className="relative h-8 w-8 text-primary animate-spin" />
+          </div>
         </CardContent>
       </Card>
     );
@@ -93,10 +98,12 @@ const DailyBriefingCard = ({ briefing, isLoading }: { briefing: DailyBriefingOut
   }
 
   return (
-    <Card className="mb-8 border-primary/30 shadow-lg bg-primary/5 hover:shadow-primary/10 transition-all duration-300">
+    <Card className="mb-8 border-primary/20 bg-gradient-to-br from-primary/5 to-accent/5 shadow-sm hover:shadow-md hover:shadow-primary/5 transition-all duration-300">
       <CardHeader>
-        <CardTitle className="flex items-center gap-2 font-headline text-primary">
-          <Brain />
+        <CardTitle className="flex items-center gap-2 text-primary">
+          <div className="flex h-7 w-7 items-center justify-center rounded-lg bg-primary/15 border border-primary/20">
+            <Brain className="h-4 w-4" />
+          </div>
           AI Daily Briefing for {format(new Date(), 'PPP')}
         </CardTitle>
         <CardDescription>
@@ -167,21 +174,21 @@ const managerTourSteps: TourStep[] = [
 
 const StatCard = ({ title, value, icon: Icon, link }: { title: string, value: number, icon: React.ElementType, link?: string }) => {
   const cardContent = (
-    <div className="flex items-center justify-between w-full p-6">
-      <div>
-        <CardDescription>{title}</CardDescription>
-        <CardTitle className="text-4xl font-bold">
+    <div className="flex items-center justify-between w-full p-5">
+      <div className="space-y-1">
+        <p className="text-xs font-medium uppercase tracking-wider text-muted-foreground">{title}</p>
+        <p className="text-3xl font-bold tracking-tight text-foreground">
           <AnimatedCounter value={value} />
-        </CardTitle>
+        </p>
       </div>
-      <div className="rounded-full bg-primary/10 border border-primary/20 p-3">
-        <Icon className="h-6 w-6 text-primary" />
+      <div className="flex h-11 w-11 shrink-0 items-center justify-center rounded-xl bg-gradient-to-br from-primary/15 to-primary/5 border border-primary/20">
+        <Icon className="h-5 w-5 text-primary" />
       </div>
     </div>
   );
 
   return (
-    <Card className="hover:border-primary/50 hover:-translate-y-1 transition-all duration-300 hover:shadow-lg hover:shadow-primary/5">
+    <Card className="hover:border-primary/40 hover:-translate-y-0.5 transition-all duration-300 hover:shadow-md hover:shadow-primary/8 overflow-hidden">
       {link ? <Link href={link} className="block h-full">{cardContent}</Link> : cardContent}
     </Card>
   );

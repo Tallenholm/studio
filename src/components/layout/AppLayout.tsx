@@ -23,6 +23,7 @@ import {
 } from '@/components/ui/sidebar';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarFallback } from '@/components/ui/avatar';
 import { FileText, HelpCircle, LogOut, Bell, Users, Cog, Truck, LayoutDashboard, Calendar, ClipboardCheck, Send, ShieldAlert, CalendarPlus, BookOpen, LineChart, SlidersHorizontal, Wrench, ClipboardList, Receipt, Coins, Briefcase, Building2, ClipboardEdit, FileBadge, HeartPulse, Route, Calculator, Cloud, User as UserIcon, Loader2, Map as MapIcon, Hammer } from 'lucide-react';
 import type { NotificationMessage } from '@/lib/types';
 import CommandPalette from '@/components/common/CommandPalette';
@@ -34,12 +35,12 @@ import { getFirestoreInstance } from '@/lib/firestoreService';
 import { FirebaseErrorListener } from '@/components/FirebaseErrorListener';
 import { useAuth, useUser } from '@/firebase/provider';
 import AiAssistantWidget from '@/components/common/AiAssistantWidget';
+import ThemeToggle from '@/components/common/ThemeToggle';
 
 const getPageTitle = (pathname: string): string => {
     if (pathname === '/admin' || pathname === '/employee') return 'Dashboard';
     if (pathname.startsWith('/my-profile')) return 'My Profile';
 
-    // Specific overrides
     const titleMap: Record<string, string> = {
         '/admin/manage-fleet': 'Manage Fleet',
         '/admin/manage-users': 'Manage Employees',
@@ -65,7 +66,6 @@ const getPageTitle = (pathname: string): string => {
 
     if (titleMap[pathname]) return titleMap[pathname];
 
-    // Fallback: take the last segment and format it
     const segments = pathname.split('/').filter(Boolean);
     if (segments.length === 0) return 'Dashboard';
 
@@ -76,6 +76,17 @@ const getPageTitle = (pathname: string): string => {
         .join(' ');
 };
 
+function getInitials(name?: string | null, email?: string | null): string {
+    if (name) {
+        const parts = name.trim().split(' ');
+        return parts.length > 1
+            ? `${parts[0][0]}${parts[parts.length - 1][0]}`.toUpperCase()
+            : parts[0].slice(0, 2).toUpperCase();
+    }
+    if (email) return email.slice(0, 2).toUpperCase();
+    return 'U';
+}
+
 function AppLayout({ children }: { children: React.ReactNode }) {
     const { user, isUserLoading } = useUser();
 
@@ -84,7 +95,6 @@ function AppLayout({ children }: { children: React.ReactNode }) {
     }
 
     if (!user) {
-        // This case should ideally be handled by RouteGuard, but as a fallback:
         return <FullScreenLoader text="Redirecting..." />;
     }
 
@@ -94,8 +104,11 @@ function AppLayout({ children }: { children: React.ReactNode }) {
 function FullScreenLoader({ text }: { text: string }) {
     return (
         <div className="flex h-screen w-full flex-col items-center justify-center bg-background">
-            <Loader2 className="h-12 w-12 animate-spin text-primary" />
-            <p className="mt-4 text-lg text-muted-foreground">{text}</p>
+            <div className="relative">
+                <div className="absolute inset-0 rounded-full bg-primary/20 blur-xl animate-pulse" />
+                <Loader2 className="relative h-10 w-10 animate-spin text-primary" />
+            </div>
+            <p className="mt-5 text-sm font-medium text-muted-foreground">{text}</p>
         </div>
     );
 }
@@ -132,7 +145,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
         const db = getFirestoreInstance();
         const notificationsRef = collection(db, "notifications");
 
-        // Use a map to store notifications from both queries and avoid duplicates
         const allNotifications = new Map<string, NotificationMessage>();
 
         const updateUnreadCount = () => {
@@ -143,7 +155,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             setUnreadCount(count);
         };
 
-        // Query for notifications sent to 'all'
         const publicQuery = query(notificationsRef, where('recipientId', '==', 'all'));
         const unsubscribePublic = onSnapshot(publicQuery, (snapshot) => {
             snapshot.docs.forEach(doc => {
@@ -154,7 +165,6 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
             console.error("Error fetching public notifications for badge:", error);
         });
 
-        // Query for notifications sent specifically to the current user
         const privateQuery = query(notificationsRef, where('recipientId', '==', user.uid));
         const unsubscribePrivate = onSnapshot(privateQuery, (snapshot) => {
             snapshot.docs.forEach(doc => {
@@ -187,19 +197,27 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
     }, [openCommandPalette, openTools])
 
     const isAdmin = user?.role === 'owner' || user?.role === 'manager';
+    const initials = getInitials(user?.name, user?.email);
+    const displayName = user?.name || user?.email || 'User';
 
     return (
         <SidebarProvider defaultOpen={isSidebarDefaultOpen}>
             <Sidebar id="tour-step-sidebar" variant="inset" className="print-hidden">
-                <SidebarHeader className="p-4 flex flex-col items-center">
-                    <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2 mb-4 text-center">
-                        <span className="font-headline text-2xl font-bold text-sidebar-primary">Logan's Excavating</span>
+                <SidebarHeader className="p-4">
+                    <Link href={isAdmin ? '/admin' : '/employee'} className="flex items-center gap-2.5 px-1 py-1">
+                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-sidebar-primary/20 border border-sidebar-primary/30">
+                            <Truck className="h-4 w-4 text-sidebar-primary" />
+                        </div>
+                        <div className="flex flex-col">
+                            <span className="font-semibold text-sm text-sidebar-foreground leading-tight">Logan's Excavating</span>
+                            <span className="text-[10px] text-sidebar-foreground/50 leading-tight">Fleet & Operations</span>
+                        </div>
                     </Link>
                 </SidebarHeader>
                 <SidebarContent>
                     {user?.role === 'employee' && (
                         <SidebarGroup>
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Tools</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 px-2 mb-1">Menu</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/employee">
@@ -252,7 +270,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                 </SidebarMenuItem>
                                 <SidebarMenuItem>
                                     <Link href="/employee/company-documents">
-                                        <SidebarMenuButton tooltip="Policies &amp; Documents" isActive={pathname.startsWith('/employee/company-documents')}>
+                                        <SidebarMenuButton tooltip="Policies & Documents" isActive={pathname.startsWith('/employee/company-documents')}>
                                             <BookOpen /><span>Policies &amp; Documents</span>
                                         </SidebarMenuButton>
                                     </Link>
@@ -283,7 +301,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                                         <SidebarMenuButton tooltip="Notifications" isActive={pathname.startsWith('/notifications')}>
                                             <Bell />
                                             <span>Notifications</span>
-                                            {unreadCount > 0 && <Badge className="ml-auto">{unreadCount}</Badge>}
+                                            {unreadCount > 0 && <Badge className="ml-auto text-[10px] h-5 min-w-5 justify-center">{unreadCount}</Badge>}
                                         </SidebarMenuButton>
                                     </Link>
                                 </SidebarMenuItem>
@@ -293,7 +311,7 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 
                     {isAdmin && user && (
                         <SidebarGroup>
-                            <SidebarGroupLabel className="text-sm font-semibold text-muted-foreground px-2">Admin Menu</SidebarGroupLabel>
+                            <SidebarGroupLabel className="text-[10px] font-semibold uppercase tracking-widest text-sidebar-foreground/40 px-2 mb-1">Admin</SidebarGroupLabel>
                             <SidebarMenu>
                                 <SidebarMenuItem>
                                     <Link href="/admin">
@@ -380,50 +398,66 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
                         </SidebarGroup>
                     )}
                 </SidebarContent>
-                <SidebarFooter className="p-2">
+                <SidebarFooter className="p-3 space-y-1">
+                    <div className="flex items-center gap-2.5 px-2 py-2 rounded-lg hover:bg-sidebar-accent/60 transition-colors cursor-default">
+                        <Avatar className="h-7 w-7 shrink-0">
+                            <AvatarFallback className="text-[11px] font-semibold bg-sidebar-primary/20 text-sidebar-primary border border-sidebar-primary/20">
+                                {initials}
+                            </AvatarFallback>
+                        </Avatar>
+                        <div className="flex flex-col min-w-0">
+                            <span className="text-xs font-medium text-sidebar-foreground truncate">{displayName}</span>
+                            <span className="text-[10px] text-sidebar-foreground/50 capitalize">{user?.role || 'User'}</span>
+                        </div>
+                    </div>
+                    <SidebarSeparator className="my-1 bg-sidebar-border/50" />
                     <SidebarMenu>
                         <SidebarMenuItem>
-                            <Button variant="ghost" className="w-full justify-start" onClick={openCommandPalette}>
-                                <span className="mr-auto">Search...</span>
-                                <kbd className="ml-4 hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘K</kbd>
+                            <Button variant="ghost" className="w-full justify-start text-sidebar-foreground/70 hover:text-sidebar-foreground hover:bg-sidebar-accent/60 h-8 px-2" onClick={openCommandPalette}>
+                                <span className="mr-auto text-xs">Search...</span>
+                                <kbd className="ml-4 hidden rounded bg-sidebar-accent px-1.5 py-px text-[10px] font-medium text-sidebar-foreground/50 sm:inline-block">⌘K</kbd>
                             </Button>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton tooltip="Calculators" onClick={openTools}>
-                                <Calculator />
-                                <span>Calculators</span>
-                                <kbd className="ml-auto hidden rounded bg-muted px-1.5 py-px text-[10px] font-medium text-muted-foreground opacity-100 sm:inline-block">⌘T</kbd>
+                            <SidebarMenuButton tooltip="Calculators" onClick={openTools} className="h-8">
+                                <Calculator className="h-4 w-4" />
+                                <span className="text-xs">Calculators</span>
+                                <kbd className="ml-auto hidden rounded bg-sidebar-accent px-1.5 py-px text-[10px] font-medium text-sidebar-foreground/50 sm:inline-block">⌘T</kbd>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                         <SidebarMenuItem id={isAdmin ? "tour-step-sidebar-help" : "tour-step-sidebar-help-employee"}>
                             <Link href="/help">
-                                <SidebarMenuButton tooltip="Help &amp; Support" isActive={pathname === '/help'}>
-                                    <HelpCircle /><span>Help &amp; Support</span>
+                                <SidebarMenuButton tooltip="Help & Support" isActive={pathname === '/help'} className="h-8">
+                                    <HelpCircle className="h-4 w-4" /><span className="text-xs">Help &amp; Support</span>
                                 </SidebarMenuButton>
                             </Link>
                         </SidebarMenuItem>
                         <SidebarMenuItem>
-                            <SidebarMenuButton tooltip="Logout" onClick={logout}>
-                                <LogOut /><span>Logout</span>
+                            <SidebarMenuButton tooltip="Logout" onClick={logout} className="h-8 text-sidebar-foreground/60 hover:text-destructive hover:bg-destructive/10">
+                                <LogOut className="h-4 w-4" /><span className="text-xs">Sign Out</span>
                             </SidebarMenuButton>
                         </SidebarMenuItem>
                     </SidebarMenu>
                 </SidebarFooter>
             </Sidebar>
             <SidebarInset>
-                <header className="sticky top-0 z-10 flex h-16 items-center justify-between border-b bg-card px-6 print-hidden">
-                    <div className="flex items-center gap-4">
-                        <SidebarTrigger />
-                        <h1 className="text-xl font-semibold tracking-tight">{getPageTitle(pathname)}</h1>
+                <header className="sticky top-0 z-10 flex h-14 items-center justify-between border-b border-border/50 bg-background/80 backdrop-blur-xl px-5 print-hidden">
+                    <div className="flex items-center gap-3">
+                        <SidebarTrigger className="text-muted-foreground hover:text-foreground" />
+                        <div className="h-4 w-px bg-border/60" />
+                        <h1 className="text-sm font-semibold tracking-tight text-foreground">{getPageTitle(pathname)}</h1>
                     </div>
-                    <Link href="/notifications" passHref>
-                        <Button variant="ghost" size="icon" aria-label="Notifications" className="relative">
-                            <Bell className="h-5 w-5 text-accent-foreground" />
-                            {unreadCount > 0 && (
-                                <Badge className="absolute -top-1 -right-1 h-4 w-4 justify-center rounded-full p-0 text-xs" variant="destructive">{unreadCount}</Badge>
-                            )}
-                        </Button>
-                    </Link>
+                    <div className="flex items-center gap-1">
+                        <ThemeToggle />
+                        <Link href="/notifications" passHref>
+                            <Button variant="ghost" size="icon" aria-label="Notifications" className="relative text-muted-foreground hover:text-foreground">
+                                <Bell className="h-5 w-5" />
+                                {unreadCount > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 h-4 w-4 flex items-center justify-center rounded-full bg-destructive text-[10px] font-bold text-white">{unreadCount > 9 ? '9+' : unreadCount}</span>
+                                )}
+                            </Button>
+                        </Link>
+                    </div>
                 </header>
                 <main className="flex-1 p-6 overflow-auto app-layout-main">
                     <FirebaseErrorListener />
@@ -440,4 +474,3 @@ function AuthenticatedLayout({ children }: { children: React.ReactNode }) {
 }
 
 export default AppLayout;
-

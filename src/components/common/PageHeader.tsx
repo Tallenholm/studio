@@ -1,31 +1,35 @@
 'use client';
 
 import type { LucideIcon } from 'lucide-react';
+import { cn } from '@/lib/utils';
 
 interface PageHeaderProps {
     icon: LucideIcon;
     title: string;
     description?: string;
-    children?: React.ReactNode; // Slot for action buttons
+    children?: React.ReactNode;
+    className?: string;
 }
 
-/**
- * Consistent page header used across all admin/employee pages.
- * Replaces the repeated CardTitle + CardDescription + icon pattern.
- */
-export default function PageHeader({ icon: Icon, title, description, children }: PageHeaderProps) {
+export default function PageHeader({ icon: Icon, title, description, children, className }: PageHeaderProps) {
     return (
-        <div className="flex flex-col gap-1 sm:flex-row sm:items-center sm:justify-between">
-            <div className="space-y-1">
-                <h1 className="text-3xl font-headline font-bold flex items-center gap-3">
-                    <Icon className="h-8 w-8 text-primary shrink-0" />
-                    {title}
-                </h1>
-                {description && (
-                    <p className="text-muted-foreground ml-11">{description}</p>
-                )}
+        <div className={cn("flex flex-col gap-1 sm:flex-row sm:items-start sm:justify-between mb-6 pb-6 border-b border-border/50", className)}>
+            <div className="flex items-start gap-3.5">
+                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-primary/10 border border-primary/20">
+                    <Icon className="h-5 w-5 text-primary" />
+                </div>
+                <div className="space-y-0.5 pt-0.5">
+                    <h1 className="text-xl font-semibold tracking-tight text-foreground">{title}</h1>
+                    {description && (
+                        <p className="text-sm text-muted-foreground">{description}</p>
+                    )}
+                </div>
             </div>
-            {children && <div className="flex items-center gap-2 ml-11 sm:ml-0 mt-2 sm:mt-0">{children}</div>}
+            {children && (
+                <div className="flex items-center gap-2 mt-3 sm:mt-0 ml-[52px] sm:ml-0">
+                    {children}
+                </div>
+            )}
         </div>
     );
 }
